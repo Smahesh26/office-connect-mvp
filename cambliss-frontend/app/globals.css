@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f4f7ff;
+  --foreground: #35558e;
+  --foreground-strong: #27467f;
+  --foreground-muted: #6f84ad;
+  --brand: #1d419d;
+  --brand-strong: #173784;
+  --brand-soft: #e9efff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), sans-serif;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--foreground-strong);
+  }
+}
+
+@layer utilities {
+  .text-black,
+  .text-zinc-900,
+  .text-gray-900,
+  .text-slate-900 {
+    color: var(--foreground-strong) !important;
+  }
+
+  .text-zinc-800,
+  .text-gray-800,
+  .text-slate-800 {
+    color: #3e5f98 !important;
+  }
+
+  .text-zinc-700,
+  .text-gray-700,
+  .text-slate-700,
+  .text-zinc-600,
+  .text-gray-600,
+  .text-slate-600,
+  .text-zinc-500,
+  .text-gray-500,
+  .text-slate-500 {
+    color: var(--foreground-muted) !important;
+  }
+
+  .bg-black,
+  .bg-zinc-900,
+  .bg-gray-900,
+  .bg-slate-900 {
+    background-color: var(--brand) !important;
+  }
+
+  .hover\:bg-black:hover,
+  .hover\:bg-zinc-900:hover,
+  .hover\:bg-zinc-800:hover,
+  .hover\:bg-gray-900:hover,
+  .hover\:bg-gray-800:hover,
+  .hover\:bg-slate-900:hover,
+  .hover\:bg-slate-800:hover {
+    background-color: var(--brand-strong) !important;
+  }
+
+  .border-black,
+  .border-zinc-900,
+  .border-gray-900,
+  .border-slate-900 {
+    border-color: var(--brand) !important;
+  }
+
+  .focus\:border-zinc-900:focus,
+  .focus\:border-black:focus,
+  .focus\:ring-black:focus {
+    border-color: var(--brand) !important;
+    --tw-ring-color: color-mix(in srgb, var(--brand) 32%, transparent) !important;
+  }
+}
