@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import React, { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 
 const getRoleFromToken = (token?: string | null): string | null => {
 	if (!token) {
@@ -69,20 +68,26 @@ type SubscriptionSnapshot = {
 };
 
 export default function LoginPage() {
-	const searchParams = useSearchParams();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [subscription, setSubscription] = useState<SubscriptionSnapshot | null>(null);
+	const [nextPath, setNextPath] = useState("");
 
-	const nextPath = useMemo(() => {
-		const raw = searchParams.get("next") || "";
-		if (!raw.startsWith("/") || raw.startsWith("//")) {
-			return "";
+	useEffect(() => {
+		if (typeof window === "undefined") {
+			return;
 		}
-		return raw;
-	}, [searchParams]);
+
+		const raw = new URLSearchParams(window.location.search).get("next") || "";
+		if (!raw.startsWith("/") || raw.startsWith("//")) {
+			setNextPath("");
+			return;
+		}
+
+		setNextPath(raw);
+	}, []);
 
 	useEffect(() => {
 		const token = localStorage.getItem("authToken");

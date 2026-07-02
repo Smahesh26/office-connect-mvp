@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { ConfirmationResult, RecaptchaVerifier, getAuth, signInWithPhoneNumber } from "firebase/auth";
 import { firebaseApp, isFirebaseConfigured } from "../../lib/firebase";
 
@@ -74,7 +73,6 @@ type PlanSummary = {
 };
 
 export default function RegisterPage() {
-	const searchParams = useSearchParams();
 	const [organizationName, setOrganizationName] = useState("");
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
@@ -91,16 +89,23 @@ export default function RegisterPage() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [plans, setPlans] = useState<PlanSummary[]>([]);
+	const [nextPath, setNextPath] = useState("");
 	const confirmationRef = useRef<ConfirmationResult | null>(null);
 	const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
-	const nextPath = useMemo(() => {
-		const raw = searchParams.get("next") || "";
-		if (!raw.startsWith("/") || raw.startsWith("//")) {
-			return "";
+	useEffect(() => {
+		if (typeof window === "undefined") {
+			return;
 		}
-		return raw;
-	}, [searchParams]);
+
+		const raw = new URLSearchParams(window.location.search).get("next") || "";
+		if (!raw.startsWith("/") || raw.startsWith("//")) {
+			setNextPath("");
+			return;
+		}
+
+		setNextPath(raw);
+	}, []);
 
 	useEffect(() => {
 		const fetchPlans = async () => {
