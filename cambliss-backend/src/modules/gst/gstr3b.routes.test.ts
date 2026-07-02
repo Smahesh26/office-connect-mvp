@@ -3,7 +3,7 @@ import request from "supertest";
 import express from "express";
 import prisma from "../../config/prisma";
 import gstr3bRoutes from "./gstr3b.routes";
-import { RoleName } from "../../generated/prisma/enums";
+import { RoleName } from "@prisma/client";
 
 const app = express();
 let activeOrgId = "test-org-id";

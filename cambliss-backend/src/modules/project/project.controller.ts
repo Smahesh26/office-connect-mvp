@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { RoleName } from "../../generated/prisma/enums";
+import { RoleName } from "@prisma/client";
 import {
 	addProjectMember,
 	createProjectStatusUpdate,

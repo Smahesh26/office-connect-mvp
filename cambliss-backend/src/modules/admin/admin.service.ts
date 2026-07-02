@@ -1,7 +1,7 @@
 import prisma from "../../config/prisma";
 import { Prisma } from "@prisma/client";
 import PDFDocument from "pdfkit";
-import { RoleName } from "../../generated/prisma/enums";
+import { RoleName } from "@prisma/client";
 
 export class HttpError extends Error {
 	statusCode: number;

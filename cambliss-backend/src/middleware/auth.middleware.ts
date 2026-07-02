@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import jwt, { JsonWebTokenError, JwtPayload, TokenExpiredError } from "jsonwebtoken";
-import type { RoleName } from "../generated/prisma/enums";
+import type { RoleName } from "@prisma/client";
 
 export interface AuthenticatedUser {
 	id: string;

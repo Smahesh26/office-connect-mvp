@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import prisma from "../../config/prisma";
-import { RoleName } from "../../generated/prisma/enums";
+import { RoleName } from "@prisma/client";
 
 export class UserManagementError extends Error {
 	statusCode: number;

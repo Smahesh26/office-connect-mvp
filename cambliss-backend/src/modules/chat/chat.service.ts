@@ -1,6 +1,6 @@
 import prisma from "../../config/prisma";
 import { randomUUID } from "crypto";
-import type { RoleName } from "../../generated/prisma/enums";
+import type { RoleName } from "@prisma/client";
 
 export class ChatError extends Error {
 	statusCode: number;

@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "../../config/prisma";
-import type { RoleName } from "../../generated/prisma/enums";
+import type { RoleName } from "@prisma/client";
 import { getMyAccess } from "../user-management/user-management.service";
 import { consumeVerifiedRegisterOtp, isMobileOtpEnabled } from "./mobile-otp.service";
 import { isFirebaseOtpEnabled, verifyFirebasePhoneToken } from "./firebase-auth.service";

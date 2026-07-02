@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import prisma from "../../config/prisma";
-import { RoleName } from "../../generated/prisma/enums";
+import { RoleName } from "@prisma/client";
 
 const CHAT_TRANSFER_MARKER = "chat-transfers";
 const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;

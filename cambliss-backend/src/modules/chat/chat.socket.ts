@@ -1,7 +1,7 @@
 import { Server as HttpServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import jwt from "jsonwebtoken";
-import { RoleName } from "../../generated/prisma/enums";
+import { RoleName } from "@prisma/client";
 import { isAuthenticatedUser, type AuthenticatedUser } from "../../middleware/auth.middleware";
 import { ChatError, createChatMessage, ensureChatStorage } from "./chat.service";
 

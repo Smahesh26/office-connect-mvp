@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../config/prisma";
-import { RoleName } from "../generated/prisma/enums";
+import { RoleName } from "@prisma/client";
 
 /**
  * Module Guard Middleware

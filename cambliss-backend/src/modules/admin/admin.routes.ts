@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { RoleName } from "../../generated/prisma/enums";
+import { RoleName } from "@prisma/client";
 import { authenticateJWT, authorizeRoles } from "../../middleware/auth.middleware";
 import {
 	assignModulesToPlanController,

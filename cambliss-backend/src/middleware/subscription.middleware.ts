@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import prisma from "../config/prisma";
-import { RoleName } from "../generated/prisma/enums";
+import { RoleName } from "@prisma/client";
 
 const forbiddenResponse = (res: Response): void => {
 	res.status(403).json({ message: "No active subscription. Please subscribe to continue." });

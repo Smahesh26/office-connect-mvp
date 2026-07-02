@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { uploadChatTransfer } from "../../config/multer";
 import { authenticateJWT } from "../../middleware/auth.middleware";
 import { requireActiveSubscription } from "../../middleware/subscription.middleware";
-import { RoleName } from "../../generated/prisma/enums";
+import { RoleName } from "@prisma/client";
 import { ChatError, createChatMessage, listChatMessages, listChatMessagesForAdmin } from "./chat.service";
 import {
 	ChatFileError,
