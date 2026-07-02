@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
+const user_management_controller_1 = require("./user-management.controller");
+const userManagementRouter = (0, express_1.Router)();
+userManagementRouter.use(auth_middleware_1.authenticateJWT);
+userManagementRouter.get("/users", user_management_controller_1.listOrganizationUsersController);
+userManagementRouter.post("/users", user_management_controller_1.createOrganizationUserController);
+userManagementRouter.put("/users/:userId/access", user_management_controller_1.updateOrganizationUserAccessController);
+userManagementRouter.delete("/users/:userId", user_management_controller_1.deactivateOrganizationUserController);
+userManagementRouter.post("/reset-data", user_management_controller_1.resetOrganizationUserManagementAndCrmDataController);
+userManagementRouter.get("/my-access", user_management_controller_1.getMyAccessController);
+exports.default = userManagementRouter;

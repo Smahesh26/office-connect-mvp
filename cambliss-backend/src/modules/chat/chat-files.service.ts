@@ -351,10 +351,18 @@ export const cleanupExpiredChatTransferFiles = async () => {
 };
 
 export const startChatTransferCleanupJob = () => {
-	void cleanupExpiredChatTransferFiles();
+	const runCleanup = async () => {
+		try {
+			await cleanupExpiredChatTransferFiles();
+		} catch (error) {
+			console.error("[chat-cleanup] cleanup failed:", error);
+		}
+	};
+
+	void runCleanup();
 
 	setInterval(() => {
-		void cleanupExpiredChatTransferFiles();
+		void runCleanup();
 	}, 60 * 60 * 1000);
 };
 

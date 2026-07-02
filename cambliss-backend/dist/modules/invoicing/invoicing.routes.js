@@ -1,0 +1,18 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
+const module_middleware_1 = require("../../middleware/module.middleware");
+const subscription_middleware_1 = require("../../middleware/subscription.middleware");
+const invoicing_controller_1 = require("./invoicing.controller");
+const invoicingRouter = (0, express_1.Router)();
+invoicingRouter.use(auth_middleware_1.authenticateJWT, subscription_middleware_1.requireActiveSubscription, (0, module_middleware_1.moduleGuard)("ACCOUNTING"));
+invoicingRouter.post("/manual", invoicing_controller_1.createManualInvoiceController);
+invoicingRouter.post("/from-pos-order", invoicing_controller_1.createInvoiceFromPOSOrderController);
+invoicingRouter.post("/credit-note", invoicing_controller_1.createCreditNoteController);
+invoicingRouter.post("/cancel", invoicing_controller_1.cancelInvoiceController);
+invoicingRouter.get("/list", invoicing_controller_1.listInvoicesController);
+invoicingRouter.get("/follow-ups", invoicing_controller_1.getInvoiceFollowUpsController);
+invoicingRouter.get("/:invoiceId", invoicing_controller_1.getInvoiceByIdController);
+invoicingRouter.get("/:invoiceId/pdf", invoicing_controller_1.generateInvoicePDFController);
+exports.default = invoicingRouter;

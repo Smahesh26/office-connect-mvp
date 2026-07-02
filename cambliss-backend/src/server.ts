@@ -10,13 +10,16 @@ const port = Number(process.env.PORT) || 4000;
 const httpServer = createServer(app);
 
 const startServer = async () => {
-	await initChatSocket(httpServer);
-	startChatTransferCleanupJob();
-	startTrialReminderJob();
-
 	httpServer.listen(port, () => {
 		console.log(`Cambliss backend running on http://localhost:${port}`);
 	});
+
+	void initChatSocket(httpServer).catch((error) => {
+		console.error("[startup] chat socket init failed:", error);
+	});
+
+	startChatTransferCleanupJob();
+	startTrialReminderJob();
 };
 
 void startServer();

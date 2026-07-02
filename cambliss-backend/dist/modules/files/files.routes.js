@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const multer_1 = require("../../config/multer");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
+const subscription_middleware_1 = require("../../middleware/subscription.middleware");
+const files_controller_1 = require("./files.controller");
+const filesRouter = (0, express_1.Router)();
+filesRouter.post("/files/upload", auth_middleware_1.authenticateJWT, subscription_middleware_1.requireActiveSubscription, multer_1.upload.single("file"), files_controller_1.uploadFileController);
+filesRouter.get("/files", auth_middleware_1.authenticateJWT, subscription_middleware_1.requireActiveSubscription, files_controller_1.getFilesController);
+filesRouter.delete("/files/:id", auth_middleware_1.authenticateJWT, subscription_middleware_1.requireActiveSubscription, files_controller_1.deleteFileController);
+exports.default = filesRouter;

@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const client_1 = require("@prisma/client");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
+const subscription_middleware_1 = require("../../middleware/subscription.middleware");
+const project_controller_1 = require("./project.controller");
+const projectRouter = (0, express_1.Router)();
+projectRouter.use(auth_middleware_1.authenticateJWT, subscription_middleware_1.requireActiveSubscription);
+projectRouter.get("/projects", (0, auth_middleware_1.authorizeRoles)(client_1.RoleName.SUPER_ADMIN, client_1.RoleName.ADMIN, client_1.RoleName.PROJECT_MANAGER, client_1.RoleName.EMPLOYEE, client_1.RoleName.CLIENT), project_controller_1.getProjectsController);
+projectRouter.post("/projects", (0, auth_middleware_1.authorizeRoles)(client_1.RoleName.SUPER_ADMIN, client_1.RoleName.ADMIN, client_1.RoleName.PROJECT_MANAGER), project_controller_1.createProjectController);
+projectRouter.post("/projects/:id/members", (0, auth_middleware_1.authorizeRoles)(client_1.RoleName.SUPER_ADMIN, client_1.RoleName.ADMIN, client_1.RoleName.PROJECT_MANAGER), project_controller_1.addProjectMemberController);
+projectRouter.post("/projects/:id/tasks", (0, auth_middleware_1.authorizeRoles)(client_1.RoleName.SUPER_ADMIN, client_1.RoleName.ADMIN, client_1.RoleName.PROJECT_MANAGER), project_controller_1.createTaskController);
+projectRouter.post("/projects/:id/status-updates", (0, auth_middleware_1.authorizeRoles)(client_1.RoleName.SUPER_ADMIN, client_1.RoleName.ADMIN, client_1.RoleName.PROJECT_MANAGER), project_controller_1.createProjectStatusUpdateController);
+projectRouter.put("/tasks/:id", (0, auth_middleware_1.authorizeRoles)(client_1.RoleName.SUPER_ADMIN, client_1.RoleName.ADMIN, client_1.RoleName.PROJECT_MANAGER), project_controller_1.updateTaskDetailsController);
+projectRouter.put("/tasks/:id/status", (0, auth_middleware_1.authorizeRoles)(client_1.RoleName.SUPER_ADMIN, client_1.RoleName.ADMIN, client_1.RoleName.PROJECT_MANAGER, client_1.RoleName.EMPLOYEE), project_controller_1.updateTaskStatusController);
+exports.default = projectRouter;

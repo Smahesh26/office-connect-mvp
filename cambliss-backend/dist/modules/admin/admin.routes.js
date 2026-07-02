@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const client_1 = require("@prisma/client");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
+const admin_controller_1 = require("./admin.controller");
+const adminRouter = (0, express_1.Router)();
+adminRouter.use(auth_middleware_1.authenticateJWT, (0, auth_middleware_1.authorizeRoles)(client_1.RoleName.SUPER_ADMIN, client_1.RoleName.ADMIN));
+adminRouter.get("/plans", admin_controller_1.getAllPlansController);
+adminRouter.post("/plans", admin_controller_1.createPlanController);
+adminRouter.put("/plans/:id", admin_controller_1.updatePlanController);
+adminRouter.delete("/plans/:id", admin_controller_1.deletePlanController);
+adminRouter.post("/plans/:planId/modules", admin_controller_1.assignModulesToPlanController);
+adminRouter.get("/order-history", admin_controller_1.getAllOrderHistoryController);
+adminRouter.get("/order-history/:paymentId/invoice", admin_controller_1.downloadAdminOrderInvoiceController);
+exports.default = adminRouter;

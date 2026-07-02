@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
+const module_middleware_1 = require("../../middleware/module.middleware");
+const subscription_middleware_1 = require("../../middleware/subscription.middleware");
+const pos_controller_1 = require("./pos.controller");
+const posRouter = (0, express_1.Router)();
+posRouter.use(auth_middleware_1.authenticateJWT, subscription_middleware_1.requireActiveSubscription, (0, module_middleware_1.moduleGuard)("INVENTORY"));
+posRouter.post("/terminals", pos_controller_1.createPOSTerminalController);
+posRouter.post("/sessions/start", pos_controller_1.startPOSSessionController);
+posRouter.post("/orders", pos_controller_1.createPOSOrderController);
+posRouter.post("/sessions/close", pos_controller_1.closePOSSessionController);
+posRouter.get("/reports/z/:sessionId", pos_controller_1.generateZReportController);
+exports.default = posRouter;

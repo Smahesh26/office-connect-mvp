@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const client_1 = require("@prisma/client");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
+const subscription_controller_1 = require("./subscription.controller");
+const subscriptionRouter = (0, express_1.Router)();
+subscriptionRouter.use(auth_middleware_1.authenticateJWT);
+subscriptionRouter.post("/subscribe", (0, auth_middleware_1.authorizeRoles)(client_1.RoleName.ADMIN, client_1.RoleName.CLIENT), subscription_controller_1.createSubscriptionController);
+subscriptionRouter.get("/tech-stack-addons", subscription_controller_1.getTechStackAddonsController);
+subscriptionRouter.get("/my-subscription", subscription_controller_1.getMySubscriptionController);
+subscriptionRouter.get("/trial-reminders", subscription_controller_1.getTrialReminderSnapshotController);
+subscriptionRouter.get("/order-history", subscription_controller_1.getOrderHistoryController);
+subscriptionRouter.get("/order-history/:paymentId/invoice", subscription_controller_1.downloadOrderInvoiceController);
+subscriptionRouter.post("/create-order", subscription_controller_1.createOrderController);
+subscriptionRouter.post("/verify-payment", subscription_controller_1.verifyPaymentController);
+exports.default = subscriptionRouter;

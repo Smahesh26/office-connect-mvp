@@ -610,9 +610,17 @@ export const startTrialReminderJob = () => {
 		return;
 	}
 
-	void dispatchTrialReminderNotifications();
+	const runDispatch = async () => {
+		try {
+			await dispatchTrialReminderNotifications();
+		} catch (error) {
+			console.error("[trial-reminder] dispatch failed:", error);
+		}
+	};
+
+	void runDispatch();
 	trialReminderTimer = setInterval(() => {
-		void dispatchTrialReminderNotifications();
+		void runDispatch();
 	}, TRIAL_REMINDER_INTERVAL_MS);
 };
 
