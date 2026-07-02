@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --files --respawn --transpile-only src/server.ts",
-    "start": "prisma generate && ts-node --files src/server.ts",
-    "postinstall": "prisma generate",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "postinstall": "prisma generate && npm run build",
     "test": "jest --runInBand",
     "test:ai": "jest --runInBand --testPathPatterns=src/modules/ai"
   },
