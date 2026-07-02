@@ -42,6 +42,11 @@ model Organization {
   settlementAccountNumber     String?
   settlementIFSC              String?
   defaultInvoicePdfTemplate   String         @default("classic")
+  
+  // Multi-currency support
+  baseCurrency  String         @default("INR")
+  supportedCurrencies String[]  @default(["INR", "USD", "EUR", "GBP"])
+  enableMultiCurrency Boolean   @default(true)
 
   users         User[]
   memberships   OrganizationUser[]
@@ -56,6 +61,8 @@ model Organization {
   posOrders     POSOrder[]
   invoices      Invoice[]
   gstConfig     GSTConfig?
+  currencyRates CurrencyExchangeRate[]
+  regionalTaxes RegionalTax[]
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -986,7 +993,7 @@ model DealStageHistory {
 }
 
 // ============================================
-// D2C / ECOMMERCE ENGINE
+// D2C / COMMERCE ENGINE
 // ============================================
 
 model Store {
@@ -999,7 +1006,14 @@ model Store {
   name           String
   domain         String?  @unique
   description    String?
+  businessTypes  String[] @default([])
+  organizationType String?
+  assortmentType String?
+  onboardingPitch String?
   isActive       Boolean  @default(true)
+  sellerTier     String   @default("new")
+  isFeatured     Boolean  @default(false)
+  tierUnlockedAt DateTime?
   paymentDisplayName      String?
   paymentUpiId            String?
   paymentBankAccountName  String?
@@ -1012,12 +1026,15 @@ model Store {
   carts          Cart[]
   orders         Order[]
   members        StoreMember[]
+  events         MarketplaceEvent[]
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@index([organizationId])
   @@index([ownerUserId])
+  @@index([sellerTier])
+  @@index([isFeatured])
 }
 
 model StoreMember {
@@ -1078,6 +1095,9 @@ model ProductListing {
   category       Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   sellingPrice   Decimal  @db.Decimal(12,2)
+  baseCurrency   String   @default("INR")
+  // JSON format: { "USD": 100.50, "EUR": 95.25, "GBP": 88.00 }
+  multiCurrencyPrices String? @default("{}")
   description    String?
   isActive       Boolean  @default(true)
 
@@ -1087,6 +1107,7 @@ model ProductListing {
 
   cartItems      CartItem[]
   orderItems     OrderItem[]
+  events         MarketplaceEvent[]
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -1111,9 +1132,19 @@ model Order {
   paymentStatus  String   @default("UNPAID")
 
   totalAmount    Decimal  @db.Decimal(14,2)
+  currency       String   @default("INR")
+  exchangeRate   Decimal  @default(1) @db.Decimal(10,6)
+  baseCurrencyAmount Decimal @db.Decimal(14,2)  // Amount in base currency (INR)
 
   razorpayOrderId   String?
   razorpayPaymentId String?
+
+  // Trust-based order flow
+  sellerTrustTier String?
+  inspectionRequired Boolean @default(false)
+  holdReason     String?
+  heldAt         DateTime?
+  autoReleasedAt DateTime?
 
   // Fulfillment tracking
   packedAt       DateTime?
@@ -1135,6 +1166,9 @@ model Order {
   @@index([organizationId])
   @@index([storeId])
   @@index([customerId])
+  @@index([sellerTrustTier])
+  @@index([inspectionRequired])
+  @@index([currency])
 }
 
 model OrderItem {
@@ -1391,6 +1425,9 @@ model Cart {
   customerId     String
   customer       Contact  @relation("CartContact", fields: [customerId], references: [id], onDelete: Cascade)
 
+  currency       String   @default("INR")
+  exchangeRate   Decimal  @default(1) @db.Decimal(10,6)
+
   items          CartItem[]
 
   createdAt      DateTime @default(now())
@@ -1418,4 +1455,81 @@ model CartItem {
 
   @@unique([cartId, productListingId])
   @@index([cartId])
+}
+
+// ============================================
+// MULTI-CURRENCY & REGIONAL SUPPORT
+// ============================================
+
+model CurrencyExchangeRate {
+  id             String   @id @default(cuid())
+  organizationId String
+
+  fromCurrency   String
+  toCurrency     String
+  rate           Decimal  @db.Decimal(10,6)
+  effectiveDate  DateTime
+  expiryDate     DateTime?
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, fromCurrency, toCurrency, effectiveDate])
+  @@index([organizationId])
+  @@index([fromCurrency, toCurrency])
+  @@index([effectiveDate])
+}
+
+model RegionalTax {
+  id             String   @id @default(cuid())
+  organizationId String
+
+  region         String   // Country code (IN, US, GB, DE, etc.)
+  country        String
+  state          String?
+  
+  taxType        String   // VAT, GST, SALES_TAX, etc.
+  taxRate        Decimal  @db.Decimal(5,2)
+  
+  isActive       Boolean  @default(true)
+  effectiveDate  DateTime
+  expiryDate     DateTime?
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, region, state, taxType, effectiveDate])
+  @@index([organizationId])
+  @@index([region, state])
+  @@index([effectiveDate])
+}
+
+// ============================================
+// MARKETPLACE EVENTS & ANALYTICS
+// ============================================
+
+model MarketplaceEvent {
+  id               String   @id @default(cuid())
+  organizationId   String
+
+  eventType        String
+  eventData        String?
+
+  customerId       String?
+  storeId          String?
+  productListingId String?
+
+  store            Store?   @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  listing          ProductListing? @relation(fields: [productListingId], references: [id], onDelete: SetNull)
+
+  createdAt        DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([storeId])
+  @@index([productListingId])
+  @@index([eventType, createdAt])
 }

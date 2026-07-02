@@ -215,150 +215,6 @@ const createInvoiceRecord = async (input: CreateInvoiceRecordInput) => {
 	throw new InvoiceError(500, "Unable to generate unique invoice number");
 };
 
-export const createInvoiceFromEcommerceOrder = async (
-	organizationId: string,
-	orderId: string,
-	options?: { tx?: Prisma.TransactionClient },
-) => {
-	if (!orderId?.trim()) {
-		throw new InvoiceError(400, "orderId is required");
-	}
-
-	const existing = await (options?.tx ?? prisma).invoice.findFirst({
-		where: { orderId: orderId.trim() },
-		include: { items: true },
-	});
-	if (existing) {
-		throw new InvoiceError(409, "Invoice already exists for this ecommerce order");
-	}
-
-	const order = await (options?.tx ?? prisma).order.findUnique({
-		where: { id: orderId.trim() },
-		include: {
-			customer: {
-				select: {
-					stateCode: true,
-				},
-			},
-			items: {
-				include: {
-					productListing: {
-						include: {
-							product: {
-								select: {
-									id: true,
-									taxRate: true,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	});
-
-	if (!order) {
-		throw new InvoiceError(404, "Order not found");
-	}
-
-	if (order.organizationId !== organizationId) {
-		throw new InvoiceError(403, "Order does not belong to this organization");
-	}
-
-	if (order.paymentStatus !== "PAID") {
-		throw new InvoiceError(400, "Invoice can only be generated for PAID ecommerce orders");
-	}
-
-	const items = order.items.map((item) => ({
-		productId: item.productListing.product.id,
-		quantity: item.quantity,
-		price: Number(item.unitPrice),
-		gstRate: Number(item.productListing.product.taxRate ?? 0),
-	}));
-
-	return createInvoiceRecord({
-		organizationId,
-		orderId: order.id,
-		customerId: order.customerId,
-		customerStateCode: order.customer?.stateCode || null,
-		status: "PAID",
-		items,
-		tx: options?.tx,
-	});
-};
-
-export const createInvoiceDraftFromOrder = async (
-	organizationId: string,
-	orderId: string,
-	options?: { tx?: Prisma.TransactionClient },
-) => {
-	if (!orderId?.trim()) {
-		throw new InvoiceError(400, "orderId is required");
-	}
-
-	const existing = await (options?.tx ?? prisma).invoice.findFirst({
-		where: { orderId: orderId.trim() },
-		include: { items: true },
-	});
-	if (existing) {
-		throw new InvoiceError(409, "Invoice already exists for this ecommerce order");
-	}
-
-	const order = await (options?.tx ?? prisma).order.findUnique({
-		where: { id: orderId.trim() },
-		include: {
-			customer: {
-				select: {
-					stateCode: true,
-				},
-			},
-			items: {
-				include: {
-					productListing: {
-						include: {
-							product: {
-								select: {
-									id: true,
-									taxRate: true,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	});
-
-	if (!order) {
-		throw new InvoiceError(404, "Order not found");
-	}
-
-	if (order.organizationId !== organizationId) {
-		throw new InvoiceError(403, "Order does not belong to this organization");
-	}
-
-	if (!order.items.length) {
-		throw new InvoiceError(400, "Order has no items");
-	}
-
-	const items = order.items.map((item) => ({
-		productId: item.productListing.product.id,
-		quantity: item.quantity,
-		price: Number(item.unitPrice),
-		gstRate: Number(item.productListing.product.taxRate ?? 0),
-	}));
-
-	return createInvoiceRecord({
-		organizationId,
-		orderId: order.id,
-		customerId: order.customerId,
-		customerStateCode: order.customer?.stateCode || null,
-		status: "DRAFT",
-		items,
-		tx: options?.tx,
-	});
-};
-
 export const createInvoiceFromPOSOrder = async (
 	organizationId: string,
 	posOrderId: string,
@@ -847,7 +703,7 @@ const drawInvoiceHeader = (
 		doc.text(`Issued At: ${invoice.issuedAt.toISOString()}`);
 		doc.text(`Status: ${invoice.status}`);
 		doc.text(`Template: Detailed`);
-		doc.text(`Source: ${invoice.orderId ? "Ecommerce" : invoice.posOrderId ? "POS" : "Manual"}`);
+		doc.text(`Source: ${invoice.orderId ? "Order" : invoice.posOrderId ? "POS" : "Manual"}`);
 		doc.moveDown(1);
 		return;
 	}
@@ -857,7 +713,7 @@ const drawInvoiceHeader = (
 	doc.fontSize(11).text(`Invoice Number: ${invoice.invoiceNumber}`);
 	doc.text(`Issued At: ${invoice.issuedAt.toISOString()}`);
 	doc.text(`Status: ${invoice.status}`);
-	doc.text(`Source: ${invoice.orderId ? "Ecommerce" : invoice.posOrderId ? "POS" : "Manual"}`);
+	doc.text(`Source: ${invoice.orderId ? "Order" : invoice.posOrderId ? "POS" : "Manual"}`);
 	doc.moveDown(1);
 };
 

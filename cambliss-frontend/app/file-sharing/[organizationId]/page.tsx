@@ -15,6 +15,12 @@ type ChatTransferFile = {
 	expiresAt: string;
 };
 
+type FileTransferPolicy = {
+	unlimitedTransfersDuringTrial: boolean;
+	retentionDays: number;
+	nonRecoverableAfterDeletion: boolean;
+};
+
 const formatFileSize = (bytes: number) => {
 	if (bytes < 1024) return `${bytes} B`;
 	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -23,6 +29,15 @@ const formatFileSize = (bytes: number) => {
 };
 
 const daysLeft = (expiresAt: string) => Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
+
+const parseApiMessage = async (response: Response, fallback: string) => {
+	try {
+		const body = (await response.json()) as { message?: string };
+		return body.message || fallback;
+	} catch {
+		return fallback;
+	}
+};
 
 export default function AdminFileFolderPage() {
 	const params = useParams<{ organizationId: string }>();
@@ -33,6 +48,7 @@ export default function AdminFileFolderPage() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [isUploading, setIsUploading] = useState(false);
 	const [notice, setNotice] = useState<string | null>(null);
+	const [policy, setPolicy] = useState<FileTransferPolicy | null>(null);
 
 	useEffect(() => {
 		const token = localStorage.getItem("authToken");
@@ -44,6 +60,13 @@ export default function AdminFileFolderPage() {
 		const load = async () => {
 			setIsLoading(true);
 			try {
+				const policyResponse = await fetch("/api/chat/files/policy", {
+					headers: { Authorization: `Bearer ${token}` },
+				});
+				if (policyResponse.ok) {
+					setPolicy((await policyResponse.json()) as FileTransferPolicy);
+				}
+
 				const response = await fetch(`/api/chat/files?organizationId=${organizationId}`, { headers: { Authorization: `Bearer ${token}` } });
 				setFiles(response.ok ? ((await response.json()) as ChatTransferFile[]) : []);
 			} catch {
@@ -89,7 +112,15 @@ export default function AdminFileFolderPage() {
 		const token = localStorage.getItem("authToken");
 		if (!token) return;
 		const response = await fetch(`/api/chat/files/${fileId}/download?organizationId=${organizationId}`, { headers: { Authorization: `Bearer ${token}` } });
-		if (!response.ok) return;
+		if (!response.ok) {
+			if (response.status === 410) {
+				setFiles((prev) => prev.filter((file) => file.id !== fileId));
+				setNotice(await parseApiMessage(response, "File expired and was permanently deleted."));
+				return;
+			}
+			setNotice(await parseApiMessage(response, "Download failed."));
+			return;
+		}
 		const blob = await response.blob();
 		const url = window.URL.createObjectURL(blob);
 		const anchor = document.createElement("a");
@@ -109,7 +140,12 @@ export default function AdminFileFolderPage() {
 			headers: { Authorization: `Bearer ${token}` },
 		});
 		if (!response.ok) {
-			setNotice("Preview failed.");
+			if (response.status === 410) {
+				setFiles((prev) => prev.filter((file) => file.id !== fileId));
+				setNotice(await parseApiMessage(response, "File expired and was permanently deleted."));
+				return;
+			}
+			setNotice(await parseApiMessage(response, "Preview failed."));
 			return;
 		}
 
@@ -145,6 +181,12 @@ export default function AdminFileFolderPage() {
 				</Link>
 				<h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Client File Folder</h1>
 				<p className="mt-1 text-sm text-zinc-600">Auto-delete after 15 days.</p>
+				<div className="mt-3 rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm text-zinc-700">
+					<p className="font-semibold text-zinc-900">File Transfer Policy</p>
+					<p className="mt-1">• {policy?.unlimitedTransfersDuringTrial === false ? "Controlled transfers during trial" : "Unlimited file transfers during trial"}</p>
+					<p>• All files remain available for {policy?.retentionDays ?? 15} days post upload</p>
+					<p>• Auto deletion after {policy?.retentionDays ?? 15} days (non-recoverable)</p>
+				</div>
 				{notice && <p className="mt-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700">{notice}</p>}
 
 				<form className="mt-4 flex flex-wrap items-center gap-2" onSubmit={(event) => void handleUpload(event)}>

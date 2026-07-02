@@ -2,6 +2,7 @@
 module.exports = {
 	testEnvironment: "node",
 	setupFiles: ["<rootDir>/jest.setup.ts"],
+	setupFilesAfterEnv: ["<rootDir>/jest.after-env.ts"],
 	testMatch: ["**/*.test.ts"],
 	transform: {
 		"^.+\\.ts$": [

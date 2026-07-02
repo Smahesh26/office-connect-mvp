@@ -1,26 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f7ff;
-  --foreground: #35558e;
-  --foreground-strong: #27467f;
-  --foreground-muted: #6f84ad;
-  --brand: #1d419d;
-  --brand-strong: #173784;
-  --brand-soft: #e9efff;
+  --background: #eef2fa;
+  --foreground: #1f2430;
+  --foreground-strong: #404d85;
+  --foreground-muted: #5b6472;
+  --brand: #6678c1;
+  --brand-strong: #404d85;
+  --brand-soft: #f8faff;
+  --brand-accent: #9ab7db;
+  --surface: #ffffff;
+  --font-app-sans: Arial, Helvetica, "Segoe UI", sans-serif;
+  --font-app-mono: "Courier New", Courier, monospace;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-app-sans);
+  --font-mono: var(--font-app-mono);
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at top, rgba(154, 183, 219, 0.12), transparent 36%),
+    linear-gradient(180deg, #f8faff 0%, var(--background) 48%, #edf2fa 100%);
   color: var(--foreground);
-  font-family: var(--font-inter), sans-serif;
+  font-family: var(--font-app-sans);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brand) 22%, white);
+  color: var(--foreground);
 }
 
 @layer base {
@@ -45,7 +56,7 @@ body {
   .text-zinc-800,
   .text-gray-800,
   .text-slate-800 {
-    color: #3e5f98 !important;
+    color: var(--foreground) !important;
   }
 
   .text-zinc-700,
@@ -64,7 +75,7 @@ body {
   .bg-zinc-900,
   .bg-gray-900,
   .bg-slate-900 {
-    background-color: var(--brand) !important;
+    background-color: var(--brand-strong) !important;
   }
 
   .hover\:bg-black:hover,
@@ -88,6 +99,6 @@ body {
   .focus\:border-black:focus,
   .focus\:ring-black:focus {
     border-color: var(--brand) !important;
-    --tw-ring-color: color-mix(in srgb, var(--brand) 32%, transparent) !important;
+    --tw-ring-color: color-mix(in srgb, var(--brand) 28%, transparent) !important;
   }
 }

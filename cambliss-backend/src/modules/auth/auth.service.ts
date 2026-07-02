@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import prisma from "../../config/prisma";
 import type { RoleName } from "../../generated/prisma/enums";
 import { getMyAccess } from "../user-management/user-management.service";
+import { consumeVerifiedRegisterOtp, isMobileOtpEnabled } from "./mobile-otp.service";
+import { isFirebaseOtpEnabled, verifyFirebasePhoneToken } from "./firebase-auth.service";
 
 export class AuthError extends Error {
 	statusCode: number;
@@ -20,6 +22,9 @@ interface RegisterInput {
 	firstName?: string;
 	lastName?: string;
 	organizationName: string;
+	phone?: string;
+	otpRequestId?: string;
+	firebaseIdToken?: string;
 }
 
 interface LoginInput {
@@ -45,6 +50,24 @@ interface UpdateOrganizationProfileInput {
 	settlementIFSC?: string;
 }
 
+interface UpdateOrganizationOnboardingInput {
+	profileCompleted?: boolean;
+	paymentCardOnboarded?: boolean;
+	preferredCurrency?: string;
+	stackSelections?: Record<string, string>;
+	onboardingPayload?: Record<string, unknown>;
+}
+
+type OrganizationOnboardingState = {
+	organizationId: string;
+	profileCompleted: boolean;
+	paymentCardOnboarded: boolean;
+	preferredCurrency: string;
+	stackSelections: Record<string, string>;
+	onboardingPayload: Record<string, unknown>;
+	updatedAt: string;
+};
+
 const toSafeUser = (params: {
 	id: string;
 	email: string;
@@ -68,6 +91,21 @@ const toSafeUser = (params: {
 };
 
 const PLATFORM_ORGANIZATION_ID = "platform";
+
+const ensureOrganizationOnboardingTable = async () => {
+	await prisma.$executeRawUnsafe(`
+		CREATE TABLE IF NOT EXISTS "OrganizationOnboarding" (
+			"organizationId" TEXT PRIMARY KEY REFERENCES "Organization"("id") ON DELETE CASCADE,
+			"profileCompleted" BOOLEAN NOT NULL DEFAULT FALSE,
+			"paymentCardOnboarded" BOOLEAN NOT NULL DEFAULT FALSE,
+			"preferredCurrency" TEXT NOT NULL DEFAULT 'INR',
+			"stackSelections" JSONB NOT NULL DEFAULT '{}'::jsonb,
+			"onboardingPayload" JSONB NOT NULL DEFAULT '{}'::jsonb,
+			"createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+			"updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+		);
+	`);
+};
 
 const getJwtSecret = (): string => {
 	const jwtSecret = process.env.JWT_SECRET;
@@ -105,10 +143,32 @@ const getOrCreateRole = async (roleName: RoleName) => {
 	});
 };
 
+const ensureUserAccessProfileTable = async () => {
+	await prisma.$executeRawUnsafe(`
+		CREATE TABLE IF NOT EXISTS "UserAccessProfile" (
+			"userId" TEXT PRIMARY KEY REFERENCES "User"("id") ON DELETE CASCADE,
+			"organizationId" TEXT NOT NULL REFERENCES "Organization"("id") ON DELETE CASCADE,
+			"phone" TEXT,
+			"accesses" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+			"createdBy" TEXT REFERENCES "User"("id") ON DELETE SET NULL,
+			"createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+			"updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+		);
+	`);
+
+	await prisma.$executeRawUnsafe(`
+		CREATE INDEX IF NOT EXISTS "UserAccessProfile_org_idx"
+		ON "UserAccessProfile"("organizationId");
+	`);
+};
+
 export const register = async (input: RegisterInput) => {
 	const email = input.email?.trim().toLowerCase();
 	const password = input.password?.trim();
 	const organizationName = input.organizationName?.trim();
+	const phone = input.phone?.trim() || null;
+	const otpRequestId = input.otpRequestId?.trim() || null;
+	const firebaseIdToken = input.firebaseIdToken?.trim() || null;
 
 	if (!email) {
 		throw new AuthError(400, "email is required");
@@ -121,6 +181,33 @@ export const register = async (input: RegisterInput) => {
 	if (!organizationName) {
 		throw new AuthError(400, "organizationName is required");
 	}
+
+	if (isFirebaseOtpEnabled()) {
+		if (!phone) {
+			throw new AuthError(400, "phone is required for Firebase verification");
+		}
+
+		if (!firebaseIdToken) {
+			throw new AuthError(400, "firebaseIdToken is required");
+		}
+
+		const firebaseVerification = await verifyFirebasePhoneToken(firebaseIdToken);
+		if (firebaseVerification.phoneNumber !== phone) {
+			throw new AuthError(400, "Firebase phone number does not match the registration phone");
+		}
+	} else if (isMobileOtpEnabled()) {
+		if (!phone) {
+			throw new AuthError(400, "phone is required for OTP verification");
+		}
+
+		if (!otpRequestId) {
+			throw new AuthError(400, "otpRequestId is required");
+		}
+
+		consumeVerifiedRegisterOtp({ phone, requestId: otpRequestId });
+	}
+
+	await ensureUserAccessProfileTable();
 
 	const existingUser = await prisma.user.findUnique({
 		where: { email },
@@ -160,6 +247,17 @@ export const register = async (input: RegisterInput) => {
 			},
 		});
 
+		await tx.$executeRawUnsafe(
+			`
+			INSERT INTO "UserAccessProfile" ("userId", "organizationId", "phone", "accesses", "createdBy", "createdAt", "updatedAt")
+			VALUES ($1, $2, $3, ARRAY[]::TEXT[], $4, NOW(), NOW())
+			`,
+			user.id,
+			organization.id,
+			phone,
+			user.id,
+		);
+
 		return {
 			user,
 			organization,
@@ -183,6 +281,7 @@ export const register = async (input: RegisterInput) => {
 			lastName: result.user.lastName,
 			organizationId: result.organization.id,
 			role: result.roleName,
+			phone,
 		}),
 	};
 };
@@ -386,5 +485,110 @@ export const clearOrganizationProfile = async (organizationId: string) => {
 			settlementIFSC: null,
 		},
 	});
+};
+
+const defaultOnboardingState = (organizationId: string): OrganizationOnboardingState => ({
+	organizationId,
+	profileCompleted: false,
+	paymentCardOnboarded: false,
+	preferredCurrency: "INR",
+	stackSelections: {},
+	onboardingPayload: {},
+	updatedAt: new Date(0).toISOString(),
+});
+
+export const getOrganizationOnboarding = async (organizationId: string): Promise<OrganizationOnboardingState> => {
+	const organization = await prisma.organization.findUnique({
+		where: { id: organizationId },
+		select: { id: true },
+	});
+
+	if (!organization) {
+		throw new AuthError(404, "Organization not found");
+	}
+
+	await ensureOrganizationOnboardingTable();
+
+	const rows = await prisma.$queryRawUnsafe<Array<{
+		organizationId: string;
+		profileCompleted: boolean;
+		paymentCardOnboarded: boolean;
+		preferredCurrency: string;
+		stackSelections: unknown;
+		onboardingPayload: unknown;
+		updatedAt: Date;
+	}>>(
+		`SELECT "organizationId", "profileCompleted", "paymentCardOnboarded", "preferredCurrency", "stackSelections", "onboardingPayload", "updatedAt"
+		 FROM "OrganizationOnboarding" WHERE "organizationId" = $1`,
+		organizationId,
+	);
+
+	if (!rows[0]) {
+		return defaultOnboardingState(organizationId);
+	}
+
+	return {
+		organizationId: rows[0].organizationId,
+		profileCompleted: rows[0].profileCompleted,
+		paymentCardOnboarded: rows[0].paymentCardOnboarded,
+		preferredCurrency: rows[0].preferredCurrency || "INR",
+		stackSelections:
+			typeof rows[0].stackSelections === "object" && rows[0].stackSelections
+				? (rows[0].stackSelections as Record<string, string>)
+				: {},
+		onboardingPayload:
+			typeof rows[0].onboardingPayload === "object" && rows[0].onboardingPayload
+				? (rows[0].onboardingPayload as Record<string, unknown>)
+				: {},
+		updatedAt: rows[0].updatedAt.toISOString(),
+	};
+};
+
+export const updateOrganizationOnboarding = async (
+	organizationId: string,
+	input: UpdateOrganizationOnboardingInput,
+): Promise<OrganizationOnboardingState> => {
+	const organization = await prisma.organization.findUnique({
+		where: { id: organizationId },
+		select: { id: true },
+	});
+
+	if (!organization) {
+		throw new AuthError(404, "Organization not found");
+	}
+
+	await ensureOrganizationOnboardingTable();
+
+	const previous = await getOrganizationOnboarding(organizationId);
+	const nextProfileCompleted = input.profileCompleted ?? previous.profileCompleted;
+	const nextPaymentCardOnboarded = input.paymentCardOnboarded ?? previous.paymentCardOnboarded;
+	const nextPreferredCurrency = (input.preferredCurrency ?? previous.preferredCurrency ?? "INR").toUpperCase();
+	const nextStackSelections = input.stackSelections ?? previous.stackSelections;
+	const nextPayload = {
+		...previous.onboardingPayload,
+		...(input.onboardingPayload ?? {}),
+	};
+
+	await prisma.$executeRawUnsafe(
+		`INSERT INTO "OrganizationOnboarding"
+			("organizationId", "profileCompleted", "paymentCardOnboarded", "preferredCurrency", "stackSelections", "onboardingPayload", "updatedAt")
+		 VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, NOW())
+		 ON CONFLICT ("organizationId")
+		 DO UPDATE SET
+			"profileCompleted" = EXCLUDED."profileCompleted",
+			"paymentCardOnboarded" = EXCLUDED."paymentCardOnboarded",
+			"preferredCurrency" = EXCLUDED."preferredCurrency",
+			"stackSelections" = EXCLUDED."stackSelections",
+			"onboardingPayload" = EXCLUDED."onboardingPayload",
+			"updatedAt" = NOW()`,
+		organizationId,
+		nextProfileCompleted,
+		nextPaymentCardOnboarded,
+		nextPreferredCurrency,
+		JSON.stringify(nextStackSelections ?? {}),
+		JSON.stringify(nextPayload ?? {}),
+	);
+
+	return getOrganizationOnboarding(organizationId);
 };
 

@@ -2,8 +2,6 @@ import { Request, Response } from "express";
 import {
 	cancelInvoice,
 	createCreditNoteFromInvoice,
-	createInvoiceDraftFromOrder,
-	createInvoiceFromEcommerceOrder,
 	createInvoiceFromPOSOrder,
 	createManualInvoice,
 	CreateManualInvoiceInput,
@@ -34,34 +32,6 @@ const getOrganizationId = (req: Request): string => {
 		throw new InvoiceError(401, "Unauthorized");
 	}
 	return organizationId;
-};
-
-export const createInvoiceFromEcommerceOrderController = async (
-	req: Request,
-	res: Response,
-): Promise<void> => {
-	try {
-		const organizationId = getOrganizationId(req);
-		const { orderId } = req.body as { orderId: string };
-		const invoice = await createInvoiceFromEcommerceOrder(organizationId, orderId);
-		res.status(201).json(invoice);
-	} catch (error) {
-		handleError(res, error);
-	}
-};
-
-export const createInvoiceDraftFromOrderController = async (
-	req: Request,
-	res: Response,
-): Promise<void> => {
-	try {
-		const organizationId = getOrganizationId(req);
-		const { orderId } = req.body as { orderId: string };
-		const invoice = await createInvoiceDraftFromOrder(organizationId, orderId);
-		res.status(201).json(invoice);
-	} catch (error) {
-		handleError(res, error);
-	}
 };
 
 export const createInvoiceFromPOSOrderController = async (req: Request, res: Response): Promise<void> => {

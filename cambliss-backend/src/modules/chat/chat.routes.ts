@@ -7,6 +7,8 @@ import { ChatError, createChatMessage, listChatMessages, listChatMessagesForAdmi
 import {
 	ChatFileError,
 	deleteChatTransferFile,
+	getChatTransferCleanupStats,
+	getChatFileTransferPolicy,
 	listChatTransferFiles,
 	listChatTransferThreads,
 	resolveChatTransferForDownload,
@@ -151,6 +153,34 @@ chatRouter.get("/files", async (req: Request, res: Response) => {
 		);
 
 		res.status(200).json(files);
+	} catch (error) {
+		handleError(res, error);
+	}
+});
+
+chatRouter.get("/files/policy", async (_req: Request, res: Response) => {
+	try {
+		res.status(200).json(getChatFileTransferPolicy());
+	} catch (error) {
+		handleError(res, error);
+	}
+});
+
+chatRouter.get("/files/cleanup-stats", async (req: Request, res: Response) => {
+	try {
+		const user = req.user;
+		if (!user?.organizationId) {
+			res.status(400).json({ message: "Organization ID is required" });
+			return;
+		}
+
+		const isAdmin = user.role === RoleName.ADMIN || user.role === RoleName.SUPER_ADMIN;
+		if (!isAdmin) {
+			res.status(403).json({ message: "Only admin can access cleanup stats" });
+			return;
+		}
+
+		res.status(200).json(getChatTransferCleanupStats());
 	} catch (error) {
 		handleError(res, error);
 	}

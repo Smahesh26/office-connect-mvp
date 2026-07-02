@@ -39,6 +39,11 @@ export { isAuthenticatedUser };
 
 export const authenticateJWT = (req: Request, res: Response, next: NextFunction): void => {
 	try {
+		if (req.user && isAuthenticatedUser(req.user as unknown as JwtPayload)) {
+			next();
+			return;
+		}
+
 		const token = extractBearerToken(req.headers.authorization);
 		if (!token) {
 			res.status(401).json({ message: "Unauthorized: Invalid or missing token" });

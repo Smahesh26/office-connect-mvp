@@ -47,49 +47,20 @@ const platformTools: ToolCard[] = [
 		status: "Ready",
 	},
 	{
-		name: "Ecommerce",
-		description: "Seller Central onboarding, storefront setup, products and payment setup",
-		module: "Ecommerce",
-		shortCode: "EC",
-		href: "/seller-central",
-		openInNewTab: true,
+		name: "File Sharing",
+		description: "Secure uploads and automatic 15-day expiry",
+		module: "Files",
+		shortCode: "FS",
+		href: "/file-sharing",
 		status: "Ready",
 	},
 	{
-		name: "Accounting",
-		description: "Ledgers, transactions and account books",
-		module: "Accounting",
-		shortCode: "AC",
-		href: "/accounting",
+		name: "Video Connect",
+		description: "Basic built-in video conferencing",
+		module: "Calls",
+		shortCode: "VC",
+		href: "/video-connect",
 		status: "Ready",
-	},
-	{
-		name: "Invoicing",
-		description: "Invoice generation, tracking and settlement",
-		module: "Invoicing",
-		shortCode: "IV",
-		status: "UI Pending",
-	},
-	{
-		name: "GST",
-		description: "GST configuration and tax compliance operations",
-		module: "GST",
-		shortCode: "GS",
-		status: "UI Pending",
-	},
-	{
-		name: "POS",
-		description: "POS terminals, sessions and checkout operations",
-		module: "POS",
-		shortCode: "PS",
-		status: "UI Pending",
-	},
-	{
-		name: "AI Insights",
-		description: "Analytics and AI-powered business insights",
-		module: "AI",
-		shortCode: "AI",
-		status: "UI Pending",
 	},
 ];
 
@@ -111,7 +82,7 @@ export default function ToolsPage() {
 	}, []);
 
 	const headingText = useMemo(
-		() => (isAdminRole(authUser?.role) ? "Admin Tool Stack" : "Business Tool Stack"),
+		() => "Core Module Launcher",
 		[authUser?.role],
 	);
 
@@ -125,7 +96,7 @@ export default function ToolsPage() {
 			CRM: "CRM",
 			HRM: "HRM",
 			Inventory: "INVENTORY",
-			Ecommerce: "ECOMMERCE",
+			"File Sharing": "FILE_SHARING",
 		};
 
 		return platformTools.filter((tool) => {
@@ -162,7 +133,7 @@ export default function ToolsPage() {
 									<p className="mt-1 text-xs text-zinc-600">{tool.description}</p>
 									<p className="mt-2 text-[11px] font-medium text-zinc-500">Module: {tool.module}</p>
 									<span className="mt-2 inline-flex rounded-full border border-zinc-300 bg-white px-2 py-0.5 text-[10px] font-semibold text-zinc-700">
-										{tool.href ? (tool.openInNewTab ? "Open Seller Central" : "Open Tool") : "Tool Module"}
+										{tool.href ? "Open Module" : "Tool Module"}
 									</span>
 								</div>
 							</div>

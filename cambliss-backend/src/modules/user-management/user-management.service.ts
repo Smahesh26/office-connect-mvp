@@ -16,10 +16,7 @@ export const ACCESS_KEYS = [
 	"CRM",
 	"HRM",
 	"INVENTORY",
-	"ECOMMERCE",
-	"CHAT",
 	"FILE_SHARING",
-	"PROJECT_TRACKING",
 	"USER_MANAGEMENT",
 ] as const;
 
@@ -85,8 +82,8 @@ const ensureUserLimit = async (organizationId: string): Promise<void> => {
 		where: { organizationId },
 	});
 
-	if (count >= 5) {
-		throw new UserManagementError(403, "First plan supports maximum 5 users");
+	if (count >= 4) {
+		throw new UserManagementError(403, "First plan supports maximum 4 users");
 	}
 };
 

@@ -5,6 +5,7 @@ import {
 	generateOrganizationOrderInvoice,
 	getOrganizationOrderHistory,
 	getOrganizationSubscription,
+	getOrganizationTrialReminderSnapshot,
 	HttpError,
 	TECH_STACK_ADDONS,
 	TECH_STACK_CATEGORIES,
@@ -60,6 +61,21 @@ export const getMySubscriptionController = async (req: Request, res: Response): 
 
 		const subscription = await getOrganizationSubscription(organizationId);
 		res.status(200).json(subscription);
+	} catch (error) {
+		handleControllerError(res, error);
+	}
+};
+
+export const getTrialReminderSnapshotController = async (req: Request, res: Response): Promise<void> => {
+	try {
+		const organizationId = req.user?.organizationId;
+		if (!organizationId) {
+			res.status(400).json({ message: "Organization ID is required" });
+			return;
+		}
+
+		const snapshot = await getOrganizationTrialReminderSnapshot(organizationId);
+		res.status(200).json(snapshot);
 	} catch (error) {
 		handleControllerError(res, error);
 	}

@@ -5,6 +5,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 
+const TRIAL_DAYS = 90;
+const TRIAL_START_KEY = "trialActivatedAt";
+const ENABLE_ONBOARDING_REDIRECT = false;
+
 const getRoleFromToken = (token?: string | null): string | null => {
 	if (!token) {
 		return null;
@@ -25,40 +29,57 @@ const getRoleFromToken = (token?: string | null): string | null => {
 	}
 };
 
+const parseStoredDate = (value: string | null): Date | null => {
+	if (!value) {
+		return null;
+	}
+
+	const parsed = new Date(value);
+	if (Number.isNaN(parsed.getTime())) {
+		return null;
+	}
+
+	return parsed;
+};
+
 type SidebarItem = {
 	label: string;
 	href?: string;
 	badge?: string;
-	accessKey?: "CRM" | "HRM" | "INVENTORY" | "ECOMMERCE" | "CHAT" | "FILE_SHARING" | "PROJECT_TRACKING" | "USER_MANAGEMENT";
+	accessKey?: "CRM" | "HRM" | "INVENTORY" | "FILE_SHARING" | "USER_MANAGEMENT";
 };
+
+function ChevronRightIcon() {
+	return (
+		<svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-current opacity-70">
+			<path d="M8 5l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+		</svg>
+	);
+}
 
 const clientMenuItems: SidebarItem[] = [
 	{ label: "Dashboard", href: "/dashboard" },
 	{ label: "Profile Completion", href: "/profile-completion" },
-	{ label: "Subscription", href: "/subscription" },
-	{ label: "Project Tracking", href: "/project-tracking" },
+	{ label: "CRM", href: "/crm", accessKey: "CRM" },
+	{ label: "HRM", href: "/hrm", accessKey: "HRM" },
+	{ label: "Inventory", href: "/inventory", accessKey: "INVENTORY" },
 	{ label: "Tools", href: "/tools" },
 	{ label: "File Sharing", href: "/file-sharing", accessKey: "FILE_SHARING" },
-	{ label: "Chat", href: "/chat", accessKey: "CHAT" },
 	{ label: "Video Connect", href: "/video-connect" },
-	{ label: "Tech Stack", href: "/tech-stack" },
-	{ label: "Order History", href: "/order-history" },
 	{ label: "User Management", href: "/user-management", accessKey: "USER_MANAGEMENT" },
-	{ label: "Notifications", badge: "5" },
-	{ label: "Reports", href: "/ceo-report" },
-	{ label: "Settings" },
 ];
 
 const adminMenuItems: SidebarItem[] = [
 	{ label: "Admin Dashboard", href: "/admin-dashboard" },
 	{ label: "Client Dashboard", href: "/dashboard" },
-	{ label: "Tech Stack", href: "/tech-stack" },
-	{ label: "Order History", href: "/admin-order-history" },
-	{ label: "Project Tracking", href: "/admin-project-tracking" },
+	{ label: "Profile Completion", href: "/profile-completion" },
+	{ label: "CRM", href: "/crm" },
+	{ label: "HRM", href: "/hrm" },
+	{ label: "Inventory", href: "/inventory" },
 	{ label: "Tools", href: "/tools" },
 	{ label: "File Sharing", href: "/file-sharing" },
-	{ label: "Chat", href: "/chat" },
 	{ label: "Video Connect", href: "/video-connect" },
+	{ label: "User Management", href: "/user-management" },
 ];
 
 function SidebarIcon({ label }: { label: string }) {
@@ -73,33 +94,27 @@ function SidebarIcon({ label }: { label: string }) {
 					<path d="M4 12h7V4H4v8Zm9 8h7v-7h-7v7Zm0-16v7h7V4h-7ZM4 20h7v-7H4v7Z" fill="currentColor" />
 				</svg>
 			);
+		case "CRM":
+			return (
+				<svg viewBox="0 0 24 24" fill="none" className={common}>
+					<path d="M5 6h14M5 12h9M5 18h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+					<path d="M16 10l3 2-3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+				</svg>
+			);
+		case "HRM":
+			return (
+				<svg viewBox="0 0 24 24" fill="none" className={common}>
+					<circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.8" />
+					<circle cx="16" cy="8" r="3" stroke="currentColor" strokeWidth="1.8" />
+					<path d="M4.5 18a5.5 5.5 0 0 1 7-5 5.5 5.5 0 0 1 7 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+				</svg>
+			);
 		case "Profile Completion":
-		case "Order History":
-			return (
-				<svg viewBox="0 0 24 24" fill="none" className={common}>
-					<path d="M7 4h10v4H7zM5 8h14v12H5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-					<path d="M8 12h8M8 15h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-				</svg>
-			);
-		case "Subscription":
-			return (
-				<svg viewBox="0 0 24 24" fill="none" className={common}>
-					<rect x="3" y="6" width="18" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.8" />
-					<path d="M3 10h18" stroke="currentColor" strokeWidth="1.8" />
-				</svg>
-			);
 		case "Tech Stack":
 			return (
 				<svg viewBox="0 0 24 24" fill="none" className={common}>
 					<path d="M4 7h16M4 12h10M4 17h7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
 					<path d="M16 10l3 2-3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-				</svg>
-			);
-		case "Project Tracking":
-			return (
-				<svg viewBox="0 0 24 24" fill="none" className={common}>
-					<path d="M5 7h14M5 12h9M5 17h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-					<circle cx="18" cy="17" r="2" fill="currentColor" />
 				</svg>
 			);
 		case "Inventory":
@@ -129,31 +144,11 @@ function SidebarIcon({ label }: { label: string }) {
 					<path d="M8 12a3 3 0 0 1 0-6h3M16 12a3 3 0 0 0 0-6h-3M9 13h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
 				</svg>
 			);
-		case "Chat":
-			return (
-				<svg viewBox="0 0 24 24" fill="none" className={common}>
-					<path d="M5 6h14v9H9l-4 3V6Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-				</svg>
-			);
 		case "Video Connect":
 			return (
 				<svg viewBox="0 0 24 24" fill="none" className={common}>
 					<rect x="3" y="7" width="12" height="10" rx="2" stroke="currentColor" strokeWidth="1.8" />
 					<path d="M15 10.5 21 8v8l-6-2.5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-				</svg>
-			);
-		case "Notifications":
-			return (
-				<svg viewBox="0 0 24 24" fill="none" className={common}>
-					<path d="M7 10a5 5 0 1 1 10 0v4l2 2H5l2-2v-4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-					<path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-				</svg>
-			);
-		case "Reports":
-			return (
-				<svg viewBox="0 0 24 24" fill="none" className={common}>
-					<path d="M6 5h12v14H6z" stroke="currentColor" strokeWidth="1.8" />
-					<path d="M9 10h6M9 14h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
 				</svg>
 			);
 		default:
@@ -199,6 +194,86 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
 	}, [router]);
 
 	useEffect(() => {
+		if (!ENABLE_ONBOARDING_REDIRECT) {
+			return;
+		}
+
+		const token = localStorage.getItem("authToken");
+		if (!token) {
+			return;
+		}
+
+		const publicAllowedPaths = new Set(["/profile-completion", "/admin-dashboard", "/login", "/register"]);
+		if (publicAllowedPaths.has(pathname)) {
+			return;
+		}
+
+		const enforceOnboarding = async () => {
+			try {
+				let trialIsExpired = false;
+				const trialResponse = await fetch("/api/subscription/trial-reminders", {
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				});
+
+				if (trialResponse.ok) {
+					const trial = (await trialResponse.json()) as {
+						status?: string;
+						trialEndsAt?: string;
+					};
+					const trialEndsAt = trial.trialEndsAt ? new Date(trial.trialEndsAt) : null;
+					trialIsExpired = trial.status === "EXPIRED" || Boolean(trialEndsAt && trialEndsAt.getTime() <= Date.now());
+				} else {
+					// Fallback for environments without trial-reminders endpoint availability.
+					const trialStart = parseStoredDate(localStorage.getItem(TRIAL_START_KEY)) ?? (() => {
+						const rawUser = localStorage.getItem("authUser");
+						if (!rawUser) {
+							return null;
+						}
+
+						try {
+							const parsed = JSON.parse(rawUser) as { createdAt?: string };
+							return parseStoredDate(parsed.createdAt ?? null);
+						} catch {
+							return null;
+						}
+					})();
+
+					trialIsExpired = trialStart ? trialStart.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000 <= Date.now() : false;
+				}
+
+				if (!trialIsExpired) {
+					return;
+				}
+
+				const response = await fetch("/api/auth/me/onboarding", {
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				});
+
+				if (!response.ok) {
+					return;
+				}
+
+				const data = (await response.json()) as {
+					profileCompleted?: boolean;
+					paymentCardOnboarded?: boolean;
+				};
+
+				if (!data.profileCompleted || !data.paymentCardOnboarded) {
+					router.replace("/profile-completion");
+				}
+			} catch {
+				// Keep current navigation if onboarding endpoint is unavailable.
+			}
+		};
+
+		void enforceOnboarding();
+	}, [pathname, router]);
+
+	useEffect(() => {
 		if (typeof window === "undefined") {
 			return;
 		}
@@ -224,14 +299,6 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
 			return false;
 		}
 
-		if (item.label === "Project Tracking") {
-			return authAccesses.includes("PROJECT_TRACKING");
-		}
-
-		if (item.label === "Tools") {
-			return ["CRM", "HRM", "INVENTORY", "ECOMMERCE"].some((key) => authAccesses.includes(key));
-		}
-
 		if (item.accessKey) {
 			return authAccesses.includes(item.accessKey);
 		}
@@ -248,23 +315,23 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
 	});
 
 	return (
-		<div className="min-h-screen bg-[#f4f7ff] text-[#111827]">
+		<div className="min-h-screen bg-[#eef2fa] text-[#1f2430]">
 			<div className="flex min-h-screen">
-				<aside className={`border-r border-[#dbe3f7] bg-[#f9fbff] transition-all duration-300 ${sidebarCollapsed ? "w-20" : "w-64"}`}>
-					<div className="flex h-28 items-center justify-between border-b border-[#dbe3f7] px-4">
+				<aside className={`border-r border-[#d9e2ef] bg-[#f8faff] transition-all duration-300 ${sidebarCollapsed ? "w-20" : "w-64"}`}>
+					<div className="flex h-24 items-center justify-between border-b border-[#d9e2ef] px-4">
 						<div className="flex items-center">
 							<Image
-								src="/officeconnectlogo.png"
+								src="/officeconnect-reference-logo.png"
 								alt="Office Connect"
 								width={sidebarCollapsed ? 70 : 320}
 								height={86}
 								priority
-								className={sidebarCollapsed ? "h-16 w-16 rounded-md object-contain" : "h-24 w-auto object-contain"}
+								className={sidebarCollapsed ? "h-12 w-12 rounded-md object-contain" : "h-16 w-auto object-contain"}
 							/>
 						</div>
 						<button
 							onClick={() => setSidebarCollapsed((prev) => !prev)}
-							className="rounded-lg border border-[#dbe3f7] p-2 text-[#374151] hover:bg-[#eef2ff]"
+							className="rounded-lg border border-[#d9e2ef] p-2 text-[#404d85] hover:bg-[#eef2fa]"
 							aria-label="Toggle sidebar"
 						>
 							<svg viewBox="0 0 20 20" fill="none" className="h-4 w-4">
@@ -291,27 +358,34 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
 										{item.href ? (
 											<Link
 												href={item.href}
+												onClick={() => setSidebarCollapsed(true)}
 												className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition ${
-														isActive ? "bg-[#1d419d] text-white shadow-[0_12px_24px_-12px_rgba(29,65,157,0.55)]" : "text-[#111827] hover:bg-[#edf2ff]"
+														isActive ? "bg-[#6678c1] text-white shadow-[0_12px_24px_-12px_rgba(102,120,193,0.45)]" : "text-[#1f2430] hover:bg-[#eef2fa]"
 												}`}
 											>
 												<div className="flex items-center gap-3">
-													<span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition ${isActive ? "border-white/20 bg-white/10" : "border-[#dbe3f7] bg-white shadow-sm"}`}>
+													<span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition ${isActive ? "border-white/20 bg-white/10" : "border-[#d9e2ef] bg-white shadow-sm"}`}>
 														<SidebarIcon label={item.label} />
 													</span>
 													{!sidebarCollapsed && <span className="text-[15px] font-medium">{item.label}</span>}
 												</div>
-												{!sidebarCollapsed && item.badge && <span className={`rounded-full px-2 py-0.5 text-xs ${isActive ? "bg-white/15 text-white" : "bg-[#1d419d] text-white"}`}>{item.badge}</span>}
+												<div className="ml-auto flex items-center gap-2">
+													{!sidebarCollapsed && item.badge && <span className={`rounded-full px-2 py-0.5 text-xs ${isActive ? "bg-white/15 text-white" : "bg-[#6678c1] text-white"}`}>{item.badge}</span>}
+													<ChevronRightIcon />
+												</div>
 											</Link>
 										) : (
-											<div className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-[#4b5563]">
+											<div className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-[#5b6472]">
 												<div className="flex items-center gap-3">
-													<span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#dbe3f7] bg-white shadow-sm">
+													<span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#d9e2ef] bg-white shadow-sm">
 														<SidebarIcon label={item.label} />
 													</span>
 													{!sidebarCollapsed && <span className="text-[15px] font-medium">{item.label}</span>}
 												</div>
-												{!sidebarCollapsed && item.badge && <span className="rounded-full bg-[#1d419d] px-2 py-0.5 text-xs text-white">{item.badge}</span>}
+												<div className="ml-auto flex items-center gap-2">
+													{!sidebarCollapsed && item.badge && <span className="rounded-full bg-[#6678c1] px-2 py-0.5 text-xs text-white">{item.badge}</span>}
+													<ChevronRightIcon />
+												</div>
 											</div>
 										)}
 									</li>
@@ -322,12 +396,12 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
 				</aside>
 
 				<main className="flex-1 p-6 lg:p-8">
-					<div className="relative overflow-hidden rounded-2xl border border-[#d7e0f7] bg-gradient-to-r from-white via-[#f7f9ff] to-[#edf3ff] p-4 shadow-[0_18px_38px_-24px_rgba(29,65,157,0.45)] ring-1 ring-white/80">
-						<div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#c9d8ff]/45 blur-3xl" />
+					<div className="relative overflow-hidden rounded-2xl border border-[#d9e2ef] bg-gradient-to-r from-white via-[#f8faff] to-[#eef2fa] p-4 shadow-[0_18px_38px_-24px_rgba(64,77,133,0.18)] ring-1 ring-white/80">
+						<div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#c9d4ea]/45 blur-3xl" />
 						<div className="flex flex-wrap items-center justify-between gap-3">
-							<div className="min-w-[260px] rounded-xl border border-[#d7e0f7] bg-white/95 p-1 shadow-inner ring-1 ring-white/70">
-								<div className="flex items-center gap-3 rounded-lg bg-[#f2f6ff] px-3 py-2 text-[#6f84af]">
-									<span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#d7e0f7] bg-white shadow-sm">
+							<div className="min-w-[260px] rounded-xl border border-[#d9e2ef] bg-white/95 p-1 shadow-inner ring-1 ring-white/70">
+								<div className="flex items-center gap-3 rounded-lg bg-[#f8faff] px-3 py-2 text-[#5b6472]">
+									<span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#d9e2ef] bg-white shadow-sm">
 										<svg viewBox="0 0 20 20" fill="none" className="h-4 w-4">
 											<circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="1.6" />
 											<path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -342,7 +416,7 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
 									localStorage.removeItem("authUser");
 									router.push("/login");
 								}}
-								className="group inline-flex items-center gap-2 rounded-xl border border-[#1d419d] bg-[#1d419d] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_24px_-16px_rgba(29,65,157,0.8)] transition hover:-translate-y-0.5 hover:bg-[#173784]"
+								className="group inline-flex items-center gap-2 rounded-xl border border-[#6678c1] bg-[#6678c1] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_24px_-16px_rgba(102,120,193,0.45)] transition hover:-translate-y-0.5 hover:bg-[#404d85]"
 							>
 								<svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 text-white/95">
 									<path d="M12 5V3h5v14h-5v-2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />

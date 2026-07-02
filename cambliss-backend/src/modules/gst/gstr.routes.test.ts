@@ -3,11 +3,18 @@ import request from "supertest";
 import express, { Express } from "express";
 import prisma from "../../config/prisma";
 import gstrRoutes from "./gstr.routes";
+import { RoleName } from "../../generated/prisma/enums";
 
 const app: Express = express();
+let activeOrgId = "test-org-id";
 app.use(express.json());
 app.use((req, res, next) => {
-	(req as any).user = { organizationId: "test-org-id" };
+	(req as any).user = {
+		id: "test-user-id",
+		email: "tester@example.com",
+		organizationId: activeOrgId,
+		role: RoleName.ADMIN,
+	};
 	next();
 });
 app.use("/gst", gstrRoutes);
@@ -25,12 +32,7 @@ describe("GSTR-1 API Routes", () => {
 			},
 		});
 		testOrgId = org.id;
-
-		// Update test to use actual org ID
-		app.use((req, res, next) => {
-			(req as any).user = { organizationId: testOrgId };
-			next();
-		});
+		activeOrgId = testOrgId;
 
 		// Create test customers
 		testCustomerB2B = await prisma.contact.create({

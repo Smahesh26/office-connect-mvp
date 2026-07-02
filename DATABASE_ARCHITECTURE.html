@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Office Connect database architecture documentation covering multi-tenant entities, flows, indexing, and compliance.">
+    <meta name="color-scheme" content="light">
+    <title>Office Connect - Database Architecture</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <script defer src="https://cdn.jsdelivr.net/npm/mermaid@11.1.1/dist/mermaid.min.js"></script>
+    <script>
+        let mermaidInitialized = false;
+        let mermaidRendered = false;
+
+        function renderMermaidDiagrams() {
+            if (mermaidRendered || !window.mermaid) {
+                return;
+            }
+
+            mermaidRendered = true;
+
+            if (typeof mermaid.run === "function") {
+                mermaid.run({ querySelector: ".mermaid" });
+                return;
+            }
+
+            if (typeof mermaid.init === "function") {
+                mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+            }
+        }
+
+        function initMermaidIfReady() {
+            if (mermaidInitialized || !window.mermaid) {
+                return;
+            }
+
+            mermaidInitialized = true;
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: "default",
+                securityLevel: "strict"
+            });
+
+            if ("requestIdleCallback" in window) {
+                window.requestIdleCallback(renderMermaidDiagrams, { timeout: 1200 });
+            } else {
+                window.setTimeout(renderMermaidDiagrams, 0);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", initMermaidIfReady);
+        window.addEventListener("load", initMermaidIfReady);
+    </script>
+    <style>
+        :root {
+            --color-bg: #f5f5f5;
+            --color-surface: #ffffff;
+            --color-text: #333333;
+            --color-primary: #1d419d;
+            --color-primary-soft: #2c4b83;
+            --color-border: #d7e0f7;
+            --color-muted: #6f84ad;
+            --color-info-bg: #edf2ff;
+            --color-card-bg: #f9fafb;
+            --radius: 4px;
+            --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --font-sans: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            --font-mono: Monaco, "Courier New", monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            color: var(--color-text);
+            background-color: var(--color-bg);
+            padding: 20px;
+        }
+
+        .skip-link {
+            position: absolute;
+            left: -999px;
+            top: 0;
+            background: var(--color-primary);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: var(--radius);
+            z-index: 1000;
+        }
+
+        .skip-link:focus {
+            left: 12px;
+            top: 12px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: var(--color-surface);
+            padding: 40px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-card);
+        }
+        
+        h1 {
+            color: var(--color-primary);
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        h2 {
+            color: var(--color-primary-soft);
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--color-border);
+        }
+        
+        h3 {
+            color: var(--color-primary-soft);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        h4 {
+            color: var(--color-primary);
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .entity-card {
+            border-left: 4px solid var(--color-primary);
+            background-color: var(--color-card-bg);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: var(--radius);
+        }
+        
+        .entity-card h4 {
+            margin-top: 0;
+        }
+        
+        .entity-card p {
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .info-box {
+            background-color: var(--color-info-bg);
+            border-left: 4px solid var(--color-muted);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: var(--radius);
+        }
+        
+        .compact-list {
+            margin-top: 10px;
+        }
+
+        .field-list {
+            list-style: none;
+            margin-left: 0;
+            margin-top: 8px;
+        }
+        
+        .field-list li {
+            padding: 4px 0;
+            padding-left: 15px;
+        }
+        
+        .field-label {
+            color: var(--color-muted);
+            font-weight: 600;
+        }
+        
+        .page-break {
+            page-break-after: always;
+            break-after: page;
+            margin: 40px 0;
+            border-top: 2px solid var(--color-border);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .doc-subtitle {
+            color: var(--color-muted);
+            font-size: 1.5em;
+            margin-top: 0;
+        }
+        
+        .metadata {
+            color: var(--color-muted);
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        
+        .toc {
+            background-color: var(--color-card-bg);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: var(--radius);
+            border-left: 4px solid var(--color-primary);
+        }
+
+        .toc-title {
+            margin-top: 0;
+            border: none;
+        }
+        
+        .toc ol {
+            margin-left: 20px;
+        }
+        
+        .toc li {
+            margin-bottom: 5px;
+        }
+        
+        .toc a {
+            color: var(--color-primary);
+            text-decoration: none;
+        }
+        
+        .toc a:hover,
+        .toc a:focus-visible {
+            text-decoration: underline;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid var(--color-border);
+            color: var(--color-muted);
+            font-size: 0.9em;
+        }
+
+        .footer-note {
+            margin-top: 15px;
+            font-size: 0.85em;
+        }
+        
+        pre {
+            background-color: var(--color-bg);
+            border: 1px solid var(--color-border);
+            padding: 10px;
+            border-radius: var(--radius);
+            overflow-x: auto;
+            font-size: 0.85em;
+        }
+        
+        code {
+            font-family: var(--font-mono);
+            color: #d63384;
+        }
+        
+        ul {
+            margin-left: 20px;
+            margin-top: 8px;
+        }
+        
+        li {
+            margin-bottom: 5px;
+        }
+        
+        em {
+            color: var(--color-muted);
+        }
+
+        a:focus-visible,
+        button:focus-visible,
+        [tabindex]:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        @media print {
+            body {
+                background-color: #fff;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                max-width: 100%;
+                border-radius: 0;
+                padding: 20px;
+            }
+
+            .skip-link {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Office Connect</h1>
+            <p class="doc-subtitle">Database Architecture Documentation</p>
+            <div class="metadata">
+                <p><strong>Document Version:</strong> 1.0</p>
+                <p><strong>Generated:</strong> 2026-06-17</p>
+            </div>
+        </header>
+        
+        <!-- Table of Contents -->
+        <nav class="toc" aria-labelledby="toc-heading">
+            <h2 class="toc-title" id="toc-heading">Table of Contents</h2>
+            <ol>
+                <li><a href="#executive-summary">Executive Summary</a></li>
+                <li><a href="#core-entities">Core Entities</a></li>
+                <li><a href="#module-breakdown">Module Breakdown</a></li>
+                <li><a href="#entity-relationship">Entity Relationship</a></li>
+                <li><a href="#data-flow">Data Flow</a></li>
+                <li><a href="#indexing">Indexing Strategy</a></li>
+            </ol>
+        </nav>
+
+        <main id="main-content" tabindex="-1">
+        
+        <!-- Executive Summary -->
+        <h2 id="executive-summary">Executive Summary</h2>
+        <p>Office Connect is a comprehensive SaaS platform built on a multi-tenant architecture supporting enterprise-grade operations across multiple business functions:</p>
+        
+        <div class="info-box">
+            <strong>Platform Capabilities:</strong>
+            <ul class="compact-list">
+                <li>Multi-organizational support with role-based access control</li>
+                <li>Subscription management with tiered plans and feature modules</li>
+                <li>Customer Relationship Management (CRM) with pipeline tracking</li>
+                <li>Human Resource Management (HRM) with payroll and attendance</li>
+                <li>Inventory & Warehouse management with stock tracking</li>
+                <li>D2C eCommerce platform with stores and orders</li>
+                <li>Point-of-Sale (POS) system integration</li>
+                <li>Invoice generation and GST compliance automation</li>
+                <li>Enterprise accounting with ledger management</li>
+            </ul>
+        </div>
+        
+        <h3>Key Metrics</h3>
+        <ul>
+            <li><strong>Database Type:</strong> PostgreSQL (ACID-compliant)</li>
+            <li><strong>Multi-tenancy:</strong> Complete data isolation by Organization ID</li>
+            <li><strong>Estimated Database Size:</strong> 50-200 GB (depending on transaction volume)</li>
+            <li><strong>Typical Transaction Volume:</strong> 10M+ rows in production environments</li>
+            <li><strong>ORM:</strong> Prisma (TypeScript-first)</li>
+        </ul>
+        
+        <!-- Core Entities -->
+        <div class="page-break"></div>
+        <h2 id="core-entities">Core Entities</h2>
+        
+        <h3>1. Authentication & Authorization</h3>
+        
+        <div class="entity-card">
+            <h4>User</h4>
+            <p><strong>Purpose:</strong> Platform user account with email-based authentication</p>
+            <ul class="field-list">
+                <li><span class="field-label">ID:</span> String (CUID primary key)</li>
+                <li><span class="field-label">Email:</span> String (unique)</li>
+                <li><span class="field-label">Name:</span> firstName, lastName</li>
+                <li><span class="field-label">Auth:</span> passwordHash</li>
+                <li><span class="field-label">Role:</span> isPlatformUser (boolean for SUPER_ADMIN)</li>
+            </ul>
+            <p><strong>Relationships:</strong> 1:N with OrganizationUser, ProjectMember, File uploads</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>Role</h4>
+            <p><strong>Purpose:</strong> Define role-based access control levels</p>
+            <p><strong>Enum Values:</strong> SUPER_ADMIN | ADMIN | PROJECT_MANAGER | EMPLOYEE | CLIENT</p>
+            <p><strong>Relationships:</strong> 1:N with OrganizationUser</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>OrganizationUser</h4>
+            <p><strong>Purpose:</strong> Join user to organization with specific role (membership)</p>
+            <ul class="field-list">
+                <li><span class="field-label">Constraint:</span> Unique (organizationId, userId)</li>
+                <li><span class="field-label">Deletion:</span> Cascade on both sides</li>
+            </ul>
+        </div>
+        
+        <h3>2. Organization & Subscription</h3>
+        
+        <div class="entity-card">
+            <h4>Organization</h4>
+            <p><strong>Purpose:</strong> Multi-tenant container for all business data</p>
+            <ul class="field-list">
+                <li><span class="field-label">Identity:</span> name, legalName, panNumber, businessType</li>
+                <li><span class="field-label">Contact:</span> supportEmail, supportPhone</li>
+                <li><span class="field-label">Address:</span> addressLine1, city, state, pincode, country</li>
+                <li><span class="field-label">Settlement:</span> Account details for payment processing</li>
+            </ul>
+            <p><strong>Multi-tenant Strategy:</strong> All queries filtered by organizationId</p>
+            <p><strong>Relationships:</strong> Central hub to User, Subscription, Project, Contact, Product, etc.</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>Subscription</h4>
+            <p><strong>Purpose:</strong> Track active subscription and billing for organization</p>
+            <ul class="field-list">
+                <li><span class="field-label">Status:</span> TRIALING | ACTIVE | PAST_DUE | CANCELED | EXPIRED | SUSPENDED</li>
+                <li><span class="field-label">Period:</span> currentPeriodStart, currentPeriodEnd</li>
+                <li><span class="field-label">Billing:</span> cancelAtPeriodEnd (boolean)</li>
+            </ul>
+            <p><strong>Relationships:</strong> N:1 with Organization and Plan, 1:N with Payment</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>Plan</h4>
+            <p><strong>Purpose:</strong> Define subscription tiers with pricing and feature limits</p>
+            <ul class="field-list">
+                <li><span class="field-label">Pricing:</span> price (Decimal), currency, interval (MONTHLY/YEARLY)</li>
+                <li><span class="field-label">Limits:</span> userLimit, storageLimit (GB)</li>
+                <li><span class="field-label">Features:</span> features[] array of included feature names</li>
+            </ul>
+            <p><strong>Relationships:</strong> 1:N with Subscription, 1:N with PlanModule</p>
+        </div>
+        
+        <!-- Module Breakdown -->
+        <div class="page-break"></div>
+        <h2 id="module-breakdown">Module Breakdown</h2>
+        
+        <h3>CRM Module - Customer Relationship Management</h3>
+        
+        <div class="entity-card">
+            <h4>Contact</h4>
+            <p><strong>Purpose:</strong> Master record for customers, vendors, and partners</p>
+            <p><strong>Type:</strong> CUSTOMER | VENDOR | PARTNER</p>
+            <ul class="field-list">
+                <li><span class="field-label">Identification:</span> firstName, lastName, companyName</li>
+                <li><span class="field-label">Communication:</span> email, phone</li>
+                <li><span class="field-label">Compliance:</span> gstNumber, panNumber</li>
+                <li><span class="field-label">Address:</span> billingAddress, shippingAddress</li>
+            </ul>
+            <p><strong>Relationships:</strong> Linked to Lead, Deal, Order, Invoice, Transaction</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>Lead</h4>
+            <p><strong>Purpose:</strong> Track sales prospects and conversion funnel</p>
+            <ul class="field-list">
+                <li><span class="field-label">Status:</span> NEW | QUALIFIED | NURTURING | STALLED | CONVERTED</li>
+                <li><span class="field-label">Scoring:</span> score (0-100)</li>
+                <li><span class="field-label">Assignment:</span> assignedTo (userId)</li>
+                <li><span class="field-label">Lifecycle:</span> isArchived, archivedAt</li>
+            </ul>
+            <p><strong>Relationships:</strong> 1:N with Activity, N:1 with Contact</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>Pipeline & Stage</h4>
+            <p><strong>Purpose:</strong> Define deal workflow and stages</p>
+            <p><strong>Pipeline:</strong> organizationId, name</p>
+            <p><strong>Stage:</strong> pipelineId, name, order (sequence)</p>
+            <p><strong>Relationships:</strong> Stage 1:N with Deal, used in DealStageHistory</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>Deal</h4>
+            <p><strong>Purpose:</strong> Track sales opportunities through pipeline</p>
+            <ul class="field-list">
+                <li><span class="field-label">Amount:</span> value (Decimal), probability (0-100)</li>
+                <li><span class="field-label">Status:</span> OPEN | WON | LOST</li>
+                <li><span class="field-label">Timeline:</span> expectedClose (DateTime)</li>
+                <li><span class="field-label">Processing:</span> isProcessed, isArchived</li>
+            </ul>
+            <p><strong>Relationships:</strong> N:1 with Pipeline/Stage/Contact, 1:N with Activity/DealStageHistory</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>DealStageHistory</h4>
+            <p><strong>Purpose:</strong> Audit trail of deal movements through stages</p>
+            <ul class="field-list">
+                <li><span class="field-label">Movement:</span> fromStageId → toStageId</li>
+                <li><span class="field-label">Audit:</span> changedBy (userId), changedAt (timestamp)</li>
+            </ul>
+            <p><strong>Use Case:</strong> Generate sales velocity reports, forecast accuracy analysis</p>
+        </div>
+        
+        <h3>HRM Module - Human Resource Management</h3>
+        
+        <div class="entity-card">
+            <h4>Employee</h4>
+            <p><strong>Purpose:</strong> Central employee record with full profile and relationships</p>
+            <ul class="field-list">
+                <li><span class="field-label">Identification:</span> employeeCode (unique per org)</li>
+                <li><span class="field-label">User Link:</span> userId (optional, connects to system user)</li>
+                <li><span class="field-label">Structure:</span> departmentId, designationId, teamId, locationId</li>
+                <li><span class="field-label">Hierarchy:</span> managerId (self-referential for manager relationship)</li>
+                <li><span class="field-label">Employment:</span> joinDate, confirmationDate, employmentType, workMode, status</li>
+                <li><span class="field-label">Compensation:</span> salary (Decimal), bankAccountNumber, bankIFSC, taxId</li>
+                <li><span class="field-label">Personal:</span> dateOfBirth, gender, phone, address</li>
+            </ul>
+            <p><strong>Relationships:</strong> 1:N with Attendance, LeaveBalance, Payslip, PerformanceReview</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>Department, Designation, Team, Location</h4>
+            <p><strong>Purpose:</strong> Define organizational structure hierarchy</p>
+            <p><strong>Constraint:</strong> Unique (organizationId, name) for each</p>
+            <p><strong>Relationships:</strong> 1:N with Employee</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>Shift & EmployeeShift</h4>
+            <p><strong>Purpose:</strong> Define and assign work schedules</p>
+            <p><strong>Shift Fields:</strong> name, startTime, endTime, graceMinutes</p>
+            <p><strong>Relationships:</strong> 1:N through EmployeeShift junction</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>Attendance</h4>
+            <p><strong>Purpose:</strong> Track daily attendance with time tracking</p>
+            <ul class="field-list">
+                <li><span class="field-label">Time:</span> date, checkIn, checkOut</li>
+                <li><span class="field-label">Calculation:</span> totalHours, overtimeHours</li>
+                <li><span class="field-label">Status:</span> isLate, status</li>
+            </ul>
+            <p><strong>Constraint:</strong> Unique (employeeId, date)</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>LeavePolicy & LeaveBalance</h4>
+            <p><strong>Purpose:</strong> Define and track leave entitlements</p>
+            <p><strong>Policy:</strong> organizationId, name, annualQuota, carryForward</p>
+            <p><strong>Balance:</strong> employeeId, leavePolicyId, balance</p>
+            <p><strong>Constraint:</strong> Unique (employeeId, leavePolicyId)</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>SalaryComponent & SalaryStructure</h4>
+            <p><strong>Purpose:</strong> Define salary components and structure per employee</p>
+            <p><strong>Component:</strong> name, type, isPercentage, value</p>
+            <p><strong>Structure:</strong> employeeId, componentId (junction)</p>
+        </div>
+        
+        <h3>Inventory Module</h3>
+        
+        <div class="entity-card">
+            <h4>Product</h4>
+            <p><strong>Purpose:</strong> Master product catalog</p>
+            <ul class="field-list">
+                <li><span class="field-label">Identity:</span> sku (unique per org), hsnCode</li>
+                <li><span class="field-label">Pricing:</span> unitPrice, costPrice, taxRate</li>
+                <li><span class="field-label">Status:</span> isActive</li>
+            </ul>
+            <p><strong>Relationships:</strong> 1:N with StockItem, StockMovement, PurchaseItem</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>Warehouse & StockItem</h4>
+            <p><strong>Purpose:</strong> Physical locations and inventory levels</p>
+            <p><strong>Warehouse:</strong> name, location, latitude, longitude</p>
+            <p><strong>StockItem:</strong> productId, warehouseId, quantity (tracked per warehouse)</p>
+            <p><strong>Constraint:</strong> Unique (productId, warehouseId)</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>StockMovement</h4>
+            <p><strong>Purpose:</strong> Audit trail of inventory transactions</p>
+            <ul class="field-list">
+                <li><span class="field-label">Type:</span> PURCHASE | SALE | ADJUSTMENT | TRANSFER</li>
+                <li><span class="field-label">Tracking:</span> quantity, referenceId (link to source doc)</li>
+            </ul>
+            <p><strong>Use Case:</strong> Full traceability and variance analysis</p>
+        </div>
+        
+        <h3>Accounting & Finance Module</h3>
+        
+        <div class="entity-card">
+            <h4>LedgerAccount</h4>
+            <p><strong>Purpose:</strong> Chart of accounts for double-entry bookkeeping</p>
+            <ul class="field-list">
+                <li><span class="field-label">Type:</span> ASSET | LIABILITY | EQUITY | INCOME | EXPENSE</li>
+                <li><span class="field-label">Hierarchy:</span> parentId (self-referential tree)</li>
+                <li><span class="field-label">Code:</span> code (unique per org)</li>
+            </ul>
+            <p><strong>Relationships:</strong> 1:N with JournalEntry</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>Transaction</h4>
+            <p><strong>Purpose:</strong> Core accounting transaction record</p>
+            <ul class="field-list">
+                <li><span class="field-label">Type:</span> SALE | PURCHASE | EXPENSE | PAYMENT | REFUND</li>
+                <li><span class="field-label">Status:</span> DRAFT | POSTED | PAID</li>
+                <li><span class="field-label">Reversal:</span> reversalOfId (self-referential)</li>
+            </ul>
+            <p><strong>Relationships:</strong> 1:N with JournalEntry, PaymentAllocation</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>JournalEntry</h4>
+            <p><strong>Purpose:</strong> Double-entry bookkeeping records</p>
+            <ul class="field-list">
+                <li><span class="field-label">Amount:</span> debit XOR credit (only one non-null)</li>
+                <li><span class="field-label">Invariant:</span> Sum of debits = Sum of credits per transaction</li>
+            </ul>
+        </div>
+        
+        <h3>eCommerce Module</h3>
+        
+        <div class="entity-card">
+            <h4>Store</h4>
+            <p><strong>Purpose:</strong> Customer-facing storefront</p>
+            <ul class="field-list">
+                <li><span class="field-label">Identity:</span> name, domain (unique)</li>
+                <li><span class="field-label">Management:</span> ownerUserId, isActive</li>
+                <li><span class="field-label">Payment:</span> UPI ID, bank account details</li>
+            </ul>
+            <p><strong>Relationships:</strong> 1:N with Category, ProductListing, Cart, Order</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>ProductListing</h4>
+            <p><strong>Purpose:</strong> Store-specific product variant</p>
+            <ul class="field-list">
+                <li><span class="field-label">Pricing:</span> sellingPrice</li>
+                <li><span class="field-label">SEO:</span> seoTitle, seoDescription, images[]</li>
+                <li><span class="field-label">Status:</span> isActive</li>
+            </ul>
+            <p><strong>Constraint:</strong> Unique (storeId, productId)</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>Cart & Order</h4>
+            <p><strong>Purpose:</strong> Shopping cart and order management</p>
+            <p><strong>Cart:</strong> storeId, customerId (unique combo), items[]</p>
+            <p><strong>Order:</strong> status, paymentStatus, totalAmount, fulfillment tracking</p>
+            <p><strong>Fulfillment:</strong> packedAt, shippedAt, deliveredAt, trackingNumber</p>
+        </div>
+        
+        <h3>Invoice & GST Module</h3>
+        
+        <div class="entity-card">
+            <h4>Invoice</h4>
+            <p><strong>Purpose:</strong> Tax invoice generation with GST compliance</p>
+            <ul class="field-list">
+                <li><span class="field-label">Reference:</span> invoiceNumber (unique per org), orderId, posOrderId</li>
+                <li><span class="field-label">GST:</span> cgstAmount, sgstAmount, igstAmount (separate tracking)</li>
+                <li><span class="field-label">Status:</span> ISSUED | CANCELLED</li>
+            </ul>
+            <p><strong>Relationships:</strong> 1:N with InvoiceItem, EWayBill, PaymentAllocation</p>
+        </div>
+        
+        <div class="entity-card">
+            <h4>EWayBill</h4>
+            <p><strong>Purpose:</strong> Electronic way bill for interstate transport</p>
+            <ul class="field-list">
+                <li><span class="field-label">Transporter:</span> transporterName, transporterGSTIN, vehicleNumber</li>
+                <li><span class="field-label">Route:</span> transportMode, distance</li>
+                <li><span class="field-label">Status:</span> GENERATED | CANCELLED</li>
+            </ul>
+        </div>
+        
+        <!-- Entity Relationship Diagram -->
+        <div class="page-break"></div>
+        <h2 id="entity-relationship">Entity Relationship Diagram & Architectural Flows</h2>
+        
+        <h3>Core Hierarchy</h3>
+        <div class="mermaid">
+graph TD
+    Org["Organization<br/>(Root Tenant)"]
+    User["User"]
+    OrgUser["OrganizationUser"]
+    Role["Role"]
+    Sub["Subscription"]
+    Plan["Plan"]
+    Module["Module"]
+    Contact["Contact"]
+    Product["Product"]
+    Employee["Employee"]
+    Shift["Shift"]
+    Attendance["Attendance"]
+    Ledger["LedgerAccount"]
+    Transaction["Transaction"]
+    JEntry["JournalEntry"]
+    Store["Store"]
+    Order["Order"]
+    Invoice["Invoice"]
+    EWay["EWayBill"]
+    
+    Org -->|1:N| User
+    Org -->|1:N| OrgUser
+    Org -->|1:N| Sub
+    Org -->|1:N| Contact
+    Org -->|1:N| Product
+    Org -->|1:N| Employee
+    Org -->|1:N| Ledger
+    Org -->|1:N| Store
+    Org -->|1:N| Invoice
+    Org -->|1:N| Module
+    
+    User -->|N:1| OrgUser
+    Role -->|1:N| OrgUser
+    
+    Plan -->|1:N| Sub
+    Sub -->|1:N| Module
+    
+    Contact -->|1:N| Order
+    Product -->|1:N| Order
+    
+    Employee -->|1:N| Attendance
+    Employee -->|1:N| Shift
+    
+    Transaction -->|1:N| JEntry
+    Ledger -->|1:N| JEntry
+    
+    Order -->|1:1| Invoice
+    Invoice -->|1:N| EWay
+        </div>
+        
+        <!-- Complete System Architecture Flow -->
+        <h3>Complete System Architecture Flow</h3>
+        <div class="mermaid">
+graph TD
+    Auth["Authentication & Multi-Tenancy<br/>User | OrganizationUser | Role"]
+    
+    Features["Feature Modules & Subscriptions<br/>Plan | PlanModule | Subscription | Payment"]
+    
+    CRM["CRM Pipeline<br/>Contact | Lead | Deal | Activity"]
+    HRM["HRM Payroll<br/>Employee | Attendance | Payslip"]
+    INV["Inventory<br/>Product | Warehouse | StockItem"]
+    ACC["Accounting<br/>LedgerAccount | Transaction"]
+    EC["E-Commerce<br/>Store | Cart | Order"]
+    POS["POS System<br/>POSTerminal | POSOrder"]
+    
+    COMP["Compliance & Invoice<br/>GSTConfig | Invoice | EWayBill"]
+    
+    Auth --> Features
+    Features --> CRM
+    Features --> HRM
+    Features --> INV
+    Features --> ACC
+    Features --> EC
+    Features --> POS
+    
+    CRM --> COMP
+    HRM --> COMP
+    INV --> COMP
+    ACC --> COMP
+    EC --> COMP
+    POS --> COMP
+        </div>
+        
+        <!-- CRM Module Flow -->
+        <h3>CRM Pipeline Flow - Lead to Deal to Invoice</h3>
+        <div class="mermaid">
+sequenceDiagram
+            participant LG as Lead Generation
+            participant CRM as CRM Pipeline
+            participant SF as Sales Fulfillment
+    
+            LG->>CRM: Lead Created (source, status)
+            CRM->>CRM: Log Activity (CALL, EMAIL, MEETING)
+            CRM->>CRM: Update Score (0-100)
+            Note over CRM: Lead Status: NEW → QUALIFIED → NEGOTIATING
+    
+            CRM->>CRM: Deal Created (pipeline, stage)
+            CRM->>CRM: DealStageHistory recorded
+            Note over CRM: Stage Movement: NEW → QUALIFIED → PROPOSAL → WON/LOST
+    
+            CRM->>SF: Deal Won
+            SF->>SF: Order Created (customer, items)
+            SF->>SF: Order Status: PENDING → PAID
+    
+            SF->>SF: Invoice Generated
+            Note over SF: InvoiceItems with GST Calculation
+    
+            SF->>SF: E-Way Bill (if interstate)
+            SF->>SF: PaymentAllocation matched
+            Note over SF: Status: ISSUED → PAID → RECONCILED
+        </div>
+        
+        <!-- HRM Module Flow -->
+        <h3>HRM Payroll Cycle Flow</h3>
+        <div class="mermaid">
+flowchart LR
+    A["Employee Setup<br/>Code, Dept, Designation<br/>Shift Assignment"] -->|Joins| B["Attendance Tracking<br/>Daily Check-In/Out<br/>Hours Calculation"]
+    
+    B -->|Leave Request| C["Leave Management<br/>Policy Setup<br/>Balance Tracking"]
+    
+    C -->|Monthly| D["Salary Calculation<br/>SalaryStructure<br/>Gross Salary"]
+    
+    D -->|Deductions| E["Net Salary<br/>Tax Components<br/>Payslip Generated"]
+    
+    E -->|Processed| F["Payment Transfer<br/>Bank Details<br/>Status: PROCESSED"]
+    
+    A -->|Reviews| G["Performance Review<br/>Rating & Comments<br/>Salary Adjustments"]
+    
+    G -.->|Updates| A
+        </div>
+        
+        <!-- Inventory & Stock Flow -->
+        <h3>Inventory Management & Stock Movement Flow</h3>
+        <div class="mermaid">
+flowchart TD
+    A["Product Setup<br/>SKU, HSN Code<br/>Unit Price, Cost Price"] -->|Creates| B["Warehouse Setup<br/>Location<br/>Capacity"]
+    
+    B -->|Tracks| C["StockItem<br/>Product in Warehouse<br/>Current Quantity"]
+    
+    D["PurchaseOrder Created<br/>Vendor Selected<br/>Items Added"] -->|Approval| E["GatePass Inward<br/>Vehicle & Driver<br/>Items Inspected"]
+    
+    E -->|Receipt| F["StockMovement<br/>Type: PURCHASE<br/>Quantity: +100"]
+    
+    F -->|Updates| C
+    
+    C -->|Sale| G["StockMovement<br/>Type: SALE<br/>Quantity: -20"]
+    
+    G -->|Updates| C
+    
+    H["Order Processing<br/>Customer Orders<br/>Items Selected"] -->|Fulfillment| G
+    
+    A -.->|SKU Reference| D
+        </div>
+        
+        <!-- Accounting & Finance Flow -->
+        <h3>Accounting Double-Entry Flow</h3>
+        <div class="mermaid">
+sequenceDiagram
+            participant TX as Transaction
+            participant JE as JournalEntry
+            participant LA as LedgerAccount
+    
+            Note over TX: SALE Transaction Initiated<br/>Amount: 10,000
+            TX->>JE: Create JournalEntry #1
+    
+            JE->>JE: Debit: AR Account (10,000)
+            JE->>JE: Credit: Revenue Account (10,000)
+    
+            Note over JE: Invariant Check<br/>Debits = Credits
+    
+            JE->>LA: Update AR Account
+            JE->>LA: Update Revenue Account
+    
+            Note over LA: Ledger Balance Updated<br/>Account Hierarchy Maintained
+    
+            TX->>TX: Status: DRAFT → POSTED
+    
+            Note over TX: PaymentAllocation<br/>Transaction Matched to Invoice
+            TX->>TX: Status: POSTED → PAID
+    
+            Note over LA: Period Closure<br/>Locked for Audit<br/>7-Year Retention
+        </div>
+        
+        <!-- E-Commerce Order Flow -->
+        <h3>E-Commerce Store Order Fulfillment Flow</h3>
+        <div class="mermaid">
+flowchart LR
+    A["Store Setup<br/>Domain, Owner<br/>Payment Settings"] -->|Create| B["Category & Products<br/>Hierarchy<br/>ProductListing"]
+    
+    B -->|Customer Browses| C["Cart Created<br/>Items Added<br/>Qty: 2 units"]
+    
+    C -->|Checkout| D["Order Created<br/>Status: PENDING<br/>Payment: UNPAID"]
+    
+    D -->|Razorpay| E["Payment Processing<br/>Razorpay Order ID<br/>Payment Status"]
+    
+    E -->|Success| F["Order Confirmed<br/>Status: PENDING<br/>Payment: PAID"]
+    
+    F -->|Fulfillment| G["Packing<br/>QC Check<br/>Packed Timestamp"]
+    
+    G -->|Ready| H["Shipping<br/>Tracking Number<br/>Courier Partner"]
+    
+    H -->|In Transit| I["Delivery<br/>Delivered Timestamp<br/>Status: COMPLETED"]
+    
+    I -->|30-Day Window| J["Return/Refund<br/>ReturnRequest Created<br/>Inspection Processing"]
+    
+    F -->|Generate| K["Invoice Created<br/>InvoiceItems<br/>GST Calculated"]
+        </div>
+        
+        <!-- GST & Compliance Flow -->
+        <h3>GST Compliance & Invoice Flow</h3>
+        <div class="mermaid">
+graph TD
+    A["Organization GST Setup<br/>GST Number<br/>State Code<br/>Legal Name"] -->|Configure| B["Tax Setup<br/>CGST: 9%<br/>SGST: 9%<br/>IGST: 18%"]
+    
+    C["Sale Transaction<br/>Order/POS Order<br/>Customer Details"] -->|Linked to| A
+    
+    C -->|Generate| D["Invoice Created<br/>InvoiceNumber<br/>Invoice Date<br/>Customer Info"]
+    
+    D -->|Calculate GST| E["Invoice Items<br/>Product Lines<br/>HSN Code<br/>GST Rate Applied"]
+    
+    E -->|Determine| F["Place of Supply<br/>Intra-state: CGST+SGST<br/>Inter-state: IGST"]
+    
+    F -->|Calculate| G["GST Amounts<br/>CGST: 900<br/>SGST: 900<br/>IGST: 0"]
+    
+    D -->|Status| H["Invoice Issued<br/>Total: 11,800<br/>Status: ISSUED"]
+    
+    H -->|Generate| I["E-Way Bill<br/>Transporter GSTIN<br/>Vehicle Number<br/>Distance"]
+    
+    D -->|Reporting| J["GSTR1 Return<br/>All Invoices<br/>GST Breakdown<br/>Export JSON/Excel"]
+    
+    J -->|File| K["GST Payment<br/>Calculate Liability<br/>Input Credits<br/>Tax Due<br/>Status: SUBMITTED"]
+    
+    K -.->|Audit Trail| L["7-Year Retention<br/>No Edit Allowed<br/>Locked Records"]
+        </div>
+        
+        <!-- POS System Flow -->
+        <h3>Point of Sale (POS) System Flow</h3>
+        <div class="mermaid">
+flowchart LR
+    A["POSTerminal Setup<br/>Location: Counter#1<br/>Name: Main Counter"] -->|Create| B["POSSession Started<br/>Opened: 09:00 AM<br/>Staff: Cashier1<br/>Opening Cash: 5000"]
+    
+    C["Product Setup<br/>Price Configured<br/>Stock Linked<br/>GST Rate"] -->|Search| D["Item Scan<br/>Qty: 2 units<br/>Price: 500 each"]
+    
+    D -->|Add to Bill| E["Bill Running Total<br/>Line Items: Array<br/>Discount Applied<br/>Tax Added"]
+    
+    E -->|Checkout| F["POSOrder Created<br/>Customer: Optional<br/>Payment Method<br/>Total Amount"]
+    
+    F -->|Payment| G["Payment Processing<br/>Method: CASH/UPI<br/>Amount Verified<br/>Receipt Printed"]
+    
+    G -->|Confirmed| H["Invoice Generated<br/>POSOrder Linked<br/>GST Calculated"]
+    
+    B -->|End of Day| I["Session Closure<br/>Closing Time<br/>Closing Cash<br/>Difference Calc"]
+    
+    I -->|Locked| J["Session: CLOSED<br/>Daily Settlement<br/>Reconciliation Complete"]
+        </div>
+
+        <!-- Multi-Tenant Data Isolation -->
+        <h3>Multi-Tenant Data Isolation Architecture</h3>
+        <div class="mermaid">
+graph TB
+    DB["PostgreSQL Database<br/>Single Instance<br/>Multiple Organizations"]
+    
+    ORG_A["Organization A<br/>TechCorp India"]
+    ORG_B["Organization B<br/>RetailCorp Limited"]
+    ORG_C["Organization C<br/>Other Companies"]
+    
+    DB -->|organizationId Filter| ORG_A
+    DB -->|organizationId Filter| ORG_B
+    DB -->|organizationId Filter| ORG_C
+    
+    ORG_A -->|Users: 5| A1["Users<br/>Contacts: 100<br/>Products: 500<br/>Employees: 50<br/>Orders: 1000"]
+    
+    ORG_B -->|Users: 10| B1["Users<br/>Contacts: 250<br/>Products: 1000<br/>Employees: 100<br/>Orders: 5000"]
+    
+    ORG_C -->|Users: 3| C1["Users<br/>Contacts: 50<br/>Products: 200<br/>Employees: 20<br/>Orders: 200"]
+    
+    A1 -->|No Cross-Org| ISOLATED["Complete Data Isolation<br/>WHERE organizationId = ?<br/>FK Constraints<br/>Index Strategy"]
+    B1 -->|No Cross-Org| ISOLATED
+    C1 -->|No Cross-Org| ISOLATED
+    
+    ISOLATED -->|Performance| BENEFIT["Query Optimization<br/>Partition Ready<br/>Scalable<br/>Secure"]
+        </div>
+        
+        <h3>Multi-tenant Data Isolation Key Principles</h3>
+        <div class="info-box">
+            <strong>Key Principles:</strong>
+            <ul class="compact-list">
+                <li>Every table contains <code>organizationId</code> field</li>
+                <li>All indexes include <code>organizationId</code> for query efficiency</li>
+                <li>Foreign key constraints prevent cross-organization access</li>
+                <li>Row-level security enforced at application layer</li>
+                <li>Query pattern: <code>WHERE organizationId = ? AND ...</code></li>
+            </ul>
+        </div>
+        
+        <!-- Data Flow -->
+        <h2 id="data-flow">Data Flow</h2>
+        
+        <h3>1. Subscription to Module Activation</h3>
+        <ol>
+            <li>Organization creates <strong>Subscription</strong> (references planId)</li>
+            <li>Plan includes multiple <strong>PlanModule</strong> entries</li>
+            <li>Application enables corresponding <strong>OrganizationModule</strong> records</li>
+            <li>User access determined by: role + module enabled status</li>
+        </ol>
+        
+        <h3>2. Order to Invoice to Payment</h3>
+        <ol>
+            <li>Customer creates <strong>Order</strong> with <strong>OrderItem</strong>s</li>
+            <li>Payment captured: Order status → PAID</li>
+            <li><strong>Invoice</strong> generated, linked to Order</li>
+            <li><strong>InvoiceItem</strong>s created from OrderItems (with GST calculation)</li>
+            <li><strong>EWayBill</strong> generated if interstate shipping</li>
+            <li><strong>PaymentAllocation</strong> matches Payment to Invoice</li>
+        </ol>
+        
+        <h3>3. Inventory Stock Movement</h3>
+        <ol>
+            <li><strong>PurchaseOrder</strong> created with <strong>PurchaseItem</strong>s</li>
+            <li>On receipt: <strong>StockMovement</strong> record created (type=PURCHASE)</li>
+            <li><strong>StockItem</strong> quantity updated per warehouse</li>
+            <li><strong>GatePass</strong> tracks physical transfer</li>
+            <li>Complete traceability: Product → Warehouse → Quantity</li>
+        </ol>
+        
+        <h3>4. HRM Payroll Process</h3>
+        <ol>
+            <li><strong>EmployeeShift</strong> defines working schedule</li>
+            <li>Daily <strong>Attendance</strong> record created (checkIn/checkOut)</li>
+            <li><strong>LeaveRequest</strong> reduces <strong>LeaveBalance</strong></li>
+            <li><strong>SalaryStructure</strong> + <strong>Payslip</strong> generated monthly</li>
+            <li>Data flow: Employee → Shift → Attendance → Payslip → Payment</li>
+        </ol>
+        
+        <!-- Indexing Strategy -->
+        <div class="page-break"></div>
+        <h2 id="indexing">Indexing Strategy</h2>
+        
+        <h3>Critical Indexes for Performance</h3>
+        
+        <div class="info-box">
+            <strong>Primary Indexing Strategy:</strong>
+            <p>All multi-tenant tables indexed on <code>organizationId</code> as first field to ensure query performance and data isolation.</p>
+        </div>
+        
+        <h3>High-Priority Indexes</h3>
+        <pre><code>-- Multi-tenant Isolation
+User.organizationId (FK)
+Contact.organizationId (FK)
+Product.organizationId (FK)
+Employee.organizationId (FK)
+Order.organizationId (FK)
+Invoice.organizationId (FK)
+Transaction.organizationId (FK)
+
+-- High-Query-Volume Tables
+Transaction(organizationId, transactionDate)
+Invoice(organizationId, issuedAt)
+Order(organizationId, customerId, status)
+Attendance(employeeId, date) UNIQUE
+StockMovement(organizationId, productId, warehouseId)
+
+-- Junction/Linking (Unique Constraints)
+OrganizationUser(organizationId, userId)
+ProjectMember(projectId, userId)
+StoreMember(storeId, userId)
+EmployeeShift(employeeId, shiftId)
+        </code></pre>
+        
+        <h3>Query Optimization Recommendations</h3>
+        <ul>
+            <li>Always filter by <code>organizationId</code> first in WHERE clause</li>
+            <li>Use composite indexes on (organizationId, foreignKey) for joins</li>
+            <li>Consider table partitioning by organizationId (future optimization)</li>
+            <li>Archive transactions older than 2 years to improve query speed</li>
+            <li>Cache frequently accessed data: Plans, Modules, LedgerAccount hierarchy</li>
+        </ul>
+        
+        <h3>Performance Metrics</h3>
+        <ul>
+            <li><strong>Typical Transaction Volume:</strong> 10M+ rows in production</li>
+            <li><strong>Query Complexity:</strong> Mostly O(1) lookups; O(n) for reporting</li>
+            <li><strong>Caching Layer:</strong> Redis for Plans, Modules, Hierarchy</li>
+            <li><strong>Batch Processing:</strong> Monthly reconciliation async jobs</li>
+            <li><strong>Data Retention:</strong> 7-year compliance for financial records</li>
+        </ul>
+        
+        <!-- Constraints -->
+        <h3>Data Integrity Constraints</h3>
+        <div class="info-box">
+            <strong>Enforced Rules:</strong>
+            <ul class="compact-list">
+                <li>Subscription status transitions: valid state machine enforced</li>
+                <li>GST Calculations: CGST + SGST ≥ IGST (for non-interstate)</li>
+                <li>Attendance Uniqueness: one record per (employeeId, date)</li>
+                <li>Stock Levels: StockItem.quantity ≥ 0 (no negative stock)</li>
+                <li>Leave Balance: cannot go negative</li>
+                <li>Invoice Uniqueness: invoiceNumber unique per organization</li>
+            </ul>
+        </div>
+        
+        <!-- Compliance -->
+        <h3>Compliance & Audit</h3>
+        <ul>
+            <li><strong>GDPR:</strong> Data isolated by organizationId</li>
+            <li><strong>India GST:</strong> Compliant Invoice + EWayBill generation</li>
+            <li><strong>PII Protection:</strong> Encrypted storage for SSN, bank details</li>
+            <li><strong>Audit Trail:</strong> DealStageHistory, StockMovement, LeaveRequest history</li>
+            <li><strong>Data Retention:</strong> 7-year retention for financial records</li>
+        </ul>
+        
+        <!-- Footer -->
+        </main>
+
+        <footer class="footer">
+            <p><strong>Office Connect Database Architecture</strong></p>
+            <p>Generated on 2026-06-17 | PostgreSQL + Prisma ORM | Version 1.0</p>
+            <p class="footer-note">For questions or updates, please contact the development team.</p>
+        </footer>
+    </div>
+</body>
+</html>

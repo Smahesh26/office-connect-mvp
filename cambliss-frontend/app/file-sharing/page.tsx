@@ -22,6 +22,12 @@ type FileThreadSummary = {
 	latestUploadedAt: string;
 };
 
+type FileTransferPolicy = {
+	unlimitedTransfersDuringTrial: boolean;
+	retentionDays: number;
+	nonRecoverableAfterDeletion: boolean;
+};
+
 const isAdminRole = (role?: string) => role === "ADMIN" || role === "SUPER_ADMIN";
 
 const formatFileSize = (bytes: number) => {
@@ -33,6 +39,15 @@ const formatFileSize = (bytes: number) => {
 
 const daysLeft = (expiresAt: string) => Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
 
+const parseApiMessage = async (response: Response, fallback: string) => {
+	try {
+		const body = (await response.json()) as { message?: string };
+		return body.message || fallback;
+	} catch {
+		return fallback;
+	}
+};
+
 export default function FileSharingPage() {
 	const router = useRouter();
 	const [authUser, setAuthUser] = useState<AuthUser | null>(null);
@@ -42,6 +57,7 @@ export default function FileSharingPage() {
 	const [threadSummaries, setThreadSummaries] = useState<FileThreadSummary[]>([]);
 	const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
 	const [isUploading, setIsUploading] = useState(false);
+	const [policy, setPolicy] = useState<FileTransferPolicy | null>(null);
 
 	const isAdmin = useMemo(() => isAdminRole(authUser?.role), [authUser?.role]);
 
@@ -68,6 +84,13 @@ export default function FileSharingPage() {
 		const load = async () => {
 			setIsLoading(true);
 			try {
+				const policyResponse = await fetch("/api/chat/files/policy", {
+					headers: { Authorization: `Bearer ${token}` },
+				});
+				if (policyResponse.ok) {
+					setPolicy((await policyResponse.json()) as FileTransferPolicy);
+				}
+
 				if (isAdmin) {
 					const response = await fetch("/api/chat/files/threads", { headers: { Authorization: `Bearer ${token}` } });
 					setThreadSummaries(response.ok ? ((await response.json()) as FileThreadSummary[]) : []);
@@ -129,7 +152,12 @@ export default function FileSharingPage() {
 
 		const response = await fetch(`/api/chat/files/${fileId}/download`, { headers: { Authorization: `Bearer ${token}` } });
 		if (!response.ok) {
-			setNotice("Download failed.");
+			if (response.status === 410) {
+				setClientFiles((prev) => prev.filter((file) => file.id !== fileId));
+				setNotice(await parseApiMessage(response, "File expired and was permanently deleted."));
+				return;
+			}
+			setNotice(await parseApiMessage(response, "Download failed."));
 			return;
 		}
 		const blob = await response.blob();
@@ -149,7 +177,12 @@ export default function FileSharingPage() {
 
 		const response = await fetch(`/api/chat/files/${fileId}/download`, { headers: { Authorization: `Bearer ${token}` } });
 		if (!response.ok) {
-			setNotice("Preview failed.");
+			if (response.status === 410) {
+				setClientFiles((prev) => prev.filter((file) => file.id !== fileId));
+				setNotice(await parseApiMessage(response, "File expired and was permanently deleted."));
+				return;
+			}
+			setNotice(await parseApiMessage(response, "Preview failed."));
 			return;
 		}
 
@@ -182,6 +215,12 @@ export default function FileSharingPage() {
 			<div className="mt-5 rounded-2xl border border-zinc-200 bg-gradient-to-br from-white via-zinc-50 to-zinc-100 p-6 shadow-[0_24px_56px_-30px_rgba(0,0,0,0.85)]">
 				<h1 className="text-2xl font-semibold tracking-tight text-zinc-900">File Sharing</h1>
 				<p className="mt-1 text-sm text-zinc-600">Files auto-delete after 15 days.</p>
+				<div className="mt-3 rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm text-zinc-700">
+					<p className="font-semibold text-zinc-900">File Transfer Policy</p>
+					<p className="mt-1">• {policy?.unlimitedTransfersDuringTrial === false ? "Controlled transfers during trial" : "Unlimited file transfers during trial"}</p>
+					<p>• All files remain available for {policy?.retentionDays ?? 15} days post upload</p>
+					<p>• Auto deletion after {policy?.retentionDays ?? 15} days (non-recoverable)</p>
+				</div>
 				{notice && <p className="mt-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700">{notice}</p>}
 
 				{isLoading ? (

@@ -134,7 +134,7 @@ async function main() {
       data: {
         name: "Global Dashboard Starter",
         description: "Default plan for dashboard demo users",
-        features: ["CRM", "ECOMMERCE", "INVENTORY"],
+        features: ["CRM", "INVENTORY"],
         price: "99.00",
         currency: "USD",
         interval: "MONTHLY",

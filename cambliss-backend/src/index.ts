@@ -1,9 +1,9 @@
 import express from "express";
 import path from "path";
+import cors from "cors";
 import adminRoutes from "./modules/admin/admin.routes";
 import accountingRoutes from "./modules/accounting/accounting.routes";
 import crmRoutes from "./modules/crm/crm.routes";
-import ecommerceRoutes from "./modules/ecommerce/ecommerce.routes";
 import hrmRoutes from "./modules/hrm/hrm.routes";
 import inventoryRoutes from "./modules/inventory/inventory.routes";
 import filesRoutes from "./modules/files/files.routes";
@@ -20,12 +20,32 @@ import userManagementRoutes from "./modules/user-management/user-management.rout
 
 const app = express();
 
+const allowedOrigins = (process.env.CORS_ORIGINS ?? "")
+	.split(",")
+	.map((origin) => origin.trim())
+	.filter(Boolean);
+
+app.use(
+	cors({
+		origin:
+			allowedOrigins.length > 0
+				? (origin, callback) => {
+					if (!origin || allowedOrigins.includes(origin)) {
+						callback(null, true);
+						return;
+					}
+					callback(new Error("CORS origin not allowed"));
+				}
+				: true,
+		credentials: true,
+	})
+);
+
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/api/admin", adminRoutes);
 app.use("/api/accounting", accountingRoutes);
 app.use("/api/crm", crmRoutes);
-app.use("/api/ecommerce", ecommerceRoutes);
 app.use("/api/hrm", hrmRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api", filesRoutes);

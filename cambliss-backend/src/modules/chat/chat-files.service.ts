@@ -5,6 +5,26 @@ import { RoleName } from "../../generated/prisma/enums";
 
 const CHAT_TRANSFER_MARKER = "chat-transfers";
 const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
+const FIFTEEN_DAYS_SECONDS = 15 * 24 * 60 * 60;
+
+export const FILE_TRANSFER_POLICY = {
+	unlimitedTransfersDuringTrial: true,
+	retentionDays: 15,
+	autoDeleteAfterSeconds: FIFTEEN_DAYS_SECONDS,
+	nonRecoverableAfterDeletion: true,
+} as const;
+
+type ChatTransferCleanupStats = {
+	lastRunAt: Date | null;
+	lastDeletedCount: number;
+	totalDeletedCount: number;
+};
+
+const cleanupStats: ChatTransferCleanupStats = {
+	lastRunAt: null,
+	lastDeletedCount: 0,
+	totalDeletedCount: 0,
+};
 
 export class ChatFileError extends Error {
 	statusCode: number;
@@ -78,6 +98,8 @@ const mapTransferFile = (record: {
 	};
 };
 
+const getRetentionThreshold = () => new Date(Date.now() - FIFTEEN_DAYS_MS);
+
 const isChatTransferFilePath = (filePath: string) => normalizePath(filePath).includes(`/${CHAT_TRANSFER_MARKER}/`);
 
 export const uploadChatTransferFile = async ({ authUser, file, requestedOrganizationId }: UploadChatFileInput) => {
@@ -108,10 +130,14 @@ export const uploadChatTransferFile = async ({ authUser, file, requestedOrganiza
 
 export const listChatTransferFiles = async (authUser: AuthContext, requestedOrganizationId?: string) => {
 	const targetOrganizationId = await resolveTargetOrganizationId(authUser, requestedOrganizationId);
+	const threshold = getRetentionThreshold();
 
 	const files = await prisma.file.findMany({
 		where: {
 			organizationId: targetOrganizationId,
+			createdAt: {
+				gte: threshold,
+			},
 			filePath: {
 				contains: CHAT_TRANSFER_MARKER,
 			},
@@ -139,11 +165,15 @@ export const resolveChatTransferForDownload = async (
 	requestedOrganizationId?: string,
 ) => {
 	const targetOrganizationId = await resolveTargetOrganizationId(authUser, requestedOrganizationId);
+	const threshold = getRetentionThreshold();
 
 	const file = await prisma.file.findFirst({
 		where: {
 			id: fileId,
 			organizationId: targetOrganizationId,
+			createdAt: {
+				gte: threshold,
+			},
 			filePath: { contains: CHAT_TRANSFER_MARKER },
 		},
 		select: {
@@ -155,6 +185,31 @@ export const resolveChatTransferForDownload = async (
 	});
 
 	if (!file) {
+		const expired = await prisma.file.findFirst({
+			where: {
+				id: fileId,
+				organizationId: targetOrganizationId,
+				filePath: { contains: CHAT_TRANSFER_MARKER },
+			},
+			select: {
+				id: true,
+				filePath: true,
+			},
+		});
+
+		if (expired) {
+			const absolutePath = path.isAbsolute(expired.filePath)
+				? expired.filePath
+				: path.resolve(process.cwd(), expired.filePath);
+
+			if (isChatTransferFilePath(expired.filePath)) {
+				await fs.unlink(absolutePath).catch(() => undefined);
+			}
+
+			await prisma.file.delete({ where: { id: expired.id } }).catch(() => undefined);
+			throw new ChatFileError(410, "File expired and was permanently deleted");
+		}
+
 		throw new ChatFileError(404, "File not found");
 	}
 
@@ -209,8 +264,13 @@ export const listChatTransferThreads = async (authUser: AuthContext) => {
 		throw new ChatFileError(403, "Only admin can access transfer folders");
 	}
 
+	const threshold = getRetentionThreshold();
+
 	const files = await prisma.file.findMany({
 		where: {
+			createdAt: {
+				gte: threshold,
+			},
 			filePath: {
 				contains: CHAT_TRANSFER_MARKER,
 			},
@@ -283,6 +343,10 @@ export const cleanupExpiredChatTransferFiles = async () => {
 		}
 	}
 
+	cleanupStats.lastRunAt = new Date();
+	cleanupStats.lastDeletedCount = expiredFiles.length;
+	cleanupStats.totalDeletedCount += expiredFiles.length;
+
 	return expiredFiles.length;
 };
 
@@ -293,3 +357,9 @@ export const startChatTransferCleanupJob = () => {
 		void cleanupExpiredChatTransferFiles();
 	}, 60 * 60 * 1000);
 };
+
+export const getChatFileTransferPolicy = () => FILE_TRANSFER_POLICY;
+
+export const getChatTransferCleanupStats = () => ({
+	...cleanupStats,
+});

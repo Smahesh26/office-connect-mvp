@@ -110,6 +110,30 @@ const addDays = (date: Date, days: number): Date => {
 	return result;
 };
 
+const TRIAL_TOTAL_DAYS = 90;
+const TRIAL_REMINDER_WINDOWS = [14, 7, 3, 1, 0] as const;
+const TRIAL_REMINDER_INTERVAL_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const TRIAL_REMINDER_STATE_PATH = path.resolve(process.cwd(), "data", "trial-reminder-state.json");
+
+type TrialReminderWindow = (typeof TRIAL_REMINDER_WINDOWS)[number];
+
+type TrialReminderState = Record<string, string>;
+
+export type TrialReminderSnapshot = {
+	organizationId: string;
+	trialStartsAt: string;
+	trialEndsAt: string;
+	status: "TRIALING" | "EXPIRED" | "ACTIVE" | "NO_SUBSCRIPTION";
+	daysLeft: number;
+	timeLeftMs: number;
+	reminderMessage: string;
+	notificationThresholds: number[];
+	maxUsersDuringTrial: number;
+};
+
+let trialReminderTimer: NodeJS.Timeout | null = null;
+
 const getIntervalDays = (interval: string): number => {
 	const normalized = interval.trim().toLowerCase();
 
@@ -122,6 +146,110 @@ const getIntervalDays = (interval: string): number => {
 	}
 
 	return 30;
+};
+
+const getTrialWindow = (daysLeft: number): TrialReminderWindow | null => {
+	for (const window of TRIAL_REMINDER_WINDOWS) {
+		if (daysLeft <= window) {
+			return window;
+		}
+	}
+
+	return null;
+};
+
+const buildReminderMessage = (daysLeft: number) => {
+	if (daysLeft <= 0) {
+		return "Your 90-day trial has expired. Add billing details now to avoid service interruption.";
+	}
+
+	return `Reminder: your 90-day trial ends in ${daysLeft} day${daysLeft === 1 ? "" : "s"}.`;
+};
+
+const readTrialReminderState = async (): Promise<TrialReminderState> => {
+	try {
+		const content = await fs.readFile(TRIAL_REMINDER_STATE_PATH, "utf8");
+		const parsed = JSON.parse(content) as TrialReminderState;
+		return parsed;
+	} catch {
+		return {};
+	}
+};
+
+const writeTrialReminderState = async (state: TrialReminderState): Promise<void> => {
+	const dirPath = path.dirname(TRIAL_REMINDER_STATE_PATH);
+	await fs.mkdir(dirPath, { recursive: true });
+	await fs.writeFile(TRIAL_REMINDER_STATE_PATH, JSON.stringify(state, null, 2));
+};
+
+const sendResendReminderEmail = async (input: {
+	recipients: string[];
+	subject: string;
+	body: string;
+}): Promise<boolean> => {
+	const apiKey = process.env.RESEND_API_KEY;
+	const fromAddress = process.env.TRIAL_REMINDER_FROM_EMAIL;
+
+	if (!apiKey || !fromAddress || input.recipients.length === 0) {
+		return false;
+	}
+
+	const response = await fetch("https://api.resend.com/emails", {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${apiKey}`,
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({
+			from: fromAddress,
+			to: input.recipients,
+			subject: input.subject,
+			text: input.body,
+		}),
+	});
+
+	return response.ok;
+};
+
+const postReminderWebhook = async (payload: {
+	organizationId: string;
+	organizationName: string;
+	subscriptionId: string;
+	daysLeft: number;
+	reminderMessage: string;
+	recipients: string[];
+	trialEndsAt: string;
+}): Promise<boolean> => {
+	const webhookUrl = process.env.TRIAL_REMINDER_WEBHOOK_URL;
+	if (!webhookUrl) {
+		return false;
+	}
+
+	const response = await fetch(webhookUrl, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(payload),
+	});
+
+	return response.ok;
+};
+
+const sanitizeRecipients = (emails: Array<string | null | undefined>) => {
+	const unique = new Set<string>();
+	for (const email of emails) {
+		if (!email) {
+			continue;
+		}
+		const normalized = email.trim().toLowerCase();
+		if (!normalized) {
+			continue;
+		}
+		unique.add(normalized);
+	}
+
+	return Array.from(unique);
 };
 
 const getRequiredEnv = (name: string): string => {
@@ -316,7 +444,7 @@ export const createSubscription = async (organizationId: string, planId: string)
 	}
 
 	const now = new Date();
-	const currentPeriodEnd = addDays(now, 30);
+	const currentPeriodEnd = addDays(now, TRIAL_TOTAL_DAYS);
 
 	return prisma.subscription.create({
 		data: {
@@ -328,6 +456,164 @@ export const createSubscription = async (organizationId: string, planId: string)
 			cancelAtPeriodEnd: false,
 		},
 	});
+};
+
+export const getOrganizationTrialReminderSnapshot = async (organizationId: string): Promise<TrialReminderSnapshot> => {
+	const organization = await prisma.organization.findUnique({
+		where: { id: organizationId },
+		select: {
+			id: true,
+			createdAt: true,
+			subscriptions: {
+				orderBy: { createdAt: "desc" },
+				take: 1,
+				select: {
+					status: true,
+					currentPeriodStart: true,
+					currentPeriodEnd: true,
+				},
+			},
+		},
+	});
+
+	if (!organization) {
+		throw new HttpError(404, "Organization not found");
+	}
+
+	const activeSubscription = organization.subscriptions[0];
+	const trialStartsAt = activeSubscription?.currentPeriodStart ?? organization.createdAt;
+	const trialEndsAt = activeSubscription?.currentPeriodEnd ?? addDays(trialStartsAt, TRIAL_TOTAL_DAYS);
+	const timeLeftMs = trialEndsAt.getTime() - Date.now();
+	const daysLeft = Math.max(0, Math.ceil(timeLeftMs / DAY_MS));
+
+	const status: TrialReminderSnapshot["status"] =
+		activeSubscription?.status === "ACTIVE"
+			? "ACTIVE"
+			: activeSubscription?.status === "TRIALING"
+				? timeLeftMs <= 0
+					? "EXPIRED"
+					: "TRIALING"
+				: activeSubscription
+					? "EXPIRED"
+					: "NO_SUBSCRIPTION";
+
+	const reminderMessage =
+		status === "ACTIVE"
+			? "Your subscription is active. Trial reminders are paused."
+			: status === "EXPIRED"
+				? buildReminderMessage(0)
+				: buildReminderMessage(daysLeft);
+
+	return {
+		organizationId,
+		trialStartsAt: trialStartsAt.toISOString(),
+		trialEndsAt: trialEndsAt.toISOString(),
+		status,
+		daysLeft,
+		timeLeftMs: Math.max(0, timeLeftMs),
+		reminderMessage,
+		notificationThresholds: [...TRIAL_REMINDER_WINDOWS],
+		maxUsersDuringTrial: 4,
+	};
+};
+
+export const dispatchTrialReminderNotifications = async () => {
+	const subscriptions = await prisma.subscription.findMany({
+		where: {
+			status: "TRIALING",
+		},
+		select: {
+			id: true,
+			currentPeriodEnd: true,
+			organization: {
+				select: {
+					id: true,
+					name: true,
+					supportEmail: true,
+					users: {
+						select: {
+							email: true,
+						},
+						take: 10,
+					},
+				},
+			},
+		},
+	});
+
+	const now = new Date();
+	const state = await readTrialReminderState();
+	let notificationsTriggered = 0;
+
+	for (const subscription of subscriptions) {
+		const timeLeftMs = subscription.currentPeriodEnd.getTime() - now.getTime();
+		const daysLeft = Math.max(0, Math.ceil(timeLeftMs / DAY_MS));
+		const reminderWindow = getTrialWindow(daysLeft);
+		if (reminderWindow === null) {
+			continue;
+		}
+
+		const reminderKey = `${subscription.id}:${reminderWindow}`;
+		if (state[reminderKey]) {
+			continue;
+		}
+
+		const recipients = sanitizeRecipients([
+			subscription.organization.supportEmail,
+			...subscription.organization.users.map((user) => user.email),
+		]);
+
+		const reminderMessage = buildReminderMessage(daysLeft);
+		const subject =
+			daysLeft <= 0
+				? `${subscription.organization.name}: Trial expired`
+				: `${subscription.organization.name}: Trial expires in ${daysLeft} day${daysLeft === 1 ? "" : "s"}`;
+
+		const emailSent = await sendResendReminderEmail({
+			recipients,
+			subject,
+			body: `${reminderMessage}\n\nOrganization: ${subscription.organization.name}\nTrial end: ${subscription.currentPeriodEnd.toISOString()}`,
+		});
+
+		const webhookSent = await postReminderWebhook({
+			organizationId: subscription.organization.id,
+			organizationName: subscription.organization.name,
+			subscriptionId: subscription.id,
+			daysLeft,
+			reminderMessage,
+			recipients,
+			trialEndsAt: subscription.currentPeriodEnd.toISOString(),
+		});
+
+		if (!emailSent && !webhookSent) {
+			console.log(
+				`[trial-reminder] ${subscription.organization.name}: ${reminderMessage} (no email/webhook configured)`
+			);
+		}
+
+		state[reminderKey] = now.toISOString();
+		notificationsTriggered += 1;
+	}
+
+	if (notificationsTriggered > 0) {
+		await writeTrialReminderState(state);
+	}
+
+	return {
+		checked: subscriptions.length,
+		notificationsTriggered,
+	};
+};
+
+export const startTrialReminderJob = () => {
+	if (trialReminderTimer) {
+		return;
+	}
+
+	void dispatchTrialReminderNotifications();
+	trialReminderTimer = setInterval(() => {
+		void dispatchTrialReminderNotifications();
+	}, TRIAL_REMINDER_INTERVAL_MS);
 };
 
 export const getOrganizationSubscription = async (organizationId: string) => {

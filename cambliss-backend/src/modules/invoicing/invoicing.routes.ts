@@ -5,8 +5,6 @@ import { requireActiveSubscription } from "../../middleware/subscription.middlew
 import {
 	cancelInvoiceController,
 	createCreditNoteController,
-	createInvoiceDraftFromOrderController,
-	createInvoiceFromEcommerceOrderController,
 	createInvoiceFromPOSOrderController,
 	createManualInvoiceController,
 	generateInvoicePDFController,
@@ -20,8 +18,6 @@ const invoicingRouter = Router();
 invoicingRouter.use(authenticateJWT, requireActiveSubscription, moduleGuard("ACCOUNTING"));
 
 invoicingRouter.post("/manual", createManualInvoiceController);
-invoicingRouter.post("/draft-from-order", createInvoiceDraftFromOrderController);
-invoicingRouter.post("/from-ecommerce-order", createInvoiceFromEcommerceOrderController);
 invoicingRouter.post("/from-pos-order", createInvoiceFromPOSOrderController);
 invoicingRouter.post("/credit-note", createCreditNoteController);
 invoicingRouter.post("/cancel", cancelInvoiceController);

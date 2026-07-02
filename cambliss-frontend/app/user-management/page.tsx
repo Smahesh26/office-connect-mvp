@@ -26,11 +26,7 @@ const accessOptions = [
 	{ key: "CRM", label: "CRM" },
 	{ key: "HRM", label: "HRM" },
 	{ key: "INVENTORY", label: "Inventory" },
-	{ key: "ECOMMERCE", label: "Ecommerce" },
-	{ key: "CHAT", label: "Chat" },
 	{ key: "FILE_SHARING", label: "File Sharing" },
-	{ key: "PROJECT_TRACKING", label: "Project Tracking" },
-	{ key: "USER_MANAGEMENT", label: "User Management" },
 ] as const;
 
 export default function UserManagementPage() {
@@ -52,7 +48,7 @@ export default function UserManagementPage() {
 	const [email, setEmail] = useState("");
 	const [phone, setPhone] = useState("");
 	const [role, setRole] = useState<ManagedRole>("EMPLOYEE");
-	const [accesses, setAccesses] = useState<string[]>(["CRM", "CHAT", "FILE_SHARING", "PROJECT_TRACKING"]);
+	const [accesses, setAccesses] = useState<string[]>(["CRM", "HRM", "INVENTORY", "FILE_SHARING"]);
 
 	const getAuthHeaders = (): Headers => {
 		const headers = new Headers();
@@ -257,7 +253,7 @@ export default function UserManagementPage() {
 			setEmail("");
 			setPhone("");
 			setRole("EMPLOYEE");
-			setAccesses(["CRM", "CHAT", "FILE_SHARING", "PROJECT_TRACKING"]);
+			setAccesses(["CRM", "HRM", "INVENTORY", "FILE_SHARING"]);
 
 			const createdEmail = data?.user?.email || "";
 			const tempPassword = data?.tempPassword || "";
@@ -305,7 +301,7 @@ export default function UserManagementPage() {
 		<WorkspaceShell>
 			<div className="mt-5 rounded-2xl border border-zinc-200 bg-gradient-to-br from-white via-zinc-50 to-zinc-100 p-6 shadow-[0_24px_56px_-30px_rgba(0,0,0,0.85)]">
 				<h1 className="text-2xl font-semibold tracking-tight text-zinc-900">User Management</h1>
-				<p className="mt-1 text-sm text-zinc-600">First plan allows maximum 5 users in your organization. Add email, phone, role, and access rights.</p>
+				<p className="mt-1 text-sm text-zinc-600">The trial allows a maximum of 4 users per organization. Add email, phone, role, and access rights.</p>
 				<p className="mt-1 text-xs text-zinc-500">Managed users will not get Order History menu access.</p>
 				<div className="mt-3">
 					<button
@@ -356,7 +352,7 @@ export default function UserManagementPage() {
 					</form>
 
 					<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-						<p className="text-sm font-semibold text-zinc-900">Organization Users ({users.length}/5)</p>
+						<p className="text-sm font-semibold text-zinc-900">Organization Users ({users.length}/4)</p>
 						{loading ? (
 							<p className="mt-2 text-xs text-zinc-500">Loading users...</p>
 						) : (

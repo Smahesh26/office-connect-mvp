@@ -3,11 +3,18 @@ import request from "supertest";
 import express, { Express } from "express";
 import prisma from "../../config/prisma";
 import ewayRoutes from "./eway.routes";
+import { RoleName } from "../../generated/prisma/enums";
 
 const app: Express = express();
+let activeOrgId = "test-org-id";
 app.use(express.json());
 app.use((req, res, next) => {
-	(req as any).user = { organizationId: "test-org-id" };
+	(req as any).user = {
+		id: "test-user-id",
+		email: "tester@example.com",
+		organizationId: activeOrgId,
+		role: RoleName.ADMIN,
+	};
 	next();
 });
 app.use("/gst", ewayRoutes);
@@ -27,12 +34,7 @@ describe("E-Way Bill API Routes", () => {
 			},
 		});
 		testOrgId = org.id;
-
-		// Update middleware to use actual org ID
-		app.use((req, res, next) => {
-			(req as any).user = { organizationId: testOrgId };
-			next();
-		});
+		activeOrgId = testOrgId;
 
 		// Create GST Config
 		await prisma.gSTConfig.create({

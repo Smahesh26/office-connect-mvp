@@ -17,11 +17,21 @@ describe("GSTR-3B Summary Generation", () => {
 			},
 		});
 		testOrgId = org.id;
+
+		await prisma.contact.createMany({
+			data: [
+				{ id: "cust-0", organizationId: testOrgId, type: "CUSTOMER", firstName: "Cust", lastName: "Zero", email: "cust0@test.com" },
+				{ id: "cust-1", organizationId: testOrgId, type: "CUSTOMER", firstName: "Cust", lastName: "One", email: "cust1@test.com" },
+				{ id: "cust-2", organizationId: testOrgId, type: "CUSTOMER", firstName: "Cust", lastName: "Two", email: "cust2@test.com" },
+			],
+			skipDuplicates: true,
+		});
 	});
 
 	afterAll(async () => {
 		// Cleanup
 		await prisma.invoice.deleteMany({ where: { organizationId: testOrgId } });
+		await prisma.contact.deleteMany({ where: { organizationId: testOrgId } });
 		await prisma.organization.delete({ where: { id: testOrgId } });
 	});
 
@@ -393,10 +403,32 @@ describe("GSTR-3B Summary Generation", () => {
 
 			const summary = await generateGSTR3BSummary(testOrgId, 9, 2026);
 
-			// Check all values are properly rounded
-			const json = JSON.stringify(summary);
-			const regex = /\d+\.\d{3,}/; // Match numbers with 3+ decimal places
-			expect(regex.test(json)).toBe(false);
+			// Check monetary values are rounded to <= 2 decimal places.
+			const monetaryValues = [
+				summary.outputGST.cgst,
+				summary.outputGST.sgst,
+				summary.outputGST.igst,
+				summary.outputGST.total,
+				summary.inputGST.cgst,
+				summary.inputGST.sgst,
+				summary.inputGST.igst,
+				summary.inputGST.total,
+				summary.netPayable.cgst,
+				summary.netPayable.sgst,
+				summary.netPayable.igst,
+				summary.netPayable.total,
+				summary.itcCarryForward.cgst,
+				summary.itcCarryForward.sgst,
+				summary.itcCarryForward.igst,
+				summary.itcCarryForward.total,
+				summary.metadata.totalOutputValue,
+				summary.metadata.totalInputValue,
+			];
+
+			for (const value of monetaryValues) {
+				const decimalPart = String(value).split(".")[1] ?? "";
+				expect(decimalPart.length).toBeLessThanOrEqual(2);
+			}
 		});
 
 		it("should handle zero tax amounts", async () => {
