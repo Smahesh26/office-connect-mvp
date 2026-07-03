@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, RoleName, SubscriptionStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { Pool } from "pg";
 
 const getRequiredEnv = (name: string): string => {
@@ -17,11 +18,35 @@ const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const ORG_NAME = "Cambliss Global Dashboard";
-const ADMIN_EMAIL = "global.admin@cambliss.local";
-const CLIENT_EMAIL = "global.client@cambliss.local";
-const ADMIN_PASSWORD = "Pass@123";
-const CLIENT_PASSWORD = "Pass@123";
+const getOptionalEnv = (name: string): string | null => {
+  const value = process.env[name]?.trim();
+  return value ? value : null;
+};
+
+const generateStrongPassword = (): string => {
+  const token = crypto.randomBytes(18).toString("base64url");
+  return `Oc_${token}_9!`;
+};
+
+const assertSafeCredentialInput = (email: string, password: string) => {
+  if (email.endsWith(".local")) {
+    throw new Error("Refusing to create a production-style test user with a .local email address");
+  }
+
+  if (password === "Pass@123") {
+    throw new Error("Refusing to use weak default password Pass@123");
+  }
+
+  if (password.length < 12) {
+    throw new Error("Password must be at least 12 characters");
+  }
+};
+
+const ORG_NAME = getOptionalEnv("TEST_ORG_NAME") || "Cambliss Global Dashboard";
+const ADMIN_EMAIL = getOptionalEnv("TEST_ADMIN_EMAIL");
+const CLIENT_EMAIL = getOptionalEnv("TEST_CLIENT_EMAIL");
+const ADMIN_PASSWORD = getOptionalEnv("TEST_ADMIN_PASSWORD") || generateStrongPassword();
+const CLIENT_PASSWORD = getOptionalEnv("TEST_CLIENT_PASSWORD") || generateStrongPassword();
 
 const ensureRole = async (name: RoleName) => {
   const existing = await prisma.role.findUnique({ where: { name } });
@@ -68,6 +93,10 @@ const ensureUser = async (params: {
 };
 
 async function main() {
+  if (!ADMIN_EMAIL && !CLIENT_EMAIL) {
+    throw new Error("Provide TEST_ADMIN_EMAIL and/or TEST_CLIENT_EMAIL before running this script");
+  }
+
   const organization =
     (await prisma.organization.findFirst({ where: { name: ORG_NAME } })) ??
     (await prisma.organization.create({ data: { name: ORG_NAME } }));
@@ -77,52 +106,67 @@ async function main() {
     ensureRole(RoleName.CLIENT),
   ]);
 
-  const [adminUser, clientUser] = await Promise.all([
-    ensureUser({
-      email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
-      firstName: "Global",
-      lastName: "Admin",
-      organizationId: organization.id,
-    }),
-    ensureUser({
-      email: CLIENT_EMAIL,
-      password: CLIENT_PASSWORD,
-      firstName: "Global",
-      lastName: "Client",
-      organizationId: organization.id,
-    }),
-  ]);
+  const adminUserPromise = ADMIN_EMAIL
+    ? (() => {
+        assertSafeCredentialInput(ADMIN_EMAIL, ADMIN_PASSWORD);
+        return ensureUser({
+          email: ADMIN_EMAIL,
+          password: ADMIN_PASSWORD,
+          firstName: "Global",
+          lastName: "Admin",
+          organizationId: organization.id,
+        });
+      })()
+    : Promise.resolve(null);
+
+  const clientUserPromise = CLIENT_EMAIL
+    ? (() => {
+        assertSafeCredentialInput(CLIENT_EMAIL, CLIENT_PASSWORD);
+        return ensureUser({
+          email: CLIENT_EMAIL,
+          password: CLIENT_PASSWORD,
+          firstName: "Global",
+          lastName: "Client",
+          organizationId: organization.id,
+        });
+      })()
+    : Promise.resolve(null);
+
+  const [adminUser, clientUser] = await Promise.all([adminUserPromise, clientUserPromise]);
 
   await Promise.all([
-    prisma.organizationUser.upsert({
-      where: {
-        organizationId_userId: {
-          organizationId: organization.id,
-          userId: adminUser.id,
-        },
-      },
-      update: { roleId: adminRole.id },
-      create: {
-        organizationId: organization.id,
-        userId: adminUser.id,
-        roleId: adminRole.id,
-      },
-    }),
-    prisma.organizationUser.upsert({
-      where: {
-        organizationId_userId: {
-          organizationId: organization.id,
-          userId: clientUser.id,
-        },
-      },
-      update: { roleId: clientRole.id },
-      create: {
-        organizationId: organization.id,
-        userId: clientUser.id,
-        roleId: clientRole.id,
-      },
-    }),
+    adminUser
+      ? prisma.organizationUser.upsert({
+          where: {
+            organizationId_userId: {
+              organizationId: organization.id,
+              userId: adminUser.id,
+            },
+          },
+          update: { roleId: adminRole.id },
+          create: {
+            organizationId: organization.id,
+            userId: adminUser.id,
+            roleId: adminRole.id,
+          },
+        })
+      : Promise.resolve(null),
+    clientUser
+      ? prisma.organizationUser.upsert({
+          where: {
+            organizationId_userId: {
+              organizationId: organization.id,
+              userId: clientUser.id,
+            },
+          },
+          update: { roleId: clientRole.id },
+          create: {
+            organizationId: organization.id,
+            userId: clientUser.id,
+            roleId: clientRole.id,
+          },
+        })
+      : Promise.resolve(null),
   ]);
 
   const activePlan =
@@ -171,8 +215,12 @@ async function main() {
   }
 
   console.log("Global dashboard users are ready:");
-  console.log(`Admin: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
-  console.log(`Client: ${CLIENT_EMAIL} / ${CLIENT_PASSWORD}`);
+  if (ADMIN_EMAIL) {
+    console.log(`Admin: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
+  }
+  if (CLIENT_EMAIL) {
+    console.log(`Client: ${CLIENT_EMAIL} / ${CLIENT_PASSWORD}`);
+  }
 }
 
 main()
