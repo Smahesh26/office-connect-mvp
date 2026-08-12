@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import WorkspaceShell from "../../components/WorkspaceShell";
+import * as XLSX from "xlsx";
 
 type CrmDashboard = {
 	totalLeads: number;
@@ -1019,11 +1020,8 @@ export default function CrmPage() {
 		const file = e.target.files?.[0];
 		if (!file) return;
 		setImportFile(file);
-		
-		const reader = new FileReader();
-		reader.onload = (event) => {
-			const text = event.target?.result as string;
-			const { headers, rows } = parseCSV(text);
+
+		const processParsedData = (headers: string[], rows: Record<string, string>[]) => {
 			setImportHeaders(headers);
 			setImportData(rows);
 			
@@ -1038,7 +1036,42 @@ export default function CrmPage() {
 			setColumnMapping(newMapping);
 			setImportStep(3);
 		};
-		reader.readAsText(file);
+
+		if (file.name.toLowerCase().endsWith('.csv')) {
+			const reader = new FileReader();
+			reader.onload = (event) => {
+				const text = event.target?.result as string;
+				const { headers, rows } = parseCSV(text);
+				processParsedData(headers, rows);
+			};
+			reader.readAsText(file);
+		} else if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
+			const reader = new FileReader();
+			reader.onload = (event) => {
+				const data = new Uint8Array(event.target?.result as ArrayBuffer);
+				const workbook = XLSX.read(data, { type: 'array' });
+				const firstSheetName = workbook.SheetNames[0];
+				const worksheet = workbook.Sheets[firstSheetName];
+				const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" }) as Record<string, any>[];
+				
+				if (jsonRows.length === 0) {
+					processParsedData([], []);
+					return;
+				}
+				
+				const headers = Object.keys(jsonRows[0]);
+				const rows = jsonRows.map(row => {
+					const newRow: Record<string, string> = {};
+					headers.forEach(h => {
+						newRow[h] = String(row[h] || "");
+					});
+					return newRow;
+				});
+				
+				processParsedData(headers, rows);
+			};
+			reader.readAsArrayBuffer(file);
+		}
 	};
 
 	const downloadSample = () => {
@@ -1177,11 +1210,11 @@ export default function CrmPage() {
 								</div>
 								
 								<div className="border-2 border-dashed border-zinc-300 rounded-xl p-8 text-center hover:bg-zinc-50 transition relative">
-									<input type="file" accept=".csv" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+									<input type="file" accept=".csv, .xlsx, .xls" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
 									<svg className="mx-auto h-12 w-12 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
 									</svg>
-									<p className="mt-4 text-sm text-zinc-600 font-medium">Click or drag CSV file to this area to upload</p>
+									<p className="mt-4 text-sm text-zinc-600 font-medium">Click or drag CSV or Excel file to this area to upload</p>
 								</div>
 								<div className="flex justify-between pt-4">
 									<button onClick={() => setImportStep(1)} className="text-zinc-600 font-semibold px-4 py-2 hover:bg-zinc-100 rounded-lg">Back</button>
