@@ -5,7 +5,9 @@ import {
 	clearMyOrganizationController,
 	getMyOrganizationOnboardingController,
 	loginController,
+	logoutController,
 	meController,
+	getSsoTokenController,
 	registerController,
 	sendRegisterOtpController,
 	verifyFirebasePhoneController,
@@ -22,7 +24,9 @@ authRouter.post("/register/otp/send", authRateLimit, sendRegisterOtpController);
 authRouter.post("/register/otp/verify", authRateLimit, verifyRegisterOtpController);
 authRouter.post("/register/firebase/verify", authRateLimit, verifyFirebasePhoneController);
 authRouter.post("/login", authRateLimit, loginController);
+authRouter.post("/logout", logoutController);
 authRouter.get("/me", authenticateJWT, meController);
+authRouter.get("/sso-token", authenticateJWT, getSsoTokenController);
 authRouter.put("/me/organization", authenticateJWT, updateMyOrganizationController);
 authRouter.delete("/me/organization", authenticateJWT, clearMyOrganizationController);
 authRouter.get("/me/onboarding", authenticateJWT, getMyOrganizationOnboardingController);

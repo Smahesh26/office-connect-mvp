@@ -45,6 +45,19 @@ const extractBearerToken = (authorizationHeader) => {
     }
     return token;
 };
+// A usable token is a non-empty string that is not a stringified null/undefined,
+// which stale frontend `Bearer ${null}` headers can produce.
+const isUsableToken = (value) => typeof value === "string" && value.length > 0 && value !== "null" && value !== "undefined";
+// Collects candidate JWTs from both transports (Authorization header and the
+// httpOnly cookie) so either can authenticate the request.
+const resolveTokenCandidates = (req) => {
+    var _a;
+    const candidates = [
+        extractBearerToken(req.headers.authorization),
+        (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.authToken,
+    ];
+    return candidates.filter(isUsableToken);
+};
 const isAuthenticatedUser = (decoded) => {
     if (typeof decoded !== "object" || decoded === null) {
         return false;
@@ -61,8 +74,8 @@ const authenticateJWT = (req, res, next) => {
             next();
             return;
         }
-        const token = extractBearerToken(req.headers.authorization);
-        if (!token) {
+        const candidates = resolveTokenCandidates(req);
+        if (candidates.length === 0) {
             res.status(401).json({ message: "Unauthorized: Invalid or missing token" });
             return;
         }
@@ -71,13 +84,23 @@ const authenticateJWT = (req, res, next) => {
             res.status(500).json({ message: "Internal server error" });
             return;
         }
-        const decoded = jsonwebtoken_1.default.verify(token, jwtSecret);
-        if (!isAuthenticatedUser(decoded)) {
-            res.status(401).json({ message: "Unauthorized: Invalid token payload" });
-            return;
+        let lastError = null;
+        for (const token of candidates) {
+            try {
+                const decoded = jsonwebtoken_1.default.verify(token, jwtSecret);
+                if (!isAuthenticatedUser(decoded)) {
+                    lastError = new jsonwebtoken_1.JsonWebTokenError("Invalid token payload");
+                    continue;
+                }
+                req.user = decoded;
+                next();
+                return;
+            }
+            catch (error) {
+                lastError = error;
+            }
         }
-        req.user = decoded;
-        next();
+        throw lastError !== null && lastError !== void 0 ? lastError : new jsonwebtoken_1.JsonWebTokenError("Invalid token");
     }
     catch (error) {
         if (error instanceof jsonwebtoken_1.TokenExpiredError) {

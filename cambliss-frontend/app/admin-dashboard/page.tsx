@@ -38,6 +38,45 @@ type Plan = {
 	createdAt?: string;
 };
 
+type Organization = {
+	id: string;
+	name: string;
+	createdAt: string;
+	supportEmail: string | null;
+	_count: { users: number };
+	subscriptions: {
+		status: string;
+		plan: { name: string };
+	}[];
+};
+
+type GlobalAnalytics = {
+	totalOrganizations: number;
+	totalUsers: number;
+	totalDeals: number;
+	totalEmployees: number;
+	totalOrders: number;
+	totalProducts: number;
+	totalFiles: number;
+	activeSubscriptions: number;
+};
+
+type PaymentHistory = {
+	id: string;
+	amount: string;
+	currency: string;
+	status: string;
+	paidAt: string;
+	subscription: {
+		organization: {
+			name: string;
+		};
+		plan: {
+			name: string;
+		};
+	};
+};
+
 type PlanForm = {
 	name: string;
 	description: string;
@@ -62,8 +101,16 @@ const initialForm: PlanForm = {
 
 export default function AdminDashboardPage() {
 	const router = useRouter();
+	const [activeTab, setActiveTab] = useState<"ANALYTICS" | "PLANS" | "CLIENTS" | "ORDER_HISTORY">("ANALYTICS");
 	const [plans, setPlans] = useState<Plan[]>([]);
+	const [organizations, setOrganizations] = useState<Organization[]>([]);
+	const [analytics, setAnalytics] = useState<GlobalAnalytics | null>(null);
+	const [orderHistory, setOrderHistory] = useState<PaymentHistory[]>([]);
+	
 	const [loading, setLoading] = useState(true);
+	const [loadingOrgs, setLoadingOrgs] = useState(false);
+	const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+	const [loadingOrders, setLoadingOrders] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -89,7 +136,7 @@ export default function AdminDashboardPage() {
 		}
 	}, []);
 
-	const canAccessAdmin = authContext.role === "SUPER_ADMIN" || authContext.role === "ADMIN";
+	const canAccessAdmin = authContext.role === "SUPER_ADMIN";
 
 	const fetchPlans = async () => {
 		if (!authContext.token) {
@@ -125,6 +172,65 @@ export default function AdminDashboardPage() {
 		}
 	};
 
+	const fetchOrganizations = async () => {
+		if (!authContext.token) return;
+		try {
+			setLoadingOrgs(true);
+			const response = await fetch("/api/admin/organizations", {
+				headers: { Authorization: `Bearer ${authContext.token}` },
+			});
+			const raw = await response.text();
+			const data = raw ? (JSON.parse(raw) as Organization[]) : [];
+			if (response.ok && Array.isArray(data)) {
+				setOrganizations(data);
+			} else {
+				setOrganizations([]);
+			}
+		} catch {
+			setOrganizations([]);
+		} finally {
+			setLoadingOrgs(false);
+		}
+	};
+
+	const fetchAnalytics = async () => {
+		if (!authContext.token) return;
+		try {
+			setLoadingAnalytics(true);
+			const response = await fetch("/api/admin/analytics", {
+				headers: { Authorization: `Bearer ${authContext.token}` },
+			});
+			const data = await response.json();
+			if (response.ok) {
+				setAnalytics(data);
+			}
+		} catch {
+			// ignore
+		} finally {
+			setLoadingAnalytics(false);
+		}
+	};
+
+	const fetchOrderHistory = async () => {
+		if (!authContext.token) return;
+		try {
+			setLoadingOrders(true);
+			const response = await fetch("/api/admin/order-history", {
+				headers: { Authorization: `Bearer ${authContext.token}` },
+			});
+			const data = await response.json();
+			if (response.ok && Array.isArray(data)) {
+				setOrderHistory(data);
+			} else {
+				setOrderHistory([]);
+			}
+		} catch {
+			setOrderHistory([]);
+		} finally {
+			setLoadingOrders(false);
+		}
+	};
+
 	useEffect(() => {
 		if (!authContext.token) {
 			router.replace("/login");
@@ -136,8 +242,16 @@ export default function AdminDashboardPage() {
 			return;
 		}
 
-		void fetchPlans();
-	}, [authContext.token, canAccessAdmin, router]);
+		if (activeTab === "PLANS") {
+			void fetchPlans();
+		} else if (activeTab === "CLIENTS") {
+			void fetchOrganizations();
+		} else if (activeTab === "ANALYTICS") {
+			void fetchAnalytics();
+		} else if (activeTab === "ORDER_HISTORY") {
+			void fetchOrderHistory();
+		}
+	}, [authContext.token, canAccessAdmin, router, activeTab]);
 
 	const resetForm = () => {
 		setForm(initialForm);
@@ -255,29 +369,109 @@ export default function AdminDashboardPage() {
 		}
 	};
 
+	const toggleOrganizationStatus = async (orgId: string, isSuspended: boolean) => {
+		const action = isSuspended ? "activate" : "suspend";
+		if (!window.confirm(`Are you sure you want to ${action} this organization?`)) return;
+
+		try {
+			await fetch(`/api/admin/organizations/${orgId}/${action}`, {
+				method: "POST",
+				headers: { Authorization: `Bearer ${authContext.token}` },
+			});
+			await fetchOrganizations();
+		} catch {
+			alert(`Failed to ${action} organization`);
+		}
+	};
+
 	return (
 		<WorkspaceShell>
 			<div className="mt-5 space-y-5">
 				<div className="rounded-2xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50 p-5 shadow-lg shadow-zinc-200/60 ring-1 ring-white/70">
-					<h1 className="text-2xl font-semibold">Admin Dashboard</h1>
-					<p className="mt-1 text-sm text-zinc-600">Manage subscription plans and publish pricing updates for client dashboards.</p>
-					<div className="mt-3 rounded-xl border border-zinc-200 bg-white p-3">
-						<p className="text-xs font-semibold text-zinc-900">CRM Usage Steps (Share with Client)</p>
-						<ol className="mt-1 list-decimal space-y-1 pl-4 text-xs text-zinc-600">
-							<li>Client creates lead in Sales Execution.</li>
-							<li>Client clicks Use in Deal from Lead List.</li>
-							<li>Client selects contact, pipeline, stage and creates deal.</li>
-							<li>Client updates deal stage and checks history.</li>
-							<li>Client uses Service, Marketing and Integrations tabs.</li>
-						</ol>
+					<h1 className="text-2xl font-semibold">Platform Management</h1>
+					<p className="mt-1 text-sm text-zinc-600">Super Admin control center for managing clients and subscription plans.</p>
+					
+					<div className="mt-5 flex gap-4 border-b border-zinc-200 pb-2 overflow-x-auto">
+						<button
+							onClick={() => setActiveTab("ANALYTICS")}
+							className={`text-sm font-semibold pb-2 border-b-2 whitespace-nowrap transition ${activeTab === "ANALYTICS" ? "border-brand-strong text-brand-strong" : "border-transparent text-zinc-500 hover:text-zinc-800"}`}
+						>
+							Global Analytics
+						</button>
+						<button
+							onClick={() => setActiveTab("PLANS")}
+							className={`text-sm font-semibold pb-2 border-b-2 whitespace-nowrap transition ${activeTab === "PLANS" ? "border-brand-strong text-brand-strong" : "border-transparent text-zinc-500 hover:text-zinc-800"}`}
+						>
+							Pricing Plans
+						</button>
+						<button
+							onClick={() => setActiveTab("CLIENTS")}
+							className={`text-sm font-semibold pb-2 border-b-2 whitespace-nowrap transition ${activeTab === "CLIENTS" ? "border-brand-strong text-brand-strong" : "border-transparent text-zinc-500 hover:text-zinc-800"}`}
+						>
+							Clients (Tenants)
+						</button>
+						<button
+							onClick={() => setActiveTab("ORDER_HISTORY")}
+							className={`text-sm font-semibold pb-2 border-b-2 whitespace-nowrap transition ${activeTab === "ORDER_HISTORY" ? "border-brand-strong text-brand-strong" : "border-transparent text-zinc-500 hover:text-zinc-800"}`}
+						>
+							Order History
+						</button>
 					</div>
 				</div>
 
 				{!canAccessAdmin ? (
 					<div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-lg shadow-zinc-200/60 ring-1 ring-white/70">
-						You don&apos;t have admin privileges to manage plans.
+						You don&apos;t have admin privileges to manage the platform.
 					</div>
-				) : (
+				) : activeTab === "ANALYTICS" ? (
+					<div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg shadow-zinc-200/60 ring-1 ring-white/70">
+						<div className="mb-4 flex items-center justify-between gap-3">
+							<h2 className="text-lg font-semibold">Platform Analytics</h2>
+							<button
+								onClick={() => void fetchAnalytics()}
+								className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+							>
+								Refresh
+							</button>
+						</div>
+						{loadingAnalytics ? (
+							<p className="text-sm text-zinc-500">Loading analytics...</p>
+						) : analytics ? (
+							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+								<div className="rounded-xl border border-zinc-200 p-4">
+									<p className="text-sm text-zinc-500">Total Organizations</p>
+									<p className="text-2xl font-bold text-zinc-900">{analytics.totalOrganizations}</p>
+								</div>
+								<div className="rounded-xl border border-zinc-200 p-4">
+									<p className="text-sm text-zinc-500">Total Users</p>
+									<p className="text-2xl font-bold text-zinc-900">{analytics.totalUsers}</p>
+								</div>
+								<div className="rounded-xl border border-zinc-200 p-4">
+									<p className="text-sm text-zinc-500">Active Subscriptions</p>
+									<p className="text-2xl font-bold text-emerald-600">{analytics.activeSubscriptions}</p>
+								</div>
+								<div className="rounded-xl border border-zinc-200 p-4">
+									<p className="text-sm text-zinc-500">Total CRM Deals</p>
+									<p className="text-2xl font-bold text-zinc-900">{analytics.totalDeals}</p>
+								</div>
+								<div className="rounded-xl border border-zinc-200 p-4">
+									<p className="text-sm text-zinc-500">Total Employees Managed</p>
+									<p className="text-2xl font-bold text-zinc-900">{analytics.totalEmployees}</p>
+								</div>
+								<div className="rounded-xl border border-zinc-200 p-4">
+									<p className="text-sm text-zinc-500">Total Products Inventoried</p>
+									<p className="text-2xl font-bold text-zinc-900">{analytics.totalProducts}</p>
+								</div>
+								<div className="rounded-xl border border-zinc-200 p-4 md:col-span-2 lg:col-span-1">
+									<p className="text-sm text-zinc-500">Total Files Shared</p>
+									<p className="text-2xl font-bold text-zinc-900">{analytics.totalFiles}</p>
+								</div>
+							</div>
+						) : (
+							<p className="text-sm text-zinc-500">Unable to load analytics.</p>
+						)}
+					</div>
+				) : activeTab === "PLANS" ? (
 					<>
 						<div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg shadow-zinc-200/60 ring-1 ring-white/70">
 							<div className="flex items-center justify-between gap-3">
@@ -435,7 +629,132 @@ export default function AdminDashboardPage() {
 							)}
 						</div>
 					</>
-				)}
+				) : activeTab === "CLIENTS" ? (
+					<div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg shadow-zinc-200/60 ring-1 ring-white/70">
+						<div className="mb-4 flex items-center justify-between gap-3">
+							<h2 className="text-lg font-semibold">Client Organizations</h2>
+							<button
+								onClick={() => void fetchOrganizations()}
+								className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+							>
+								Refresh
+							</button>
+						</div>
+
+						{loadingOrgs ? (
+							<p className="text-sm text-zinc-500">Loading clients...</p>
+						) : organizations.length === 0 ? (
+							<p className="text-sm text-zinc-500">No organizations registered yet.</p>
+						) : (
+							<div className="overflow-x-auto">
+								<table className="w-full text-left text-sm text-zinc-600">
+									<thead className="border-b border-zinc-200 text-xs uppercase text-zinc-500">
+										<tr>
+											<th className="px-4 py-3 font-medium">Organization</th>
+											<th className="px-4 py-3 font-medium">Users</th>
+											<th className="px-4 py-3 font-medium">Active Plan</th>
+											<th className="px-4 py-3 font-medium">Status</th>
+											<th className="px-4 py-3 font-medium text-right">Actions</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-zinc-200">
+										{organizations.map((org) => {
+											const activeSub = org.subscriptions?.find((sub) => sub.status !== "CANCELED");
+											const isSuspended = activeSub?.status === "SUSPENDED";
+											return (
+												<tr key={org.id} className="hover:bg-zinc-50">
+													<td className="px-4 py-3">
+														<p className="font-semibold text-zinc-900">{org.name}</p>
+														<p className="text-xs text-zinc-500">Joined {new Date(org.createdAt).toLocaleDateString()}</p>
+													</td>
+													<td className="px-4 py-3">
+														{org._count?.users || 0}
+													</td>
+													<td className="px-4 py-3">
+														{activeSub ? activeSub.plan.name : "None"}
+													</td>
+													<td className="px-4 py-3">
+														{isSuspended ? (
+															<span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">Suspended</span>
+														) : (
+															<span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">Active</span>
+														)}
+													</td>
+													<td className="px-4 py-3 text-right">
+														<div className="flex justify-end gap-2">
+															<button
+																onClick={() => toggleOrganizationStatus(org.id, isSuspended)}
+																className={`rounded-lg border px-3 py-1 text-xs font-medium ${isSuspended ? "border-emerald-300 text-emerald-700 hover:bg-emerald-50" : "border-red-300 text-red-700 hover:bg-red-50"}`}
+															>
+																{isSuspended ? "Activate" : "Suspend"}
+															</button>
+															<button
+																onClick={() => alert("Impersonation feature coming soon. Support access will be logged securely.")}
+																className="rounded-lg border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+															>
+																Impersonate
+															</button>
+														</div>
+													</td>
+												</tr>
+											);
+										})}
+									</tbody>
+								</table>
+							</div>
+						)}
+					</div>
+				) : activeTab === "ORDER_HISTORY" ? (
+					<div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg shadow-zinc-200/60 ring-1 ring-white/70">
+						<div className="mb-4 flex items-center justify-between gap-3">
+							<h2 className="text-lg font-semibold">Global Order History</h2>
+							<button
+								onClick={() => void fetchOrderHistory()}
+								className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+							>
+								Refresh
+							</button>
+						</div>
+						<div className="overflow-x-auto">
+							<table className="w-full min-w-[600px] text-left text-sm">
+								<thead className="border-b border-zinc-200 text-xs font-semibold text-zinc-500">
+									<tr>
+										<th className="pb-3 pr-4 uppercase">Date</th>
+										<th className="pb-3 pr-4 uppercase">Client</th>
+										<th className="pb-3 pr-4 uppercase">Plan</th>
+										<th className="pb-3 pr-4 uppercase">Amount</th>
+										<th className="pb-3 pr-4 uppercase">Status</th>
+									</tr>
+								</thead>
+								<tbody className="divide-y divide-zinc-100">
+									{loadingOrders ? (
+										<tr>
+											<td colSpan={5} className="py-4 text-center text-zinc-500">Loading order history...</td>
+										</tr>
+									) : orderHistory.length > 0 ? (
+										orderHistory.map((order) => (
+											<tr key={order.id} className="group transition-colors hover:bg-zinc-50/50">
+												<td className="py-3 pr-4 text-zinc-600">{new Date(order.paidAt).toLocaleDateString()}</td>
+												<td className="py-3 pr-4 font-medium text-zinc-900">{order.subscription.organization.name}</td>
+												<td className="py-3 pr-4 text-zinc-600">{order.subscription.plan.name}</td>
+												<td className="py-3 pr-4 font-medium text-zinc-900">{order.amount} {order.currency}</td>
+												<td className="py-3 pr-4">
+													<span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${order.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+														{order.status}
+													</span>
+												</td>
+											</tr>
+										))
+									) : (
+										<tr>
+											<td colSpan={5} className="py-4 text-center text-zinc-500">No order history available.</td>
+										</tr>
+									)}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				) : null}
 			</div>
 		</WorkspaceShell>
 	);

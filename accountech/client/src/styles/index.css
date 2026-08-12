@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { @apply border-line-light; }
+  body { @apply antialiased; font-feature-settings: 'tnum' 1; }
+  ::selection { background-color: theme('colors.brass.light'); color: theme('colors.ink.950'); }
+  :focus-visible { outline: 2px solid theme('colors.brass.DEFAULT'); outline-offset: 2px; }
+}
+
+@layer components {
+  /* Tabular monospace treatment for all monetary figures — the app's signature detail */
+  .num {
+    @apply font-mono tabular-nums;
+  }
+
+  .ledger-total {
+    @apply num text-lg font-semibold border-t-2 border-double border-ink-900 pt-2;
+  }
+
+  .card {
+    @apply bg-white border border-line-light rounded-xl shadow-[0_1px_2px_rgba(11,18,32,0.04)];
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-ink-950 text-paper hover:bg-ink-800;
+  }
+  .btn-brass {
+    @apply btn bg-brass text-ink-950 hover:bg-brass-dark hover:text-paper;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent text-ink-900 hover:bg-ink-950/5 border border-line-light;
+  }
+  .btn-danger {
+    @apply btn bg-ledger-rust text-white hover:bg-ledger-rust/90;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-line-light bg-white px-3 py-2 text-sm text-ink-950 placeholder:text-ink-600/50 focus:border-brass focus:ring-1 focus:ring-brass;
+  }
+  .label {
+    @apply block text-xs font-medium uppercase tracking-wide text-ink-700 mb-1;
+  }
+
+  /* Rubber-stamp style status badge, an accounting-office motif */
+  .stamp {
+    @apply inline-flex items-center gap-1.5 rounded-md border-2 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider;
+    transform: rotate(-1deg);
+  }
+  .stamp-draft { @apply stamp border-ink-600 text-ink-700; }
+  .stamp-sent, .stamp-viewed { @apply stamp border-brass-dark text-brass-dark; }
+  .stamp-paid, .stamp-accepted { @apply stamp border-ledger-green text-ledger-green; }
+  .stamp-partial { @apply stamp border-brass text-brass-dark; }
+  .stamp-overdue, .stamp-declined, .stamp-cancelled { @apply stamp border-ledger-rust text-ledger-rust; }
+  .stamp-expired, .stamp-converted { @apply stamp border-ink-600 text-ink-700; }
+}

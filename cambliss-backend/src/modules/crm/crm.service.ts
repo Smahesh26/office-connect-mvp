@@ -2,6 +2,7 @@ import prisma from "../../config/prisma";
 import { Prisma } from "@prisma/client";
 import { createTransactionWithEntries } from "../accounting/accounting.service";
 import { reduceStockWithDb } from "../inventory/inventory.service";
+import { syncContactToAccountech } from "../../utils/webhook";
 
 export class HttpError extends Error {
 	statusCode: number;
@@ -914,6 +915,9 @@ export const createLead = async (organizationId: string, input: CreateLeadInput)
 			},
 		});
 		contactId = contact.id;
+
+		// Fire webhook asynchronously
+		syncContactToAccountech(contact).catch(console.error);
 	}
 
 	// contactId is now either provided or auto-created

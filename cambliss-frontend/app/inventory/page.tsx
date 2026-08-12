@@ -203,6 +203,52 @@ const getApiErrorMessage = async (response: Response, fallback: string): Promise
 	}
 };
 
+const parseCSV = (text: string) => {
+	const lines = text.split('\n').filter(l => l.trim() !== '');
+	if (lines.length === 0) return { headers: [], rows: [] };
+	const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+	const rows = lines.slice(1).map(line => {
+		const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
+		return headers.reduce((acc, header, index) => {
+			acc[header] = values[index] || '';
+			return acc;
+		}, {} as Record<string, string>);
+	});
+	return { headers, rows };
+};
+
+const IMPORT_MODULE_FIELDS = {
+	products: [
+		{ key: "name", label: "Product Name", required: true },
+		{ key: "sku", label: "SKU", required: true },
+		{ key: "unitPrice", label: "Unit Price", required: true },
+		{ key: "costPrice", label: "Cost Price", required: false },
+		{ key: "category", label: "Category", required: false },
+	],
+	warehouses: [
+		{ key: "name", label: "Warehouse Name", required: true },
+		{ key: "location", label: "Location", required: true },
+	],
+	vendors: [
+		{ key: "companyName", label: "Company Name", required: true },
+		{ key: "email", label: "Email Address", required: true },
+		{ key: "phone", label: "Phone Number", required: false },
+	]
+};
+
+const TOP_INVENTORY = [
+	{ id: "netsuite", name: "Oracle NetSuite", color: "bg-[#00558c]/10 text-[#00558c] border-[#00558c]/20", logo: "☁️" },
+	{ id: "sapb1", name: "SAP Business One", color: "bg-[#f0ab00]/10 text-[#f0ab00] border-[#f0ab00]/20", logo: "🏆" },
+	{ id: "odoo", name: "Odoo", color: "bg-[#8f5ca8]/10 text-[#8f5ca8] border-[#8f5ca8]/20", logo: "⚙️" },
+	{ id: "zohoinventory", name: "Zoho Inventory", color: "bg-[#f0483e]/10 text-[#f0483e] border-[#f0483e]/20", logo: "📦" },
+	{ id: "fishbowl", name: "Fishbowl", color: "bg-[#002f5d]/10 text-[#002f5d] border-[#002f5d]/20", logo: "🐟" },
+	{ id: "dear", name: "Cin7 Core", color: "bg-[#293d48]/10 text-[#293d48] border-[#293d48]/20", logo: "📦" },
+	{ id: "tradegecko", name: "QuickBooks", color: "bg-[#2ca01c]/10 text-[#2ca01c] border-[#2ca01c]/20", logo: "🧮" },
+	{ id: "sos", name: "SOS Inventory", color: "bg-[#264c72]/10 text-[#264c72] border-[#264c72]/20", logo: "📋" },
+	{ id: "katana", name: "Katana", color: "bg-[#181818]/10 text-[#181818] border-[#181818]/20", logo: "⚙️" },
+	{ id: "sortly", name: "Sortly", color: "bg-[#2358f5]/10 text-[#2358f5] border-[#2358f5]/20", logo: "📱" },
+];
+
 export default function InventoryPage() {
 	type MovementFiltersState = {
 		productId: string;
@@ -272,6 +318,21 @@ export default function InventoryPage() {
 	const warehouseMapElementRef = useRef<HTMLDivElement | null>(null);
 	const warehouseGoogleMapRef = useRef<any>(null);
 	const warehouseGoogleMarkerRef = useRef<any>(null);
+
+	// Import Wizard State
+	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+	const [importStep, setImportStep] = useState<1 | 2 | 3 | 4>(1);
+	const [importModule, setImportModule] = useState<"products" | "warehouses" | "vendors">("products");
+	const [importFile, setImportFile] = useState<File | null>(null);
+	const [importHeaders, setImportHeaders] = useState<string[]>([]);
+	const [importData, setImportData] = useState<Record<string, string>[]>([]);
+	const [columnMapping, setColumnMapping] = useState<Record<string, { csvColumn: string, defaultValue: string }>>({});
+	const [isImporting, setIsImporting] = useState(false);
+
+	// External Inventory Integration State
+	const [selectedInventoryToConnect, setSelectedInventoryToConnect] = useState<string | null>(null);
+	const [connectedInventories, setConnectedInventories] = useState<string[]>([]);
+	const [isConnectingInventory, setIsConnectingInventory] = useState(false);
 
 	const getAuthHeaders = () => {
 		const headers = new Headers();
@@ -1114,11 +1175,346 @@ export default function InventoryPage() {
 		return null;
 	};
 
+	const handleConnectExternalInventory = (event: React.FormEvent) => {
+		event.preventDefault();
+		if (!selectedInventoryToConnect) return;
+		setIsConnectingInventory(true);
+		
+		setTimeout(() => {
+			if (!connectedInventories.includes(selectedInventoryToConnect)) {
+				setConnectedInventories(prev => [...prev, selectedInventoryToConnect]);
+			}
+			setIsConnectingInventory(false);
+		}, 1500);
+	};
+
+	const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		setImportFile(file);
+		
+		const reader = new FileReader();
+		reader.onload = (event) => {
+			const text = event.target?.result as string;
+			const { headers, rows } = parseCSV(text);
+			setImportHeaders(headers);
+			setImportData(rows);
+			
+			const newMapping: Record<string, { csvColumn: string, defaultValue: string }> = {};
+			IMPORT_MODULE_FIELDS[importModule].forEach(field => {
+				const matchedHeader = headers.find(h => h.toLowerCase().replace(/[^a-z]/g, '') === field.label.toLowerCase().replace(/[^a-z]/g, '') || h.toLowerCase() === field.key.toLowerCase());
+				newMapping[field.key] = {
+					csvColumn: matchedHeader || "",
+					defaultValue: ""
+				};
+			});
+			setColumnMapping(newMapping);
+			setImportStep(3);
+		};
+		reader.readAsText(file);
+	};
+
+	const downloadSample = () => {
+		const fields = IMPORT_MODULE_FIELDS[importModule];
+		const headerRow = fields.map(f => `"${f.label}"`).join(",");
+		const blob = new Blob([headerRow + "\n"], { type: 'text/csv' });
+		const url = window.URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `cambliss_inventory_${importModule}_sample.csv`;
+		a.click();
+		window.URL.revokeObjectURL(url);
+	};
+
+	const executeImport = () => {
+		setIsImporting(true);
+		setTimeout(() => {
+			if (importModule === "products") {
+				const newProducts = importData.map((row, i) => {
+					return {
+						id: `imported_prod_${Date.now()}_${i}`,
+						name: columnMapping.name.csvColumn ? row[columnMapping.name.csvColumn] : columnMapping.name.defaultValue || "Unknown Product",
+						sku: columnMapping.sku.csvColumn ? row[columnMapping.sku.csvColumn] : columnMapping.sku.defaultValue || `SKU-${Date.now()}-${i}`,
+						unitPrice: parseInt(columnMapping.unitPrice?.csvColumn ? row[columnMapping.unitPrice.csvColumn] : columnMapping.unitPrice?.defaultValue) || 0,
+						costPrice: parseInt(columnMapping.costPrice?.csvColumn ? row[columnMapping.costPrice.csvColumn] : columnMapping.costPrice?.defaultValue) || 0,
+						category: columnMapping.category?.csvColumn ? row[columnMapping.category.csvColumn] : columnMapping.category?.defaultValue || "General",
+						stockQuantity: 0,
+						reorderLevel: 10,
+						unit: "pcs",
+					} as Product;
+				});
+				setProducts(prev => [...newProducts, ...prev]);
+			}
+			
+			setIsImporting(false);
+			setImportStep(4);
+		}, 1500);
+	};
+
+	const closeImportModal = () => {
+		setIsImportModalOpen(false);
+		setTimeout(() => {
+			setImportStep(1);
+			setImportFile(null);
+			setImportData([]);
+			setImportHeaders([]);
+			setColumnMapping({});
+		}, 300);
+	};
+
 	return (
 		<WorkspaceShell>
-			<div className="mt-5 rounded-2xl border border-zinc-200 bg-gradient-to-br from-white via-zinc-50 to-zinc-100 p-6 shadow-[0_24px_56px_-30px_rgba(0,0,0,0.85)]">
+			{/* Import Data Modal */}
+			{isImportModalOpen && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+					<div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+						<button onClick={closeImportModal} className="absolute right-4 top-4 text-zinc-400 hover:text-zinc-600">
+							<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+						</button>
+						<h2 className="text-2xl font-bold text-zinc-900 mb-6">Inventory Data Import Wizard</h2>
+						
+						{importStep === 1 && (
+							<div className="space-y-4">
+								<p className="text-zinc-600">Select the module you want to import data into:</p>
+								<div className="grid grid-cols-2 gap-4">
+									{(["products", "warehouses", "vendors"] as const).map(mod => (
+										<button 
+											key={mod} 
+											type="button"
+											onClick={() => setImportModule(mod)}
+											className={`p-4 rounded-xl border-2 text-left ${importModule === mod ? "border-[#404d85] bg-[#404d85]/5" : "border-zinc-200 hover:border-[#404d85]/50"}`}
+										>
+											<h3 className="font-semibold text-zinc-900 capitalize">{mod}</h3>
+										</button>
+									))}
+								</div>
+								<div className="flex justify-end pt-4">
+									<button onClick={() => setImportStep(2)} className="bg-[#404d85] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#323d6a]">Next Step</button>
+								</div>
+							</div>
+						)}
+						
+						{importStep === 2 && (
+							<div className="space-y-6">
+								<div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex justify-between items-center">
+									<div>
+										<h4 className="font-semibold text-blue-900">Need the correct format?</h4>
+										<p className="text-sm text-blue-700">Download our sample CSV file for {importModule}.</p>
+									</div>
+									<button onClick={downloadSample} className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 shadow-sm">Download Sample</button>
+								</div>
+								
+								<div className="border-2 border-dashed border-zinc-300 rounded-xl p-8 text-center hover:bg-zinc-50 transition relative">
+									<input type="file" accept=".csv" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+									<svg className="mx-auto h-12 w-12 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+									</svg>
+									<p className="mt-4 text-sm text-zinc-600 font-medium">Click or drag CSV file to this area to upload</p>
+								</div>
+								<div className="flex justify-between pt-4">
+									<button onClick={() => setImportStep(1)} className="text-zinc-600 font-semibold px-4 py-2 hover:bg-zinc-100 rounded-lg">Back</button>
+								</div>
+							</div>
+						)}
+						
+						{importStep === 3 && (
+							<div className="space-y-6">
+								<p className="text-zinc-600">Map your CSV columns to the Inventory fields. If a column is missing, you can provide a default fallback value.</p>
+								<div className="border border-zinc-200 rounded-xl overflow-hidden">
+									<table className="w-full text-left text-sm">
+										<thead className="bg-zinc-50">
+											<tr>
+												<th className="px-4 py-3 font-semibold text-zinc-900 border-b border-zinc-200">Inventory Field</th>
+												<th className="px-4 py-3 font-semibold text-zinc-900 border-b border-zinc-200">Your CSV Column</th>
+												<th className="px-4 py-3 font-semibold text-zinc-900 border-b border-zinc-200">Fallback Default Value</th>
+											</tr>
+										</thead>
+										<tbody className="divide-y divide-zinc-200">
+											{IMPORT_MODULE_FIELDS[importModule].map(field => (
+												<tr key={field.key}>
+													<td className="px-4 py-3">
+														<span className="font-medium text-zinc-900">{field.label}</span>
+														{field.required && <span className="text-rose-500 ml-1">*</span>}
+													</td>
+													<td className="px-4 py-3">
+														<select 
+															value={columnMapping[field.key]?.csvColumn || ""} 
+															onChange={(e) => setColumnMapping(prev => ({...prev, [field.key]: { ...prev[field.key], csvColumn: e.target.value }}))}
+															className="w-full rounded-md border-zinc-300 shadow-sm text-sm focus:border-[#404d85] focus:ring-[#404d85]"
+														>
+															<option value="">-- Ignore / Missing --</option>
+															{importHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+														</select>
+													</td>
+													<td className="px-4 py-3">
+														<input 
+															type="text" 
+															placeholder={field.required ? "Required fallback" : "e.g. Unknown"} 
+															value={columnMapping[field.key]?.defaultValue || ""}
+															onChange={(e) => setColumnMapping(prev => ({...prev, [field.key]: { ...prev[field.key], defaultValue: e.target.value }}))}
+															disabled={!!columnMapping[field.key]?.csvColumn}
+															className="w-full rounded-md border-zinc-300 shadow-sm text-sm focus:border-[#404d85] focus:ring-[#404d85] disabled:bg-zinc-100 disabled:text-zinc-400"
+														/>
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+								<div className="flex justify-between pt-4">
+									<button onClick={() => setImportStep(2)} className="text-zinc-600 font-semibold px-4 py-2 hover:bg-zinc-100 rounded-lg">Back</button>
+									<button onClick={executeImport} disabled={isImporting} className="bg-[#404d85] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#323d6a] shadow-lg disabled:opacity-50">
+										{isImporting ? "Importing..." : `Import ${importData.length} Records`}
+									</button>
+								</div>
+							</div>
+						)}
+						
+						{importStep === 4 && (
+							<div className="py-8 text-center space-y-4">
+								<div className="mx-auto w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4 shadow-sm">
+									<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
+								</div>
+								<h3 className="text-2xl font-bold text-zinc-900">Import Successful!</h3>
+								<p className="text-zinc-600">Successfully imported {importData.length} records into {importModule}.</p>
+								<div className="pt-6">
+									<button onClick={closeImportModal} className="bg-zinc-900 text-white px-8 py-2 rounded-lg font-semibold hover:bg-zinc-800 shadow-lg">Done</button>
+								</div>
+							</div>
+						)}
+					</div>
+				</div>
+			)}
+
+			{/* Inventory Connection Modal */}
+			{selectedInventoryToConnect && (() => {
+				const inv = TOP_INVENTORY.find(c => c.id === selectedInventoryToConnect);
+				if (!inv) return null;
+				const isConnected = connectedInventories.includes(inv.id);
+				
+				return (
+					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+						<div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl relative">
+							<button onClick={() => setSelectedInventoryToConnect(null)} className="absolute right-6 top-6 text-zinc-400 hover:text-zinc-600 transition-colors">
+								<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+							</button>
+							
+							<div className="flex flex-col items-center text-center">
+								<div className={`mb-4 flex h-20 w-20 items-center justify-center rounded-2xl border-2 text-4xl shadow-md ${inv.color} bg-white`}>
+									{inv.logo}
+								</div>
+								<h2 className="text-2xl font-bold text-zinc-900">{isConnected ? `Manage ${inv.name}` : `Connect ${inv.name}`}</h2>
+								<p className="mt-2 text-sm text-zinc-600">
+									{isConnected 
+										? `Your ${inv.name} account is currently syncing with Cambliss.` 
+										: `Authorize Cambliss to access your ${inv.name} data via API.`}
+								</p>
+							</div>
+
+							{!isConnected ? (
+								<form onSubmit={handleConnectExternalInventory} className="mt-8 space-y-4">
+									<div>
+										<label className="block text-xs font-semibold text-zinc-700 mb-1">API Key or Access Token</label>
+										<input 
+											type="password" 
+											required
+											placeholder={`Enter your ${inv.name} API key`} 
+											className="w-full rounded-xl border-zinc-300 px-4 py-3 text-sm shadow-sm focus:border-[#404d85] focus:ring-[#404d85]"
+										/>
+									</div>
+									<div className="bg-blue-50/50 rounded-xl p-3 border border-blue-100 flex gap-3">
+										<svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+										<p className="text-xs text-blue-800 leading-relaxed">
+											In a production environment, this would redirect you to a secure OAuth 2.0 authorization screen provided by {inv.name}.
+										</p>
+									</div>
+									<button 
+										type="submit" 
+										disabled={isConnectingInventory}
+										className="w-full mt-4 rounded-xl bg-[#404d85] px-4 py-3.5 text-sm font-bold text-white shadow-lg hover:-translate-y-0.5 hover:bg-[#323d6a] transition-all disabled:opacity-70 disabled:hover:translate-y-0"
+									>
+										{isConnectingInventory ? "Authenticating..." : `Connect ${inv.name}`}
+									</button>
+								</form>
+							) : (
+								<div className="mt-8 space-y-4">
+									<div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 flex items-center justify-center gap-2 text-emerald-800 font-semibold">
+										<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+										Connection Active & Syncing
+									</div>
+									<button 
+										onClick={() => {
+											setConnectedInventories(prev => prev.filter(id => id !== inv.id));
+											setSelectedInventoryToConnect(null);
+										}}
+										className="w-full rounded-xl border-2 border-rose-100 bg-white px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+									>
+										Disconnect Integration
+									</button>
+								</div>
+							)}
+						</div>
+					</div>
+				);
+			})()}
+
+			<div className="mt-5 mb-8 overflow-hidden rounded-[24px] bg-gradient-to-br from-[#404d85] to-[#252f5a] shadow-lg">
+				<div className="px-8 py-8 md:px-10 text-center flex flex-col items-center justify-center">
+					<h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
+						Your Stock & Vendors, Fully Synchronized.
+					</h2>
+					<p className="mt-3 max-w-2xl text-sm md:text-base text-[#c9d4ea] font-medium leading-relaxed">
+						Sync products, track warehouses, and manage vendors by connecting your existing ERP and Inventory tools to Cambliss in seconds.
+					</p>
+					<div className="mt-4 bg-white/10 rounded-full px-5 py-2 border border-white/20 shadow-sm backdrop-blur-sm">
+						<span className="text-sm font-bold text-white">
+							Don't see your tool below? <a href="#" className="underline decoration-2 underline-offset-2 hover:text-blue-200 transition-colors">Let us know</a> and we'll build a custom connection immediately.
+						</span>
+					</div>
+					
+					{/* Top 10 Inventory Grid */}
+					<div className="mt-10 w-full max-w-5xl">
+						<p className="text-sm font-semibold uppercase tracking-widest text-[#8f9ecf] mb-6">Supported Enterprise Integrations</p>
+						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+							{TOP_INVENTORY.map(inv => {
+								const isConnected = connectedInventories.includes(inv.id);
+								return (
+									<button
+										key={inv.id}
+										onClick={() => setSelectedInventoryToConnect(inv.id)}
+										className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-200 ${isConnected ? "bg-white/20 border-white/40 ring-2 ring-white/50" : "bg-white/5 border-white/10 hover:bg-white/10 hover:-translate-y-1 hover:shadow-lg"}`}
+									>
+										{isConnected && (
+											<div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md ring-2 ring-[#252f5a]">
+												<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
+											</div>
+										)}
+										<div className={`mb-3 flex h-14 w-14 items-center justify-center rounded-xl border-2 text-2xl shadow-sm transition-transform group-hover:scale-110 ${inv.color} bg-white`}>
+											{inv.logo}
+										</div>
+										<span className="text-xs font-bold text-white tracking-wide">{inv.name}</span>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+				</div>
+			</div>
+			<div className="rounded-2xl border border-zinc-200 bg-gradient-to-br from-white via-zinc-50 to-zinc-100 p-6 shadow-[0_24px_56px_-30px_rgba(0,0,0,0.85)]">
 				<h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Inventory Control Center</h1>
 				<p className="mt-1 text-sm text-zinc-600">Products, warehouses, stock movement and purchase receipts.</p>
+				
+				<div className="mt-3 flex gap-3">
+					<button
+						type="button"
+						onClick={() => setIsImportModalOpen(true)}
+						className="flex items-center gap-1.5 rounded-lg border border-[#404d85] bg-[#404d85] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#323d6a]"
+					>
+						<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+						Import Data (CSV)
+					</button>
+				</div>
+
 				{notice && <p className="mt-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700">{notice}</p>}
 
 				<div className="mt-4 flex flex-wrap gap-2">

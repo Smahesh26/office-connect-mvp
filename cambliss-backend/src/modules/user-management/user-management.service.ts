@@ -18,6 +18,8 @@ export const ACCESS_KEYS = [
 	"INVENTORY",
 	"FILE_SHARING",
 	"USER_MANAGEMENT",
+	"STORE",
+	"VIDEO_CONNECT",
 ] as const;
 
 export type AccessKey = (typeof ACCESS_KEYS)[number];
@@ -28,11 +30,17 @@ const ensureAccessProfileTable = async (): Promise<void> => {
 			"userId" TEXT PRIMARY KEY REFERENCES "User"("id") ON DELETE CASCADE,
 			"organizationId" TEXT NOT NULL REFERENCES "Organization"("id") ON DELETE CASCADE,
 			"phone" TEXT,
+			"department" TEXT,
 			"accesses" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
 			"createdBy" TEXT REFERENCES "User"("id") ON DELETE SET NULL,
 			"createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
 			"updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
 		);
+	`);
+
+	await prisma.$executeRawUnsafe(`
+		ALTER TABLE "UserAccessProfile" 
+		ADD COLUMN IF NOT EXISTS "department" TEXT;
 	`);
 
 	await prisma.$executeRawUnsafe(`
@@ -77,16 +85,6 @@ const ensureOrganizationMembership = async (organizationId: string, userId: stri
 	}
 };
 
-const ensureUserLimit = async (organizationId: string): Promise<void> => {
-	const count = await prisma.organizationUser.count({
-		where: { organizationId },
-	});
-
-	if (count >= 4) {
-		throw new UserManagementError(403, "First plan supports maximum 4 users");
-	}
-};
-
 const randomPassword = (): string => {
 	const seed = Math.random().toString(36).slice(-6);
 	return `Cambliss@${seed}`;
@@ -103,6 +101,7 @@ export const listOrganizationUsers = async (organizationId: string, requesterId:
 		lastName: string | null;
 		role: RoleName;
 		phone: string | null;
+		department: string | null;
 		accesses: string[] | null;
 		createdAt: Date;
 	}>>(
@@ -114,6 +113,7 @@ export const listOrganizationUsers = async (organizationId: string, requesterId:
 			u."lastName" AS "lastName",
 			r."name" AS "role",
 			ap."phone" AS "phone",
+			ap."department" AS "department",
 			ap."accesses" AS "accesses",
 			ou."createdAt" AS "createdAt"
 		FROM "OrganizationUser" ou
@@ -135,6 +135,7 @@ export const listOrganizationUsers = async (organizationId: string, requesterId:
 		lastName: row.lastName,
 		role: row.role,
 		phone: row.phone,
+		department: row.department,
 		accesses: normalizeAccesses(row.accesses || []),
 		createdAt: row.createdAt,
 	}));
@@ -144,15 +145,18 @@ export const createOrganizationUser = async (
 	organizationId: string,
 	requesterId: string,
 	input: {
+		firstName?: string;
+		lastName?: string;
 		email: string;
 		phone?: string;
+		department?: string;
 		role: RoleName;
 		accesses?: string[];
 	},
 ) => {
 	await ensureOrganizationMembership(organizationId, requesterId);
 	await ensureAccessProfileTable();
-	await ensureUserLimit(organizationId);
+
 
 	const email = input.email?.trim().toLowerCase();
 	if (!email) {
@@ -201,12 +205,13 @@ export const createOrganizationUser = async (
 
 		await tx.$executeRawUnsafe(
 			`
-			INSERT INTO "UserAccessProfile" ("userId", "organizationId", "phone", "accesses", "createdBy", "createdAt", "updatedAt")
-			VALUES ($1, $2, $3, $4::TEXT[], $5, NOW(), NOW())
+			INSERT INTO "UserAccessProfile" ("userId", "organizationId", "phone", "department", "accesses", "createdBy", "createdAt", "updatedAt")
+			VALUES ($1, $2, $3, $4, $5::TEXT[], $6, NOW(), NOW())
 			`,
 			user.id,
 			organizationId,
 			input.phone?.trim() || null,
+			input.department?.trim() || null,
 			accesses,
 			requesterId,
 		);
@@ -220,6 +225,7 @@ export const createOrganizationUser = async (
 			email: created.email,
 			role: input.role,
 			phone: input.phone?.trim() || null,
+			department: input.department?.trim() || null,
 			accesses,
 			createdAt: created.createdAt,
 		},
@@ -233,6 +239,7 @@ export const updateOrganizationUserAccess = async (
 	userId: string,
 	input: {
 		phone?: string;
+		department?: string;
 		role?: RoleName;
 		accesses?: string[];
 	},
@@ -255,6 +262,7 @@ export const updateOrganizationUserAccess = async (
 
 	const accesses = normalizeAccesses(input.accesses || []);
 	const phone = input.phone?.trim() || null;
+	const department = input.department?.trim() || null;
 
 	if (input.role) {
 		const roleRecord = await resolveRole(input.role);
@@ -271,17 +279,19 @@ export const updateOrganizationUserAccess = async (
 
 	await prisma.$executeRawUnsafe(
 		`
-		INSERT INTO "UserAccessProfile" ("userId", "organizationId", "phone", "accesses", "createdBy", "createdAt", "updatedAt")
-		VALUES ($1, $2, $3, $4::TEXT[], $5, NOW(), NOW())
+		INSERT INTO "UserAccessProfile" ("userId", "organizationId", "phone", "department", "accesses", "createdBy", "createdAt", "updatedAt")
+		VALUES ($1, $2, $3, $4, $5::TEXT[], $6, NOW(), NOW())
 		ON CONFLICT ("userId")
 		DO UPDATE SET
 			"phone" = EXCLUDED."phone",
+			"department" = EXCLUDED."department",
 			"accesses" = EXCLUDED."accesses",
 			"updatedAt" = NOW()
 		`,
 		userId,
 		organizationId,
 		phone,
+		department,
 		accesses,
 		requesterId,
 	);

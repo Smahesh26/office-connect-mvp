@@ -22,7 +22,9 @@ export class OnboardingApiClient {
 
 	constructor(token: string, fetchImpl: FetchLike = fetch) {
 		this.token = token;
-		this.fetchImpl = fetchImpl;
+		// Bind to the global scope so the native fetch keeps its correct `this`.
+		// Calling a detached native fetch throws "Illegal invocation".
+		this.fetchImpl = fetchImpl.bind(globalThis) as FetchLike;
 	}
 
 	private async request(path: string, init: RequestInit = {}): Promise<Response> {

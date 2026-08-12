@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState, useRef, useCallback } from "react";
+import Webcam from "react-webcam";
 import WorkspaceShell from "../../components/WorkspaceShell";
 
 type Employee = {
@@ -159,6 +160,9 @@ const tabTitle: Record<HrmTab, string> = {
 };
 
 const emptyEmployeeForm = {
+	firstName: "",
+	lastName: "",
+	email: "",
 	employeeCode: "",
 	departmentId: "",
 	designationId: "",
@@ -257,6 +261,54 @@ function NodeTree({ nodes, level = 0 }: { nodes: HierarchyNode[]; level?: number
 	);
 }
 
+const parseCSV = (text: string) => {
+	const lines = text.split('\n').filter(l => l.trim() !== '');
+	if (lines.length === 0) return { headers: [], rows: [] };
+	const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+	const rows = lines.slice(1).map(line => {
+		const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
+		return headers.reduce((acc, header, index) => {
+			acc[header] = values[index] || '';
+			return acc;
+		}, {} as Record<string, string>);
+	});
+	return { headers, rows };
+};
+
+const IMPORT_MODULE_FIELDS = {
+	employees: [
+		{ key: "employeeCode", label: "Employee Code", required: true },
+		{ key: "firstName", label: "First Name", required: true },
+		{ key: "lastName", label: "Last Name", required: true },
+		{ key: "email", label: "Email Address", required: true },
+		{ key: "salary", label: "Salary", required: false },
+	],
+	attendance: [
+		{ key: "employeeCode", label: "Employee Code", required: true },
+		{ key: "checkIn", label: "Check-in Time", required: true },
+		{ key: "checkOut", label: "Check-out Time", required: false },
+	],
+	payroll: [
+		{ key: "employeeCode", label: "Employee Code", required: true },
+		{ key: "month", label: "Month", required: true },
+		{ key: "year", label: "Year", required: true },
+		{ key: "grossSalary", label: "Gross Salary", required: true },
+	]
+};
+
+const TOP_HRMS = [
+	{ id: "workday", name: "Workday", color: "bg-[#005cb9]/10 text-[#005cb9] border-[#005cb9]/20", logo: "🌤️" },
+	{ id: "bamboohr", name: "BambooHR", color: "bg-[#91c11e]/10 text-[#91c11e] border-[#91c11e]/20", logo: "🐼" },
+	{ id: "gusto", name: "Gusto", color: "bg-[#f45d48]/10 text-[#f45d48] border-[#f45d48]/20", logo: "🍃" },
+	{ id: "adp", name: "ADP", color: "bg-[#d0271d]/10 text-[#d0271d] border-[#d0271d]/20", logo: "🔴" },
+	{ id: "rippling", name: "Rippling", color: "bg-[#fdb515]/10 text-[#fdb515] border-[#fdb515]/20", logo: "🌊" },
+	{ id: "paycor", name: "Paycor", color: "bg-[#007da5]/10 text-[#007da5] border-[#007da5]/20", logo: "💳" },
+	{ id: "zenefits", name: "Zenefits", color: "bg-[#f36b22]/10 text-[#f36b22] border-[#f36b22]/20", logo: "🧘" },
+	{ id: "deel", name: "Deel", color: "bg-[#2c71f0]/10 text-[#2c71f0] border-[#2c71f0]/20", logo: "🌍" },
+	{ id: "paylocity", name: "Paylocity", color: "bg-[#f26722]/10 text-[#f26722] border-[#f26722]/20", logo: "🏢" },
+	{ id: "successfactors", name: "SAP", color: "bg-[#f0ab00]/10 text-[#f0ab00] border-[#f0ab00]/20", logo: "🏆" },
+];
+
 export default function HrmPage() {
 	const [activeTab, setActiveTab] = useState<HrmTab>("overview");
 	const [loading, setLoading] = useState(true);
@@ -298,7 +350,130 @@ export default function HrmPage() {
 	const [structureModalValue, setStructureModalValue] = useState("");
 	const [structureModalAddress, setStructureModalAddress] = useState("");
 	const [isSavingStructure, setIsSavingStructure] = useState(false);
+
+	// External HRM Integration State
+	const [selectedHrmToConnect, setSelectedHrmToConnect] = useState<string | null>(null);
+	const [connectedHrms, setConnectedHrms] = useState<string[]>([]);
+
+	// Smart Attendance Kiosk State
+	const [isCameraActive, setIsCameraActive] = useState(false);
+	const [isScanning, setIsScanning] = useState(false);
+	const [scanResult, setScanResult] = useState<{ name: string, action: string } | null>(null);
+	const webcamRef = useRef<Webcam>(null);
+
+	// Enrollment State
+	const [enrollingEmployee, setEnrollingEmployee] = useState<string | null>(null);
+	const [isEnrollScanning, setIsEnrollScanning] = useState(false);
+	const enrollWebcamRef = useRef<Webcam>(null);
+
+	const handleEnrollFace = async () => {
+		if (!enrollWebcamRef.current || !enrollingEmployee) return;
+		setIsEnrollScanning(true);
+		
+		const imageSrc = enrollWebcamRef.current.getScreenshot();
+		if (!imageSrc) {
+			setNotice("Failed to capture image.");
+			setIsEnrollScanning(false);
+			return;
+		}
+
+		try {
+			const headers = getAuthHeaders();
+			headers.set("Content-Type", "application/json");
+			
+			const response = await fetch(`/api/hrm/employees/${enrollingEmployee}/enroll-face`, {
+				method: "POST",
+				headers,
+				body: JSON.stringify({ imageBase64: imageSrc }),
+			});
+			
+			if (response.ok) {
+				setNotice("Face successfully enrolled for employee!");
+				setEnrollingEmployee(null);
+			} else {
+				const data = await response.json().catch(() => ({}));
+				setNotice(data.message || "Failed to enroll face");
+			}
+		} catch (err) {
+			setNotice("An error occurred while enrolling face");
+		} finally {
+			setIsEnrollScanning(false);
+		}
+	};
+
+	const startCamera = () => {
+		setIsCameraActive(true);
+		setScanResult(null);
+	};
+
+	const stopCamera = () => {
+		setIsCameraActive(false);
+		setIsScanning(false);
+	};
+
+	// Clean up camera on unmount
+	useEffect(() => {
+		return () => stopCamera();
+	}, []);
+
+	const handleSmartScan = async (actionType: "checkin" | "checkout") => {
+		if (!isCameraActive || !webcamRef.current) {
+			setNotice("Please start the camera first.");
+			return;
+		}
+
+		setIsScanning(true);
+		setScanResult(null);
+		
+		const imageSrc = webcamRef.current.getScreenshot();
+		if (!imageSrc) {
+			setNotice("Failed to capture image.");
+			setIsScanning(false);
+			return;
+		}
+
+		try {
+			const headers = getAuthHeaders();
+			headers.set("Content-Type", "application/json");
+			
+			const response = await fetch("/api/hrm/attendance/smart-scan", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					imageBase64: imageSrc,
+					actionType,
+				}),
+			});
+
+			if (response.ok) {
+				const result = await response.json();
+				setNotice(result.message);
+				setScanResult({ 
+					name: result.employeeCode, 
+					action: actionType === "checkin" ? "Checked In" : "Checked Out" 
+				});
+				await loadAll();
+			} else {
+				setNotice(await getApiErrorMessage(response, `Smart ${actionType} failed.`));
+			}
+		} catch (error) {
+			setNotice("Network error during face scan.");
+		} finally {
+			setIsScanning(false);
+		}
+	};
+	const [isConnectingHrm, setIsConnectingHrm] = useState(false);
 	const [structureModalError, setStructureModalError] = useState<string | null>(null);
+
+	// Import Wizard State
+	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+	const [importStep, setImportStep] = useState<1 | 2 | 3 | 4>(1);
+	const [importModule, setImportModule] = useState<"employees" | "attendance" | "payroll">("employees");
+	const [importFile, setImportFile] = useState<File | null>(null);
+	const [importHeaders, setImportHeaders] = useState<string[]>([]);
+	const [importData, setImportData] = useState<Record<string, string>[]>([]);
+	const [columnMapping, setColumnMapping] = useState<Record<string, { csvColumn: string, defaultValue: string }>>({});
+	const [isImporting, setIsImporting] = useState(false);
 
 	const getAuthHeaders = (): Headers => {
 		const headers = new Headers();
@@ -434,6 +609,9 @@ export default function HrmPage() {
 				method: "POST",
 				headers,
 				body: JSON.stringify({
+					firstName: employeeForm.firstName.trim(),
+					lastName: employeeForm.lastName.trim(),
+					email: employeeForm.email.trim(),
 					employeeCode: employeeForm.employeeCode.trim(),
 					departmentId: employeeForm.departmentId || undefined,
 					designationId: employeeForm.designationId || undefined,
@@ -933,6 +1111,96 @@ export default function HrmPage() {
 		setIsRefreshingDash(false);
 	};
 
+	const handleConnectExternalHrm = (event: FormEvent) => {
+		event.preventDefault();
+		if (!selectedHrmToConnect) return;
+		setIsConnectingHrm(true);
+		
+		setTimeout(() => {
+			if (!connectedHrms.includes(selectedHrmToConnect)) {
+				setConnectedHrms(prev => [...prev, selectedHrmToConnect]);
+			}
+			setIsConnectingHrm(false);
+		}, 1500);
+	};
+
+	const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		setImportFile(file);
+		
+		const reader = new FileReader();
+		reader.onload = (event) => {
+			const text = event.target?.result as string;
+			const { headers, rows } = parseCSV(text);
+			setImportHeaders(headers);
+			setImportData(rows);
+			
+			const newMapping: Record<string, { csvColumn: string, defaultValue: string }> = {};
+			IMPORT_MODULE_FIELDS[importModule].forEach(field => {
+				const matchedHeader = headers.find(h => h.toLowerCase().replace(/[^a-z]/g, '') === field.label.toLowerCase().replace(/[^a-z]/g, '') || h.toLowerCase() === field.key.toLowerCase());
+				newMapping[field.key] = {
+					csvColumn: matchedHeader || "",
+					defaultValue: ""
+				};
+			});
+			setColumnMapping(newMapping);
+			setImportStep(3);
+		};
+		reader.readAsText(file);
+	};
+
+	const downloadSample = () => {
+		const fields = IMPORT_MODULE_FIELDS[importModule];
+		const headerRow = fields.map(f => `"${f.label}"`).join(",");
+		const blob = new Blob([headerRow + "\n"], { type: 'text/csv' });
+		const url = window.URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `cambliss_hrm_${importModule}_sample.csv`;
+		a.click();
+		window.URL.revokeObjectURL(url);
+	};
+
+	const executeImport = () => {
+		setIsImporting(true);
+		setTimeout(() => {
+			if (importModule === "employees") {
+				const newEmployees = importData.map((row, i) => {
+					return {
+						id: `imported_emp_${Date.now()}_${i}`,
+						employeeCode: columnMapping.employeeCode.csvColumn ? row[columnMapping.employeeCode.csvColumn] : columnMapping.employeeCode.defaultValue,
+						status: "ACTIVE",
+						employmentType: "FULL_TIME",
+						workMode: "ON_SITE",
+						salary: parseInt(columnMapping.salary?.csvColumn ? row[columnMapping.salary.csvColumn] : columnMapping.salary?.defaultValue) || 0,
+						joinDate: new Date().toISOString(),
+						user: {
+							firstName: columnMapping.firstName.csvColumn ? row[columnMapping.firstName.csvColumn] : columnMapping.firstName.defaultValue,
+							lastName: columnMapping.lastName.csvColumn ? row[columnMapping.lastName.csvColumn] : columnMapping.lastName.defaultValue,
+							email: columnMapping.email.csvColumn ? row[columnMapping.email.csvColumn] : columnMapping.email.defaultValue,
+						}
+					} as Employee;
+				});
+				setEmployees(prev => [...newEmployees, ...prev]);
+			}
+			
+			setIsImporting(false);
+			setImportStep(4);
+		}, 1500);
+	};
+
+	const closeImportModal = () => {
+		setIsImportModalOpen(false);
+		setTimeout(() => {
+			setImportStep(1);
+			setImportFile(null);
+			setImportData([]);
+			setImportHeaders([]);
+			setColumnMapping({});
+		}, 300);
+	};
+
 	const headcount = useMemo(() => employees.length, [employees]);
 	const activeCount = useMemo(() => employees.filter((item) => item.status === "ACTIVE").length, [employees]);
 
@@ -951,9 +1219,256 @@ export default function HrmPage() {
 
 	return (
 		<WorkspaceShell>
-			<div className="mt-5 rounded-2xl border border-zinc-200 bg-gradient-to-br from-white via-zinc-50 to-zinc-100 p-6 shadow-[0_24px_56px_-30px_rgba(0,0,0,0.85)]">
+			{/* Import Data Modal */}
+			{isImportModalOpen && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+					<div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+						<button onClick={closeImportModal} className="absolute right-4 top-4 text-zinc-400 hover:text-zinc-600">
+							<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+						</button>
+						<h2 className="text-2xl font-bold text-zinc-900 mb-6">HRM Data Import Wizard</h2>
+						
+						{importStep === 1 && (
+							<div className="space-y-4">
+								<p className="text-zinc-600">Select the module you want to import data into:</p>
+								<div className="grid grid-cols-2 gap-4">
+									{(["employees", "attendance", "payroll"] as const).map(mod => (
+										<button 
+											key={mod} 
+											type="button"
+											onClick={() => setImportModule(mod)}
+											className={`p-4 rounded-xl border-2 text-left ${importModule === mod ? "border-[#404d85] bg-[#404d85]/5" : "border-zinc-200 hover:border-[#404d85]/50"}`}
+										>
+											<h3 className="font-semibold text-zinc-900 capitalize">{mod}</h3>
+										</button>
+									))}
+								</div>
+								<div className="flex justify-end pt-4">
+									<button onClick={() => setImportStep(2)} className="bg-[#404d85] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#323d6a]">Next Step</button>
+								</div>
+							</div>
+						)}
+						
+						{importStep === 2 && (
+							<div className="space-y-6">
+								<div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex justify-between items-center">
+									<div>
+										<h4 className="font-semibold text-blue-900">Need the correct format?</h4>
+										<p className="text-sm text-blue-700">Download our sample CSV file for {importModule}.</p>
+									</div>
+									<button onClick={downloadSample} className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 shadow-sm">Download Sample</button>
+								</div>
+								
+								<div className="border-2 border-dashed border-zinc-300 rounded-xl p-8 text-center hover:bg-zinc-50 transition relative">
+									<input type="file" accept=".csv" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+									<svg className="mx-auto h-12 w-12 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+									</svg>
+									<p className="mt-4 text-sm text-zinc-600 font-medium">Click or drag CSV file to this area to upload</p>
+								</div>
+								<div className="flex justify-between pt-4">
+									<button onClick={() => setImportStep(1)} className="text-zinc-600 font-semibold px-4 py-2 hover:bg-zinc-100 rounded-lg">Back</button>
+								</div>
+							</div>
+						)}
+						
+						{importStep === 3 && (
+							<div className="space-y-6">
+								<p className="text-zinc-600">Map your CSV columns to the HRM fields. If a column is missing, you can provide a default fallback value.</p>
+								<div className="border border-zinc-200 rounded-xl overflow-hidden">
+									<table className="w-full text-left text-sm">
+										<thead className="bg-zinc-50">
+											<tr>
+												<th className="px-4 py-3 font-semibold text-zinc-900 border-b border-zinc-200">HRM Field</th>
+												<th className="px-4 py-3 font-semibold text-zinc-900 border-b border-zinc-200">Your CSV Column</th>
+												<th className="px-4 py-3 font-semibold text-zinc-900 border-b border-zinc-200">Fallback Default Value</th>
+											</tr>
+										</thead>
+										<tbody className="divide-y divide-zinc-200">
+											{IMPORT_MODULE_FIELDS[importModule].map(field => (
+												<tr key={field.key}>
+													<td className="px-4 py-3">
+														<span className="font-medium text-zinc-900">{field.label}</span>
+														{field.required && <span className="text-rose-500 ml-1">*</span>}
+													</td>
+													<td className="px-4 py-3">
+														<select 
+															value={columnMapping[field.key]?.csvColumn || ""} 
+															onChange={(e) => setColumnMapping(prev => ({...prev, [field.key]: { ...prev[field.key], csvColumn: e.target.value }}))}
+															className="w-full rounded-md border-zinc-300 shadow-sm text-sm focus:border-[#404d85] focus:ring-[#404d85]"
+														>
+															<option value="">-- Ignore / Missing --</option>
+															{importHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+														</select>
+													</td>
+													<td className="px-4 py-3">
+														<input 
+															type="text" 
+															placeholder={field.required ? "Required fallback" : "e.g. Unknown"} 
+															value={columnMapping[field.key]?.defaultValue || ""}
+															onChange={(e) => setColumnMapping(prev => ({...prev, [field.key]: { ...prev[field.key], defaultValue: e.target.value }}))}
+															disabled={!!columnMapping[field.key]?.csvColumn}
+															className="w-full rounded-md border-zinc-300 shadow-sm text-sm focus:border-[#404d85] focus:ring-[#404d85] disabled:bg-zinc-100 disabled:text-zinc-400"
+														/>
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+								<div className="flex justify-between pt-4">
+									<button onClick={() => setImportStep(2)} className="text-zinc-600 font-semibold px-4 py-2 hover:bg-zinc-100 rounded-lg">Back</button>
+									<button onClick={executeImport} disabled={isImporting} className="bg-[#404d85] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#323d6a] shadow-lg disabled:opacity-50">
+										{isImporting ? "Importing..." : `Import ${importData.length} Records`}
+									</button>
+								</div>
+							</div>
+						)}
+						
+						{importStep === 4 && (
+							<div className="py-8 text-center space-y-4">
+								<div className="mx-auto w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4 shadow-sm">
+									<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
+								</div>
+								<h3 className="text-2xl font-bold text-zinc-900">Import Successful!</h3>
+								<p className="text-zinc-600">Successfully imported {importData.length} records into {importModule}.</p>
+								<div className="pt-6">
+									<button onClick={closeImportModal} className="bg-zinc-900 text-white px-8 py-2 rounded-lg font-semibold hover:bg-zinc-800 shadow-lg">Done</button>
+								</div>
+							</div>
+						)}
+					</div>
+				</div>
+			)}
+
+			{/* HRM Connection Modal */}
+			{selectedHrmToConnect && (() => {
+				const hrm = TOP_HRMS.find(c => c.id === selectedHrmToConnect);
+				if (!hrm) return null;
+				const isConnected = connectedHrms.includes(hrm.id);
+				
+				return (
+					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+						<div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl relative">
+							<button onClick={() => setSelectedHrmToConnect(null)} className="absolute right-6 top-6 text-zinc-400 hover:text-zinc-600 transition-colors">
+								<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+							</button>
+							
+							<div className="flex flex-col items-center text-center">
+								<div className={`mb-4 flex h-20 w-20 items-center justify-center rounded-2xl border-2 text-4xl shadow-md ${hrm.color} bg-white`}>
+									{hrm.logo}
+								</div>
+								<h2 className="text-2xl font-bold text-zinc-900">{isConnected ? `Manage ${hrm.name}` : `Connect ${hrm.name}`}</h2>
+								<p className="mt-2 text-sm text-zinc-600">
+									{isConnected 
+										? `Your ${hrm.name} account is currently syncing with Cambliss.` 
+										: `Authorize Cambliss to access your ${hrm.name} data via API.`}
+								</p>
+							</div>
+
+							{!isConnected ? (
+								<form onSubmit={handleConnectExternalHrm} className="mt-8 space-y-4">
+									<div>
+										<label className="block text-xs font-semibold text-zinc-700 mb-1">API Key or Access Token</label>
+										<input 
+											type="password" 
+											required
+											placeholder={`Enter your ${hrm.name} API key`} 
+											className="w-full rounded-xl border-zinc-300 px-4 py-3 text-sm shadow-sm focus:border-[#404d85] focus:ring-[#404d85]"
+										/>
+									</div>
+									<div className="bg-blue-50/50 rounded-xl p-3 border border-blue-100 flex gap-3">
+										<svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+										<p className="text-xs text-blue-800 leading-relaxed">
+											In a production environment, this would redirect you to a secure OAuth 2.0 authorization screen provided by {hrm.name}.
+										</p>
+									</div>
+									<button 
+										type="submit" 
+										disabled={isConnectingHrm}
+										className="w-full mt-4 rounded-xl bg-[#404d85] px-4 py-3.5 text-sm font-bold text-white shadow-lg hover:-translate-y-0.5 hover:bg-[#323d6a] transition-all disabled:opacity-70 disabled:hover:translate-y-0"
+									>
+										{isConnectingHrm ? "Authenticating..." : `Connect ${hrm.name}`}
+									</button>
+								</form>
+							) : (
+								<div className="mt-8 space-y-4">
+									<div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 flex items-center justify-center gap-2 text-emerald-800 font-semibold">
+										<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+										Connection Active & Syncing
+									</div>
+									<button 
+										onClick={() => {
+											setConnectedHrms(prev => prev.filter(id => id !== hrm.id));
+											setSelectedHrmToConnect(null);
+										}}
+										className="w-full rounded-xl border-2 border-rose-100 bg-white px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+									>
+										Disconnect Integration
+									</button>
+								</div>
+							)}
+						</div>
+					</div>
+				);
+			})()}
+
+			<div className="mt-5 mb-8 overflow-hidden rounded-[24px] bg-gradient-to-br from-[#404d85] to-[#252f5a] shadow-lg">
+				<div className="px-8 py-8 md:px-10 text-center flex flex-col items-center justify-center">
+					<h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
+						Your HR Data, Fully Synchronized.
+					</h2>
+					<p className="mt-3 max-w-2xl text-sm md:text-base text-[#c9d4ea] font-medium leading-relaxed">
+						Sync employees, run payroll, and manage performance by connecting your existing HR tools to Cambliss in seconds.
+					</p>
+					<div className="mt-4 bg-white/10 rounded-full px-5 py-2 border border-white/20 shadow-sm backdrop-blur-sm">
+						<span className="text-sm font-bold text-white">
+							Don't see your tool below? <a href="#" className="underline decoration-2 underline-offset-2 hover:text-blue-200 transition-colors">Let us know</a> and we'll build a custom connection immediately.
+						</span>
+					</div>
+					
+					{/* Top 10 HRM Grid */}
+					<div className="mt-10 w-full max-w-5xl">
+						<p className="text-sm font-semibold uppercase tracking-widest text-[#8f9ecf] mb-6">Supported Enterprise Integrations</p>
+						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+							{TOP_HRMS.map(hrm => {
+								const isConnected = connectedHrms.includes(hrm.id);
+								return (
+									<button
+										key={hrm.id}
+										onClick={() => setSelectedHrmToConnect(hrm.id)}
+										className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-200 ${isConnected ? "bg-white/20 border-white/40 ring-2 ring-white/50" : "bg-white/5 border-white/10 hover:bg-white/10 hover:-translate-y-1 hover:shadow-lg"}`}
+									>
+										{isConnected && (
+											<div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md ring-2 ring-[#252f5a]">
+												<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
+											</div>
+										)}
+										<div className={`mb-3 flex h-14 w-14 items-center justify-center rounded-xl border-2 text-2xl shadow-sm transition-transform group-hover:scale-110 ${hrm.color} bg-white`}>
+											{hrm.logo}
+										</div>
+										<span className="text-xs font-bold text-white tracking-wide">{hrm.name}</span>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div className="rounded-2xl border border-zinc-200 bg-gradient-to-br from-white via-zinc-50 to-zinc-100 p-6 shadow-[0_24px_56px_-30px_rgba(0,0,0,0.85)]">
 				<h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Premium HRM Suite</h1>
 				<p className="mt-1 text-sm text-zinc-600">Enterprise-ready HR operations: employees, org structure, attendance, payroll, performance and hierarchy.</p>
+				<div className="mt-3 flex gap-3">
+					<button
+						type="button"
+						onClick={() => setIsImportModalOpen(true)}
+						className="flex items-center gap-1.5 rounded-lg border border-[#404d85] bg-[#404d85] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#323d6a]"
+					>
+						<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+						Import Data (CSV)
+					</button>
+				</div>
 				{notice && <p className="mt-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700">{notice}</p>}
 
 				<div className="mt-4 flex flex-wrap gap-2">
@@ -1022,6 +1537,11 @@ export default function HrmPage() {
 					<div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
 						<form onSubmit={(event) => void handleCreateEmployee(event)} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
 							<p className="text-sm font-semibold text-zinc-900">Add Employee</p>
+							<div className="grid grid-cols-2 gap-2">
+								<input value={employeeForm.firstName} onChange={(event) => setEmployeeForm((prev) => ({ ...prev, firstName: event.target.value }))} placeholder="First name" className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" required />
+								<input value={employeeForm.lastName} onChange={(event) => setEmployeeForm((prev) => ({ ...prev, lastName: event.target.value }))} placeholder="Last name" className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" required />
+							</div>
+							<input value={employeeForm.email} onChange={(event) => setEmployeeForm((prev) => ({ ...prev, email: event.target.value }))} type="email" placeholder="Email address" className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" required />
 							<input value={employeeForm.employeeCode} onChange={(event) => setEmployeeForm((prev) => ({ ...prev, employeeCode: event.target.value }))} placeholder="Employee code" className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" required />
 							<input value={employeeForm.joinDate} onChange={(event) => setEmployeeForm((prev) => ({ ...prev, joinDate: event.target.value }))} type="date" className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" required />
 							<input value={employeeForm.salary} onChange={(event) => setEmployeeForm((prev) => ({ ...prev, salary: event.target.value }))} placeholder="Salary" className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" required />
@@ -1068,6 +1588,7 @@ export default function HrmPage() {
 											<button type="button" onClick={() => void handleEditEmployee(employee)} className="rounded-md border border-zinc-300 px-2 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-100">Edit</button>
 											<button type="button" onClick={() => void handleChangeEmployeeStatus(employee.id)} className="rounded-md border border-zinc-300 px-2 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-100">Status</button>
 											<button type="button" onClick={() => void handleAssignManager(employee.id)} className="rounded-md border border-zinc-300 px-2 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-100">Assign Manager</button>
+											<button type="button" onClick={() => setEnrollingEmployee(employee.id)} className="rounded-md border border-zinc-300 bg-zinc-900 px-2 py-1 text-[11px] font-semibold text-white hover:bg-zinc-800">Enroll Face</button>
 										</div>
 									</div>
 								))}
@@ -1113,40 +1634,130 @@ export default function HrmPage() {
 								<p className="mt-1 text-lg font-semibold text-zinc-900">{String(value)}</p>
 							</div>
 						))}
-						<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm md:col-span-2 xl:col-span-3">
-							<p className="text-sm font-semibold text-zinc-900">Check-in / Check-out</p>
-							<div className="mt-2 flex flex-wrap items-center gap-2">
-								<input
-									type="date"
-									value={attendanceDate}
-									onChange={(event) => setAttendanceDate(event.target.value)}
-									className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
-								/>
-								<select value={attendanceEmployeeId} onChange={(event) => setAttendanceEmployeeId(event.target.value)} className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm">
-									<option value="">Select Employee</option>
-									{employees.map((employee) => (
-										<option key={employee.id} value={employee.id}>{employee.user?.firstName || employee.employeeCode} ({employee.employeeCode})</option>
-									))}
-								</select>
-								<input
-									type="datetime-local"
-									value={manualCheckInAt}
-									onChange={(event) => setManualCheckInAt(event.target.value)}
-									className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
-									title="Manual check-in time"
-								/>
-								<button type="button" onClick={() => void handleCheckIn()} className="rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white">Check-in</button>
-								<input
-									type="datetime-local"
-									value={manualCheckOutAt}
-									onChange={(event) => setManualCheckOutAt(event.target.value)}
-									className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
-									title="Manual check-out time"
-								/>
-								<button type="button" onClick={() => void handleCheckOut()} className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700">Check-out</button>
-								<button type="button" onClick={downloadAttendanceExcel} className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">Download Excel</button>
+						<div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm md:col-span-2 xl:col-span-3">
+							<div className="flex justify-between items-center mb-4">
+								<div>
+									<h2 className="text-xl font-bold text-zinc-900 flex items-center gap-2">
+										<svg className="w-6 h-6 text-[#404d85]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+										</svg>
+										Smart Attendance Kiosk
+									</h2>
+									<p className="text-sm text-zinc-500 mt-1">Facial recognition terminal for automated check-ins.</p>
+								</div>
+								<button type="button" onClick={downloadAttendanceExcel} className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors">Download Excel</button>
 							</div>
-							<p className="mt-2 text-[11px] text-zinc-500">Manual mode: pick employee and optional date/time. If date/time is empty, selected attendance date with current time is used.</p>
+
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-zinc-50 p-4 rounded-xl border border-zinc-200">
+								{/* Camera View Area */}
+								<div className="relative aspect-video bg-black rounded-lg overflow-hidden border-2 border-zinc-300 shadow-inner flex flex-col items-center justify-center">
+									{isCameraActive && (
+										<Webcam
+											audio={false}
+											ref={webcamRef}
+											screenshotFormat="image/jpeg"
+											className="w-full h-full object-cover"
+										/>
+									)}
+									
+									{!isCameraActive && (
+										<div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-400">
+											<svg className="w-12 h-12 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+											</svg>
+											<p className="text-sm font-medium">Camera Offline</p>
+										</div>
+									)}
+
+									{/* Scanning Overlay Animation */}
+									{isScanning && (
+										<div className="absolute inset-0 border-4 border-[#404d85] border-dashed rounded-lg animate-pulse">
+											<div className="absolute top-0 left-0 w-full h-1 bg-[#404d85] shadow-[0_0_8px_#404d85] animate-[scan_2s_ease-in-out_infinite]" />
+										</div>
+									)}
+
+									{/* Status Overlay */}
+									{scanResult && !isScanning && (
+										<div className="absolute inset-x-0 bottom-0 bg-emerald-600/90 backdrop-blur-sm text-white p-3 text-center transform translate-y-0 transition-transform">
+											<p className="font-bold text-lg">{scanResult.name}</p>
+											<p className="text-sm text-emerald-100 font-medium">Successfully {scanResult.action} at {new Date().toLocaleTimeString()}</p>
+										</div>
+									)}
+								</div>
+
+								{/* Controls Area */}
+								<div className="flex flex-col justify-center space-y-4">
+									{!isCameraActive ? (
+										<button 
+											type="button" 
+											onClick={startCamera} 
+											className="w-full py-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-lg shadow-lg transition-colors flex items-center justify-center gap-2"
+										>
+											<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+											Initialize Kiosk
+										</button>
+									) : (
+										<>
+											<div className="p-4 bg-zinc-100 rounded-xl border border-zinc-200 shadow-sm mb-4">
+												<p className="text-sm font-bold text-zinc-900 mb-2">1. First time? Enroll Face Here:</p>
+												<select 
+													onChange={(e) => {
+														if(e.target.value) setEnrollingEmployee(e.target.value);
+													}} 
+													value={""} 
+													className="w-full rounded-lg border border-zinc-300 px-2 py-2 text-sm bg-white"
+												>
+													<option value="">Select Employee to Enroll...</option>
+													{employees.map(emp => (
+														<option key={emp.id} value={emp.id}>
+															{emp.user?.firstName || emp.employeeCode} ({emp.employeeCode})
+														</option>
+													))}
+												</select>
+												<p className="text-xs text-zinc-500 mt-2">Required before you can check-in below.</p>
+											</div>
+
+											<div className="w-full h-px bg-zinc-200 my-2"></div>
+											<p className="text-sm font-bold text-zinc-900 mt-2 text-center">2. Everyday Check-In:</p>
+
+											<button 
+												type="button" 
+												onClick={() => void handleSmartScan("checkin")} 
+												disabled={isScanning}
+												className="w-full py-4 rounded-xl bg-gradient-to-r from-[#404d85] to-[#252f5a] hover:from-[#323d6a] hover:to-[#1a2245] text-white font-bold text-lg shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+											>
+												<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
+												{isScanning ? "Scanning Face..." : "Scan Face to Check-In"}
+											</button>
+											<button 
+												type="button" 
+												onClick={() => void handleSmartScan("checkout")} 
+												disabled={isScanning}
+												className="w-full py-3 rounded-xl bg-white hover:bg-zinc-50 border-2 border-[#404d85] text-[#404d85] font-bold text-md shadow-sm transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+											>
+												<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+												Scan Face to Check-Out
+											</button>
+											<button 
+												type="button" 
+												onClick={stopCamera} 
+												disabled={isScanning}
+												className="w-full py-2 mt-4 text-xs font-semibold text-zinc-500 hover:text-rose-600 transition-colors"
+											>
+												Turn Off Camera
+											</button>
+										</>
+									)}
+								</div>
+							</div>
+							
+							<style dangerouslySetInnerHTML={{__html: `
+								@keyframes scan {
+									0% { transform: translateY(0); }
+									50% { transform: translateY(200px); }
+									100% { transform: translateY(0); }
+								}
+							`}} />
 
 							<div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
 								<p className="text-sm font-semibold text-zinc-800">Filter Daily Records</p>
@@ -1383,6 +1994,37 @@ export default function HrmPage() {
 					</div>
 				)}
 			</div>
+			{/* Enroll Face Modal */}
+			{enrollingEmployee && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+					<div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+						<div className="bg-zinc-50 px-6 py-4 border-b border-zinc-100 flex justify-between items-center">
+							<h3 className="text-lg font-bold text-zinc-900">Enroll Employee Face</h3>
+							<button onClick={() => setEnrollingEmployee(null)} className="text-zinc-400 hover:text-zinc-600">✕</button>
+						</div>
+						<div className="p-6">
+							<div className="relative overflow-hidden rounded-xl bg-zinc-900 aspect-video shadow-inner">
+								<Webcam
+									ref={enrollWebcamRef}
+									audio={false}
+									screenshotFormat="image/jpeg"
+									videoConstraints={{ facingMode: "user" }}
+									className="h-full w-full object-cover"
+								/>
+							</div>
+							<p className="mt-4 text-sm text-zinc-600 text-center">Please ensure the employee's face is clearly visible and well-lit.</p>
+							<button 
+								type="button" 
+								onClick={() => void handleEnrollFace()} 
+								disabled={isEnrollScanning}
+								className="w-full mt-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-md shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+							>
+								{isEnrollScanning ? "Saving Face..." : "Capture & Save"}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</WorkspaceShell>
 	);
 }

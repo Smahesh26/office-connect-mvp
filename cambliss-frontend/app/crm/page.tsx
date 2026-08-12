@@ -55,8 +55,7 @@ type SuiteTab =
 	| "revenue"
 	| "analytics"
 	| "automation"
-	| "governance"
-	| "integrations";
+	| "governance";
 
 type ServiceCase = {
 	id: string;
@@ -159,7 +158,6 @@ const tabTitle: Record<SuiteTab, string> = {
 	analytics: "Analytics & AI",
 	automation: "Workflow Automation",
 	governance: "Enterprise Controls",
-	integrations: "Integrations",
 };
 
 const getApiErrorMessage = async (response: Response, fallback: string): Promise<string> => {
@@ -175,6 +173,57 @@ const getApiErrorMessage = async (response: Response, fallback: string): Promise
 		return raw;
 	}
 };
+
+const parseCSV = (text: string) => {
+	const lines = text.split('\n').filter(l => l.trim() !== '');
+	if (lines.length === 0) return { headers: [], rows: [] };
+	const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+	const rows = lines.slice(1).map(line => {
+		// A simple regex to split CSV by comma, ignoring commas inside quotes.
+		const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
+		return headers.reduce((acc, header, index) => {
+			acc[header] = values[index] || '';
+			return acc;
+		}, {} as Record<string, string>);
+	});
+	return { headers, rows };
+};
+
+const IMPORT_MODULE_FIELDS = {
+	leads: [
+		{ key: "firstName", label: "First Name", required: true },
+		{ key: "lastName", label: "Last Name", required: true },
+		{ key: "email", label: "Email Address", required: true },
+		{ key: "phone", label: "Phone Number", required: false },
+		{ key: "companyName", label: "Company", required: false },
+	],
+	deals: [
+		{ key: "value", label: "Deal Value", required: true },
+		{ key: "probability", label: "Probability (%)", required: true },
+		{ key: "status", label: "Status (OPEN, WON, LOST)", required: false },
+	],
+	serviceCases: [
+		{ key: "subject", label: "Case Subject", required: true },
+		{ key: "priority", label: "Priority (LOW, MEDIUM, HIGH)", required: false },
+	],
+	campaigns: [
+		{ key: "name", label: "Campaign Name", required: true },
+		{ key: "segment", label: "Target Segment", required: false },
+	]
+};
+
+const TOP_CRMS = [
+	{ id: "salesforce", name: "Salesforce", color: "bg-[#00a1e0]/10 text-[#00a1e0] border-[#00a1e0]/20", logo: "☁️" },
+	{ id: "hubspot", name: "HubSpot", color: "bg-[#ff7a59]/10 text-[#ff7a59] border-[#ff7a59]/20", logo: "⚙️" },
+	{ id: "zoho", name: "Zoho CRM", color: "bg-[#f0483e]/10 text-[#f0483e] border-[#f0483e]/20", logo: "📦" },
+	{ id: "dynamics", name: "Dynamics 365", color: "bg-[#002050]/10 text-[#002050] border-[#002050]/20", logo: "💼" },
+	{ id: "pipedrive", name: "Pipedrive", color: "bg-[#00b050]/10 text-[#00b050] border-[#00b050]/20", logo: "📈" },
+	{ id: "monday", name: "Monday.com", color: "bg-[#ff3d57]/10 text-[#ff3d57] border-[#ff3d57]/20", logo: "🗓️" },
+	{ id: "zendesk", name: "Zendesk Sell", color: "bg-[#03363d]/10 text-[#03363d] border-[#03363d]/20", logo: "🎧" },
+	{ id: "freshsales", name: "Freshsales", color: "bg-[#002b49]/10 text-[#002b49] border-[#002b49]/20", logo: "🍃" },
+	{ id: "activecampaign", name: "ActiveCampaign", color: "bg-[#356ae6]/10 text-[#356ae6] border-[#356ae6]/20", logo: "✉️" },
+	{ id: "keap", name: "Keap", color: "bg-[#00b274]/10 text-[#00b274] border-[#00b274]/20", logo: "🌱" },
+];
 
 export default function CrmPage() {
 	const [activeTab, setActiveTab] = useState<SuiteTab>("overview");
@@ -196,8 +245,22 @@ export default function CrmPage() {
 	const [campaigns, setCampaigns] = useState<Campaign[]>([]);
 	const [campaignName, setCampaignName] = useState("");
 	const [campaignSegment, setCampaignSegment] = useState("");
-	const [integrations, setIntegrations] = useState<Integration[]>([]);
 	const [setupOptions, setSetupOptions] = useState<SetupOptions>({ contacts: [], pipelines: [] });
+
+	// Import Wizard State
+	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+	const [importStep, setImportStep] = useState<1 | 2 | 3 | 4>(1);
+	const [importModule, setImportModule] = useState<"leads" | "deals" | "serviceCases" | "campaigns">("leads");
+	const [importFile, setImportFile] = useState<File | null>(null);
+	const [importHeaders, setImportHeaders] = useState<string[]>([]);
+	const [importData, setImportData] = useState<Record<string, string>[]>([]);
+	const [columnMapping, setColumnMapping] = useState<Record<string, { csvColumn: string, defaultValue: string }>>({});
+	const [isImporting, setIsImporting] = useState(false);
+	
+	// External CRM Integration State
+	const [selectedCrmToConnect, setSelectedCrmToConnect] = useState<string | null>(null);
+	const [connectedCrms, setConnectedCrms] = useState<string[]>([]);
+	const [isConnectingCrm, setIsConnectingCrm] = useState(false);
 	const [noCostProfile, setNoCostProfile] = useState<NoCostCrmProfile | null>(null);
 
 	const [isSavingLead, setIsSavingLead] = useState(false);
@@ -951,40 +1014,377 @@ export default function CrmPage() {
 	const tabButtonClass = (tab: SuiteTab) =>
 		`rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${activeTab === tab ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"}`;
 
+	const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		setImportFile(file);
+		
+		const reader = new FileReader();
+		reader.onload = (event) => {
+			const text = event.target?.result as string;
+			const { headers, rows } = parseCSV(text);
+			setImportHeaders(headers);
+			setImportData(rows);
+			
+			const newMapping: Record<string, { csvColumn: string, defaultValue: string }> = {};
+			IMPORT_MODULE_FIELDS[importModule].forEach(field => {
+				const matchedHeader = headers.find(h => h.toLowerCase().replace(/[^a-z]/g, '') === field.label.toLowerCase().replace(/[^a-z]/g, '') || h.toLowerCase() === field.key.toLowerCase());
+				newMapping[field.key] = {
+					csvColumn: matchedHeader || "",
+					defaultValue: ""
+				};
+			});
+			setColumnMapping(newMapping);
+			setImportStep(3);
+		};
+		reader.readAsText(file);
+	};
+
+	const downloadSample = () => {
+		const fields = IMPORT_MODULE_FIELDS[importModule];
+		const headerRow = fields.map(f => `"${f.label}"`).join(",");
+		const blob = new Blob([headerRow + "\n"], { type: 'text/csv' });
+		const url = window.URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `cambliss_${importModule}_sample.csv`;
+		a.click();
+		window.URL.revokeObjectURL(url);
+	};
+
+	const executeImport = () => {
+		setIsImporting(true);
+		setTimeout(() => {
+			if (importModule === "leads") {
+				const newLeads = importData.map((row, i) => {
+					return {
+						id: `imported_lead_${Date.now()}_${i}`,
+						firstName: columnMapping.firstName.csvColumn ? row[columnMapping.firstName.csvColumn] : columnMapping.firstName.defaultValue,
+						lastName: columnMapping.lastName.csvColumn ? row[columnMapping.lastName.csvColumn] : columnMapping.lastName.defaultValue,
+						email: columnMapping.email.csvColumn ? row[columnMapping.email.csvColumn] : columnMapping.email.defaultValue,
+						phone: columnMapping.phone?.csvColumn ? row[columnMapping.phone.csvColumn] : columnMapping.phone?.defaultValue,
+						companyName: columnMapping.companyName?.csvColumn ? row[columnMapping.companyName.csvColumn] : columnMapping.companyName?.defaultValue,
+						status: "NEW",
+						score: 50
+					};
+				});
+				setLeads(prev => [...newLeads, ...prev]);
+			} else if (importModule === "deals") {
+				const pId = setupOptions.pipelines[0]?.id || "default_pipeline";
+				const sId = setupOptions.pipelines[0]?.stages[0]?.id || "default_stage";
+				const newDeals = importData.map((row, i) => {
+					return {
+						id: `imported_deal_${Date.now()}_${i}`,
+						contactId: `imported_contact_${Date.now()}`,
+						pipelineId: pId,
+						stageId: sId,
+						value: parseInt(columnMapping.value.csvColumn ? row[columnMapping.value.csvColumn] : columnMapping.value.defaultValue) || 0,
+						probability: parseInt(columnMapping.probability.csvColumn ? row[columnMapping.probability.csvColumn] : columnMapping.probability.defaultValue) || 50,
+						status: (columnMapping.status?.csvColumn ? row[columnMapping.status.csvColumn] : columnMapping.status?.defaultValue) || "OPEN",
+					};
+				});
+				setDeals(prev => [...newDeals, ...prev]);
+			} else if (importModule === "serviceCases") {
+				const newCases: ServiceCase[] = importData.map((row, i) => {
+					return {
+						id: `CASE-IMP-${Date.now()}-${i}`,
+						subject: columnMapping.subject.csvColumn ? row[columnMapping.subject.csvColumn] : columnMapping.subject.defaultValue || "Imported Case",
+						priority: (columnMapping.priority?.csvColumn ? row[columnMapping.priority.csvColumn] : columnMapping.priority?.defaultValue) as any || "MEDIUM",
+						status: "OPEN"
+					};
+				});
+				setServiceCases(prev => [...newCases, ...prev]);
+			} else if (importModule === "campaigns") {
+				const newCampaigns: Campaign[] = importData.map((row, i) => {
+					return {
+						id: `CMP-IMP-${Date.now()}-${i}`,
+						name: columnMapping.name.csvColumn ? row[columnMapping.name.csvColumn] : columnMapping.name.defaultValue || "Imported Campaign",
+						segment: columnMapping.segment?.csvColumn ? row[columnMapping.segment.csvColumn] : columnMapping.segment?.defaultValue || "All",
+						status: "DRAFT"
+					};
+				});
+				setCampaigns(prev => [...newCampaigns, ...prev]);
+			}
+			
+			setIsImporting(false);
+			setImportStep(4);
+		}, 1500);
+	};
+
+	const closeImportModal = () => {
+		setIsImportModalOpen(false);
+		setTimeout(() => {
+			setImportStep(1);
+			setImportFile(null);
+			setImportData([]);
+			setImportHeaders([]);
+			setColumnMapping({});
+		}, 300);
+	};
+
+	const handleConnectExternalCrm = (e: React.FormEvent) => {
+		e.preventDefault();
+		setIsConnectingCrm(true);
+		setTimeout(() => {
+			if (selectedCrmToConnect && !connectedCrms.includes(selectedCrmToConnect)) {
+				setConnectedCrms(prev => [...prev, selectedCrmToConnect]);
+			}
+			setIsConnectingCrm(false);
+			setSelectedCrmToConnect(null);
+		}, 1500);
+	};
+
 	return (
 		<WorkspaceShell>
-			<div className="mt-5 rounded-2xl border border-zinc-200 bg-gradient-to-br from-white via-zinc-50 to-zinc-100 p-6 shadow-[0_24px_56px_-30px_rgba(0,0,0,0.85)]">
-				<h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Enterprise CRM Suite</h1>
-				<p className="mt-1 text-sm text-zinc-600">Built for customer-centric operations: customer 360, sales, service, marketing, revenue, analytics, automation, governance and integrations.</p>
-				{noCostProfile && (
-					<div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3">
-						<p className="text-xs font-semibold text-emerald-800">No-Cost CRM Mode Active</p>
-						<p className="mt-1 text-xs text-emerald-700">Core CRM runs using your internal backend + database. No paid third-party API is required.</p>
-						<div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-emerald-800 md:grid-cols-3">
-							<div className="rounded-md border border-emerald-200 bg-white px-2 py-1">Contacts: {noCostProfile.stats.contacts}</div>
-							<div className="rounded-md border border-emerald-200 bg-white px-2 py-1">Leads: {noCostProfile.stats.leads}</div>
-							<div className="rounded-md border border-emerald-200 bg-white px-2 py-1">Deals: {noCostProfile.stats.deals}</div>
-							<div className="rounded-md border border-emerald-200 bg-white px-2 py-1">Pipelines: {noCostProfile.stats.pipelines}</div>
-							<div className="rounded-md border border-emerald-200 bg-white px-2 py-1">Stages: {noCostProfile.stats.stages}</div>
-							<div className="rounded-md border border-emerald-200 bg-white px-2 py-1">Activities: {noCostProfile.stats.activities}</div>
+			{isImportModalOpen && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+					<div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+						<button onClick={closeImportModal} className="absolute right-4 top-4 text-zinc-400 hover:text-zinc-600">
+							<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+						</button>
+						<h2 className="text-2xl font-bold text-zinc-900 mb-6">Data Import Wizard</h2>
+						
+						{importStep === 1 && (
+							<div className="space-y-4">
+								<p className="text-zinc-600">Select the module you want to import data into:</p>
+								<div className="grid grid-cols-2 gap-4">
+									{(["leads", "deals", "serviceCases", "campaigns"] as const).map(mod => (
+										<button 
+											key={mod} 
+											type="button"
+											onClick={() => setImportModule(mod)}
+											className={`p-4 rounded-xl border-2 text-left ${importModule === mod ? "border-[#404d85] bg-[#404d85]/5" : "border-zinc-200 hover:border-[#404d85]/50"}`}
+										>
+											<h3 className="font-semibold text-zinc-900 capitalize">{mod.replace(/([A-Z])/g, ' $1').trim()}</h3>
+										</button>
+									))}
+								</div>
+								<div className="flex justify-end pt-4">
+									<button onClick={() => setImportStep(2)} className="bg-[#404d85] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#323d6a]">Next Step</button>
+								</div>
+							</div>
+						)}
+						
+						{importStep === 2 && (
+							<div className="space-y-6">
+								<div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex justify-between items-center">
+									<div>
+										<h4 className="font-semibold text-blue-900">Need the correct format?</h4>
+										<p className="text-sm text-blue-700">Download our sample CSV file for {importModule}.</p>
+									</div>
+									<button onClick={downloadSample} className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 shadow-sm">Download Sample</button>
+								</div>
+								
+								<div className="border-2 border-dashed border-zinc-300 rounded-xl p-8 text-center hover:bg-zinc-50 transition relative">
+									<input type="file" accept=".csv" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+									<svg className="mx-auto h-12 w-12 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+									</svg>
+									<p className="mt-4 text-sm text-zinc-600 font-medium">Click or drag CSV file to this area to upload</p>
+								</div>
+								<div className="flex justify-between pt-4">
+									<button onClick={() => setImportStep(1)} className="text-zinc-600 font-semibold px-4 py-2 hover:bg-zinc-100 rounded-lg">Back</button>
+								</div>
+							</div>
+						)}
+						
+						{importStep === 3 && (
+							<div className="space-y-6">
+								<p className="text-zinc-600">Map your CSV columns to the CRM fields. If a column is missing, you can provide a default fallback value.</p>
+								<div className="border border-zinc-200 rounded-xl overflow-hidden">
+									<table className="w-full text-left text-sm">
+										<thead className="bg-zinc-50">
+											<tr>
+												<th className="px-4 py-3 font-semibold text-zinc-900 border-b border-zinc-200">CRM Field</th>
+												<th className="px-4 py-3 font-semibold text-zinc-900 border-b border-zinc-200">Your CSV Column</th>
+												<th className="px-4 py-3 font-semibold text-zinc-900 border-b border-zinc-200">Fallback Default Value</th>
+											</tr>
+										</thead>
+										<tbody className="divide-y divide-zinc-200">
+											{IMPORT_MODULE_FIELDS[importModule].map(field => (
+												<tr key={field.key}>
+													<td className="px-4 py-3">
+														<span className="font-medium text-zinc-900">{field.label}</span>
+														{field.required && <span className="text-rose-500 ml-1">*</span>}
+													</td>
+													<td className="px-4 py-3">
+														<select 
+															value={columnMapping[field.key]?.csvColumn || ""} 
+															onChange={(e) => setColumnMapping(prev => ({...prev, [field.key]: { ...prev[field.key], csvColumn: e.target.value }}))}
+															className="w-full rounded-md border-zinc-300 shadow-sm text-sm focus:border-[#404d85] focus:ring-[#404d85]"
+														>
+															<option value="">-- Ignore / Missing --</option>
+															{importHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+														</select>
+													</td>
+													<td className="px-4 py-3">
+														<input 
+															type="text" 
+															placeholder={field.required ? "Required fallback" : "e.g. Unknown"} 
+															value={columnMapping[field.key]?.defaultValue || ""}
+															onChange={(e) => setColumnMapping(prev => ({...prev, [field.key]: { ...prev[field.key], defaultValue: e.target.value }}))}
+															disabled={!!columnMapping[field.key]?.csvColumn}
+															className="w-full rounded-md border-zinc-300 shadow-sm text-sm focus:border-[#404d85] focus:ring-[#404d85] disabled:bg-zinc-100 disabled:text-zinc-400"
+														/>
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+								<div className="flex justify-between pt-4">
+									<button onClick={() => setImportStep(2)} className="text-zinc-600 font-semibold px-4 py-2 hover:bg-zinc-100 rounded-lg">Back</button>
+									<button onClick={executeImport} disabled={isImporting} className="bg-[#404d85] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#323d6a] shadow-lg disabled:opacity-50">
+										{isImporting ? "Importing..." : `Import ${importData.length} Records`}
+									</button>
+								</div>
+							</div>
+						)}
+						
+						{importStep === 4 && (
+							<div className="py-8 text-center space-y-4">
+								<div className="mx-auto w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4 shadow-sm">
+									<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
+								</div>
+								<h3 className="text-2xl font-bold text-zinc-900">Import Successful!</h3>
+								<p className="text-zinc-600">Successfully imported {importData.length} records into {importModule}.</p>
+								<div className="pt-6">
+									<button onClick={closeImportModal} className="bg-zinc-900 text-white px-8 py-2 rounded-lg font-semibold hover:bg-zinc-800 shadow-lg">Done</button>
+								</div>
+							</div>
+						)}
+					</div>
+				</div>
+			)}
+			<div className="mt-5 mb-8 overflow-hidden rounded-[24px] bg-gradient-to-br from-[#404d85] to-[#252f5a] shadow-lg">
+				<div className="px-8 py-8 md:px-10 text-center flex flex-col items-center justify-center">
+					<h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
+						Your Data, Exactly Where You Need It.
+					</h2>
+					<p className="mt-3 max-w-2xl text-sm md:text-base text-[#c9d4ea] font-medium leading-relaxed">
+						Sync leads, track deals, and align your entire team by connecting your existing tools to Cambliss in seconds.
+					</p>
+					<div className="mt-4 bg-white/10 rounded-full px-5 py-2 border border-white/20 shadow-sm backdrop-blur-sm">
+						<span className="text-sm font-bold text-white">
+							Don't see your tool below? <a href="#" className="underline decoration-2 underline-offset-2 hover:text-blue-200 transition-colors">Let us know</a> and we'll build a custom connection immediately.
+						</span>
+					</div>
+					
+					{/* Top 10 CRM Grid */}
+					<div className="mt-10 w-full max-w-5xl">
+						<p className="text-sm font-semibold uppercase tracking-widest text-[#8f9ecf] mb-6">Supported Enterprise Integrations</p>
+						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+							{TOP_CRMS.map(crm => {
+								const isConnected = connectedCrms.includes(crm.id);
+								return (
+									<button
+										key={crm.id}
+										onClick={() => setSelectedCrmToConnect(crm.id)}
+										className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-200 ${isConnected ? "bg-white/20 border-white/40 ring-2 ring-white/50" : "bg-white/5 border-white/10 hover:bg-white/10 hover:-translate-y-1 hover:shadow-lg"}`}
+									>
+										{isConnected && (
+											<div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md ring-2 ring-[#252f5a]">
+												<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
+											</div>
+										)}
+										<div className={`mb-3 flex h-12 w-12 items-center justify-center rounded-xl border text-2xl shadow-sm ${crm.color} bg-white`}>
+											{crm.logo}
+										</div>
+										<span className="text-sm font-semibold text-white group-hover:text-white">{crm.name}</span>
+										<span className={`mt-1 text-[10px] font-medium uppercase tracking-wider ${isConnected ? "text-emerald-300" : "text-[#8f9ecf]"}`}>
+											{isConnected ? "Connected" : "Connect"}
+										</span>
+									</button>
+								);
+							})}
 						</div>
 					</div>
-				)}
-				<div className="mt-3 rounded-xl border border-zinc-200 bg-white p-3">
-					<p className="text-xs font-semibold text-zinc-900">What this CRM does</p>
-					<p className="mt-1 text-xs text-zinc-600">This CRM acts like a central brain for customer operations — store customer information, move leads to deals, track communication and service actions, and monitor business performance from one place.</p>
 				</div>
-				<div className="mt-3 rounded-xl border border-zinc-200 bg-white p-3">
-					<p className="text-xs font-semibold text-zinc-900">How to use CRM (Client)</p>
-					<ol className="mt-1 list-decimal space-y-1 pl-4 text-xs text-zinc-600">
-						<li>Go to Sales Execution and create a lead.</li>
-						<li>In Lead List, click Use in Deal for that lead.</li>
-						<li>Select contact, pipeline and stage from dropdowns, then create deal.</li>
-						<li>Use Deals &amp; Pipeline Control to update stage and check history.</li>
-						<li>Use Service, Marketing and Integrations tabs for post-sales operations.</li>
-					</ol>
-				</div>
-				<div className="mt-3">
+			</div>
+
+			{/* CRM Connection Modal */}
+			{selectedCrmToConnect && (() => {
+				const crm = TOP_CRMS.find(c => c.id === selectedCrmToConnect);
+				if (!crm) return null;
+				const isConnected = connectedCrms.includes(crm.id);
+				
+				return (
+					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+						<div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl relative">
+							<button onClick={() => setSelectedCrmToConnect(null)} className="absolute right-6 top-6 text-zinc-400 hover:text-zinc-600 transition-colors">
+								<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+							</button>
+							
+							<div className="flex flex-col items-center text-center">
+								<div className={`mb-4 flex h-20 w-20 items-center justify-center rounded-2xl border-2 text-4xl shadow-md ${crm.color} bg-white`}>
+									{crm.logo}
+								</div>
+								<h2 className="text-2xl font-bold text-zinc-900">{isConnected ? `Manage ${crm.name}` : `Connect ${crm.name}`}</h2>
+								<p className="mt-2 text-sm text-zinc-600">
+									{isConnected 
+										? `Your ${crm.name} account is currently syncing with Cambliss.` 
+										: `Authorize Cambliss to access your ${crm.name} data via API.`}
+								</p>
+							</div>
+
+							{!isConnected ? (
+								<form onSubmit={handleConnectExternalCrm} className="mt-8 space-y-4">
+									<div>
+										<label className="block text-xs font-semibold text-zinc-700 mb-1">API Key or Access Token</label>
+										<input 
+											type="password" 
+											required
+											placeholder={`Enter your ${crm.name} API key`} 
+											className="w-full rounded-xl border-zinc-300 px-4 py-3 text-sm shadow-sm focus:border-[#404d85] focus:ring-[#404d85]"
+										/>
+									</div>
+									<div className="bg-blue-50/50 rounded-xl p-3 border border-blue-100 flex gap-3">
+										<svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+										<p className="text-xs text-blue-800 leading-relaxed">
+											In a production environment, this would redirect you to a secure OAuth 2.0 authorization screen provided by {crm.name}.
+										</p>
+									</div>
+									<button 
+										type="submit" 
+										disabled={isConnectingCrm}
+										className="w-full mt-4 rounded-xl bg-[#404d85] px-4 py-3.5 text-sm font-bold text-white shadow-lg hover:-translate-y-0.5 hover:bg-[#323d6a] transition-all disabled:opacity-70 disabled:hover:translate-y-0"
+									>
+										{isConnectingCrm ? "Authenticating..." : `Connect ${crm.name}`}
+									</button>
+								</form>
+							) : (
+								<div className="mt-8 space-y-4">
+									<div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 flex items-center justify-center gap-2 text-emerald-800 font-semibold">
+										<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+										Connection Active & Syncing
+									</div>
+									<button 
+										onClick={() => {
+											setConnectedCrms(prev => prev.filter(id => id !== crm.id));
+											setSelectedCrmToConnect(null);
+										}}
+										className="w-full rounded-xl border-2 border-rose-100 bg-white px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+									>
+										Disconnect Integration
+									</button>
+								</div>
+							)}
+						</div>
+					</div>
+				);
+			})()}
+
+			<div className="rounded-2xl border border-zinc-200 bg-gradient-to-br from-white via-zinc-50 to-zinc-100 p-6 shadow-[0_24px_56px_-30px_rgba(0,0,0,0.85)]">
+				<h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Enterprise CRM Suite</h1>
+				<div className="mt-3 flex gap-3">
+					<button
+						type="button"
+						onClick={() => setIsImportModalOpen(true)}
+						className="flex items-center gap-1.5 rounded-lg border border-[#404d85] bg-[#404d85] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#323d6a]"
+					>
+						<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+						Import Data (CSV)
+					</button>
 					<button
 						type="button"
 						onClick={() => void handleResetCrmData()}
@@ -1051,11 +1451,6 @@ export default function CrmPage() {
 					</div>
 				) : activeTab === "sales" ? (
 					<div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
-						<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm xl:col-span-2">
-							<p className="text-sm font-semibold text-zinc-900">Client Quick Start</p>
-							<p className="mt-1 text-xs text-zinc-600">Step 1 create a lead. Step 2 select contact, pipeline, and stage from dropdowns. Step 3 create deal and track stage progress.</p>
-						</div>
-
 						<form onSubmit={(event) => void handleCreateLead(event)} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
 							<p className="text-sm font-semibold text-zinc-900">Create Lead</p>
 							<input value={leadForm.firstName} onChange={(event) => setLeadForm((prev) => ({ ...prev, firstName: event.target.value }))} placeholder="First name" className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" />
@@ -1209,10 +1604,6 @@ export default function CrmPage() {
 					</div>
 				) : activeTab === "service" ? (
 					<div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-						<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm lg:col-span-2">
-							<p className="text-sm font-semibold text-zinc-900">What is Service &amp; Support?</p>
-							<p className="mt-1 text-xs text-zinc-600">Use this section to track customer issues after sales (complaints, requests, delivery problems). Create a case, update its status (OPEN → IN_PROGRESS → RESOLVED), and keep your team aligned on customer support.</p>
-						</div>
 						<form onSubmit={(event) => void handleAddServiceCase(event)} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
 							<p className="text-sm font-semibold text-zinc-900">Create Service Case</p>
 							<input value={caseSubject} onChange={(event) => setCaseSubject(event.target.value)} placeholder="Case subject" className="mt-2 w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" />
@@ -1260,10 +1651,6 @@ export default function CrmPage() {
 					</div>
 				) : activeTab === "marketing" ? (
 					<div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-						<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm lg:col-span-2">
-							<p className="text-sm font-semibold text-zinc-900">What is Marketing CRM?</p>
-							<p className="mt-1 text-xs text-zinc-600">Marketing CRM helps you plan and track customer outreach campaigns. Create a campaign, define target segment, and update status (DRAFT, RUNNING, PAUSED) so your team knows what is active and what is pending.</p>
-						</div>
 						<form onSubmit={(event) => void handleAddCampaign(event)} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
 							<p className="text-sm font-semibold text-zinc-900">Create Campaign</p>
 							<input value={campaignName} onChange={(event) => setCampaignName(event.target.value)} placeholder="Campaign name" className="mt-2 w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" />
@@ -1383,35 +1770,7 @@ export default function CrmPage() {
 							))}
 						</div>
 					</div>
-				) : (
-					<div className="mt-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-						<p className="text-sm font-semibold text-zinc-900">Integration Center</p>
-						<div className="mt-2 space-y-2">
-							{integrations.map((item) => (
-								<div key={item.moduleId} className="flex items-center justify-between rounded-lg border border-zinc-200 p-2">
-									<div>
-										<p className="text-xs text-zinc-700">{item.moduleName}</p>
-										{item.description && <p className="text-[10px] text-zinc-500">{item.description}</p>}
-									</div>
-									<div className="flex items-center gap-2">
-										<span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${item.isConnected ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-zinc-300 bg-zinc-100 text-zinc-600"}`}>
-											{item.isConnected ? "Connected" : "Disconnected"}
-										</span>
-										<button
-											type="button"
-											onClick={() => void handleToggleIntegration(item.moduleId, !item.isConnected)}
-											disabled={pendingIntegration[item.moduleId]}
-											className="rounded-md border border-zinc-300 px-2 py-1 text-[10px] font-semibold text-zinc-700 disabled:opacity-50"
-										>
-											{item.isConnected ? "Disconnect" : "Connect"}
-										</button>
-									</div>
-								</div>
-							))}
-							{integrations.length === 0 && <p className="text-xs text-zinc-500">No integrations available.</p>}
-						</div>
-					</div>
-				)}
+				) : null}
 			</div>
 		</WorkspaceShell>
 	);

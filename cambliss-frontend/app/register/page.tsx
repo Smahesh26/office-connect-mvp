@@ -41,13 +41,13 @@ function SparkIcon() {
 }
 
 const setupFlow = [
-	"Create organization workspace",
-	"Complete business onboarding",
-	"Activate free trial",
-	"Access core modules",
+	"AI-Powered Financial Insights",
+	"Automated GST & E-Way Bills",
+	"Real-time Inventory Sync",
+	"Unified CRM & HRM",
 ];
 
-const launchModules = ["CRM", "HRM", "Inventory", "File Sharing", "Video Connect"];
+const launchModules = ["Accounting", "GST Compliance", "CRM", "HRM", "Inventory"];
 
 const isFirebaseOtpMode = process.env.NEXT_PUBLIC_AUTH_OTP_PROVIDER === "FIREBASE";
 
@@ -77,21 +77,12 @@ export default function RegisterPage() {
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
 	const [phone, setPhone] = useState("");
-	const [otp, setOtp] = useState("");
-	const [otpRequestId, setOtpRequestId] = useState<string | null>(null);
-	const [otpVerified, setOtpVerified] = useState(false);
-	const [otpMessage, setOtpMessage] = useState<string | null>(null);
-	const [sendingOtp, setSendingOtp] = useState(false);
-	const [verifyingOtp, setVerifyingOtp] = useState(false);
-	const [firebaseIdToken, setFirebaseIdToken] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [plans, setPlans] = useState<PlanSummary[]>([]);
 	const [nextPath, setNextPath] = useState("");
-	const confirmationRef = useRef<ConfirmationResult | null>(null);
-	const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
 	useEffect(() => {
 		if (typeof window === "undefined") {
@@ -125,172 +116,9 @@ export default function RegisterPage() {
 		void fetchPlans();
 	}, []);
 
-	const resetOtpState = () => {
-		setOtp("");
-		setOtpRequestId(null);
-		setOtpVerified(false);
-		setOtpMessage(null);
-		setFirebaseIdToken("");
-		confirmationRef.current = null;
-	};
-
-	const handleSendOtp = async () => {
-		setError(null);
-		setOtpMessage(null);
-		setFirebaseIdToken("");
-		setOtpVerified(false);
-
-		if (!phone.trim()) {
-			setError("Phone number is required before sending OTP");
-			return;
-		}
-
-		if (isFirebaseOtpMode) {
-			if (!firebaseApp || !isFirebaseConfigured()) {
-				setError("Firebase is not configured yet");
-				return;
-			}
-
-			const firebasePhone = normalizePhoneForFirebase(phone);
-			if (!firebasePhone.startsWith("+") || firebasePhone.length < 8) {
-				setError("Enter phone in international format like +919876543210");
-				return;
-			}
-
-			setSendingOtp(true);
-			try {
-				const auth = getAuth(firebaseApp);
-				if (!recaptchaVerifierRef.current) {
-					recaptchaVerifierRef.current = new RecaptchaVerifier(auth, "recaptcha-container", {
-						size: "invisible",
-					});
-					await recaptchaVerifierRef.current.render();
-				}
-
-				confirmationRef.current = await signInWithPhoneNumber(auth, firebasePhone, recaptchaVerifierRef.current);
-				setOtpRequestId("firebase");
-				setOtpMessage("Firebase OTP sent. Check your phone.");
-			} catch (err: any) {
-				setError(err.message || "Unable to send Firebase OTP");
-			} finally {
-				setSendingOtp(false);
-			}
-
-			return;
-		}
-
-		setSendingOtp(true);
-		try {
-			const response = await fetch("/api/auth/register/otp/send", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ phone }),
-			});
-
-			const data = (await response.json().catch(() => null)) as {
-				message?: string;
-				requestId?: string;
-				expiresInSeconds?: number;
-				otp?: string;
-			} | null;
-
-			if (!response.ok || !data?.requestId) {
-				throw new Error(data?.message || "Unable to send OTP");
-			}
-
-			setOtpRequestId(data.requestId);
-			setOtpVerified(false);
-			setOtpMessage(data.otp
-				? `OTP sent. Dev OTP: ${data.otp}`
-				: `OTP sent successfully. It will expire in ${Math.round((data.expiresInSeconds || 300) / 60)} minutes.`);
-		} catch (err: any) {
-			setError(err.message || "Unable to send OTP");
-		} finally {
-			setSendingOtp(false);
-		}
-	};
-
-	const handleVerifyOtp = async () => {
-		setError(null);
-		setOtpMessage(null);
-		setFirebaseIdToken("");
-
-		if (isFirebaseOtpMode) {
-			if (!confirmationRef.current) {
-				setError("Please send Firebase OTP first");
-				return;
-			}
-
-			if (!otp.trim()) {
-				setError("Enter OTP to verify");
-				return;
-			}
-
-			setVerifyingOtp(true);
-			try {
-				const result = await confirmationRef.current.confirm(otp.trim());
-				const idToken = await result.user.getIdToken();
-				setFirebaseIdToken(idToken);
-				setOtpVerified(true);
-				setOtpMessage("Firebase phone verified successfully.");
-			} catch (err: any) {
-				setOtpVerified(false);
-				setError(err.message || "Firebase OTP verification failed");
-			} finally {
-				setVerifyingOtp(false);
-			}
-
-			return;
-		}
-
-		if (!otpRequestId) {
-			setError("Please send OTP first");
-			return;
-		}
-
-		if (!otp.trim()) {
-			setError("Enter OTP to verify");
-			return;
-		}
-
-		setVerifyingOtp(true);
-		try {
-			const response = await fetch("/api/auth/register/otp/verify", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					phone,
-					requestId: otpRequestId,
-					otp,
-				}),
-			});
-
-			const data = (await response.json().catch(() => null)) as { message?: string; verified?: boolean } | null;
-			if (!response.ok || !data?.verified) {
-				throw new Error(data?.message || "OTP verification failed");
-			}
-
-			setOtpVerified(true);
-			setOtpMessage("Mobile OTP verified successfully.");
-		} catch (err: any) {
-			setOtpVerified(false);
-			setError(err.message || "OTP verification failed");
-		} finally {
-			setVerifyingOtp(false);
-		}
-	};
 
 	const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		if (isFirebaseOtpMode) {
-			if (!otpVerified || !firebaseIdToken) {
-				setError("Please verify Firebase OTP before creating account");
-				return;
-			}
-		} else if (!otpVerified || !otpRequestId) {
-			setError("Please verify mobile OTP before creating account");
-			return;
-		}
 		setLoading(true);
 		setError(null);
 
@@ -305,8 +133,6 @@ export default function RegisterPage() {
 					firstName,
 					lastName,
 					phone: isFirebaseOtpMode ? normalizePhoneForFirebase(phone) : phone,
-					otpRequestId: isFirebaseOtpMode ? undefined : otpRequestId,
-					firebaseIdToken: isFirebaseOtpMode ? firebaseIdToken : undefined,
 					email,
 					password,
 				}),
@@ -333,7 +159,9 @@ export default function RegisterPage() {
 				throw new Error("Token missing in response");
 			}
 
-			localStorage.setItem("authToken", data.token);
+			// Real JWT is stored in an httpOnly cookie by the backend; keep only a
+			// non-sensitive marker so client login guards work without exposing the token to XSS.
+			localStorage.setItem("authToken", "cookie-session");
 			if (data.user) {
 				localStorage.setItem("authUser", JSON.stringify(data.user));
 			} else {
@@ -361,7 +189,7 @@ export default function RegisterPage() {
 					<div className="grid grid-cols-1 gap-3 rounded-[34px] border border-[#d9e2ef] bg-white p-3 lg:grid-cols-[380px_1fr]">
 						<div className="rounded-[24px] bg-white p-8 lg:p-12">
 							<div className="mb-8 flex flex-col items-center">
-								<Image src="/officeconnect-reference-logo.png" alt="Office Connect" width={300} height={90} priority className="h-20 w-auto object-contain" />
+								<img src="/officeconnectlogo.png" alt="Office Connect" className="h-12 w-auto object-contain" />
 								<h1 className="mt-8 text-3xl font-semibold tracking-tight text-[#404d85]">Start your free trial</h1>
 								<p className="mt-2 text-sm leading-6 text-[#5b6472]">Create your account and verify your mobile number.</p>
 							</div>
@@ -408,51 +236,10 @@ export default function RegisterPage() {
 										type="tel"
 										required
 										value={phone}
-										onChange={(event) => {
-											setPhone(event.target.value);
-											resetOtpState();
-										}}
-										placeholder={isFirebaseOtpMode ? "+919876543210" : "+91 98765 43210"}
-										className="w-full rounded-xl border border-[#d9e2ef] bg-white px-4 py-2.5 text-sm text-[#1f2430] outline-none ring-0 transition focus:border-[#6678c1]"
+										onChange={(event) => setPhone(event.target.value)}
+										placeholder="+91 98765 43210"
+										className="w-full rounded-xl border border-line bg-white px-4 py-2.5 text-sm text-foreground outline-none ring-0 transition focus:border-brand"
 									/>
-									{isFirebaseOtpMode && <p className="mt-2 text-xs text-[#5b6472]">Firebase phone auth expects an international number like +919876543210.</p>}
-									<div className="mt-2 flex items-center gap-2">
-										<button
-											type="button"
-											onClick={() => void handleSendOtp()}
-											disabled={sendingOtp || loading || !phone.trim()}
-											className="rounded-lg border border-[#6678c1] px-3 py-1.5 text-xs font-semibold text-[#404d85] transition hover:bg-[#f8faff] disabled:cursor-not-allowed disabled:border-[#b8c3df] disabled:text-[#b8c3df]"
-										>
-											{sendingOtp ? "Sending OTP..." : otpRequestId ? "Resend OTP" : isFirebaseOtpMode ? "Send Firebase OTP" : "Send OTP"}
-										</button>
-										{otpVerified && <span className="text-xs font-semibold text-green-700">Verified</span>}
-									</div>
-									{otpRequestId && (
-										<div className="mt-2 flex items-center gap-2">
-											<input
-												type="text"
-												value={otp}
-												onChange={(event) => {
-													setOtp(event.target.value.replace(/\D/g, "").slice(0, 6));
-													if (otpVerified) {
-														setOtpVerified(false);
-													}
-												}}
-												placeholder="Enter 6-digit OTP"
-												className="w-full rounded-xl border border-[#d9e2ef] bg-white px-4 py-2.5 text-sm text-[#1f2430] outline-none ring-0 transition focus:border-[#6678c1]"
-											/>
-											<button
-												type="button"
-												onClick={() => void handleVerifyOtp()}
-												disabled={verifyingOtp || loading || otp.length !== 6}
-												className="rounded-lg border border-[#6678c1] px-3 py-1.5 text-xs font-semibold text-[#404d85] transition hover:bg-[#f8faff] disabled:cursor-not-allowed disabled:border-[#b8c3df] disabled:text-[#b8c3df]"
-											>
-												{verifyingOtp ? "Verifying..." : "Verify OTP"}
-											</button>
-										</div>
-									)}
-									{otpMessage && <p className="mt-2 text-xs text-[#404d85]">{otpMessage}</p>}
-									{isFirebaseOtpMode && <div id="recaptcha-container" className="mt-2" />}
 								</div>
 
 								<div>
@@ -497,7 +284,7 @@ export default function RegisterPage() {
 							</p>
 						</div>
 
-						<div className="relative hidden overflow-hidden rounded-[24px] border border-[#d9e2ef] bg-gradient-to-br from-[#f8faff] to-[#eef2fa] p-8 lg:block">
+						<div className="relative hidden overflow-hidden rounded-[24px] border border-line bg-gradient-to-br from-[#f8faff] to-[#eef2fa] p-8 lg:block">
 							<div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-white/75 blur-2xl" />
 							<div className="absolute -bottom-16 -right-14 h-80 w-80 rounded-full bg-white/70 blur-3xl" />
 							<div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.8),transparent_55%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.7),transparent_60%)]" />
@@ -505,42 +292,35 @@ export default function RegisterPage() {
 								<div className="ml-auto">
 									<a
 										href="/"
-										className="inline-flex items-center rounded-xl border border-[#d9e2ef] bg-white/85 px-4 py-2 text-xs font-semibold text-[#404d85] backdrop-blur hover:bg-white"
+										className="inline-flex items-center rounded-xl border border-line bg-white/85 px-4 py-2 text-xs font-semibold text-brand-strong backdrop-blur hover:bg-white"
 									>
 										Setup Flow
 									</a>
 								</div>
-								<div className="mt-auto max-w-xl pb-8">
+								<div className="mt-16 max-w-xl pb-8">
 									<div className="mb-5 flex items-center gap-2">
 										<SparkIcon />
 									</div>
-									<h2 className="text-4xl font-semibold leading-tight tracking-tight text-[#404d85]">
-										Start your workspace with onboarding and subscription from day one.
+									<h2 className="text-4xl font-semibold leading-tight tracking-tight text-brand-strong">
+										Your complete business operating system.
 									</h2>
-									<div className="mt-6 space-y-3 border-l-2 border-[#b8c3df] pl-4 text-base leading-relaxed text-[#5b6472]">
+									<p className="mt-4 text-lg text-foreground-muted">
+										Everything you need to manage finances, compliance, and daily operations in one intelligent platform.
+									</p>
+									<div className="mt-6 space-y-3 border-l-2 border-brand/30 pl-4 text-base leading-relaxed text-foreground-muted">
 										{setupFlow.map((step) => (
 											<p key={step}>• {step}</p>
 										))}
 									</div>
-									<div className="mt-6 rounded-xl border border-[#d9e2ef] bg-white/85 p-4">
-										<p className="text-xs font-semibold uppercase tracking-wide text-[#5b6472]">Available plans</p>
-										{plans.length > 0 ? (
-											<div className="mt-2 space-y-1.5">
-												{plans.map((plan) => (
-													<p key={plan.id} className="text-sm text-[#5b6472]">
-														{plan.name} · {plan.currency} {plan.price}/{plan.interval.toLowerCase()}
-													</p>
-												))}
-											</div>
-										) : (
-											<p className="mt-2 text-sm text-[#5b6472]">Plans will appear once configured by admin.</p>
-										)}
+									<div className="mt-6 rounded-xl border border-line bg-white/85 p-4">
+										<p className="text-xs font-semibold uppercase tracking-wide text-brand">90-Day Free Trial</p>
+										<p className="mt-1 text-sm text-foreground-muted">Enjoy full, unrestricted access to all ERP modules during your free trial. No credit card required.</p>
 									</div>
 									<div className="mt-6 flex flex-wrap gap-2">
 										{launchModules.map((module) => (
 											<span
 												key={module}
-													className="rounded-full border border-[#d9e2ef] bg-white/80 px-3 py-1 text-xs font-semibold text-[#5b6472]"
+													className="rounded-full border border-line bg-white/80 px-3 py-1 text-xs font-semibold text-foreground-muted"
 											>
 												{module}
 											</span>

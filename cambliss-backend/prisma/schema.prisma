@@ -388,6 +388,8 @@ model Employee {
 
   employmentType String
   workMode       String
+  preferredStartTime String?
+  preferredEndTime   String?
   status         String @default("ACTIVE")
 
   salary         Decimal @db.Decimal(12,2)

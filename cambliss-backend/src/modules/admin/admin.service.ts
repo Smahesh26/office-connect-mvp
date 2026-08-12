@@ -114,6 +114,31 @@ export const getAllOrganizations = async () => {
 	});
 };
 
+export const getGlobalAnalytics = async () => {
+	const totalOrganizations = await prisma.organization.count();
+	const totalUsers = await prisma.user.count();
+	const totalDeals = await prisma.deal.count();
+	const totalEmployees = await prisma.employee.count();
+	const totalOrders = await prisma.order.count();
+	const totalProducts = await prisma.product.count();
+	const totalFiles = await prisma.file.count();
+	
+	const activeSubscriptions = await prisma.subscription.count({
+		where: { status: "ACTIVE" }
+	});
+
+	return {
+		totalOrganizations,
+		totalUsers,
+		totalDeals,
+		totalEmployees,
+		totalOrders,
+		totalProducts,
+		totalFiles,
+		activeSubscriptions
+	};
+};
+
 export const getOrganizationById = async (organizationId: string) => {
 	const organization = await prisma.organization.findUnique({
 		where: { id: organizationId },

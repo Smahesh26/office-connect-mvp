@@ -24,7 +24,12 @@ const storage = multer_1.default.diskStorage({
         cb(null, Date.now() + "-" + file.originalname);
     },
 });
-exports.upload = (0, multer_1.default)({ storage });
+exports.upload = (0, multer_1.default)({
+    storage,
+    limits: {
+        fileSize: 1024 * 1024 * 50,
+    },
+});
 const chatTransferStorage = multer_1.default.diskStorage({
     destination: function (req, file, cb) {
         cb(null, chatTransfersRoot);

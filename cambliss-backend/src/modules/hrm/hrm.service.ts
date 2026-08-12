@@ -1,4 +1,5 @@
 import prisma from "../../config/prisma";
+import bcrypt from "bcryptjs";
 import { promises as fs } from "fs";
 import path from "path";
 
@@ -298,6 +299,9 @@ export const validateEmployeeBelongsToOrg = validateEmployeeExists;
 // ============================================
 
 export interface CreateEmployeeInput {
+	firstName: string;
+	lastName?: string;
+	email: string;
 	employeeCode: string;
 	userId?: string;
 	departmentId?: string;
@@ -380,14 +384,53 @@ export const createEmployee = async (organizationId: string, input: CreateEmploy
 	}
 
 	// If userId provided, validate it exists
-	if (input.userId) {
+	let finalUserId = input.userId;
+	if (finalUserId) {
 		const user = await prisma.user.findUnique({
-			where: { id: input.userId },
+			where: { id: finalUserId },
 			select: { id: true },
 		});
 
 		if (!user) {
 			throw new HttpError(404, "User not found");
+		}
+	} else if (input.email && input.firstName) {
+		const existingUser = await prisma.user.findUnique({
+			where: { email: input.email },
+		});
+		
+		if (existingUser) {
+			finalUserId = existingUser.id;
+		} else {
+			const passwordHash = await bcrypt.hash("Welcome@123", 10);
+			const newUser = await prisma.user.create({
+				data: {
+					email: input.email,
+					firstName: input.firstName,
+					lastName: input.lastName,
+					passwordHash,
+				},
+			});
+			finalUserId = newUser.id;
+		}
+
+		// Ensure they are mapped to the organization as an EMPLOYEE
+		const role = await prisma.role.findUnique({ where: { name: "EMPLOYEE" } });
+		if (role) {
+			await prisma.organizationUser.upsert({
+				where: {
+					organizationId_userId: {
+						organizationId,
+						userId: finalUserId,
+					},
+				},
+				update: {},
+				create: {
+					organizationId,
+					userId: finalUserId,
+					roleId: role.id,
+				},
+			});
 		}
 	}
 
@@ -417,7 +460,7 @@ export const createEmployee = async (organizationId: string, input: CreateEmploy
 		data: {
 			organizationId,
 			employeeCode: input.employeeCode,
-			userId: input.userId,
+			userId: finalUserId,
 			departmentId: input.departmentId,
 			designationId: input.designationId,
 			teamId: input.teamId,
@@ -890,14 +933,10 @@ const getAttendanceContext = async (
 	});
 
 	if (!employeeShift) {
-		if (!requireShift) {
-			return {
-				employee,
-				shift: null,
-			};
-		}
-
-		throw new HttpError(400, "No shift assigned to employee");
+		return {
+			employee,
+			shift: null,
+		};
 	}
 
 	if (employeeShift.shift.organizationId !== organizationId) {
@@ -2529,4 +2568,83 @@ export const getOrganizationHierarchy = async (organizationId: string) => {
 		hierarchy: hierarchyTrees,
 		totalTopLevelEmployees: hierarchyTrees.length,
 	};
+};
+
+export const processSmartScan = async (organizationId: string, imageBase64: string, actionType: "checkin" | "checkout") => {
+	let response;
+	try {
+		response = await fetch("http://localhost:8000/recognize", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ image_base64: imageBase64 }),
+		});
+	} catch (error) {
+		throw new HttpError(503, "Computer Vision microservice is not running. Please start it on port 8000.");
+	}
+
+	if (!response.ok) {
+		const errorData = await response.json().catch(() => null);
+		throw new HttpError(400, errorData?.detail || "Face recognition failed");
+	}
+
+	const data = await response.json();
+
+	if (!data.success || !data.employeeCode) {
+		throw new HttpError(400, data.message || "Face not recognized");
+	}
+
+	const employee = await prisma.employee.findFirst({
+		where: { organizationId, employeeCode: data.employeeCode },
+	});
+
+	if (!employee) {
+		throw new HttpError(404, "Recognized employee not found in this organization");
+	}
+
+	if (actionType === "checkin") {
+		await checkIn(employee.id, organizationId, { manual: true, checkInAt: new Date().toISOString() });
+	} else {
+		await checkOut(employee.id, organizationId, { manual: true, checkOutAt: new Date().toISOString() });
+	}
+
+	return {
+		success: true,
+		employeeId: employee.id,
+		employeeCode: employee.employeeCode,
+		message: `Successfully ${actionType === "checkin" ? "checked in" : "checked out"} via Smart Scan`,
+	};
+};
+
+
+
+export const enrollFace = async (organizationId: string, employeeId: string, imageBase64: string) => {
+	const employee = await prisma.employee.findUnique({
+		where: { id: employeeId },
+	});
+
+	if (!employee || employee.organizationId !== organizationId) {
+		throw new HttpError(404, "Employee not found");
+	}
+
+	const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+	const buffer = Buffer.from(base64Data, "base64");
+
+	const facesDir = path.resolve(__dirname, "../../../../cambliss-cv-service/data/faces");
+	
+	try {
+		await fs.mkdir(facesDir, { recursive: true });
+	} catch (err) {
+		// Ignore
+	}
+
+	const filePath = path.join(facesDir, `${employee.employeeCode}.jpg`);
+	await fs.writeFile(filePath, buffer);
+
+	try {
+		await fetch("http://localhost:8000/reload", { method: "POST" });
+	} catch (error) {
+		console.warn("Failed to reload CV service", error);
+	}
+
+	return { success: true, message: "Face enrolled successfully" };
 };

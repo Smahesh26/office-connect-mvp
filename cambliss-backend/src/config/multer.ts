@@ -19,11 +19,16 @@ const storage = multer.diskStorage({
     cb(null, uploadsRoot);
   },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname);
+    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}-${file.originalname}`);
   },
 });
 
-export const upload = multer({ storage });
+export const upload = multer({
+  storage,
+  limits: {
+    fileSize: 1024 * 1024 * 50,
+  },
+});
 
 const chatTransferStorage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -36,7 +41,7 @@ const chatTransferStorage = multer.diskStorage({
 
 export const uploadChatTransfer = multer({
   storage: chatTransferStorage,
-  limits: {
-    fileSize: 1024 * 1024 * 500,
-  },
+  // limits: {
+  //   fileSize: 1024 * 1024 * 500,
+  // },
 });

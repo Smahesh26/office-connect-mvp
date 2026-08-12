@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateMyOrganizationOnboardingController = exports.getMyOrganizationOnboardingController = exports.clearMyOrganizationController = exports.updateMyOrganizationController = exports.meController = exports.loginController = exports.verifyFirebasePhoneController = exports.verifyRegisterOtpController = exports.sendRegisterOtpController = exports.registerController = void 0;
+exports.updateMyOrganizationOnboardingController = exports.getMyOrganizationOnboardingController = exports.clearMyOrganizationController = exports.updateMyOrganizationController = exports.meController = exports.logoutController = exports.loginController = exports.verifyFirebasePhoneController = exports.verifyRegisterOtpController = exports.sendRegisterOtpController = exports.registerController = void 0;
 const auth_service_1 = require("./auth.service");
 const mobile_otp_service_1 = require("./mobile-otp.service");
 const firebase_auth_service_1 = require("./firebase-auth.service");
@@ -28,9 +28,34 @@ const handleAuthError = (res, error) => {
     }
     res.status(500).json({ message: "Internal server error" });
 };
+const AUTH_COOKIE_NAME = "authToken";
+const AUTH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // matches the 7d JWT expiry
+// httpOnly cookie so the token is never exposed to JavaScript (mitigates XSS
+// token theft). SameSite=strict blocks cross-site CSRF on the cookie.
+const setAuthCookie = (res, token) => {
+    res.cookie(AUTH_COOKIE_NAME, token, {
+        httpOnly: true,
+        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: AUTH_COOKIE_MAX_AGE_MS,
+        path: "/",
+    });
+};
+const clearAuthCookie = (res) => {
+    res.clearCookie(AUTH_COOKIE_NAME, {
+        httpOnly: true,
+        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+    });
+};
 const registerController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const result = yield (0, auth_service_1.register)(req.body);
+        const token = result === null || result === void 0 ? void 0 : result.token;
+        if (token) {
+            setAuthCookie(res, token);
+        }
         res.status(201).json(result);
     }
     catch (error) {
@@ -79,6 +104,10 @@ exports.verifyFirebasePhoneController = verifyFirebasePhoneController;
 const loginController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const result = yield (0, auth_service_1.login)(req.body);
+        const token = result === null || result === void 0 ? void 0 : result.token;
+        if (token) {
+            setAuthCookie(res, token);
+        }
         res.status(200).json(result);
     }
     catch (error) {
@@ -86,6 +115,11 @@ const loginController = (req, res) => __awaiter(void 0, void 0, void 0, function
     }
 });
 exports.loginController = loginController;
+const logoutController = (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    clearAuthCookie(res);
+    res.status(200).json({ message: "Logged out" });
+});
+exports.logoutController = logoutController;
 const meController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {

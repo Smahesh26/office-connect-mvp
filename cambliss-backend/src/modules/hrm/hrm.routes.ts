@@ -7,6 +7,7 @@ import {
 	assignShiftController,
 	checkInController,
 	checkOutController,
+	smartScanController,
 	changeEmployeeStatusController,
 	createDepartmentController,
 	createDesignationController,
@@ -42,6 +43,7 @@ import {
 	updatePayrollStatusController,
 	updateSalaryComponentController,
 	updateEmployeeController,
+	enrollFaceController,
 } from "./hrm.controller";
 
 const hrmRouter = Router();
@@ -62,9 +64,11 @@ hrmRouter.get("/employees/:employeeId", getEmployeeByIdController);
 hrmRouter.put("/employees/:employeeId", updateEmployeeController);
 hrmRouter.put("/employees/:employeeId/status", changeEmployeeStatusController);
 hrmRouter.put("/employees/:employeeId/manager", assignManagerController);
+hrmRouter.post("/employees/:employeeId/enroll-face", enrollFaceController);
 hrmRouter.post("/employees/:employeeId/shifts", assignShiftController);
 hrmRouter.post("/attendance/check-in", checkInController);
 hrmRouter.post("/attendance/check-out", checkOutController);
+hrmRouter.post("/attendance/smart-scan", smartScanController);
 hrmRouter.get("/attendance/dashboard", getAttendanceDashboardController);
 hrmRouter.get("/attendance/daily", getDailyAttendanceController);
 hrmRouter.post("/payroll/generate", generatePayrollController);

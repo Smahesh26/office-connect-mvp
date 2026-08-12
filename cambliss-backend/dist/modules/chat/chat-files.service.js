@@ -284,9 +284,17 @@ const cleanupExpiredChatTransferFiles = () => __awaiter(void 0, void 0, void 0, 
 });
 exports.cleanupExpiredChatTransferFiles = cleanupExpiredChatTransferFiles;
 const startChatTransferCleanupJob = () => {
-    void (0, exports.cleanupExpiredChatTransferFiles)();
+    const runCleanup = () => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield (0, exports.cleanupExpiredChatTransferFiles)();
+        }
+        catch (error) {
+            console.error("[chat-cleanup] cleanup failed:", error);
+        }
+    });
+    void runCleanup();
     setInterval(() => {
-        void (0, exports.cleanupExpiredChatTransferFiles)();
+        void runCleanup();
     }, 60 * 60 * 1000);
 };
 exports.startChatTransferCleanupJob = startChatTransferCleanupJob;

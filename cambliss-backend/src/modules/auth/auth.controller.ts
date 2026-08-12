@@ -6,6 +6,7 @@ import {
 	getOrganizationOnboarding,
 	login,
 	register,
+	generateSsoToken,
 	updateOrganizationOnboarding,
 	updateOrganizationProfile,
 } from "./auth.service";
@@ -31,9 +32,37 @@ const handleAuthError = (res: Response, error: unknown): void => {
 	res.status(500).json({ message: "Internal server error" });
 };
 
+const AUTH_COOKIE_NAME = "authToken";
+const AUTH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // matches the 7d JWT expiry
+
+// httpOnly cookie so the token is never exposed to JavaScript (mitigates XSS
+// token theft). SameSite=strict blocks cross-site CSRF on the cookie.
+const setAuthCookie = (res: Response, token: string): void => {
+	res.cookie(AUTH_COOKIE_NAME, token, {
+		httpOnly: true,
+		sameSite: "strict",
+		secure: process.env.NODE_ENV === "production",
+		maxAge: AUTH_COOKIE_MAX_AGE_MS,
+		path: "/",
+	});
+};
+
+const clearAuthCookie = (res: Response): void => {
+	res.clearCookie(AUTH_COOKIE_NAME, {
+		httpOnly: true,
+		sameSite: "strict",
+		secure: process.env.NODE_ENV === "production",
+		path: "/",
+	});
+};
+
 export const registerController = async (req: Request, res: Response): Promise<void> => {
 	try {
 		const result = await register(req.body);
+		const token = (result as { token?: string })?.token;
+		if (token) {
+			setAuthCookie(res, token);
+		}
 		res.status(201).json(result);
 	} catch (error) {
 		handleAuthError(res, error);
@@ -73,13 +102,42 @@ export const verifyFirebasePhoneController = async (req: Request, res: Response)
 	}
 };
 
+export const getSsoTokenController = async (req: Request, res: Response): Promise<void> => {
+	try {
+		if (!req.user) {
+			res.status(401).json({ message: "Unauthorized" });
+			return;
+		}
+
+		const token = generateSsoToken({
+			id: req.user.id,
+			email: req.user.email,
+			organizationId: req.user.organizationId,
+			role: req.user.role as any,
+		});
+
+		res.status(200).json({ token });
+	} catch (error) {
+		handleAuthError(res, error);
+	}
+};
+
 export const loginController = async (req: Request, res: Response): Promise<void> => {
 	try {
 		const result = await login(req.body);
+		const token = (result as { token?: string })?.token;
+		if (token) {
+			setAuthCookie(res, token);
+		}
 		res.status(200).json(result);
 	} catch (error) {
 		handleAuthError(res, error);
 	}
+};
+
+export const logoutController = async (_req: Request, res: Response): Promise<void> => {
+	clearAuthCookie(res);
+	res.status(200).json({ message: "Logged out" });
 };
 
 export const meController = async (req: Request, res: Response): Promise<void> => {

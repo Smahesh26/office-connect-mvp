@@ -28,7 +28,7 @@ type FileTransferPolicy = {
 	nonRecoverableAfterDeletion: boolean;
 };
 
-const isAdminRole = (role?: string) => role === "ADMIN" || role === "SUPER_ADMIN";
+const isAdminRole = (role?: string) => role === "SUPER_ADMIN";
 
 const formatFileSize = (bytes: number) => {
 	if (bytes < 1024) return `${bytes} B`;
@@ -57,6 +57,7 @@ export default function FileSharingPage() {
 	const [threadSummaries, setThreadSummaries] = useState<FileThreadSummary[]>([]);
 	const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
 	const [isUploading, setIsUploading] = useState(false);
+	const [isDragging, setIsDragging] = useState(false);
 	const [policy, setPolicy] = useState<FileTransferPolicy | null>(null);
 
 	const isAdmin = useMemo(() => isAdminRole(authUser?.role), [authUser?.role]);
@@ -111,13 +112,7 @@ export default function FileSharingPage() {
 		void load();
 	}, [isAdmin]);
 
-	const handleUpload = async (event: FormEvent) => {
-		event.preventDefault();
-		if (!selectedUploadFile) {
-			setNotice("Choose a file first.");
-			return;
-		}
-
+	const executeUpload = async (file: File) => {
 		const token = localStorage.getItem("authToken");
 		if (!token) return;
 
@@ -125,7 +120,7 @@ export default function FileSharingPage() {
 		setNotice(null);
 		try {
 			const body = new FormData();
-			body.append("file", selectedUploadFile);
+			body.append("file", file);
 			const response = await fetch("/api/chat/files", {
 				method: "POST",
 				headers: { Authorization: `Bearer ${token}` },
@@ -143,6 +138,25 @@ export default function FileSharingPage() {
 			setNotice("Upload failed.");
 		} finally {
 			setIsUploading(false);
+		}
+	};
+
+	const handleUpload = async (event: FormEvent) => {
+		event.preventDefault();
+		if (!selectedUploadFile) {
+			setNotice("Choose a file first.");
+			return;
+		}
+		await executeUpload(selectedUploadFile);
+	};
+
+	const handleDrop = async (event: React.DragEvent) => {
+		event.preventDefault();
+		setIsDragging(false);
+		if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+			const file = event.dataTransfer.files[0];
+			setSelectedUploadFile(file);
+			await executeUpload(file);
 		}
 	};
 
@@ -214,11 +228,11 @@ export default function FileSharingPage() {
 		<WorkspaceShell>
 			<div className="mt-5 rounded-2xl border border-zinc-200 bg-gradient-to-br from-white via-zinc-50 to-zinc-100 p-6 shadow-[0_24px_56px_-30px_rgba(0,0,0,0.85)]">
 				<h1 className="text-2xl font-semibold tracking-tight text-zinc-900">File Sharing</h1>
-				<p className="mt-1 text-sm text-zinc-600">Files auto-delete after 15 days.</p>
+				<p className="mt-1 text-sm text-zinc-600">Secure, unlimited file sharing. Auto-deletes after 15 days.</p>
 				<div className="mt-3 rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm text-zinc-700">
 					<p className="font-semibold text-zinc-900">File Transfer Policy</p>
-					<p className="mt-1">• {policy?.unlimitedTransfersDuringTrial === false ? "Controlled transfers during trial" : "Unlimited file transfers during trial"}</p>
-					<p>• All files remain available for {policy?.retentionDays ?? 15} days post upload</p>
+					<p className="mt-1">• Unlimited file transfers</p>
+					<p>• All files remain valid and available for {policy?.retentionDays ?? 15} days post upload</p>
 					<p>• Auto deletion after {policy?.retentionDays ?? 15} days (non-recoverable)</p>
 				</div>
 				{notice && <p className="mt-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700">{notice}</p>}
@@ -241,10 +255,40 @@ export default function FileSharingPage() {
 					</div>
 				) : (
 					<>
-						<form className="mt-4 flex flex-wrap items-center gap-2" onSubmit={(event) => void handleUpload(event)}>
-							<input type="file" onChange={(event) => setSelectedUploadFile(event.target.files?.[0] || null)} className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-600" />
-							<button type="submit" disabled={isUploading || !selectedUploadFile} className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs font-semibold text-white disabled:bg-zinc-500">{isUploading ? "Uploading..." : "Upload"}</button>
-						</form>
+						<div 
+							className={`mt-4 border-2 border-dashed rounded-xl p-8 text-center transition-colors ${isDragging ? "border-[#404d85] bg-[#404d85]/5" : "border-zinc-300 hover:bg-zinc-50"}`}
+							onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+							onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+							onDrop={handleDrop}
+						>
+							<svg className="mx-auto h-12 w-12 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+							</svg>
+							<p className="mt-4 text-sm font-semibold text-zinc-700">Drag and drop your file here</p>
+							<p className="mt-1 text-xs text-zinc-500">or</p>
+							<form className="mt-2 flex justify-center items-center gap-2" onSubmit={(event) => void handleUpload(event)}>
+								<label className="cursor-pointer rounded-xl border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 transition">
+									{selectedUploadFile ? selectedUploadFile.name : "Browse Files"}
+									<input 
+										type="file" 
+										onChange={(event) => {
+											const file = event.target.files?.[0];
+											if (file) {
+												setSelectedUploadFile(file);
+												// Trigger upload automatically when selecting via dialog
+												executeUpload(file);
+											}
+										}} 
+										className="hidden" 
+									/>
+								</label>
+								{selectedUploadFile && (
+									<button type="submit" disabled={isUploading} className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:bg-zinc-500">
+										{isUploading ? "Uploading..." : "Upload"}
+									</button>
+								)}
+							</form>
+						</div>
 						<div className="mt-4 space-y-2">
 							{clientFiles.map((file) => (
 								<div key={file.id} className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-3 py-2">

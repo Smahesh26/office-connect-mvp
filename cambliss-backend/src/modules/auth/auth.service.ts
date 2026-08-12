@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import prisma from "../../config/prisma";
 import type { RoleName } from "@prisma/client";
 import { getMyAccess } from "../user-management/user-management.service";
+import { getOrganizationTrialReminderSnapshot } from "../subscription/subscription.service";
 import { consumeVerifiedRegisterOtp, isMobileOtpEnabled } from "./mobile-otp.service";
 import { isFirebaseOtpEnabled, verifyFirebasePhoneToken } from "./firebase-auth.service";
 
@@ -125,6 +126,15 @@ const signAccessToken = (payload: {
 	return jwt.sign(payload, getJwtSecret(), { expiresIn: "7d" });
 };
 
+export const generateSsoToken = (payload: {
+	id: string;
+	email: string;
+	organizationId: string;
+	role: RoleName;
+}): string => {
+	return signAccessToken(payload);
+};
+
 const getOrCreateRole = async (roleName: RoleName) => {
 	const existing = await prisma.role.findUnique({
 		where: {
@@ -182,30 +192,6 @@ export const register = async (input: RegisterInput) => {
 		throw new AuthError(400, "organizationName is required");
 	}
 
-	if (isFirebaseOtpEnabled()) {
-		if (!phone) {
-			throw new AuthError(400, "phone is required for Firebase verification");
-		}
-
-		if (!firebaseIdToken) {
-			throw new AuthError(400, "firebaseIdToken is required");
-		}
-
-		const firebaseVerification = await verifyFirebasePhoneToken(firebaseIdToken);
-		if (firebaseVerification.phoneNumber !== phone) {
-			throw new AuthError(400, "Firebase phone number does not match the registration phone");
-		}
-	} else if (isMobileOtpEnabled()) {
-		if (!phone) {
-			throw new AuthError(400, "phone is required for OTP verification");
-		}
-
-		if (!otpRequestId) {
-			throw new AuthError(400, "otpRequestId is required");
-		}
-
-		consumeVerifiedRegisterOtp({ phone, requestId: otpRequestId });
-	}
 
 	await ensureUserAccessProfileTable();
 
@@ -331,6 +317,13 @@ export const login = async (input: LoginInput) => {
 	const myAccess = role === "SUPER_ADMIN"
 		? { accesses: [], phone: null }
 		: await getMyAccess(resolvedOrganizationId, user.id);
+
+	if (role !== "SUPER_ADMIN") {
+		const trialSnapshot = await getOrganizationTrialReminderSnapshot(resolvedOrganizationId);
+		if (trialSnapshot.status === "EXPIRED") {
+			throw new AuthError(403, "Trial period expired");
+		}
+	}
 
 	const token = signAccessToken({
 		id: user.id,

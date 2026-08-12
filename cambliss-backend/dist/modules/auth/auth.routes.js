@@ -11,6 +11,7 @@ authRouter.post("/register/otp/send", authRateLimit, auth_controller_1.sendRegis
 authRouter.post("/register/otp/verify", authRateLimit, auth_controller_1.verifyRegisterOtpController);
 authRouter.post("/register/firebase/verify", authRateLimit, auth_controller_1.verifyFirebasePhoneController);
 authRouter.post("/login", authRateLimit, auth_controller_1.loginController);
+authRouter.post("/logout", auth_controller_1.logoutController);
 authRouter.get("/me", auth_middleware_1.authenticateJWT, auth_controller_1.meController);
 authRouter.put("/me/organization", auth_middleware_1.authenticateJWT, auth_controller_1.updateMyOrganizationController);
 authRouter.delete("/me/organization", auth_middleware_1.authenticateJWT, auth_controller_1.clearMyOrganizationController);

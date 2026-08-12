@@ -7,6 +7,7 @@ import {
 	generateAdminOrderInvoice,
 	getAllOrderHistory,
 	getAllOrganizations,
+	getGlobalAnalytics,
 	getAllPlans,
 	getAllSubscriptions,
 	getOrganizationById,
@@ -43,6 +44,15 @@ export const getAllOrganizationsController = async (_req: Request, res: Response
 	try {
 		const organizations = await getAllOrganizations();
 		res.status(200).json(organizations);
+	} catch (error) {
+		handleControllerError(res, error);
+	}
+};
+
+export const getGlobalAnalyticsController = async (_req: Request, res: Response): Promise<void> => {
+	try {
+		const stats = await getGlobalAnalytics();
+		res.status(200).json(stats);
 	} catch (error) {
 		handleControllerError(res, error);
 	}

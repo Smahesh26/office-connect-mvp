@@ -14,6 +14,7 @@ const startServer = async () => {
 		console.log(`Cambliss backend running on http://localhost:${port}`);
 	});
 
+
 	void initChatSocket(httpServer).catch((error) => {
 		console.error("[startup] chat socket init failed:", error);
 	});

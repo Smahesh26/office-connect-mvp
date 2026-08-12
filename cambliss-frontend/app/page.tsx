@@ -1,49 +1,64 @@
-import { readFileSync } from "fs";
-import path from "path";
+import { NavBar } from "@/components/NavBar";
 
-const referencePath = path.resolve(process.cwd(), "..", "OfficeConnect_Landing_Page (3) (1).html");
-
-function loadReferenceHtml() {
-	try {
-		const html = readFileSync(referencePath, "utf8");
-		const normalizedHtml = (() => {
-			const logoMatches = [...html.matchAll(/<img[^>]*src="(data:image\/png;base64,[^"]+)"[^>]*alt="Office Connect"[^>]*>/g)];
-			let nextHtml = html;
-
-			if (logoMatches.length >= 2) {
-				const headerLogo = logoMatches[0][1];
-				const footerLogo = logoMatches[logoMatches.length - 1][1];
-				nextHtml = nextHtml.replace(headerLogo, footerLogo);
-			}
-
-			nextHtml = nextHtml
-				.replace('<a href="#" class="signin">Sign in</a>', '<a href="/login" class="signin">Sign in</a>')
-				.replace('<a href="#offer" class="btn btn-primary">Start free trial</a>', '<a href="/register" class="btn btn-primary">Start free trial</a>')
-				.replace('<a href="#offer" class="btn btn-primary">Start free — no card required</a>', '<a href="/register" class="btn btn-primary">Start free — no card required</a>')
-				.replace('<a href="#modules" class="btn btn-ghost">Explore the platform</a>', '<a href="/login" class="btn btn-ghost">Explore the platform</a>')
-				.replace('<a href="#" class="btn btn-white">Claim your free 90 days</a>', '<a href="/register" class="btn btn-white">Claim your free 90 days</a>')
-				.replace('<a href="#" class="btn btn-primary">Start your free workspace</a>', '<a href="/register" class="btn btn-primary">Start your free workspace</a>')
-				.replace('<a href="#" class="btn btn-ghost">Book a demo</a>', '<a href="/login" class="btn btn-ghost">Book a demo</a>');
-
-			return nextHtml;
-		})();
-		return normalizedHtml;
-	} catch {
-		return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Office Connect</title></head><body style="margin:0;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#1f2430;"><div style="padding:40px">Office Connect landing page reference file could not be loaded.</div></body></html>`;
-	}
-}
+import { BentoGrid } from "@/components/BentoGrid";
+import { TrustBar } from "@/components/TrustBar";
+import { OfferBanner } from "@/components/OfferBanner";
+import { ModuleDeepDives } from "@/components/ModuleDeepDives";
+import { Testimonial } from "@/components/Testimonial";
+import { FinalCTA } from "@/components/FinalCTA";
+import { Footer } from "@/components/Footer";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 export default function Home() {
-	const html = loadReferenceHtml();
-	const styleMatch = html.match(/<style>([\s\S]*?)<\/style>/i);
-	const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-	const referenceCss = (styleMatch?.[1] || "").replace(/body\s*\{/m, ".oc-reference{");
-	const bodyContent = bodyMatch?.[1] || html;
+  return (
+    <main className="relative min-h-screen w-full bg-background overflow-hidden selection:bg-brand/20">
+      <NavBar />
 
-	return (
-		<main className="oc-reference min-h-screen w-full bg-white">
-			<style dangerouslySetInnerHTML={{ __html: referenceCss }} />
-			<div dangerouslySetInnerHTML={{ __html: bodyContent }} />
-		</main>
-	);
+      {/* Hero Section */}
+      <div className="relative pt-32 pb-20 sm:pt-40 sm:pb-24">
+        <div className="mx-auto max-w-5xl px-4 text-center">
+          <h1 className="text-5xl font-extrabold tracking-tight text-foreground-strong sm:text-7xl">
+            The Ultimate <br className="hidden sm:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-strong to-brand">
+              Unified Workspace.
+            </span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-foreground-muted sm:text-xl">
+            Office Connect is your centralized hub. We bring CRM, HRM, Video Calls, Inventory, and File Sharing into one seamless platform. <br/><br/>
+            Already using other tools? No problem. Connect your favorite 3rd party software via API and manage everything from a single dashboard.
+          </p>
+          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link
+              href="/register"
+              className="w-full sm:w-auto flex justify-center items-center gap-2 rounded-full bg-brand-strong px-8 py-4 text-base font-bold text-white shadow-xl hover:bg-brand-strong/90 transition-all hover:scale-105"
+            >
+              Start free — no card required <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="#features"
+              className="w-full sm:w-auto flex justify-center items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-bold text-brand-strong shadow-sm border border-line hover:border-brand hover:text-brand transition-all"
+            >
+              Explore the platform
+            </Link>
+          </div>
+          <div className="mt-8 text-sm text-foreground-muted font-medium">
+            CRM, HRM, Video Calls, Inventory & File Sharing included free for your first 90 days*
+          </div>
+        </div>
+      </div>
+
+      <OfferBanner />
+
+      <div id="features">
+        <BentoGrid />
+      </div>
+
+      <ModuleDeepDives />
+      <Testimonial />
+      <FinalCTA />
+      <Footer />
+
+    </main>
+  );
 }

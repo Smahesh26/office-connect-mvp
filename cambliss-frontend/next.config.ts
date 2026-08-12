@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     root: __dirname,
   },
   async rewrites() {
-    const backendOrigin = process.env.BACKEND_ORIGIN || "http://localhost:4000";
+    const backendOrigin = process.env.BACKEND_ORIGIN || "http://127.0.0.1:4000";
 
     return [
       {

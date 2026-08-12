@@ -190,7 +190,10 @@ export default function AdminFileFolderPage() {
 				{notice && <p className="mt-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700">{notice}</p>}
 
 				<form className="mt-4 flex flex-wrap items-center gap-2" onSubmit={(event) => void handleUpload(event)}>
-					<input type="file" onChange={(event) => setSelectedUploadFile(event.target.files?.[0] || null)} className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-600" />
+					<label className="max-w-[200px] cursor-pointer truncate rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">
+						{selectedUploadFile ? selectedUploadFile.name : "Choose File"}
+						<input type="file" onChange={(event) => setSelectedUploadFile(event.target.files?.[0] || null)} className="hidden" />
+					</label>
 					<button type="submit" disabled={isUploading || !selectedUploadFile} className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs font-semibold text-white disabled:bg-zinc-500">{isUploading ? "Uploading..." : "Upload"}</button>
 				</form>
 

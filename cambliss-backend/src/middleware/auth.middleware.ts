@@ -22,6 +22,21 @@ const extractBearerToken = (authorizationHeader?: string): string | null => {
 	return token;
 };
 
+// A usable token is a non-empty string that is not a stringified null/undefined,
+// which stale frontend `Bearer ${null}` headers can produce.
+const isUsableToken = (value: unknown): value is string =>
+	typeof value === "string" && value.length > 0 && value !== "null" && value !== "undefined";
+
+// Collects candidate JWTs from both transports (Authorization header and the
+// httpOnly cookie) so either can authenticate the request.
+const resolveTokenCandidates = (req: Request): string[] => {
+	const candidates = [
+		extractBearerToken(req.headers.authorization),
+		(req as Request & { cookies?: Record<string, string> }).cookies?.authToken,
+	];
+	return candidates.filter(isUsableToken);
+};
+
 const isAuthenticatedUser = (decoded: JwtPayload | string): decoded is AuthenticatedUser => {
 	if (typeof decoded !== "object" || decoded === null) {
 		return false;
@@ -44,8 +59,8 @@ export const authenticateJWT = (req: Request, res: Response, next: NextFunction)
 			return;
 		}
 
-		const token = extractBearerToken(req.headers.authorization);
-		if (!token) {
+		const candidates = resolveTokenCandidates(req);
+		if (candidates.length === 0) {
 			res.status(401).json({ message: "Unauthorized: Invalid or missing token" });
 			return;
 		}
@@ -56,14 +71,23 @@ export const authenticateJWT = (req: Request, res: Response, next: NextFunction)
 			return;
 		}
 
-		const decoded = jwt.verify(token, jwtSecret);
-		if (!isAuthenticatedUser(decoded)) {
-			res.status(401).json({ message: "Unauthorized: Invalid token payload" });
-			return;
+		let lastError: unknown = null;
+		for (const token of candidates) {
+			try {
+				const decoded = jwt.verify(token, jwtSecret);
+				if (!isAuthenticatedUser(decoded)) {
+					lastError = new JsonWebTokenError("Invalid token payload");
+					continue;
+				}
+				req.user = decoded;
+				next();
+				return;
+			} catch (error) {
+				lastError = error;
+			}
 		}
 
-		req.user = decoded;
-		next();
+		throw lastError ?? new JsonWebTokenError("Invalid token");
 	} catch (error) {
 		if (error instanceof TokenExpiredError) {
 			res.status(401).json({ message: "Unauthorized: Token expired" });

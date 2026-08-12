@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { ReactNode, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ReactNode, useEffect, useState, Suspense } from "react";
 
 const TRIAL_DAYS = 90;
 const TRIAL_START_KEY = "trialActivatedAt";
@@ -47,15 +47,27 @@ type SidebarItem = {
 	href?: string;
 	badge?: string;
 	accessKey?: "CRM" | "HRM" | "INVENTORY" | "FILE_SHARING" | "USER_MANAGEMENT";
+	isSso?: boolean;
+	ssoAppUrl?: string;
+	subItems?: SidebarItem[];
 };
 
-function ChevronRightIcon() {
+function ChevronRightIcon({ className = "" }: { className?: string }) {
 	return (
-		<svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-current opacity-70">
+		<svg viewBox="0 0 20 20" fill="none" className={`h-4 w-4 shrink-0 text-current opacity-70 ${className}`}>
 			<path d="M8 5l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
 		</svg>
 	);
 }
+
+const accountechSubItems: SidebarItem[] = [
+	{ label: "Dashboard", href: "/accountech" },
+	{ label: "Invoices", href: "/accountech?view=invoices" },
+	{ label: "Quotes", href: "/accountech?view=quotes" },
+	{ label: "Customers", href: "/accountech?view=customers" },
+	{ label: "Reports", href: "/accountech?view=reports" },
+	{ label: "Settings", href: "/accountech?view=settings" },
+];
 
 const clientMenuItems: SidebarItem[] = [
 	{ label: "Dashboard", href: "/dashboard" },
@@ -63,23 +75,15 @@ const clientMenuItems: SidebarItem[] = [
 	{ label: "CRM", href: "/crm", accessKey: "CRM" },
 	{ label: "HRM", href: "/hrm", accessKey: "HRM" },
 	{ label: "Inventory", href: "/inventory", accessKey: "INVENTORY" },
-	{ label: "Tools", href: "/tools" },
+	{ label: "Store", href: "/store" },
 	{ label: "File Sharing", href: "/file-sharing", accessKey: "FILE_SHARING" },
 	{ label: "Video Connect", href: "/video-connect" },
 	{ label: "User Management", href: "/user-management", accessKey: "USER_MANAGEMENT" },
+	// { label: "Accountech", href: "/accountech", subItems: accountechSubItems },
 ];
 
 const adminMenuItems: SidebarItem[] = [
 	{ label: "Admin Dashboard", href: "/admin-dashboard" },
-	{ label: "Client Dashboard", href: "/dashboard" },
-	{ label: "Profile Completion", href: "/profile-completion" },
-	{ label: "CRM", href: "/crm" },
-	{ label: "HRM", href: "/hrm" },
-	{ label: "Inventory", href: "/inventory" },
-	{ label: "Tools", href: "/tools" },
-	{ label: "File Sharing", href: "/file-sharing" },
-	{ label: "Video Connect", href: "/video-connect" },
-	{ label: "User Management", href: "/user-management" },
 ];
 
 function SidebarIcon({ label }: { label: string }) {
@@ -132,7 +136,7 @@ function SidebarIcon({ label }: { label: string }) {
 					<path d="M19 8v4M17 10h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
 				</svg>
 			);
-		case "Tools":
+		case "Store":
 			return (
 				<svg viewBox="0 0 24 24" fill="none" className={common}>
 					<path d="M14 5.5a4 4 0 0 0-5 5l-5 5 2.5 2.5 5-5a4 4 0 0 0 5-5l-2.5 2.5L11.5 8l2.5-2.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
@@ -151,6 +155,13 @@ function SidebarIcon({ label }: { label: string }) {
 					<path d="M15 10.5 21 8v8l-6-2.5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
 				</svg>
 			);
+		case "Accountech":
+			return (
+				<svg viewBox="0 0 24 24" fill="none" className={common}>
+					<rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" />
+					<path d="M8 12h8M8 8h4M8 16h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+				</svg>
+			);
 		default:
 			return (
 				<svg viewBox="0 0 24 24" fill="none" className={common}>
@@ -162,12 +173,27 @@ function SidebarIcon({ label }: { label: string }) {
 }
 
 export default function WorkspaceShell({ children }: { children: ReactNode }) {
+	return (
+		<Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+			<WorkspaceShellContent>{children}</WorkspaceShellContent>
+		</Suspense>
+	);
+}
+
+function WorkspaceShellContent({ children }: { children: ReactNode }) {
 	const pathname = usePathname();
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [authRole, setAuthRole] = useState<string | null>(null);
 	const [authAccesses, setAuthAccesses] = useState<string[]>([]);
 	const [currentHash, setCurrentHash] = useState("");
+	const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+
+	const toggleExpanded = (label: string, e: React.MouseEvent) => {
+		e.preventDefault();
+		setExpandedItems(prev => ({ ...prev, [label]: !prev[label] }));
+	};
 
 	useEffect(() => {
 		const token = localStorage.getItem("authToken");
@@ -288,7 +314,8 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
 	}, [pathname]);
 
 	const isAdminRole = authRole === "SUPER_ADMIN" || authRole === "ADMIN";
-	const rawMenuItems = isAdminRole ? adminMenuItems : clientMenuItems;
+	const isSuperAdminRole = authRole === "SUPER_ADMIN";
+	const rawMenuItems = isSuperAdminRole ? adminMenuItems : clientMenuItems;
 	const hasManagedAccessRules = !isAdminRole && authAccesses.length > 0;
 	const filteredMenuItems = rawMenuItems.filter((item) => {
 		if (!hasManagedAccessRules) {
@@ -315,13 +342,12 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
 	});
 
 	return (
-		<div className="min-h-screen bg-[#eef2fa] text-[#1f2430]">
-			<div className="flex min-h-screen">
-				<aside className={`border-r border-[#d9e2ef] bg-[#f8faff] transition-all duration-300 ${sidebarCollapsed ? "w-20" : "w-64"}`}>
-					<div className="flex h-24 items-center justify-between border-b border-[#d9e2ef] px-4">
+		<div className="flex h-screen overflow-hidden bg-[#eef2fa] text-[#1f2430]">
+			<aside className={`flex flex-col flex-shrink-0 h-full overflow-y-auto border-r border-[#d9e2ef] bg-[#f8faff] transition-all duration-300 ${sidebarCollapsed ? "w-20" : "w-64"}`}>
+					<div className="flex-shrink-0 flex h-24 items-center justify-between border-b border-[#d9e2ef] px-4">
 						<div className="flex items-center">
 							<Image
-								src="/officeconnect-reference-logo.png"
+								src="/officeconnectlogo.png"
 								alt="Office Connect"
 								width={sidebarCollapsed ? 70 : 320}
 								height={86}
@@ -340,44 +366,54 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
 						</button>
 					</div>
 
-					<nav className="px-3 py-4">
+					<nav className="flex-1 overflow-y-auto px-3 py-4">
 						<ul className="space-y-1">
 							{filteredMenuItems.map((item) => {
-								const baseHref = item.href?.split("#")[0];
-								const hashPart = item.href?.includes("#") ? item.href.split("#")[1] : undefined;
-								const isActive = Boolean(
-									baseHref &&
-									pathname === baseHref &&
-									(
-										(hashPart && currentHash === `#${hashPart}`) ||
-										(!hashPart && !hasHashSpecificActiveItem)
-									)
-								);
+								const baseHref = item.href?.split("?")[0].split("#")[0];
+								const isActive = Boolean(baseHref && pathname.startsWith(baseHref));
+								const isExpanded = expandedItems[item.label] ?? isActive;
+								
 								return (
-									<li key={item.label}>
+									<li key={item.label} className="flex flex-col">
 										{item.href ? (
 											<Link
 												href={item.href}
-												onClick={() => setSidebarCollapsed(true)}
+												onClick={(e) => { 
+													if (item.subItems) {
+														if (isActive) {
+															toggleExpanded(item.label, e);
+														} else {
+															setExpandedItems(prev => ({ ...prev, [item.label]: true }));
+														}
+													} else {
+														setSidebarCollapsed(true); 
+													}
+												}}
 												className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition ${
 														isActive ? "bg-[#6678c1] text-white shadow-[0_12px_24px_-12px_rgba(102,120,193,0.45)]" : "text-[#1f2430] hover:bg-[#eef2fa]"
 												}`}
 											>
 												<div className="flex items-center gap-3">
-													<span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition ${isActive ? "border-white/20 bg-white/10" : "border-[#d9e2ef] bg-white shadow-sm"}`}>
+													<span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition ${isActive ? "border-white/20 bg-white/10" : "border-[#d9e2ef] bg-white shadow-sm"}`}>
 														<SidebarIcon label={item.label} />
 													</span>
 													{!sidebarCollapsed && <span className="text-[15px] font-medium">{item.label}</span>}
 												</div>
 												<div className="ml-auto flex items-center gap-2">
 													{!sidebarCollapsed && item.badge && <span className={`rounded-full px-2 py-0.5 text-xs ${isActive ? "bg-white/15 text-white" : "bg-[#6678c1] text-white"}`}>{item.badge}</span>}
-													<ChevronRightIcon />
+													{!sidebarCollapsed && (
+														item.subItems ? (
+															<ChevronRightIcon className={`transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} />
+														) : (
+															<ChevronRightIcon />
+														)
+													)}
 												</div>
 											</Link>
 										) : (
 											<div className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-[#5b6472]">
 												<div className="flex items-center gap-3">
-													<span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#d9e2ef] bg-white shadow-sm">
+													<span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#d9e2ef] bg-white shadow-sm">
 														<SidebarIcon label={item.label} />
 													</span>
 													{!sidebarCollapsed && <span className="text-[15px] font-medium">{item.label}</span>}
@@ -388,6 +424,32 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
 												</div>
 											</div>
 										)}
+										
+										{/* Render SubItems */}
+										{!sidebarCollapsed && item.subItems && isExpanded && (
+											<ul className="mt-1 flex flex-col space-y-0.5 pl-12 pr-2">
+												{item.subItems.map(subItem => {
+													const subHrefQuery = subItem.href?.includes('?') ? new URLSearchParams(subItem.href.split('?')[1]) : null;
+													const subView = subHrefQuery?.get('view');
+													const currentView = searchParams.get('view');
+													const isSubActive = subView ? currentView === subView : !currentView;
+													
+													return (
+														<li key={subItem.label}>
+															<Link
+																href={subItem.href || "#"}
+																onClick={() => setSidebarCollapsed(true)}
+																className={`block rounded-lg px-3 py-2 text-[14px] transition ${
+																	isSubActive ? "bg-[#eef2fa] font-semibold text-[#6678c1]" : "text-[#5b6472] hover:bg-[#f8faff] hover:text-[#1f2430]"
+																}`}
+															>
+																{subItem.label}
+															</Link>
+														</li>
+													);
+												})}
+											</ul>
+										)}
 									</li>
 								);
 							})}
@@ -395,7 +457,7 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
 					</nav>
 				</aside>
 
-				<main className="flex-1 p-6 lg:p-8">
+				<main className="flex-1 h-full overflow-y-auto p-6 lg:p-8">
 					<div className="relative overflow-hidden rounded-2xl border border-[#d9e2ef] bg-gradient-to-r from-white via-[#f8faff] to-[#eef2fa] p-4 shadow-[0_18px_38px_-24px_rgba(64,77,133,0.18)] ring-1 ring-white/80">
 						<div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#c9d4ea]/45 blur-3xl" />
 						<div className="flex flex-wrap items-center justify-between gap-3">
@@ -411,7 +473,12 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
 								</div>
 							</div>
 							<button
-								onClick={() => {
+								onClick={async () => {
+									try {
+										await fetch("/api/auth/logout", { method: "POST" });
+									} catch {
+										// ignore network error; still clear client state below
+									}
 									localStorage.removeItem("authToken");
 									localStorage.removeItem("authUser");
 									router.push("/login");
@@ -430,7 +497,6 @@ export default function WorkspaceShell({ children }: { children: ReactNode }) {
 
 					{children}
 				</main>
-			</div>
 		</div>
 	);
 }

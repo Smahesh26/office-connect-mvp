@@ -41,6 +41,8 @@ import {
 	updateSalaryComponent,
 	deleteSalaryComponent,
 	updateEmployee,
+	processSmartScan,
+	enrollFace,
 } from "./hrm.service";
 
 const handleControllerError = (res: Response, error: unknown): void => {
@@ -124,6 +126,23 @@ export const updateEmployeeController = async (req: Request, res: Response): Pro
 		const employeeId = getRequiredParam(req.params.employeeId, "employeeId");
 		const employee = await updateEmployee(employeeId, req.user.organizationId, req.body);
 		res.status(200).json(employee);
+	} catch (error) {
+		handleControllerError(res, error);
+	}
+};
+
+export const enrollFaceController = async (req: Request, res: Response): Promise<void> => {
+	try {
+		if (!req.user?.organizationId) {
+			res.status(401).json({ message: "Unauthorized" });
+			return;
+		}
+
+		const employeeId = getRequiredParam(req.params.employeeId, "employeeId");
+		const imageBase64 = getRequiredParam(req.body.imageBase64, "imageBase64");
+
+		const result = await enrollFace(req.user.organizationId, employeeId, imageBase64);
+		res.status(200).json(result);
 	} catch (error) {
 		handleControllerError(res, error);
 	}
@@ -227,6 +246,26 @@ export const checkOutController = async (req: Request, res: Response): Promise<v
 
 		const attendance = await checkOut(employeeId, req.user.organizationId, { manual, checkOutAt });
 		res.status(200).json({ message: "Check-out successful", attendance });
+	} catch (error) {
+		handleControllerError(res, error);
+	}
+};
+
+export const smartScanController = async (req: Request, res: Response): Promise<void> => {
+	try {
+		if (!req.user?.organizationId) {
+			res.status(401).json({ message: "Unauthorized" });
+			return;
+		}
+
+		const { imageBase64, actionType } = req.body;
+
+		if (!imageBase64 || !actionType) {
+			throw new HttpError(400, "imageBase64 and actionType are required");
+		}
+
+		const result = await processSmartScan(req.user.organizationId, imageBase64, actionType);
+		res.status(200).json(result);
 	} catch (error) {
 		handleControllerError(res, error);
 	}

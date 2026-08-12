@@ -1,15 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --background: #eef2fa;
-  --foreground: #1f2430;
-  --foreground-strong: #404d85;
-  --foreground-muted: #5b6472;
-  --brand: #6678c1;
-  --brand-strong: #404d85;
-  --brand-soft: #f8faff;
-  --brand-accent: #9ab7db;
-  --surface: #ffffff;
+  --indigo: #5c74c4;
+  --indigo-dark: #475a9e;
+  --sky: #8eb0d8;
+  --navy: #364477;
+  --navy-deep: #2b365c;
+  --ink: #1a1e28;
+  --slate: #545c6a;
+  --pale: #eff3f9;
+  --pale-2: #f8fafc;
+  --white: #ffffff;
+  --line: #e2e6ef;
+
+  /* Tailwind theme mappings */
+  --background: var(--pale);
+  --foreground: var(--ink);
+  --foreground-strong: var(--navy-deep);
+  --foreground-muted: var(--slate);
+  --brand: var(--indigo);
+  --brand-strong: var(--navy);
+  --brand-soft: var(--pale-2);
+  --brand-accent: var(--sky);
+  
   --font-app-sans: Arial, Helvetica, "Segoe UI", sans-serif;
   --font-app-mono: "Courier New", Courier, monospace;
 }
@@ -17,16 +30,24 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-accent: var(--brand-accent);
+  --color-foreground-strong: var(--foreground-strong);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-line: var(--line);
+  --color-navy-deep: var(--navy-deep);
+  
   --font-sans: var(--font-app-sans);
   --font-mono: var(--font-app-mono);
 }
 
 body {
   background:
-    radial-gradient(circle at top, rgba(154, 183, 219, 0.12), transparent 36%),
-    linear-gradient(180deg, #f8faff 0%, var(--background) 48%, #edf2fa 100%);
+    radial-gradient(circle at top, rgba(142, 176, 216, 0.15), transparent 36%),
+    linear-gradient(180deg, #f9fbff 0%, var(--background) 48%, #eef3f9 100%);
   color: var(--foreground);
-  font-family: var(--font-app-sans);
 }
 
 ::selection {
