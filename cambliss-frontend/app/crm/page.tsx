@@ -246,6 +246,7 @@ export default function CrmPage() {
 	const [campaignName, setCampaignName] = useState("");
 	const [campaignSegment, setCampaignSegment] = useState("");
 	const [setupOptions, setSetupOptions] = useState<SetupOptions>({ contacts: [], pipelines: [] });
+	const [integrations, setIntegrations] = useState<Integration[]>([]);
 
 	// Import Wizard State
 	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
