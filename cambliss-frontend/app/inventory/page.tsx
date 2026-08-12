@@ -220,20 +220,20 @@ const parseCSV = (text: string) => {
 
 const IMPORT_MODULE_FIELDS = {
 	products: [
-		{ key: "name", label: "Product Name", required: true },
-		{ key: "sku", label: "SKU", required: true },
-		{ key: "unitPrice", label: "Unit Price", required: true },
-		{ key: "costPrice", label: "Cost Price", required: false },
-		{ key: "category", label: "Category", required: false },
+		{ key: "name", label: "Product Name", required: true, aliases: ["name", "productname", "product", "item", "itemname", "title", "description"] },
+		{ key: "sku", label: "SKU", required: true, aliases: ["sku", "stockcode", "stock code", "item code", "itemcode", "product code", "productcode", "barcode", "part no", "partno", "partnumber"] },
+		{ key: "unitPrice", label: "Unit Price", required: true, aliases: ["unitprice", "unit price", "price", "selling price", "sellingprice", "mrp", "rate", "cost"] },
+		{ key: "costPrice", label: "Cost Price", required: false, aliases: ["costprice", "cost price", "purchase price", "purchaseprice", "buying price", "buyingprice"] },
+		{ key: "category", label: "Category", required: false, aliases: ["category", "type", "producttype", "product type", "group", "subcategory", "department"] },
 	],
 	warehouses: [
-		{ key: "name", label: "Warehouse Name", required: true },
-		{ key: "location", label: "Location", required: true },
+		{ key: "name", label: "Warehouse Name", required: true, aliases: ["name", "warehousename", "warehouse", "store", "branch", "location name"] },
+		{ key: "location", label: "Location", required: true, aliases: ["location", "address", "city", "place", "area"] },
 	],
 	vendors: [
-		{ key: "companyName", label: "Company Name", required: true },
-		{ key: "email", label: "Email Address", required: true },
-		{ key: "phone", label: "Phone Number", required: false },
+		{ key: "companyName", label: "Company Name", required: true, aliases: ["companyname", "company", "vendor", "supplier", "vendorname", "suppliername", "firm", "business"] },
+		{ key: "email", label: "Email Address", required: true, aliases: ["email", "emailaddress", "e-mail", "email id", "emailid", "mail"] },
+		{ key: "phone", label: "Phone Number", required: false, aliases: ["phone", "phonenumber", "mobile", "mobilenumber", "mobile number", "contact", "tel", "telephone"] },
 	]
 };
 
@@ -1198,11 +1198,20 @@ export default function InventoryPage() {
 			setImportHeaders(headers);
 			setImportData(rows);
 			
+			// Normalize a string to bare lowercase alphanumeric for fuzzy matching
+			const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+			const normalizedHeaders = headers.map(h => ({ original: h, normalized: normalize(h) }));
+
 			const newMapping: Record<string, { csvColumn: string, defaultValue: string }> = {};
 			IMPORT_MODULE_FIELDS[importModule].forEach(field => {
-				const matchedHeader = headers.find(h => h.toLowerCase().replace(/[^a-z]/g, '') === field.label.toLowerCase().replace(/[^a-z]/g, '') || h.toLowerCase() === field.key.toLowerCase());
+				const allCandidates = [
+					normalize(field.key),
+					normalize(field.label),
+					...(field.aliases || []).map(normalize),
+				];
+				const matched = normalizedHeaders.find(h => allCandidates.includes(h.normalized));
 				newMapping[field.key] = {
-					csvColumn: matchedHeader || "",
+					csvColumn: matched?.original || "",
 					defaultValue: ""
 				};
 			});
@@ -1259,29 +1268,41 @@ export default function InventoryPage() {
 		window.URL.revokeObjectURL(url);
 	};
 
-	const executeImport = () => {
+	const executeImport = async () => {
 		setIsImporting(true);
-		setTimeout(() => {
+		
+		try {
+			const authHeaders = getAuthHeaders();
+			authHeaders.set("Content-Type", "application/json");
+
 			if (importModule === "products") {
-				const newProducts = importData.map((row, i) => {
-					return {
-						id: `imported_prod_${Date.now()}_${i}`,
-						name: columnMapping.name.csvColumn ? row[columnMapping.name.csvColumn] : columnMapping.name.defaultValue || "Unknown Product",
-						sku: columnMapping.sku.csvColumn ? row[columnMapping.sku.csvColumn] : columnMapping.sku.defaultValue || `SKU-${Date.now()}-${i}`,
-						unitPrice: parseInt(columnMapping.unitPrice?.csvColumn ? row[columnMapping.unitPrice.csvColumn] : columnMapping.unitPrice?.defaultValue) || 0,
-						costPrice: parseInt(columnMapping.costPrice?.csvColumn ? row[columnMapping.costPrice.csvColumn] : columnMapping.costPrice?.defaultValue) || 0,
-						category: columnMapping.category?.csvColumn ? row[columnMapping.category.csvColumn] : columnMapping.category?.defaultValue || "General",
-						stockQuantity: 0,
-						reorderLevel: 10,
+				const promises = importData.map(async (row) => {
+					const payload = {
+						name: (columnMapping.name.csvColumn ? row[columnMapping.name.csvColumn] : columnMapping.name.defaultValue) || "Unknown Product",
+						sku: (columnMapping.sku.csvColumn ? row[columnMapping.sku.csvColumn] : columnMapping.sku.defaultValue) || `SKU-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+						unitPrice: Number(columnMapping.unitPrice?.csvColumn ? row[columnMapping.unitPrice.csvColumn] : columnMapping.unitPrice?.defaultValue) || 0,
+						costPrice: Number(columnMapping.costPrice?.csvColumn ? row[columnMapping.costPrice.csvColumn] : columnMapping.costPrice?.defaultValue) || 0,
+						category: (columnMapping.category?.csvColumn ? row[columnMapping.category.csvColumn] : columnMapping.category?.defaultValue) || "General",
 						unit: "pcs",
-					} as Product;
+						reorderLevel: 10,
+					};
+					return fetch("/api/inventory/products", {
+						method: "POST",
+						headers: authHeaders,
+						body: JSON.stringify(payload)
+					});
 				});
-				setProducts(prev => [...newProducts, ...prev]);
+				await Promise.all(promises);
 			}
 			
-			setIsImporting(false);
+			await loadAll();
 			setImportStep(4);
-		}, 1500);
+		} catch (error) {
+			console.error("Failed to import data:", error);
+			setNotice("An error occurred during import.");
+		} finally {
+			setIsImporting(false);
+		}
 	};
 
 	const closeImportModal = () => {

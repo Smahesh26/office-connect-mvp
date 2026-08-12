@@ -278,22 +278,22 @@ const parseCSV = (text: string) => {
 
 const IMPORT_MODULE_FIELDS = {
 	employees: [
-		{ key: "employeeCode", label: "Employee Code", required: true },
-		{ key: "firstName", label: "First Name", required: true },
-		{ key: "lastName", label: "Last Name", required: true },
-		{ key: "email", label: "Email Address", required: true },
-		{ key: "salary", label: "Salary", required: false },
+		{ key: "employeeCode", label: "Employee Code", required: true, aliases: ["employeecode", "empcode", "emp code", "emp id", "empid", "employee id", "employeeid", "staff id", "staffid", "id"] },
+		{ key: "firstName", label: "First Name", required: true, aliases: ["firstname", "first", "fname", "frstname", "given name", "givenname", "forename"] },
+		{ key: "lastName", label: "Last Name", required: false, aliases: ["lastname", "last", "lname", "surname", "family name", "familyname"] },
+		{ key: "email", label: "Email Address", required: true, aliases: ["email", "emailaddress", "e-mail", "email id", "emailid", "mail", "work email"] },
+		{ key: "salary", label: "Salary", required: false, aliases: ["salary", "pay", "ctc", "gross salary", "grosssalary", "basic", "wages", "compensation"] },
 	],
 	attendance: [
-		{ key: "employeeCode", label: "Employee Code", required: true },
-		{ key: "checkIn", label: "Check-in Time", required: true },
-		{ key: "checkOut", label: "Check-out Time", required: false },
+		{ key: "employeeCode", label: "Employee Code", required: true, aliases: ["employeecode", "empcode", "emp code", "emp id", "empid", "employee id", "employeeid"] },
+		{ key: "checkIn", label: "Check-in Time", required: true, aliases: ["checkin", "check in", "check-in", "login", "in time", "intime", "start time", "arrival"] },
+		{ key: "checkOut", label: "Check-out Time", required: false, aliases: ["checkout", "check out", "check-out", "logout", "out time", "outtime", "end time", "departure"] },
 	],
 	payroll: [
-		{ key: "employeeCode", label: "Employee Code", required: true },
-		{ key: "month", label: "Month", required: true },
-		{ key: "year", label: "Year", required: true },
-		{ key: "grossSalary", label: "Gross Salary", required: true },
+		{ key: "employeeCode", label: "Employee Code", required: true, aliases: ["employeecode", "empcode", "emp code", "emp id", "empid"] },
+		{ key: "month", label: "Month", required: true, aliases: ["month", "paymonth", "pay month", "period month"] },
+		{ key: "year", label: "Year", required: true, aliases: ["year", "payyear", "pay year", "period year"] },
+		{ key: "grossSalary", label: "Gross Salary", required: true, aliases: ["grosssalary", "gross salary", "gross", "total pay", "totalpay", "ctc"] },
 	]
 };
 
@@ -1134,11 +1134,20 @@ export default function HrmPage() {
 			setImportHeaders(headers);
 			setImportData(rows);
 			
+			// Normalize a string to bare lowercase alphanumeric for fuzzy matching
+			const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+			const normalizedHeaders = headers.map(h => ({ original: h, normalized: normalize(h) }));
+
 			const newMapping: Record<string, { csvColumn: string, defaultValue: string }> = {};
 			IMPORT_MODULE_FIELDS[importModule].forEach(field => {
-				const matchedHeader = headers.find(h => h.toLowerCase().replace(/[^a-z]/g, '') === field.label.toLowerCase().replace(/[^a-z]/g, '') || h.toLowerCase() === field.key.toLowerCase());
+				const allCandidates = [
+					normalize(field.key),
+					normalize(field.label),
+					...(field.aliases || []).map(normalize),
+				];
+				const matched = normalizedHeaders.find(h => allCandidates.includes(h.normalized));
 				newMapping[field.key] = {
-					csvColumn: matchedHeader || "",
+					csvColumn: matched?.original || "",
 					defaultValue: ""
 				};
 			});
@@ -1195,32 +1204,42 @@ export default function HrmPage() {
 		window.URL.revokeObjectURL(url);
 	};
 
-	const executeImport = () => {
+	const executeImport = async () => {
 		setIsImporting(true);
-		setTimeout(() => {
+		
+		try {
+			const authHeaders = getAuthHeaders();
+			authHeaders.set("Content-Type", "application/json");
+
 			if (importModule === "employees") {
-				const newEmployees = importData.map((row, i) => {
-					return {
-						id: `imported_emp_${Date.now()}_${i}`,
-						employeeCode: columnMapping.employeeCode.csvColumn ? row[columnMapping.employeeCode.csvColumn] : columnMapping.employeeCode.defaultValue,
-						status: "ACTIVE",
+				const promises = importData.map(async (row) => {
+					const payload = {
+						firstName: (columnMapping.firstName.csvColumn ? row[columnMapping.firstName.csvColumn] : columnMapping.firstName.defaultValue) || "",
+						lastName: (columnMapping.lastName.csvColumn ? row[columnMapping.lastName.csvColumn] : columnMapping.lastName.defaultValue) || "",
+						email: (columnMapping.email.csvColumn ? row[columnMapping.email.csvColumn] : columnMapping.email.defaultValue) || "",
+						employeeCode: (columnMapping.employeeCode.csvColumn ? row[columnMapping.employeeCode.csvColumn] : columnMapping.employeeCode.defaultValue) || "",
 						employmentType: "FULL_TIME",
 						workMode: "ON_SITE",
-						salary: parseInt(columnMapping.salary?.csvColumn ? row[columnMapping.salary.csvColumn] : columnMapping.salary?.defaultValue) || 0,
+						salary: Number(columnMapping.salary?.csvColumn ? row[columnMapping.salary.csvColumn] : columnMapping.salary?.defaultValue) || 0,
 						joinDate: new Date().toISOString(),
-						user: {
-							firstName: columnMapping.firstName.csvColumn ? row[columnMapping.firstName.csvColumn] : columnMapping.firstName.defaultValue,
-							lastName: columnMapping.lastName.csvColumn ? row[columnMapping.lastName.csvColumn] : columnMapping.lastName.defaultValue,
-							email: columnMapping.email.csvColumn ? row[columnMapping.email.csvColumn] : columnMapping.email.defaultValue,
-						}
-					} as Employee;
+					};
+					return fetch("/api/hrm/employees", {
+						method: "POST",
+						headers: authHeaders,
+						body: JSON.stringify(payload)
+					});
 				});
-				setEmployees(prev => [...newEmployees, ...prev]);
+				await Promise.all(promises);
 			}
 			
-			setIsImporting(false);
+			await loadAll();
 			setImportStep(4);
-		}, 1500);
+		} catch (error) {
+			console.error("Failed to import data:", error);
+			setNotice("An error occurred during import.");
+		} finally {
+			setIsImporting(false);
+		}
 	};
 
 	const closeImportModal = () => {
