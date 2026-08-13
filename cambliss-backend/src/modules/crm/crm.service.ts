@@ -1360,7 +1360,11 @@ export const createDeal = async (organizationId: string, input: {
 	}
 
 	let status = (input.status || "OPEN").toUpperCase().trim();
-	if (!["OPEN", "WON", "LOST"].includes(status)) {
+	if (status.includes("WON") || status === "SUCCESS") {
+		status = "WON";
+	} else if (status.includes("LOST") || status === "FAILED" || status === "CANCELLED") {
+		status = "LOST";
+	} else if (!["OPEN", "WON", "LOST"].includes(status)) {
 		status = "OPEN";
 	}
 
