@@ -1110,7 +1110,13 @@ const createDeal = (organizationId, input) => __awaiter(void 0, void 0, void 0, 
         stageId = newStage.id;
     }
     let status = (input.status || "OPEN").toUpperCase().trim();
-    if (!["OPEN", "WON", "LOST"].includes(status)) {
+    if (status.includes("WON") || status === "SUCCESS") {
+        status = "WON";
+    }
+    else if (status.includes("LOST") || status === "FAILED" || status === "CANCELLED") {
+        status = "LOST";
+    }
+    else if (!["OPEN", "WON", "LOST"].includes(status)) {
         status = "OPEN";
     }
     return prisma_1.default.deal.create({
