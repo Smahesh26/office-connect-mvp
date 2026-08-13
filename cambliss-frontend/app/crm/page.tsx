@@ -1065,6 +1065,43 @@ export default function CrmPage() {
 			setImportStep(3);
 		};
 
+		if (file.name.toLowerCase().endsWith('.csv')) {
+			const reader = new FileReader();
+			reader.onload = (event) => {
+				const text = event.target?.result as string;
+				const { headers, rows } = parseCSV(text);
+				processParsedData(headers, rows);
+			};
+			reader.readAsText(file);
+		} else if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
+			const reader = new FileReader();
+			reader.onload = (event) => {
+				const data = new Uint8Array(event.target?.result as ArrayBuffer);
+				const workbook = XLSX.read(data, { type: 'array' });
+				const firstSheetName = workbook.SheetNames[0];
+				const worksheet = workbook.Sheets[firstSheetName];
+				const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" }) as Record<string, any>[];
+				
+				if (jsonRows.length === 0) {
+					processParsedData([], []);
+					return;
+				}
+				
+				const headers = Object.keys(jsonRows[0]);
+				const rows = jsonRows.map(row => {
+					const newRow: Record<string, string> = {};
+					headers.forEach(h => {
+						newRow[h] = String(row[h] || "");
+					});
+					return newRow;
+				});
+				
+				processParsedData(headers, rows);
+			};
+			reader.readAsArrayBuffer(file);
+		}
+	};
+
 	const handleDirectDealExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
@@ -1153,43 +1190,6 @@ export default function CrmPage() {
 				const worksheet = workbook.Sheets[firstSheetName];
 				const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" }) as Record<string, any>[];
 				void processRows(jsonRows);
-			};
-			reader.readAsArrayBuffer(file);
-		}
-	};
-
-		if (file.name.toLowerCase().endsWith('.csv')) {
-			const reader = new FileReader();
-			reader.onload = (event) => {
-				const text = event.target?.result as string;
-				const { headers, rows } = parseCSV(text);
-				processParsedData(headers, rows);
-			};
-			reader.readAsText(file);
-		} else if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
-			const reader = new FileReader();
-			reader.onload = (event) => {
-				const data = new Uint8Array(event.target?.result as ArrayBuffer);
-				const workbook = XLSX.read(data, { type: 'array' });
-				const firstSheetName = workbook.SheetNames[0];
-				const worksheet = workbook.Sheets[firstSheetName];
-				const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" }) as Record<string, any>[];
-				
-				if (jsonRows.length === 0) {
-					processParsedData([], []);
-					return;
-				}
-				
-				const headers = Object.keys(jsonRows[0]);
-				const rows = jsonRows.map(row => {
-					const newRow: Record<string, string> = {};
-					headers.forEach(h => {
-						newRow[h] = String(row[h] || "");
-					});
-					return newRow;
-				});
-				
-				processParsedData(headers, rows);
 			};
 			reader.readAsArrayBuffer(file);
 		}
