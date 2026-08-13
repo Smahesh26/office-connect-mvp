@@ -44,7 +44,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a, _b, _c, _d, _e;
+var _a, _b, _c, _d;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.convertTxtToPptx = exports.convertPptxToTxt = exports.convertTxtToDocx = exports.convertPdfToTxt = exports.convertCsvToXlsx = exports.convertXlsxToCsv = exports.convertDocxToPdf = exports.convertPdfToDocx = exports.removeImageBackgroundAdvanced = exports.removeImageBackground = exports.upscaleImageFile = exports.compressPdfFile = exports.splitPdfFile = exports.mergePdfFiles = exports.extractDocumentText = exports.getDailyUtilityCatalog = exports.generateQrCode = exports.convertCurrency = exports.ToolsError = void 0;
 const qrcode_1 = __importDefault(require("qrcode"));
@@ -63,9 +63,9 @@ const exceljs_1 = __importDefault(require("exceljs"));
 const sync_1 = require("csv-parse/sync");
 const pptxgenjs_1 = __importDefault(require("pptxgenjs"));
 const jszip_1 = __importDefault(require("jszip"));
-const parsePdfDocument = (_a = pdf_parse_1.default.default) !== null && _a !== void 0 ? _a : pdf_parse_1.default;
+const { PDFParse } = pdf_parse_1.default;
 const execFileAsync = (0, util_1.promisify)(child_process_1.execFile);
-const LIBREOFFICE_BIN = ((_b = process.env.LIBREOFFICE_BIN) === null || _b === void 0 ? void 0 : _b.trim()) || ((_c = process.env.LIBREOFFICE_PATH) === null || _c === void 0 ? void 0 : _c.trim()) || "soffice";
+const LIBREOFFICE_BIN = ((_a = process.env.LIBREOFFICE_BIN) === null || _a === void 0 ? void 0 : _a.trim()) || ((_b = process.env.LIBREOFFICE_PATH) === null || _b === void 0 ? void 0 : _b.trim()) || "soffice";
 class ToolsError extends Error {
     constructor(statusCode, message) {
         super(message);
@@ -218,8 +218,10 @@ const getFileKind = (mimeType) => {
 const extractTextFromPdf = (filePath) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const buffer = yield promises_1.default.readFile(filePath);
-    const parsed = yield parsePdfDocument(buffer);
-    return ((_a = parsed.text) !== null && _a !== void 0 ? _a : "").trim();
+    const parser = new PDFParse({ data: buffer });
+    yield parser.load();
+    const result = yield parser.getText();
+    return ((_a = result.text) !== null && _a !== void 0 ? _a : "").trim();
 });
 const extractTextFromImage = (filePath) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -441,8 +443,8 @@ const createPdfFromText = (title, text) => __awaiter(void 0, void 0, void 0, fun
         doc.on("error", reject);
     });
 });
-const REMBG_API_URL = ((_d = process.env.REMBG_API_URL) === null || _d === void 0 ? void 0 : _d.trim()) || "";
-const REMBG_API_KEY = ((_e = process.env.REMBG_API_KEY) === null || _e === void 0 ? void 0 : _e.trim()) || "";
+const REMBG_API_URL = ((_c = process.env.REMBG_API_URL) === null || _c === void 0 ? void 0 : _c.trim()) || "";
+const REMBG_API_KEY = ((_d = process.env.REMBG_API_KEY) === null || _d === void 0 ? void 0 : _d.trim()) || "";
 const upscaleImageFile = (file, scaleRaw) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     if (!file) {
@@ -576,7 +578,8 @@ const removeImageBackground = (file, toleranceRaw) => __awaiter(void 0, void 0, 
         }
         if (y > 0) {
             enqueue(index - width);
-            let csv;
+        }
+        if (y < height - 1) {
             enqueue(index + width);
         }
     }

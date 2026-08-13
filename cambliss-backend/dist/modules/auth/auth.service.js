@@ -12,13 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateOrganizationOnboarding = exports.getOrganizationOnboarding = exports.clearOrganizationProfile = exports.updateOrganizationProfile = exports.getMe = exports.login = exports.register = exports.AuthError = void 0;
+exports.updateOrganizationOnboarding = exports.getOrganizationOnboarding = exports.clearOrganizationProfile = exports.updateOrganizationProfile = exports.getMe = exports.login = exports.register = exports.generateSsoToken = exports.AuthError = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const user_management_service_1 = require("../user-management/user-management.service");
-const mobile_otp_service_1 = require("./mobile-otp.service");
-const firebase_auth_service_1 = require("./firebase-auth.service");
+const subscription_service_1 = require("../subscription/subscription.service");
 class AuthError extends Error {
     constructor(statusCode, message) {
         super(message);
@@ -65,6 +64,10 @@ const getJwtSecret = () => {
 const signAccessToken = (payload) => {
     return jsonwebtoken_1.default.sign(payload, getJwtSecret(), { expiresIn: "7d" });
 };
+const generateSsoToken = (payload) => {
+    return signAccessToken(payload);
+};
+exports.generateSsoToken = generateSsoToken;
 const getOrCreateRole = (roleName) => __awaiter(void 0, void 0, void 0, function* () {
     const existing = yield prisma_1.default.role.findUnique({
         where: {
@@ -113,27 +116,6 @@ const register = (input) => __awaiter(void 0, void 0, void 0, function* () {
     }
     if (!organizationName) {
         throw new AuthError(400, "organizationName is required");
-    }
-    if ((0, firebase_auth_service_1.isFirebaseOtpEnabled)()) {
-        if (!phone) {
-            throw new AuthError(400, "phone is required for Firebase verification");
-        }
-        if (!firebaseIdToken) {
-            throw new AuthError(400, "firebaseIdToken is required");
-        }
-        const firebaseVerification = yield (0, firebase_auth_service_1.verifyFirebasePhoneToken)(firebaseIdToken);
-        if (firebaseVerification.phoneNumber !== phone) {
-            throw new AuthError(400, "Firebase phone number does not match the registration phone");
-        }
-    }
-    else if ((0, mobile_otp_service_1.isMobileOtpEnabled)()) {
-        if (!phone) {
-            throw new AuthError(400, "phone is required for OTP verification");
-        }
-        if (!otpRequestId) {
-            throw new AuthError(400, "otpRequestId is required");
-        }
-        (0, mobile_otp_service_1.consumeVerifiedRegisterOtp)({ phone, requestId: otpRequestId });
     }
     yield ensureUserAccessProfileTable();
     const existingUser = yield prisma_1.default.user.findUnique({
@@ -237,6 +219,12 @@ const login = (input) => __awaiter(void 0, void 0, void 0, function* () {
     const myAccess = role === "SUPER_ADMIN"
         ? { accesses: [], phone: null }
         : yield (0, user_management_service_1.getMyAccess)(resolvedOrganizationId, user.id);
+    if (role !== "SUPER_ADMIN") {
+        const trialSnapshot = yield (0, subscription_service_1.getOrganizationTrialReminderSnapshot)(resolvedOrganizationId);
+        if (trialSnapshot.status === "EXPIRED") {
+            throw new AuthError(403, "Trial period expired");
+        }
+    }
     const token = signAccessToken({
         id: user.id,
         email: user.email,

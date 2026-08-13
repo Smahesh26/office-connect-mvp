@@ -21,7 +21,7 @@ const storage = multer_1.default.diskStorage({
         cb(null, uploadsRoot);
     },
     filename: function (req, file, cb) {
-        cb(null, Date.now() + "-" + file.originalname);
+        cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}-${file.originalname}`);
     },
 });
 exports.upload = (0, multer_1.default)({
@@ -40,7 +40,7 @@ const chatTransferStorage = multer_1.default.diskStorage({
 });
 exports.uploadChatTransfer = (0, multer_1.default)({
     storage: chatTransferStorage,
-    limits: {
-        fileSize: 1024 * 1024 * 500,
-    },
+    // limits: {
+    //   fileSize: 1024 * 1024 * 500,
+    // },
 });

@@ -19,9 +19,11 @@ hrmRouter.get("/employees/:employeeId", hrm_controller_1.getEmployeeByIdControll
 hrmRouter.put("/employees/:employeeId", hrm_controller_1.updateEmployeeController);
 hrmRouter.put("/employees/:employeeId/status", hrm_controller_1.changeEmployeeStatusController);
 hrmRouter.put("/employees/:employeeId/manager", hrm_controller_1.assignManagerController);
+hrmRouter.post("/employees/:employeeId/enroll-face", hrm_controller_1.enrollFaceController);
 hrmRouter.post("/employees/:employeeId/shifts", hrm_controller_1.assignShiftController);
 hrmRouter.post("/attendance/check-in", hrm_controller_1.checkInController);
 hrmRouter.post("/attendance/check-out", hrm_controller_1.checkOutController);
+hrmRouter.post("/attendance/smart-scan", hrm_controller_1.smartScanController);
 hrmRouter.get("/attendance/dashboard", hrm_controller_1.getAttendanceDashboardController);
 hrmRouter.get("/attendance/daily", hrm_controller_1.getDailyAttendanceController);
 hrmRouter.post("/payroll/generate", hrm_controller_1.generatePayrollController);

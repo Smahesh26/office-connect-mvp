@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.downloadAdminOrderInvoiceController = exports.getAllOrderHistoryController = exports.assignModulesToPlanController = exports.getAllPlansController = exports.deletePlanController = exports.updatePlanController = exports.createPlanController = exports.getAllSubscriptionsController = exports.activateOrganizationController = exports.suspendOrganizationController = exports.getOrganizationByIdController = exports.getAllOrganizationsController = void 0;
+exports.downloadAdminOrderInvoiceController = exports.getAllOrderHistoryController = exports.assignModulesToPlanController = exports.getAllPlansController = exports.deletePlanController = exports.updatePlanController = exports.createPlanController = exports.getAllSubscriptionsController = exports.activateOrganizationController = exports.suspendOrganizationController = exports.getOrganizationByIdController = exports.getGlobalAnalyticsController = exports.getAllOrganizationsController = void 0;
 const admin_service_1 = require("./admin.service");
 const handleControllerError = (res, error) => {
     if (error instanceof admin_service_1.HttpError) {
@@ -39,6 +39,16 @@ const getAllOrganizationsController = (_req, res) => __awaiter(void 0, void 0, v
     }
 });
 exports.getAllOrganizationsController = getAllOrganizationsController;
+const getGlobalAnalyticsController = (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const stats = yield (0, admin_service_1.getGlobalAnalytics)();
+        res.status(200).json(stats);
+    }
+    catch (error) {
+        handleControllerError(res, error);
+    }
+});
+exports.getGlobalAnalyticsController = getGlobalAnalyticsController;
 const getOrganizationByIdController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const organizationId = getRequiredParam(req.params.organizationId, "organizationId");

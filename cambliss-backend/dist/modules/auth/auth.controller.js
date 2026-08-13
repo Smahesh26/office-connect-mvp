@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateMyOrganizationOnboardingController = exports.getMyOrganizationOnboardingController = exports.clearMyOrganizationController = exports.updateMyOrganizationController = exports.meController = exports.logoutController = exports.loginController = exports.verifyFirebasePhoneController = exports.verifyRegisterOtpController = exports.sendRegisterOtpController = exports.registerController = void 0;
+exports.updateMyOrganizationOnboardingController = exports.getMyOrganizationOnboardingController = exports.clearMyOrganizationController = exports.updateMyOrganizationController = exports.meController = exports.logoutController = exports.loginController = exports.getSsoTokenController = exports.verifyFirebasePhoneController = exports.verifyRegisterOtpController = exports.sendRegisterOtpController = exports.registerController = void 0;
 const auth_service_1 = require("./auth.service");
 const mobile_otp_service_1 = require("./mobile-otp.service");
 const firebase_auth_service_1 = require("./firebase-auth.service");
@@ -101,6 +101,25 @@ const verifyFirebasePhoneController = (req, res) => __awaiter(void 0, void 0, vo
     }
 });
 exports.verifyFirebasePhoneController = verifyFirebasePhoneController;
+const getSsoTokenController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!req.user) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+        const token = (0, auth_service_1.generateSsoToken)({
+            id: req.user.id,
+            email: req.user.email,
+            organizationId: req.user.organizationId,
+            role: req.user.role,
+        });
+        res.status(200).json({ token });
+    }
+    catch (error) {
+        handleAuthError(res, error);
+    }
+});
+exports.getSsoTokenController = getSsoTokenController;
 const loginController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const result = yield (0, auth_service_1.login)(req.body);

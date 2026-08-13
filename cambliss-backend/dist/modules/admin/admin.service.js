@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateAdminOrderInvoice = exports.getAllOrderHistory = exports.assignModulesToPlan = exports.getAllPlans = exports.deletePlan = exports.updatePlan = exports.createPlan = exports.getAllSubscriptions = exports.activateOrganization = exports.suspendOrganization = exports.getOrganizationById = exports.getAllOrganizations = exports.HttpError = void 0;
+exports.generateAdminOrderInvoice = exports.getAllOrderHistory = exports.assignModulesToPlan = exports.getAllPlans = exports.deletePlan = exports.updatePlan = exports.createPlan = exports.getAllSubscriptions = exports.activateOrganization = exports.suspendOrganization = exports.getOrganizationById = exports.getGlobalAnalytics = exports.getAllOrganizations = exports.HttpError = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const client_1 = require("@prisma/client");
 const pdfkit_1 = __importDefault(require("pdfkit"));
@@ -97,6 +97,29 @@ const getAllOrganizations = () => __awaiter(void 0, void 0, void 0, function* ()
     });
 });
 exports.getAllOrganizations = getAllOrganizations;
+const getGlobalAnalytics = () => __awaiter(void 0, void 0, void 0, function* () {
+    const totalOrganizations = yield prisma_1.default.organization.count();
+    const totalUsers = yield prisma_1.default.user.count();
+    const totalDeals = yield prisma_1.default.deal.count();
+    const totalEmployees = yield prisma_1.default.employee.count();
+    const totalOrders = yield prisma_1.default.order.count();
+    const totalProducts = yield prisma_1.default.product.count();
+    const totalFiles = yield prisma_1.default.file.count();
+    const activeSubscriptions = yield prisma_1.default.subscription.count({
+        where: { status: "ACTIVE" }
+    });
+    return {
+        totalOrganizations,
+        totalUsers,
+        totalDeals,
+        totalEmployees,
+        totalOrders,
+        totalProducts,
+        totalFiles,
+        activeSubscriptions
+    };
+});
+exports.getGlobalAnalytics = getGlobalAnalytics;
 const getOrganizationById = (organizationId) => __awaiter(void 0, void 0, void 0, function* () {
     const organization = yield prisma_1.default.organization.findUnique({
         where: { id: organizationId },

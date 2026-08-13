@@ -17,6 +17,7 @@ const prisma_1 = __importDefault(require("../../config/prisma"));
 const client_1 = require("@prisma/client");
 const accounting_service_1 = require("../accounting/accounting.service");
 const inventory_service_1 = require("../inventory/inventory.service");
+const webhook_1 = require("../../utils/webhook");
 class HttpError extends Error {
     constructor(statusCode, message) {
         super(message);
@@ -716,6 +717,8 @@ const createLead = (organizationId, input) => __awaiter(void 0, void 0, void 0, 
             },
         });
         contactId = contact.id;
+        // Fire webhook asynchronously
+        (0, webhook_1.syncContactToAccountech)(contact).catch(console.error);
     }
     // contactId is now either provided or auto-created
     if (!contactId) {
@@ -1006,6 +1009,7 @@ const updateLead = (leadId, organizationId, input) => __awaiter(void 0, void 0, 
 });
 exports.updateLead = updateLead;
 const createDeal = (organizationId, input) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     // Validate org exists
     const org = yield prisma_1.default.organization.findUnique({
         where: { id: organizationId },
@@ -1014,23 +1018,110 @@ const createDeal = (organizationId, input) => __awaiter(void 0, void 0, void 0, 
     if (!org) {
         throw new HttpError(404, "Organization not found");
     }
-    // Verify contact belongs to org
-    const contact = yield prisma_1.default.contact.findUnique({
-        where: { id: input.contactId },
-        select: { organizationId: true },
-    });
-    if (!contact || contact.organizationId !== organizationId) {
-        throw new HttpError(403, "Contact does not belong to this organization");
+    // Resolve contactId (or find/create default contact for org)
+    let contactId = input.contactId;
+    if (contactId) {
+        const contact = yield prisma_1.default.contact.findUnique({
+            where: { id: contactId },
+            select: { organizationId: true },
+        });
+        if (!contact || contact.organizationId !== organizationId) {
+            contactId = undefined;
+        }
+    }
+    if (!contactId) {
+        const existingContact = yield prisma_1.default.contact.findFirst({
+            where: { organizationId },
+            select: { id: true },
+        });
+        if (existingContact) {
+            contactId = existingContact.id;
+        }
+        else {
+            const defaultContact = yield prisma_1.default.contact.create({
+                data: {
+                    organizationId,
+                    type: "CUSTOMER",
+                    firstName: "Default",
+                    lastName: "Contact",
+                    email: "contact@organization.internal",
+                    isActive: true,
+                },
+            });
+            contactId = defaultContact.id;
+        }
+    }
+    // Resolve pipelineId & stageId (or find/create default pipeline/stage)
+    let pipelineId = input.pipelineId;
+    let stageId = input.stageId;
+    if (pipelineId) {
+        const pipeline = yield prisma_1.default.pipeline.findUnique({
+            where: { id: pipelineId },
+            include: { stages: { orderBy: { order: "asc" } } },
+        });
+        if (!pipeline || pipeline.organizationId !== organizationId) {
+            pipelineId = undefined;
+            stageId = undefined;
+        }
+        else if (!stageId || !pipeline.stages.some((s) => s.id === stageId)) {
+            stageId = (_a = pipeline.stages[0]) === null || _a === void 0 ? void 0 : _a.id;
+        }
+    }
+    if (!pipelineId) {
+        let pipeline = yield prisma_1.default.pipeline.findFirst({
+            where: { organizationId },
+            include: { stages: { orderBy: { order: "asc" } } },
+        });
+        if (!pipeline) {
+            pipeline = yield prisma_1.default.pipeline.create({
+                data: {
+                    organizationId,
+                    name: "Standard Sales Pipeline",
+                    stages: {
+                        create: [
+                            { name: "Qualification", order: 1 },
+                            { name: "Proposal", order: 2 },
+                            { name: "Closed Won", order: 3 },
+                            { name: "Closed Lost", order: 4 },
+                        ],
+                    },
+                },
+                include: { stages: { orderBy: { order: "asc" } } },
+            });
+        }
+        pipelineId = pipeline.id;
+        stageId = stageId || ((_b = pipeline.stages[0]) === null || _b === void 0 ? void 0 : _b.id);
+    }
+    if (!stageId) {
+        const stage = yield prisma_1.default.stage.findFirst({
+            where: { pipelineId },
+            orderBy: { order: "asc" },
+        });
+        stageId = stage === null || stage === void 0 ? void 0 : stage.id;
+    }
+    if (!stageId) {
+        const newStage = yield prisma_1.default.stage.create({
+            data: {
+                pipelineId,
+                name: "Initial Stage",
+                order: 1,
+            },
+        });
+        stageId = newStage.id;
+    }
+    let status = (input.status || "OPEN").toUpperCase().trim();
+    if (!["OPEN", "WON", "LOST"].includes(status)) {
+        status = "OPEN";
     }
     return prisma_1.default.deal.create({
         data: {
             organizationId,
-            contactId: input.contactId,
-            pipelineId: input.pipelineId,
-            stageId: input.stageId,
-            value: new client_1.Prisma.Decimal(input.value),
-            probability: input.probability || 0,
-            status: input.status || "OPEN",
+            contactId,
+            pipelineId,
+            stageId,
+            value: new client_1.Prisma.Decimal(input.value || 0),
+            probability: Math.min(100, Math.max(0, Number(input.probability) || 0)),
+            status,
         },
         include: {
             contact: true,

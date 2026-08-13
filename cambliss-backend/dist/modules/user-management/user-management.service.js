@@ -30,6 +30,8 @@ exports.ACCESS_KEYS = [
     "INVENTORY",
     "FILE_SHARING",
     "USER_MANAGEMENT",
+    "STORE",
+    "VIDEO_CONNECT",
 ];
 const ensureAccessProfileTable = () => __awaiter(void 0, void 0, void 0, function* () {
     yield prisma_1.default.$executeRawUnsafe(`
@@ -37,11 +39,16 @@ const ensureAccessProfileTable = () => __awaiter(void 0, void 0, void 0, functio
 			"userId" TEXT PRIMARY KEY REFERENCES "User"("id") ON DELETE CASCADE,
 			"organizationId" TEXT NOT NULL REFERENCES "Organization"("id") ON DELETE CASCADE,
 			"phone" TEXT,
+			"department" TEXT,
 			"accesses" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
 			"createdBy" TEXT REFERENCES "User"("id") ON DELETE SET NULL,
 			"createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
 			"updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
 		);
+	`);
+    yield prisma_1.default.$executeRawUnsafe(`
+		ALTER TABLE "UserAccessProfile" 
+		ADD COLUMN IF NOT EXISTS "department" TEXT;
 	`);
     yield prisma_1.default.$executeRawUnsafe(`
 		CREATE INDEX IF NOT EXISTS "UserAccessProfile_org_idx"
@@ -78,14 +85,6 @@ const ensureOrganizationMembership = (organizationId, userId) => __awaiter(void 
         throw new UserManagementError(403, "You are not a member of this organization");
     }
 });
-const ensureUserLimit = (organizationId) => __awaiter(void 0, void 0, void 0, function* () {
-    const count = yield prisma_1.default.organizationUser.count({
-        where: { organizationId },
-    });
-    if (count >= 4) {
-        throw new UserManagementError(403, "First plan supports maximum 4 users");
-    }
-});
 const randomPassword = () => {
     const seed = Math.random().toString(36).slice(-6);
     return `Cambliss@${seed}`;
@@ -101,6 +100,7 @@ const listOrganizationUsers = (organizationId, requesterId) => __awaiter(void 0,
 			u."lastName" AS "lastName",
 			r."name" AS "role",
 			ap."phone" AS "phone",
+			ap."department" AS "department",
 			ap."accesses" AS "accesses",
 			ou."createdAt" AS "createdAt"
 		FROM "OrganizationUser" ou
@@ -118,16 +118,16 @@ const listOrganizationUsers = (organizationId, requesterId) => __awaiter(void 0,
         lastName: row.lastName,
         role: row.role,
         phone: row.phone,
+        department: row.department,
         accesses: normalizeAccesses(row.accesses || []),
         createdAt: row.createdAt,
     }));
 });
 exports.listOrganizationUsers = listOrganizationUsers;
 const createOrganizationUser = (organizationId, requesterId, input) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a, _b, _c;
     yield ensureOrganizationMembership(organizationId, requesterId);
     yield ensureAccessProfileTable();
-    yield ensureUserLimit(organizationId);
     const email = (_a = input.email) === null || _a === void 0 ? void 0 : _a.trim().toLowerCase();
     if (!email) {
         throw new UserManagementError(400, "email is required");
@@ -148,7 +148,7 @@ const createOrganizationUser = (organizationId, requesterId, input) => __awaiter
     const tempPassword = randomPassword();
     const passwordHash = yield bcryptjs_1.default.hash(tempPassword, 10);
     const created = yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a;
+        var _a, _b;
         const user = yield tx.user.create({
             data: {
                 email,
@@ -169,9 +169,9 @@ const createOrganizationUser = (organizationId, requesterId, input) => __awaiter
             },
         });
         yield tx.$executeRawUnsafe(`
-			INSERT INTO "UserAccessProfile" ("userId", "organizationId", "phone", "accesses", "createdBy", "createdAt", "updatedAt")
-			VALUES ($1, $2, $3, $4::TEXT[], $5, NOW(), NOW())
-			`, user.id, organizationId, ((_a = input.phone) === null || _a === void 0 ? void 0 : _a.trim()) || null, accesses, requesterId);
+			INSERT INTO "UserAccessProfile" ("userId", "organizationId", "phone", "department", "accesses", "createdBy", "createdAt", "updatedAt")
+			VALUES ($1, $2, $3, $4, $5::TEXT[], $6, NOW(), NOW())
+			`, user.id, organizationId, ((_a = input.phone) === null || _a === void 0 ? void 0 : _a.trim()) || null, ((_b = input.department) === null || _b === void 0 ? void 0 : _b.trim()) || null, accesses, requesterId);
         return user;
     }));
     return {
@@ -180,6 +180,7 @@ const createOrganizationUser = (organizationId, requesterId, input) => __awaiter
             email: created.email,
             role: input.role,
             phone: ((_b = input.phone) === null || _b === void 0 ? void 0 : _b.trim()) || null,
+            department: ((_c = input.department) === null || _c === void 0 ? void 0 : _c.trim()) || null,
             accesses,
             createdAt: created.createdAt,
         },
@@ -188,7 +189,7 @@ const createOrganizationUser = (organizationId, requesterId, input) => __awaiter
 });
 exports.createOrganizationUser = createOrganizationUser;
 const updateOrganizationUserAccess = (organizationId, requesterId, userId, input) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    var _a, _b;
     yield ensureOrganizationMembership(organizationId, requesterId);
     yield ensureAccessProfileTable();
     const membership = yield prisma_1.default.organizationUser.findUnique({
@@ -205,6 +206,7 @@ const updateOrganizationUserAccess = (organizationId, requesterId, userId, input
     }
     const accesses = normalizeAccesses(input.accesses || []);
     const phone = ((_a = input.phone) === null || _a === void 0 ? void 0 : _a.trim()) || null;
+    const department = ((_b = input.department) === null || _b === void 0 ? void 0 : _b.trim()) || null;
     if (input.role) {
         const roleRecord = yield resolveRole(input.role);
         yield prisma_1.default.organizationUser.update({
@@ -218,14 +220,15 @@ const updateOrganizationUserAccess = (organizationId, requesterId, userId, input
         });
     }
     yield prisma_1.default.$executeRawUnsafe(`
-		INSERT INTO "UserAccessProfile" ("userId", "organizationId", "phone", "accesses", "createdBy", "createdAt", "updatedAt")
-		VALUES ($1, $2, $3, $4::TEXT[], $5, NOW(), NOW())
+		INSERT INTO "UserAccessProfile" ("userId", "organizationId", "phone", "department", "accesses", "createdBy", "createdAt", "updatedAt")
+		VALUES ($1, $2, $3, $4, $5::TEXT[], $6, NOW(), NOW())
 		ON CONFLICT ("userId")
 		DO UPDATE SET
 			"phone" = EXCLUDED."phone",
+			"department" = EXCLUDED."department",
 			"accesses" = EXCLUDED."accesses",
 			"updatedAt" = NOW()
-		`, userId, organizationId, phone, accesses, requesterId);
+		`, userId, organizationId, phone, department, accesses, requesterId);
     return { message: "User access updated" };
 });
 exports.updateOrganizationUserAccess = updateOrganizationUserAccess;

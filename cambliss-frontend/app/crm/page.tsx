@@ -147,6 +147,7 @@ const emptyDealForm = {
 	stageId: "",
 	value: "",
 	probability: "",
+	status: "OPEN",
 };
 
 const tabTitle: Record<SuiteTab, string> = {
@@ -516,11 +517,12 @@ export default function CrmPage() {
 			const authHeaders = getAuthHeaders();
 			authHeaders.set("Content-Type", "application/json");
 			const payload = {
-				contactId: dealForm.contactId,
-				pipelineId: dealForm.pipelineId,
-				stageId: dealForm.stageId,
+				contactId: dealForm.contactId || undefined,
+				pipelineId: dealForm.pipelineId || undefined,
+				stageId: dealForm.stageId || undefined,
 				value: Number(dealForm.value || 0),
 				probability: Number(dealForm.probability || 0),
+				status: dealForm.status || "OPEN",
 			};
 			const response = await fetch("/api/crm/deals", {
 				method: "POST",
@@ -1148,20 +1150,19 @@ export default function CrmPage() {
 				const pId = setupOptions.pipelines[0]?.id || "";
 				const sId = setupOptions.pipelines[0]?.stages[0]?.id || "";
 				const cId = setupOptions.contacts[0]?.id || "";
-				
-				if (!pId || !sId || !cId) {
-					setNotice("Cannot import deals: missing pipeline, stage, or contact in CRM setup.");
-					setIsImporting(false);
-					return;
-				}
 
 				const promises = importData.map(async (row) => {
+					const valStr = columnMapping.value?.csvColumn ? row[columnMapping.value.csvColumn] : columnMapping.value?.defaultValue;
+					const probStr = columnMapping.probability?.csvColumn ? row[columnMapping.probability.csvColumn] : columnMapping.probability?.defaultValue;
+					const statusStr = columnMapping.status?.csvColumn ? row[columnMapping.status.csvColumn] : columnMapping.status?.defaultValue;
+
 					const payload = {
-						contactId: cId,
-						pipelineId: pId,
-						stageId: sId,
-						value: parseInt(columnMapping.value.csvColumn ? row[columnMapping.value.csvColumn] : columnMapping.value.defaultValue) || 0,
-						probability: parseInt(columnMapping.probability.csvColumn ? row[columnMapping.probability.csvColumn] : columnMapping.probability.defaultValue) || 50,
+						contactId: cId || undefined,
+						pipelineId: pId || undefined,
+						stageId: sId || undefined,
+						value: parseFloat(valStr || "0") || 0,
+						probability: parseInt(probStr || "0") || 0,
+						status: (statusStr || "OPEN").toUpperCase().trim(),
 					};
 					const response = await fetch("/api/crm/deals", {
 						method: "POST",
@@ -1577,7 +1578,7 @@ export default function CrmPage() {
 								onChange={(event) => setDealForm((prev) => ({ ...prev, contactId: event.target.value }))}
 								className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
 							>
-								<option value="">Select Contact</option>
+								<option value="">Select Contact (Optional)</option>
 								{setupOptions.contacts.map((contact) => (
 									<option key={contact.id} value={contact.id}>{contact.label}</option>
 								))}
@@ -1591,7 +1592,7 @@ export default function CrmPage() {
 								}}
 								className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
 							>
-								<option value="">Select Pipeline</option>
+								<option value="">Select Pipeline (Optional)</option>
 								{setupOptions.pipelines.map((pipeline) => (
 									<option key={pipeline.id} value={pipeline.id}>{pipeline.name}</option>
 								))}
@@ -1602,16 +1603,23 @@ export default function CrmPage() {
 								className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
 								disabled={!dealForm.pipelineId}
 							>
-								<option value="">Select Stage</option>
+								<option value="">Select Stage (Optional)</option>
 								{selectedPipelineStages.map((stage) => (
 									<option key={stage.id} value={stage.id}>{stage.name}</option>
 								))}
 							</select>
 							<input value={dealForm.value} onChange={(event) => setDealForm((prev) => ({ ...prev, value: event.target.value }))} placeholder="Deal value" className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" />
 							<input value={dealForm.probability} onChange={(event) => setDealForm((prev) => ({ ...prev, probability: event.target.value }))} placeholder="Probability" className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" />
+							<select
+								value={dealForm.status}
+								onChange={(event) => setDealForm((prev) => ({ ...prev, status: event.target.value }))}
+								className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+							>
+								<option value="OPEN">Status: OPEN</option>
+								<option value="WON">Status: WON</option>
+								<option value="LOST">Status: LOST</option>
+							</select>
 							<button type="submit" disabled={isSavingDeal} className="rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white">{isSavingDeal ? "Saving..." : "Create Deal"}</button>
-							{setupOptions.contacts.length === 0 && <p className="text-[11px] text-amber-700">No contacts found. Create lead/contact data first.</p>}
-							{setupOptions.pipelines.length === 0 && <p className="text-[11px] text-amber-700">No pipelines found. Ask admin to configure CRM pipeline stages.</p>}
 						</form>
 
 						<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm xl:col-span-2">

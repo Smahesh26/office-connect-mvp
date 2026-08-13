@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getOrganizationHierarchyController = exports.getOrgStructureSummaryController = exports.createLocationController = exports.createTeamController = exports.createDesignationController = exports.createDepartmentController = exports.getFullHRAnalyticsController = exports.getPerformanceDashboardController = exports.getEmployeePerformanceHistoryController = exports.createPerformanceReviewController = exports.unassignSalaryComponentController = exports.assignSalaryComponentController = exports.deleteSalaryComponentController = exports.updateSalaryComponentController = exports.createSalaryComponentController = exports.listSalaryComponentsController = exports.downloadPayslipPdfController = exports.getPayrollAuditTrailController = exports.reconcilePayrollPaymentController = exports.updatePayrollPaymentController = exports.updatePayrollAdjustmentsController = exports.updatePayrollStatusController = exports.exportPayrollRegisterController = exports.getPayrollRegisterController = exports.getPayslipsController = exports.getPayrollDashboardController = exports.generatePayrollBulkController = exports.generatePayrollController = exports.getDailyAttendanceController = exports.getAttendanceDashboardController = exports.checkOutController = exports.checkInController = exports.assignShiftController = exports.assignManagerController = exports.changeEmployeeStatusController = exports.updateEmployeeController = exports.getEmployeeByIdController = exports.getEmployeesController = exports.createEmployeeController = void 0;
+exports.getOrganizationHierarchyController = exports.getOrgStructureSummaryController = exports.createLocationController = exports.createTeamController = exports.createDesignationController = exports.createDepartmentController = exports.getFullHRAnalyticsController = exports.getPerformanceDashboardController = exports.getEmployeePerformanceHistoryController = exports.createPerformanceReviewController = exports.unassignSalaryComponentController = exports.assignSalaryComponentController = exports.deleteSalaryComponentController = exports.updateSalaryComponentController = exports.createSalaryComponentController = exports.listSalaryComponentsController = exports.downloadPayslipPdfController = exports.getPayrollAuditTrailController = exports.reconcilePayrollPaymentController = exports.updatePayrollPaymentController = exports.updatePayrollAdjustmentsController = exports.updatePayrollStatusController = exports.exportPayrollRegisterController = exports.getPayrollRegisterController = exports.getPayslipsController = exports.getPayrollDashboardController = exports.generatePayrollBulkController = exports.generatePayrollController = exports.getDailyAttendanceController = exports.getAttendanceDashboardController = exports.smartScanController = exports.checkOutController = exports.checkInController = exports.assignShiftController = exports.assignManagerController = exports.changeEmployeeStatusController = exports.enrollFaceController = exports.updateEmployeeController = exports.getEmployeeByIdController = exports.getEmployeesController = exports.createEmployeeController = void 0;
 const pdfkit_1 = __importDefault(require("pdfkit"));
 const hrm_service_1 = require("./hrm.service");
 const handleControllerError = (res, error) => {
@@ -98,6 +98,23 @@ const updateEmployeeController = (req, res) => __awaiter(void 0, void 0, void 0,
     }
 });
 exports.updateEmployeeController = updateEmployeeController;
+const enrollFaceController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a.organizationId)) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+        const employeeId = getRequiredParam(req.params.employeeId, "employeeId");
+        const imageBase64 = getRequiredParam(req.body.imageBase64, "imageBase64");
+        const result = yield (0, hrm_service_1.enrollFace)(req.user.organizationId, employeeId, imageBase64);
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleControllerError(res, error);
+    }
+});
+exports.enrollFaceController = enrollFaceController;
 const changeEmployeeStatusController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -196,6 +213,25 @@ const checkOutController = (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 });
 exports.checkOutController = checkOutController;
+const smartScanController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a.organizationId)) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+        const { imageBase64, actionType } = req.body;
+        if (!imageBase64 || !actionType) {
+            throw new hrm_service_1.HttpError(400, "imageBase64 and actionType are required");
+        }
+        const result = yield (0, hrm_service_1.processSmartScan)(req.user.organizationId, imageBase64, actionType);
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleControllerError(res, error);
+    }
+});
+exports.smartScanController = smartScanController;
 const getAttendanceDashboardController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {

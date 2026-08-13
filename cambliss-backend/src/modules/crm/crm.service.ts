@@ -1244,10 +1244,10 @@ export const updateLead = async (leadId: string, organizationId: string, input: 
 };
 
 export const createDeal = async (organizationId: string, input: {
-	contactId: string;
-	pipelineId: string;
-	stageId: string;
-	value: number;
+	contactId?: string;
+	pipelineId?: string;
+	stageId?: string;
+	value?: number;
 	probability?: number;
 	status?: string;
 }) => {
@@ -1261,25 +1261,118 @@ export const createDeal = async (organizationId: string, input: {
 		throw new HttpError(404, "Organization not found");
 	}
 
-	// Verify contact belongs to org
-	const contact = await prisma.contact.findUnique({
-		where: { id: input.contactId },
-		select: { organizationId: true },
-	});
+	// Resolve contactId (or find/create default contact for org)
+	let contactId = input.contactId;
+	if (contactId) {
+		const contact = await prisma.contact.findUnique({
+			where: { id: contactId },
+			select: { organizationId: true },
+		});
+		if (!contact || contact.organizationId !== organizationId) {
+			contactId = undefined;
+		}
+	}
 
-	if (!contact || contact.organizationId !== organizationId) {
-		throw new HttpError(403, "Contact does not belong to this organization");
+	if (!contactId) {
+		const existingContact = await prisma.contact.findFirst({
+			where: { organizationId },
+			select: { id: true },
+		});
+		if (existingContact) {
+			contactId = existingContact.id;
+		} else {
+			const defaultContact = await prisma.contact.create({
+				data: {
+					organizationId,
+					type: "CUSTOMER",
+					firstName: "Default",
+					lastName: "Contact",
+					email: "contact@organization.internal",
+					isActive: true,
+				},
+			});
+			contactId = defaultContact.id;
+		}
+	}
+
+	// Resolve pipelineId & stageId (or find/create default pipeline/stage)
+	let pipelineId = input.pipelineId;
+	let stageId = input.stageId;
+
+	if (pipelineId) {
+		const pipeline = await prisma.pipeline.findUnique({
+			where: { id: pipelineId },
+			include: { stages: { orderBy: { order: "asc" } } },
+		});
+		if (!pipeline || pipeline.organizationId !== organizationId) {
+			pipelineId = undefined;
+			stageId = undefined;
+		} else if (!stageId || !pipeline.stages.some((s) => s.id === stageId)) {
+			stageId = pipeline.stages[0]?.id;
+		}
+	}
+
+	if (!pipelineId) {
+		let pipeline = await prisma.pipeline.findFirst({
+			where: { organizationId },
+			include: { stages: { orderBy: { order: "asc" } } },
+		});
+
+		if (!pipeline) {
+			pipeline = await prisma.pipeline.create({
+				data: {
+					organizationId,
+					name: "Standard Sales Pipeline",
+					stages: {
+						create: [
+							{ name: "Qualification", order: 1 },
+							{ name: "Proposal", order: 2 },
+							{ name: "Closed Won", order: 3 },
+							{ name: "Closed Lost", order: 4 },
+						],
+					},
+				},
+				include: { stages: { orderBy: { order: "asc" } } },
+			});
+		}
+
+		pipelineId = pipeline.id;
+		stageId = stageId || pipeline.stages[0]?.id;
+	}
+
+	if (!stageId) {
+		const stage = await prisma.stage.findFirst({
+			where: { pipelineId },
+			orderBy: { order: "asc" },
+		});
+		stageId = stage?.id;
+	}
+
+	if (!stageId) {
+		const newStage = await prisma.stage.create({
+			data: {
+				pipelineId,
+				name: "Initial Stage",
+				order: 1,
+			},
+		});
+		stageId = newStage.id;
+	}
+
+	let status = (input.status || "OPEN").toUpperCase().trim();
+	if (!["OPEN", "WON", "LOST"].includes(status)) {
+		status = "OPEN";
 	}
 
 	return prisma.deal.create({
 		data: {
 			organizationId,
-			contactId: input.contactId,
-			pipelineId: input.pipelineId,
-			stageId: input.stageId,
-			value: new Prisma.Decimal(input.value),
-			probability: input.probability || 0,
-			status: input.status || "OPEN",
+			contactId,
+			pipelineId,
+			stageId,
+			value: new Prisma.Decimal(input.value || 0),
+			probability: Math.min(100, Math.max(0, Number(input.probability) || 0)),
+			status,
 		},
 		include: {
 			contact: true,

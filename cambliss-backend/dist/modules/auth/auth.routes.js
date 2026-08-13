@@ -13,6 +13,7 @@ authRouter.post("/register/firebase/verify", authRateLimit, auth_controller_1.ve
 authRouter.post("/login", authRateLimit, auth_controller_1.loginController);
 authRouter.post("/logout", auth_controller_1.logoutController);
 authRouter.get("/me", auth_middleware_1.authenticateJWT, auth_controller_1.meController);
+authRouter.get("/sso-token", auth_middleware_1.authenticateJWT, auth_controller_1.getSsoTokenController);
 authRouter.put("/me/organization", auth_middleware_1.authenticateJWT, auth_controller_1.updateMyOrganizationController);
 authRouter.delete("/me/organization", auth_middleware_1.authenticateJWT, auth_controller_1.clearMyOrganizationController);
 authRouter.get("/me/onboarding", auth_middleware_1.authenticateJWT, auth_controller_1.getMyOrganizationOnboardingController);

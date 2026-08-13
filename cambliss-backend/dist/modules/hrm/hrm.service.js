@@ -12,8 +12,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getOrganizationHierarchy = exports.getOrgStructureSummary = exports.createLocation = exports.createTeam = exports.createDesignation = exports.createDepartment = exports.getFullHRAnalytics = exports.getPerformanceDashboard = exports.getEmployeePerformanceHistory = exports.createPerformanceReview = exports.unassignSalaryComponentFromEmployee = exports.assignSalaryComponentToEmployee = exports.deleteSalaryComponent = exports.updateSalaryComponent = exports.createSalaryComponent = exports.listSalaryComponents = exports.getPayrollAuditTrail = exports.reconcilePayrollPayment = exports.updatePayrollPayment = exports.updatePayrollAdjustments = exports.updatePayrollLifecycleStatus = exports.getPayslipWithMetaById = exports.getPayrollRegister = exports.getPayslips = exports.getPayrollDashboard = exports.generatePayrollBulk = exports.generatePayroll = exports.getDailyAttendanceRecords = exports.markAbsentForDate = exports.getAttendanceDashboard = exports.checkOut = exports.checkIn = exports.assignShiftToEmployee = exports.assignShift = exports.assignManager = exports.changeEmployeeStatus = exports.updateEmployee = exports.getEmployeeById = exports.getEmployees = exports.createEmployee = exports.validateEmployeeBelongsToOrg = exports.HttpError = void 0;
+exports.enrollFace = exports.processSmartScan = exports.getOrganizationHierarchy = exports.getOrgStructureSummary = exports.createLocation = exports.createTeam = exports.createDesignation = exports.createDepartment = exports.getFullHRAnalytics = exports.getPerformanceDashboard = exports.getEmployeePerformanceHistory = exports.createPerformanceReview = exports.unassignSalaryComponentFromEmployee = exports.assignSalaryComponentToEmployee = exports.deleteSalaryComponent = exports.updateSalaryComponent = exports.createSalaryComponent = exports.listSalaryComponents = exports.getPayrollAuditTrail = exports.reconcilePayrollPayment = exports.updatePayrollPayment = exports.updatePayrollAdjustments = exports.updatePayrollLifecycleStatus = exports.getPayslipWithMetaById = exports.getPayrollRegister = exports.getPayslips = exports.getPayrollDashboard = exports.generatePayrollBulk = exports.generatePayroll = exports.getDailyAttendanceRecords = exports.markAbsentForDate = exports.getAttendanceDashboard = exports.checkOut = exports.checkIn = exports.assignShiftToEmployee = exports.assignShift = exports.assignManager = exports.changeEmployeeStatus = exports.updateEmployee = exports.getEmployeeById = exports.getEmployees = exports.createEmployee = exports.validateEmployeeBelongsToOrg = exports.HttpError = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const fs_1 = require("fs");
 const path_1 = __importDefault(require("path"));
 class HttpError extends Error {
@@ -265,13 +266,52 @@ const createEmployee = (organizationId, input) => __awaiter(void 0, void 0, void
         throw new HttpError(400, `Employee code "${input.employeeCode}" already exists in this organization`);
     }
     // If userId provided, validate it exists
-    if (input.userId) {
+    let finalUserId = input.userId;
+    if (finalUserId) {
         const user = yield prisma_1.default.user.findUnique({
-            where: { id: input.userId },
+            where: { id: finalUserId },
             select: { id: true },
         });
         if (!user) {
             throw new HttpError(404, "User not found");
+        }
+    }
+    else if (input.email && input.firstName) {
+        const existingUser = yield prisma_1.default.user.findUnique({
+            where: { email: input.email },
+        });
+        if (existingUser) {
+            finalUserId = existingUser.id;
+        }
+        else {
+            const passwordHash = yield bcryptjs_1.default.hash("Welcome@123", 10);
+            const newUser = yield prisma_1.default.user.create({
+                data: {
+                    email: input.email,
+                    firstName: input.firstName,
+                    lastName: input.lastName,
+                    passwordHash,
+                },
+            });
+            finalUserId = newUser.id;
+        }
+        // Ensure they are mapped to the organization as an EMPLOYEE
+        const role = yield prisma_1.default.role.findUnique({ where: { name: "EMPLOYEE" } });
+        if (role) {
+            yield prisma_1.default.organizationUser.upsert({
+                where: {
+                    organizationId_userId: {
+                        organizationId,
+                        userId: finalUserId,
+                    },
+                },
+                update: {},
+                create: {
+                    organizationId,
+                    userId: finalUserId,
+                    roleId: role.id,
+                },
+            });
         }
     }
     // Validate all org-scoped relations belong to this org
@@ -295,7 +335,7 @@ const createEmployee = (organizationId, input) => __awaiter(void 0, void 0, void
         data: {
             organizationId,
             employeeCode: input.employeeCode,
-            userId: input.userId,
+            userId: finalUserId,
             departmentId: input.departmentId,
             designationId: input.designationId,
             teamId: input.teamId,
@@ -707,13 +747,10 @@ const getAttendanceContext = (employeeId, organizationId, requireShift) => __awa
         orderBy: { id: "asc" },
     });
     if (!employeeShift) {
-        if (!requireShift) {
-            return {
-                employee,
-                shift: null,
-            };
-        }
-        throw new HttpError(400, "No shift assigned to employee");
+        return {
+            employee,
+            shift: null,
+        };
     }
     if (employeeShift.shift.organizationId !== organizationId) {
         throw new HttpError(403, "Assigned shift does not belong to this organization");
@@ -2004,3 +2041,70 @@ const getOrganizationHierarchy = (organizationId) => __awaiter(void 0, void 0, v
     };
 });
 exports.getOrganizationHierarchy = getOrganizationHierarchy;
+const processSmartScan = (organizationId, imageBase64, actionType) => __awaiter(void 0, void 0, void 0, function* () {
+    let response;
+    try {
+        response = yield fetch("http://localhost:8000/recognize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image_base64: imageBase64 }),
+        });
+    }
+    catch (error) {
+        throw new HttpError(503, "Computer Vision microservice is not running. Please start it on port 8000.");
+    }
+    if (!response.ok) {
+        const errorData = yield response.json().catch(() => null);
+        throw new HttpError(400, (errorData === null || errorData === void 0 ? void 0 : errorData.detail) || "Face recognition failed");
+    }
+    const data = yield response.json();
+    if (!data.success || !data.employeeCode) {
+        throw new HttpError(400, data.message || "Face not recognized");
+    }
+    const employee = yield prisma_1.default.employee.findFirst({
+        where: { organizationId, employeeCode: data.employeeCode },
+    });
+    if (!employee) {
+        throw new HttpError(404, "Recognized employee not found in this organization");
+    }
+    if (actionType === "checkin") {
+        yield (0, exports.checkIn)(employee.id, organizationId, { manual: true, checkInAt: new Date().toISOString() });
+    }
+    else {
+        yield (0, exports.checkOut)(employee.id, organizationId, { manual: true, checkOutAt: new Date().toISOString() });
+    }
+    return {
+        success: true,
+        employeeId: employee.id,
+        employeeCode: employee.employeeCode,
+        message: `Successfully ${actionType === "checkin" ? "checked in" : "checked out"} via Smart Scan`,
+    };
+});
+exports.processSmartScan = processSmartScan;
+const enrollFace = (organizationId, employeeId, imageBase64) => __awaiter(void 0, void 0, void 0, function* () {
+    const employee = yield prisma_1.default.employee.findUnique({
+        where: { id: employeeId },
+    });
+    if (!employee || employee.organizationId !== organizationId) {
+        throw new HttpError(404, "Employee not found");
+    }
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64");
+    const facesDir = path_1.default.resolve(__dirname, "../../../../cambliss-cv-service/data/faces");
+    try {
+        yield fs_1.promises.mkdir(facesDir, { recursive: true });
+    }
+    catch (err) {
+        // Ignore
+    }
+    const filePath = path_1.default.join(facesDir, `${employee.employeeCode}.jpg`);
+    yield fs_1.promises.writeFile(filePath, buffer);
+    try {
+        yield fetch("http://localhost:8000/reload", { method: "POST" });
+    }
+    catch (error) {
+        console.warn("Failed to reload CV service", error);
+    }
+    return { success: true, message: "Face enrolled successfully" };
+});
+exports.enrollFace = enrollFace;
