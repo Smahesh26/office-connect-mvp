@@ -200,8 +200,13 @@ const IMPORT_MODULE_FIELDS = {
 		{ key: "email", label: "Email Address", required: true, aliases: ["email", "emailaddress", "e-mail", "email id", "emailid", "mail", "contact email"] },
 		{ key: "phone", label: "Phone Number", required: false, aliases: ["phone", "phonenumber", "mobile", "mobilenumber", "mobile number", "contact", "contactnumber", "cell", "cellphone", "tel", "telephone", "phone no", "mobile no"] },
 		{ key: "companyName", label: "Company", required: false, aliases: ["company", "companyname", "organisation", "organization", "firm", "business", "employer", "company name"] },
+		{ key: "source", label: "Source", required: false, aliases: ["source", "leadsource", "lead source", "channel", "medium", "origin"] },
+		{ key: "status", label: "Status (NEW, CONTACTED, QUALIFIED)", required: false, aliases: ["status", "leadstatus", "lead status", "state"] },
 	],
 	deals: [
+		{ key: "contact", label: "Select Contact", required: false, aliases: ["contact", "contactname", "contact name", "contact email", "customer", "client", "customer name"] },
+		{ key: "pipeline", label: "Select Pipeline", required: false, aliases: ["pipeline", "pipelinename", "pipeline name", "sales pipeline"] },
+		{ key: "stage", label: "Select Stage", required: false, aliases: ["stage", "stagename", "stage name", "deal stage"] },
 		{ key: "value", label: "Deal Value", required: true, aliases: ["value", "amount", "deal value", "dealvalue", "price", "revenue"] },
 		{ key: "probability", label: "Probability (%)", required: true, aliases: ["probability", "prob", "chance", "likelihood", "probability%", "win rate"] },
 		{ key: "status", label: "Status (OPEN, WON, LOST)", required: false, aliases: ["status", "deal status", "dealstatus", "state"] },
@@ -1223,6 +1228,8 @@ export default function CrmPage() {
 					const emailVal = getValue("email", row);
 					const phoneVal = getValue("phone", row);
 					const compVal = getValue("companyName", row);
+					const sourceVal = getValue("source", row) || "Imported CSV/XLSX";
+					const statusVal = getValue("status", row) || "NEW";
 
 					if (!fName && !lName && !emailVal && !phoneVal && !compVal) {
 						return null;
@@ -1234,7 +1241,8 @@ export default function CrmPage() {
 						email: emailVal,
 						phone: phoneVal,
 						companyName: compVal,
-						source: "Imported CSV/XLSX",
+						source: sourceVal,
+						status: statusVal,
 					};
 					const response = await fetch("/api/crm/leads", {
 						method: "POST",
@@ -1249,19 +1257,32 @@ export default function CrmPage() {
 				});
 				await Promise.all(promises);
 			} else if (importModule === "deals") {
-				const pId = setupOptions.pipelines[0]?.id || "";
-				const sId = setupOptions.pipelines[0]?.stages[0]?.id || "";
-				const cId = setupOptions.contacts[0]?.id || "";
-
 				const promises = importData.map(async (row) => {
-					const valStr = columnMapping.value?.csvColumn ? row[columnMapping.value.csvColumn] : columnMapping.value?.defaultValue;
-					const probStr = columnMapping.probability?.csvColumn ? row[columnMapping.probability.csvColumn] : columnMapping.probability?.defaultValue;
-					const statusStr = columnMapping.status?.csvColumn ? row[columnMapping.status.csvColumn] : columnMapping.status?.defaultValue;
+					const contactVal = getValue("contact", row);
+					const pipelineVal = getValue("pipeline", row);
+					const stageVal = getValue("stage", row);
+					const valStr = getValue("value", row);
+					const probStr = getValue("probability", row);
+					const statusStr = getValue("status", row);
+
+					let foundContactId = setupOptions.contacts.find(c =>
+						(contactVal && c.label.toLowerCase().includes(contactVal.toLowerCase())) ||
+						(c.email && contactVal && c.email.toLowerCase() === contactVal.toLowerCase())
+					)?.id || setupOptions.contacts[0]?.id;
+
+					let foundPipeline = setupOptions.pipelines.find(p =>
+						pipelineVal && p.name.toLowerCase().includes(pipelineVal.toLowerCase())
+					) || setupOptions.pipelines[0];
+
+					let foundPipelineId = foundPipeline?.id;
+					let foundStageId = foundPipeline?.stages.find(s =>
+						stageVal && s.name.toLowerCase().includes(stageVal.toLowerCase())
+					)?.id || foundPipeline?.stages[0]?.id;
 
 					const payload = {
-						contactId: cId || undefined,
-						pipelineId: pId || undefined,
-						stageId: sId || undefined,
+						contactId: foundContactId || undefined,
+						pipelineId: foundPipelineId || undefined,
+						stageId: foundStageId || undefined,
 						value: parseFloat(valStr || "0") || 0,
 						probability: parseInt(probStr || "0") || 0,
 						status: (statusStr || "OPEN").toUpperCase().trim(),
