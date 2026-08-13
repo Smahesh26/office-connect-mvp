@@ -176,14 +176,16 @@ const getApiErrorMessage = async (response: Response, fallback: string): Promise
 };
 
 const parseCSV = (text: string) => {
-	const lines = text.split('\n').filter(l => l.trim() !== '');
+	const cleanText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+	const lines = cleanText.split('\n').filter(l => l.trim() !== '');
 	if (lines.length === 0) return { headers: [], rows: [] };
-	const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+	const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').trim());
 	const rows = lines.slice(1).map(line => {
-		// A simple regex to split CSV by comma, ignoring commas inside quotes.
-		const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''));
+		const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, '').trim());
 		return headers.reduce((acc, header, index) => {
-			acc[header] = values[index] || '';
+			if (header) {
+				acc[header] = values[index] || '';
+			}
 			return acc;
 		}, {} as Record<string, string>);
 	});
@@ -192,11 +194,11 @@ const parseCSV = (text: string) => {
 
 const IMPORT_MODULE_FIELDS = {
 	leads: [
-		{ key: "firstName", label: "First Name", required: true, aliases: ["firstname", "first", "fname", "frstname", "given name", "givenname", "forename"] },
+		{ key: "firstName", label: "First Name", required: true, aliases: ["firstname", "first", "fname", "frstname", "given name", "givenname", "forename", "name", "fullname", "full name", "lead name", "contact name", "customer name"] },
 		{ key: "lastName", label: "Last Name", required: false, aliases: ["lastname", "last", "lname", "surname", "family name", "familyname"] },
-		{ key: "email", label: "Email Address", required: true, aliases: ["email", "emailaddress", "e-mail", "email id", "emailid", "mail"] },
-		{ key: "phone", label: "Phone Number", required: false, aliases: ["phone", "phonenumber", "mobile", "mobilenumber", "mobile number", "contact", "contactnumber", "cell", "cellphone", "tel", "telephone"] },
-		{ key: "companyName", label: "Company", required: false, aliases: ["company", "companyname", "organisation", "organization", "firm", "business", "employer"] },
+		{ key: "email", label: "Email Address", required: true, aliases: ["email", "emailaddress", "e-mail", "email id", "emailid", "mail", "contact email"] },
+		{ key: "phone", label: "Phone Number", required: false, aliases: ["phone", "phonenumber", "mobile", "mobilenumber", "mobile number", "contact", "contactnumber", "cell", "cellphone", "tel", "telephone", "phone no", "mobile no"] },
+		{ key: "companyName", label: "Company", required: false, aliases: ["company", "companyname", "organisation", "organization", "firm", "business", "employer", "company name"] },
 	],
 	deals: [
 		{ key: "value", label: "Deal Value", required: true, aliases: ["value", "amount", "deal value", "dealvalue", "price", "revenue"] },
@@ -1103,14 +1105,31 @@ export default function CrmPage() {
 			const authHeaders = getAuthHeaders();
 			authHeaders.set("Content-Type", "application/json");
 
+			const getValue = (key: string, row: Record<string, string>) => {
+				const mapping = columnMapping[key];
+				if (!mapping) return "";
+				const val = mapping.csvColumn ? row[mapping.csvColumn] : mapping.defaultValue;
+				return (val || "").trim();
+			};
+
 			if (importModule === "leads") {
 				const promises = importData.map(async (row) => {
+					const fName = getValue("firstName", row);
+					const lName = getValue("lastName", row);
+					const emailVal = getValue("email", row);
+					const phoneVal = getValue("phone", row);
+					const compVal = getValue("companyName", row);
+
+					if (!fName && !lName && !emailVal && !phoneVal && !compVal) {
+						return null;
+					}
+
 					const payload = {
-						firstName: (columnMapping.firstName.csvColumn ? row[columnMapping.firstName.csvColumn] : columnMapping.firstName.defaultValue) || "",
-						lastName: (columnMapping.lastName.csvColumn ? row[columnMapping.lastName.csvColumn] : columnMapping.lastName.defaultValue) || "",
-						email: (columnMapping.email.csvColumn ? row[columnMapping.email.csvColumn] : columnMapping.email.defaultValue) || "",
-						phone: (columnMapping.phone?.csvColumn ? row[columnMapping.phone.csvColumn] : columnMapping.phone?.defaultValue) || "",
-						companyName: (columnMapping.companyName?.csvColumn ? row[columnMapping.companyName.csvColumn] : columnMapping.companyName?.defaultValue) || "",
+						firstName: fName,
+						lastName: lName,
+						email: emailVal,
+						phone: phoneVal,
+						companyName: compVal,
 						source: "Imported CSV/XLSX",
 					};
 					const response = await fetch("/api/crm/leads", {
