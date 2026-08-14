@@ -144,7 +144,9 @@ const getCrmSetupOptions = (organizationId) => __awaiter(void 0, void 0, void 0,
     return {
         contacts: contacts.map((contact) => {
             const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(" ").trim();
-            const label = fullName || contact.companyName || contact.email || contact.phone || contact.id;
+            const secondary = [contact.email, contact.companyName, contact.phone].filter(Boolean).join(" | ");
+            let nameDisplay = fullName || contact.companyName || contact.email || contact.phone || `Contact ${contact.id.slice(-6)}`;
+            let label = secondary && fullName ? `${fullName} (${secondary})` : nameDisplay;
             return {
                 id: contact.id,
                 label,

@@ -20,6 +20,8 @@ type Lead = {
 	id: string;
 	contactId?: string;
 	firstName?: string;
+	lastName?: string;
+	companyName?: string;
 	email?: string;
 	phone?: string;
 	status?: string;
@@ -37,6 +39,14 @@ type Deal = {
 	probability: number;
 	value: number;
 	isArchived?: boolean;
+	contact?: {
+		id: string;
+		firstName?: string | null;
+		lastName?: string | null;
+		companyName?: string | null;
+		email?: string | null;
+		phone?: string | null;
+	} | null;
 };
 
 type StageHistory = {
@@ -1534,12 +1544,16 @@ export default function CrmPage() {
 						<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
 							<p className="text-sm font-semibold text-zinc-900">Top Contacts Snapshot</p>
 							<div className="mt-2 max-h-44 space-y-2 overflow-y-auto">
-								{leads.slice(0, 8).map((lead) => (
-									<div key={lead.id} className="rounded-lg border border-zinc-200 p-2">
-										<p className="text-xs font-semibold text-zinc-800">{lead.firstName || lead.email || lead.id}</p>
-										<p className="text-[11px] text-zinc-500">{lead.email || "No email"} · {lead.phone || "No phone"}</p>
-									</div>
-								))}
+								{leads.slice(0, 8).map((lead) => {
+									const leadFullName = [lead.firstName, lead.lastName].filter(Boolean).join(" ").trim();
+									const leadDisplayName = leadFullName || lead.companyName || lead.email || `Lead ${lead.id.slice(0, 8)}`;
+									return (
+										<div key={lead.id} className="rounded-lg border border-zinc-200 p-2">
+											<p className="text-xs font-semibold text-zinc-800">{leadDisplayName}</p>
+											<p className="text-[11px] text-zinc-500">{lead.email || "No email"} · {lead.phone || "No phone"}{lead.companyName ? ` · ${lead.companyName}` : ""}</p>
+										</div>
+									);
+								})}
 								{leads.length === 0 && <p className="text-xs text-zinc-500">No contacts yet.</p>}
 							</div>
 						</div>
@@ -1646,9 +1660,14 @@ export default function CrmPage() {
 									(() => {
 										const dealStages = getStagesForPipeline(deal.pipelineId);
 										const nextStageValue = stageUpdate[deal.id] || "";
+										const contactObj = deal.contact;
+										const contactFullName = [contactObj?.firstName, contactObj?.lastName].filter(Boolean).join(" ").trim();
+										const dealContactDisplay = contactFullName
+											? `${contactFullName}${contactObj?.email ? ` (${contactObj.email})` : ""}`
+											: (contactObj?.companyName || contactObj?.email || setupOptions.contacts.find((c) => c.id === deal.contactId)?.label || `Deal ${deal.id.slice(0, 8)}`);
 										return (
 									<div key={deal.id} className="rounded-lg border border-zinc-200 p-3">
-										<p className="text-xs font-semibold text-zinc-800">Deal {deal.id.slice(0, 8)}...</p>
+										<p className="text-xs font-semibold text-zinc-800">{dealContactDisplay}</p>
 										<p className="text-[11px] text-zinc-500">Value: {deal.value} · Probability: {deal.probability}% · Status: {deal.status}</p>
 										<p className="text-[11px] text-zinc-500">Pipeline: {getPipelineName(deal.pipelineId)} · Stage: {getStageName(deal.pipelineId, deal.stageId)}</p>
 										<div className="mt-2 flex flex-wrap items-center gap-1">
