@@ -203,14 +203,6 @@ const IMPORT_MODULE_FIELDS = {
 		{ key: "source", label: "Source", required: false, aliases: ["source", "leadsource", "lead source", "channel", "medium", "origin"] },
 		{ key: "status", label: "Status (NEW, CONTACTED, QUALIFIED)", required: false, aliases: ["status", "leadstatus", "lead status", "state"] },
 	],
-	deals: [
-		{ key: "contact", label: "Select Contact", required: false, aliases: ["contact", "contactname", "contact name", "contact email", "customer", "client", "customer name"] },
-		{ key: "pipeline", label: "Select Pipeline", required: false, aliases: ["pipeline", "pipelinename", "pipeline name", "sales pipeline"] },
-		{ key: "stage", label: "Select Stage", required: false, aliases: ["stage", "stagename", "stage name", "deal stage"] },
-		{ key: "value", label: "Deal Value", required: true, aliases: ["value", "amount", "deal value", "dealvalue", "price", "revenue"] },
-		{ key: "probability", label: "Probability (%)", required: true, aliases: ["probability", "prob", "chance", "likelihood", "probability%", "win rate"] },
-		{ key: "status", label: "Status (OPEN, WON, LOST)", required: false, aliases: ["status", "deal status", "dealstatus", "state"] },
-	],
 	serviceCases: [
 		{ key: "subject", label: "Case Subject", required: true, aliases: ["subject", "title", "issue", "problem", "case", "description", "summary"] },
 		{ key: "priority", label: "Priority (LOW, MEDIUM, HIGH)", required: false, aliases: ["priority", "urgency", "severity", "level"] },
@@ -260,7 +252,7 @@ export default function CrmPage() {
 	// Import Wizard State
 	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 	const [importStep, setImportStep] = useState<1 | 2 | 3 | 4>(1);
-	const [importModule, setImportModule] = useState<"leads" | "deals" | "serviceCases" | "campaigns">("leads");
+	const [importModule, setImportModule] = useState<"leads" | "serviceCases" | "campaigns">("leads");
 	const [importFile, setImportFile] = useState<File | null>(null);
 	const [importHeaders, setImportHeaders] = useState<string[]>([]);
 	const [importData, setImportData] = useState<Record<string, string>[]>([]);
@@ -516,13 +508,19 @@ export default function CrmPage() {
 
 	const handleCreateDeal = async (event: FormEvent) => {
 		event.preventDefault();
+
+		if (!dealForm.contactId) {
+			setNotice("Select a contact saved in your CRM setup to create a deal.");
+			return;
+		}
+
 		setIsSavingDeal(true);
 		setNotice(null);
 		try {
 			const authHeaders = getAuthHeaders();
 			authHeaders.set("Content-Type", "application/json");
 			const payload = {
-				contactId: dealForm.contactId || undefined,
+				contactId: dealForm.contactId,
 				pipelineId: dealForm.pipelineId || undefined,
 				stageId: dealForm.stageId || undefined,
 				value: Number(dealForm.value || 0),
@@ -1102,98 +1100,7 @@ export default function CrmPage() {
 		}
 	};
 
-	const handleDirectDealExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file) return;
 
-		const processRows = async (rows: Record<string, any>[]) => {
-			if (rows.length === 0) {
-				setNotice("Selected file contains no data rows.");
-				return;
-			}
-
-			setIsSavingDeal(true);
-			setNotice("Uploading Excel deals...");
-
-			try {
-				const normalize = (s: string) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-
-				const firstRowKeys = Object.keys(rows[0]);
-				const valueKey = firstRowKeys.find(k => ["dealvalue", "value", "amount", "price", "revenue"].some(alias => normalize(k).includes(alias))) || firstRowKeys[0];
-				const probKey = firstRowKeys.find(k => ["probability", "prob", "chance", "winrate"].some(alias => normalize(k).includes(alias))) || firstRowKeys[1];
-				const statusKey = firstRowKeys.find(k => ["status", "state", "dealstatus"].some(alias => normalize(k).includes(alias))) || firstRowKeys[2];
-
-				const authHeaders = getAuthHeaders();
-				authHeaders.set("Content-Type", "application/json");
-
-				const pId = setupOptions.pipelines[0]?.id || undefined;
-				const sId = setupOptions.pipelines[0]?.stages[0]?.id || undefined;
-				const cId = setupOptions.contacts[0]?.id || undefined;
-
-				let importedCount = 0;
-				for (const row of rows) {
-					const valRaw = valueKey ? row[valueKey] : 0;
-					const probRaw = probKey ? row[probKey] : 50;
-					const statusRaw = statusKey ? row[statusKey] : "OPEN";
-
-					const valNum = parseFloat(String(valRaw).replace(/[^0-9.]/g, "")) || 0;
-					const probNum = parseInt(String(probRaw).replace(/[^0-9]/g, "")) || 0;
-					const statusStr = String(statusRaw || "OPEN").toUpperCase().trim();
-
-					if (!valNum && !probNum && !statusRaw) continue;
-
-					const payload = {
-						contactId: dealForm.contactId || cId,
-						pipelineId: dealForm.pipelineId || pId,
-						stageId: dealForm.stageId || sId,
-						value: valNum,
-						probability: probNum,
-						status: statusStr,
-					};
-
-					const response = await fetch("/api/crm/deals", {
-						method: "POST",
-						headers: authHeaders,
-						body: JSON.stringify(payload),
-					});
-
-					if (response.ok) {
-						importedCount++;
-					}
-				}
-
-				await loadAll();
-				setNotice(`Successfully saved ${importedCount} deals from Excel!`);
-			} catch (err) {
-				console.error("Direct deal upload failed:", err);
-				setNotice("Failed to import deals from Excel.");
-			} finally {
-				setIsSavingDeal(false);
-				e.target.value = "";
-			}
-		};
-
-		if (file.name.toLowerCase().endsWith(".csv")) {
-			const reader = new FileReader();
-			reader.onload = (event) => {
-				const text = event.target?.result as string;
-				const { rows } = parseCSV(text);
-				void processRows(rows);
-			};
-			reader.readAsText(file);
-		} else {
-			const reader = new FileReader();
-			reader.onload = (event) => {
-				const data = new Uint8Array(event.target?.result as ArrayBuffer);
-				const workbook = XLSX.read(data, { type: "array" });
-				const firstSheetName = workbook.SheetNames[0];
-				const worksheet = workbook.Sheets[firstSheetName];
-				const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" }) as Record<string, any>[];
-				void processRows(jsonRows);
-			};
-			reader.readAsArrayBuffer(file);
-		}
-	};
 
 	const downloadSample = () => {
 		const fields = IMPORT_MODULE_FIELDS[importModule];
@@ -1252,49 +1159,6 @@ export default function CrmPage() {
 					if (!response.ok) {
 						const err = await response.json().catch(() => ({}));
 						throw new Error(`Failed to import lead: ${err.message || response.statusText}`);
-					}
-					return response;
-				});
-				await Promise.all(promises);
-			} else if (importModule === "deals") {
-				const promises = importData.map(async (row) => {
-					const contactVal = getValue("contact", row);
-					const pipelineVal = getValue("pipeline", row);
-					const stageVal = getValue("stage", row);
-					const valStr = getValue("value", row);
-					const probStr = getValue("probability", row);
-					const statusStr = getValue("status", row);
-
-					let foundContactId = setupOptions.contacts.find(c =>
-						(contactVal && c.label.toLowerCase().includes(contactVal.toLowerCase())) ||
-						(c.email && contactVal && c.email.toLowerCase() === contactVal.toLowerCase())
-					)?.id || setupOptions.contacts[0]?.id;
-
-					let foundPipeline = setupOptions.pipelines.find(p =>
-						pipelineVal && p.name.toLowerCase().includes(pipelineVal.toLowerCase())
-					) || setupOptions.pipelines[0];
-
-					let foundPipelineId = foundPipeline?.id;
-					let foundStageId = foundPipeline?.stages.find(s =>
-						stageVal && s.name.toLowerCase().includes(stageVal.toLowerCase())
-					)?.id || foundPipeline?.stages[0]?.id;
-
-					const payload = {
-						contactId: foundContactId || undefined,
-						pipelineId: foundPipelineId || undefined,
-						stageId: foundStageId || undefined,
-						value: parseFloat(valStr || "0") || 0,
-						probability: parseInt(probStr || "0") || 0,
-						status: (statusStr || "OPEN").toUpperCase().trim(),
-					};
-					const response = await fetch("/api/crm/deals", {
-						method: "POST",
-						headers: authHeaders,
-						body: JSON.stringify(payload)
-					});
-					if (!response.ok) {
-						const err = await response.json().catch(() => ({}));
-						throw new Error(`Failed to import deal: ${err.message || response.statusText}`);
 					}
 					return response;
 				});
@@ -1379,7 +1243,7 @@ export default function CrmPage() {
 							<div className="space-y-4">
 								<p className="text-zinc-600">Select the module you want to import data into:</p>
 								<div className="grid grid-cols-2 gap-4">
-									{(["leads", "deals", "serviceCases", "campaigns"] as const).map(mod => (
+									{(["leads", "serviceCases", "campaigns"] as const).map(mod => (
 										<button 
 											key={mod} 
 											type="button"
@@ -1694,21 +1558,15 @@ export default function CrmPage() {
 						</form>
 
 						<form onSubmit={(event) => void handleCreateDeal(event)} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
-							<div className="flex items-center justify-between">
-								<p className="text-sm font-semibold text-zinc-900">Create Deal</p>
-								<label className="cursor-pointer rounded-lg border border-[#404d85] bg-[#404d85]/10 px-2.5 py-1 text-[11px] font-semibold text-[#404d85] hover:bg-[#404d85]/20 flex items-center gap-1 transition-colors">
-									<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-									Upload Excel
-									<input type="file" accept=".csv, .xlsx, .xls" onChange={handleDirectDealExcelUpload} className="hidden" />
-								</label>
-							</div>
-							<p className="text-[11px] text-zinc-500">Manual creation or upload Excel with <strong>Deal Value</strong>, <strong>Probability</strong> &amp; <strong>Status</strong>.</p>
+							<p className="text-sm font-semibold text-zinc-900">Create Deal</p>
+							<p className="text-[11px] text-zinc-500">Create deals for existing leads/contacts saved in your CRM.</p>
 							<select
 								value={dealForm.contactId}
 								onChange={(event) => setDealForm((prev) => ({ ...prev, contactId: event.target.value }))}
 								className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+								required
 							>
-								<option value="">Select Contact (Optional)</option>
+								<option value="">Select Contact (Required)</option>
 								{setupOptions.contacts.map((contact) => (
 									<option key={contact.id} value={contact.id}>{contact.label}</option>
 								))}

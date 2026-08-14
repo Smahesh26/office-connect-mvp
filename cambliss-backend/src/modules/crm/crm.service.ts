@@ -1244,7 +1244,7 @@ export const updateLead = async (leadId: string, organizationId: string, input: 
 };
 
 export const createDeal = async (organizationId: string, input: {
-	contactId?: string;
+	contactId: string;
 	pipelineId?: string;
 	stageId?: string;
 	value?: number;
@@ -1261,39 +1261,21 @@ export const createDeal = async (organizationId: string, input: {
 		throw new HttpError(404, "Organization not found");
 	}
 
-	// Resolve contactId (or find/create default contact for org)
-	let contactId = input.contactId;
-	if (contactId) {
-		const contact = await prisma.contact.findUnique({
-			where: { id: contactId },
-			select: { organizationId: true },
-		});
-		if (!contact || contact.organizationId !== organizationId) {
-			contactId = undefined;
-		}
+	if (!input.contactId) {
+		throw new HttpError(400, "Contact ID is required. Create or select a contact saved in CRM first.");
 	}
 
-	if (!contactId) {
-		const existingContact = await prisma.contact.findFirst({
-			where: { organizationId },
-			select: { id: true },
-		});
-		if (existingContact) {
-			contactId = existingContact.id;
-		} else {
-			const defaultContact = await prisma.contact.create({
-				data: {
-					organizationId,
-					type: "CUSTOMER",
-					firstName: "Default",
-					lastName: "Contact",
-					email: "contact@organization.internal",
-					isActive: true,
-				},
-			});
-			contactId = defaultContact.id;
-		}
+	// Verify contact belongs to org
+	const contact = await prisma.contact.findUnique({
+		where: { id: input.contactId },
+		select: { organizationId: true },
+	});
+
+	if (!contact || contact.organizationId !== organizationId) {
+		throw new HttpError(400, "Selected contact does not belong to this organization.");
 	}
+
+	const contactId = input.contactId;
 
 	// Resolve pipelineId & stageId (or find/create default pipeline/stage)
 	let pipelineId = input.pipelineId;
