@@ -161,15 +161,15 @@ const emptyDealForm = {
 };
 
 const tabTitle: Record<SuiteTab, string> = {
-	overview: "Executive Overview",
-	customer360: "Customer 360",
-	sales: "Sales Execution",
-	service: "Service & Support",
-	marketing: "Marketing CRM",
-	revenue: "Revenue CRM",
-	analytics: "Analytics & AI",
-	automation: "Workflow Automation",
-	governance: "Enterprise Controls",
+	overview: "📊 Overview",
+	customer360: "👥 Customer 360",
+	sales: "💼 Sales Execution",
+	service: "🎧 Service & Support",
+	marketing: "📢 Marketing CRM",
+	revenue: "💰 Revenue Ops",
+	analytics: "📈 Analytics & AI",
+	automation: "⚡ Workflow Automation",
+	governance: "⚙️ Admin & Governance",
 };
 
 const getApiErrorMessage = async (response: Response, fallback: string): Promise<string> => {
@@ -253,9 +253,14 @@ export default function CrmPage() {
 
 	const [serviceCases, setServiceCases] = useState<ServiceCase[]>([]);
 	const [caseSubject, setCaseSubject] = useState("");
+	const [caseContactId, setCaseContactId] = useState("");
+	const [caseCategory, setCaseCategory] = useState("Technical Support");
+	const [casePriority, setCasePriority] = useState<"LOW" | "MEDIUM" | "HIGH" | "URGENT">("MEDIUM");
+
 	const [campaigns, setCampaigns] = useState<Campaign[]>([]);
 	const [campaignName, setCampaignName] = useState("");
-	const [campaignSegment, setCampaignSegment] = useState("");
+	const [campaignSegment, setCampaignSegment] = useState("All Leads");
+	const [campaignChannel, setCampaignChannel] = useState("Email Blast");
 	const [setupOptions, setSetupOptions] = useState<SetupOptions>({ contacts: [], pipelines: [] });
 	const [integrations, setIntegrations] = useState<Integration[]>([]);
 
@@ -637,14 +642,20 @@ export default function CrmPage() {
 			const response = await fetch("/api/crm/service/cases", {
 				method: "POST",
 				headers: authHeaders,
-				body: JSON.stringify({ subject: caseSubject.trim(), priority: "MEDIUM" }),
+				body: JSON.stringify({
+					subject: `${caseCategory ? `[${caseCategory}] ` : ""}${caseSubject.trim()}`,
+					priority: casePriority,
+					contactId: caseContactId || undefined,
+				}),
 			});
 			if (!response.ok) {
 				setNotice("Unable to create service case.");
 				return;
 			}
 			setCaseSubject("");
+			setCaseContactId("");
 			await loadAll();
+			setNotice("Service case submitted.");
 		} finally {
 			setIsSavingServiceCase(false);
 		}
@@ -711,7 +722,7 @@ export default function CrmPage() {
 
 	const handleAddCampaign = async (event: FormEvent) => {
 		event.preventDefault();
-		if (!campaignName.trim() || !campaignSegment.trim()) {
+		if (!campaignName.trim()) {
 			return;
 		}
 		setIsSavingCampaign(true);
@@ -722,15 +733,19 @@ export default function CrmPage() {
 			const response = await fetch("/api/crm/marketing/campaigns", {
 				method: "POST",
 				headers: authHeaders,
-				body: JSON.stringify({ name: campaignName.trim(), segment: campaignSegment.trim(), status: "DRAFT" }),
+				body: JSON.stringify({
+					name: campaignName.trim(),
+					segment: `${campaignChannel} · ${campaignSegment.trim()}`,
+					status: "DRAFT",
+				}),
 			});
 			if (!response.ok) {
 				setNotice("Unable to create campaign.");
 				return;
 			}
 			setCampaignName("");
-			setCampaignSegment("");
 			await loadAll();
+			setNotice("Campaign created.");
 		} finally {
 			setIsSavingCampaign(false);
 		}
@@ -1501,12 +1516,16 @@ export default function CrmPage() {
 				</div>
 				{notice && <p className="mt-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700">{notice}</p>}
 
-				<div className="mt-4 flex flex-wrap gap-2">
-					{(Object.keys(tabTitle) as SuiteTab[]).map((tab) => (
+				<div className="mt-4 flex flex-wrap items-center gap-2">
+					{(["overview", "customer360", "sales", "service", "marketing", "revenue", "analytics"] as const).map((tab) => (
 						<button key={tab} type="button" onClick={() => setActiveTab(tab)} className={tabButtonClass(tab)}>
 							{tabTitle[tab]}
 						</button>
 					))}
+					<div className="h-4 w-px bg-zinc-300 mx-1 hidden sm:block"></div>
+					<button type="button" onClick={() => setActiveTab("governance")} className={tabButtonClass("governance")}>
+						{tabTitle["governance"]}
+					</button>
 				</div>
 
 				{isLoading ? (
@@ -1726,74 +1745,102 @@ export default function CrmPage() {
 					</div>
 				) : activeTab === "service" ? (
 					<div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-						<form onSubmit={(event) => void handleAddServiceCase(event)} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-							<p className="text-sm font-semibold text-zinc-900">Create Service Case</p>
-							<input value={caseSubject} onChange={(event) => setCaseSubject(event.target.value)} placeholder="Case subject" className="mt-2 w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" />
-							<button type="submit" disabled={isSavingServiceCase} className="mt-2 rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white">{isSavingServiceCase ? "Saving..." : "Add Case"}</button>
-						</form>
-						<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-							<p className="text-sm font-semibold text-zinc-900">Case Queue</p>
-							<div className="mt-2 space-y-2">
-								{serviceCases.map((serviceCase) => (
-									<div key={serviceCase.id} className="rounded-lg border border-zinc-200 p-2">
-										<p className="text-xs font-semibold text-zinc-800">{serviceCase.subject}</p>
-										<p className="text-[11px] text-zinc-500">{serviceCase.id} · {serviceCase.priority} · {serviceCase.status}</p>
-										<div className="mt-1 flex gap-1">
-											<button
-												type="button"
-												onClick={() => void handleEditServiceCase(serviceCase)}
-												className="rounded-md border border-zinc-300 px-2 py-1 text-[10px] font-semibold text-zinc-700"
-											>
-												Edit
-											</button>
-											{(["OPEN", "IN_PROGRESS", "RESOLVED"] as const).map((status) => (
-												<button
-													key={status}
-													type="button"
-													onClick={() => void handleUpdateServiceCaseStatus(serviceCase.id, status)}
-													disabled={pendingServiceStatus[serviceCase.id] || serviceCase.status === status}
-													className="rounded-md border border-zinc-300 px-2 py-1 text-[10px] font-semibold text-zinc-700 disabled:opacity-50"
-												>
-													{status}
-												</button>
-											))}
-											<button
-												type="button"
-												onClick={() => void handleDeleteServiceCase(serviceCase.id)}
-												className="rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-700"
-											>
-												Delete
-											</button>
-										</div>
-									</div>
+						<form onSubmit={(event) => void handleAddServiceCase(event)} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
+							<p className="text-sm font-semibold text-zinc-900">Create Support Ticket</p>
+							<p className="text-[11px] text-zinc-500">Log customer support issues, billing inquiries, or feature requests.</p>
+							<input value={caseSubject} onChange={(event) => setCaseSubject(event.target.value)} placeholder="Case subject / issue description" className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" required />
+							<select value={caseContactId} onChange={(event) => setCaseContactId(event.target.value)} className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm">
+								<option value="">Select Contact (Optional)</option>
+								{setupOptions.contacts.map((contact) => (
+									<option key={contact.id} value={contact.id}>{contact.label}</option>
 								))}
-								{serviceCases.length === 0 && <p className="text-xs text-zinc-500">No service cases yet.</p>}
+							</select>
+							<div className="grid grid-cols-2 gap-2">
+								<select value={caseCategory} onChange={(event) => setCaseCategory(event.target.value)} className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm">
+									<option value="Technical Support">Category: Tech Support</option>
+									<option value="Billing Issue">Category: Billing</option>
+									<option value="Product Inquiry">Category: Product</option>
+									<option value="General Complaint">Category: Complaint</option>
+								</select>
+								<select value={casePriority} onChange={(event) => setCasePriority(event.target.value as any)} className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm">
+									<option value="LOW">Priority: LOW</option>
+									<option value="MEDIUM">Priority: MEDIUM</option>
+									<option value="HIGH">Priority: HIGH</option>
+									<option value="URGENT">Priority: URGENT</option>
+								</select>
+							</div>
+							<button type="submit" disabled={isSavingServiceCase} className="rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white">{isSavingServiceCase ? "Submitting..." : "Submit Ticket"}</button>
+						</form>
+
+						<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+							<p className="text-sm font-semibold text-zinc-900">Support Ticket Queue</p>
+							<div className="mt-2 max-h-[380px] space-y-2 overflow-y-auto">
+								{serviceCases.map((serviceCase) => {
+									const priorityColor = serviceCase.priority === "HIGH" ? "bg-rose-50 text-rose-700 border-rose-200" : (serviceCase.priority === "MEDIUM" ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-emerald-50 text-emerald-700 border-emerald-200");
+									return (
+										<div key={serviceCase.id} className="rounded-lg border border-zinc-200 p-3">
+											<div className="flex items-center justify-between">
+												<p className="text-xs font-semibold text-zinc-800">{serviceCase.subject}</p>
+												<span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${priorityColor}`}>{serviceCase.priority}</span>
+											</div>
+											<p className="mt-1 text-[11px] text-zinc-500">Case ID: {serviceCase.id.slice(0, 8)} · Status: <strong>{serviceCase.status}</strong></p>
+											<div className="mt-2 flex items-center gap-1">
+												<button type="button" onClick={() => void handleEditServiceCase(serviceCase)} className="rounded-md border border-zinc-300 px-2 py-1 text-[10px] font-semibold text-zinc-700">Edit</button>
+												{(["OPEN", "IN_PROGRESS", "RESOLVED"] as const).map((status) => (
+													<button
+														key={status}
+														type="button"
+														onClick={() => void handleUpdateServiceCaseStatus(serviceCase.id, status)}
+														disabled={pendingServiceStatus[serviceCase.id] || serviceCase.status === status}
+														className="rounded-md border border-zinc-300 px-2 py-1 text-[10px] font-semibold text-zinc-700 disabled:opacity-50"
+													>
+														{status}
+													</button>
+												))}
+												<button type="button" onClick={() => void handleDeleteServiceCase(serviceCase.id)} className="rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-700">Delete</button>
+											</div>
+										</div>
+									);
+								})}
+								{serviceCases.length === 0 && <p className="text-xs text-zinc-500">No support tickets in queue.</p>}
 							</div>
 						</div>
 					</div>
 				) : activeTab === "marketing" ? (
 					<div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-						<form onSubmit={(event) => void handleAddCampaign(event)} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-							<p className="text-sm font-semibold text-zinc-900">Create Campaign</p>
-							<input value={campaignName} onChange={(event) => setCampaignName(event.target.value)} placeholder="Campaign name" className="mt-2 w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" />
-							<input value={campaignSegment} onChange={(event) => setCampaignSegment(event.target.value)} placeholder="Segment" className="mt-2 w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" />
-							<button type="submit" disabled={isSavingCampaign} className="mt-2 rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white">{isSavingCampaign ? "Saving..." : "Add Campaign"}</button>
+						<form onSubmit={(event) => void handleAddCampaign(event)} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
+							<p className="text-sm font-semibold text-zinc-900">Create Marketing Campaign</p>
+							<p className="text-[11px] text-zinc-500">Launch targeted campaigns across Email, WhatsApp, SMS, or Social media.</p>
+							<input value={campaignName} onChange={(event) => setCampaignName(event.target.value)} placeholder="Campaign name (e.g. Q4 Customer Outreach)" className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" required />
+							<div className="grid grid-cols-2 gap-2">
+								<select value={campaignChannel} onChange={(event) => setCampaignChannel(event.target.value)} className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm">
+									<option value="Email Blast">Channel: Email Blast</option>
+									<option value="WhatsApp Outreach">Channel: WhatsApp</option>
+									<option value="SMS Outreach">Channel: SMS</option>
+									<option value="Social Media Promo">Channel: Social Media</option>
+								</select>
+								<select value={campaignSegment} onChange={(event) => setCampaignSegment(event.target.value)} className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm">
+									<option value="All Leads">Segment: All Leads</option>
+									<option value="Qualified Leads">Segment: Qualified</option>
+									<option value="High Value Customers">Segment: High Value</option>
+									<option value="Custom Segment">Segment: Custom</option>
+								</select>
+							</div>
+							<button type="submit" disabled={isSavingCampaign} className="rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white">{isSavingCampaign ? "Launching..." : "Launch Campaign"}</button>
 						</form>
+
 						<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-							<p className="text-sm font-semibold text-zinc-900">Campaigns</p>
-							<div className="mt-2 space-y-2">
+							<p className="text-sm font-semibold text-zinc-900">Active Campaigns</p>
+							<div className="mt-2 max-h-[380px] space-y-2 overflow-y-auto">
 								{campaigns.map((campaign) => (
-									<div key={campaign.id} className="rounded-lg border border-zinc-200 p-2">
-										<p className="text-xs font-semibold text-zinc-800">{campaign.name}</p>
-										<p className="text-[11px] text-zinc-500">{campaign.segment} · {campaign.status}</p>
-										<div className="mt-1 flex gap-1">
-											<button
-												type="button"
-												onClick={() => void handleEditCampaign(campaign)}
-												className="rounded-md border border-zinc-300 px-2 py-1 text-[10px] font-semibold text-zinc-700"
-											>
-												Edit
-											</button>
+									<div key={campaign.id} className="rounded-lg border border-zinc-200 p-3">
+										<div className="flex items-center justify-between">
+											<p className="text-xs font-semibold text-zinc-800">{campaign.name}</p>
+											<span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">{campaign.status}</span>
+										</div>
+										<p className="mt-1 text-[11px] text-zinc-500">{campaign.segment}</p>
+										<div className="mt-2 flex items-center gap-1">
+											<button type="button" onClick={() => void handleEditCampaign(campaign)} className="rounded-md border border-zinc-300 px-2 py-1 text-[10px] font-semibold text-zinc-700">Edit</button>
 											{(["DRAFT", "RUNNING", "PAUSED"] as const).map((status) => (
 												<button
 													key={status}
@@ -1805,17 +1852,11 @@ export default function CrmPage() {
 													{status}
 												</button>
 											))}
-											<button
-												type="button"
-												onClick={() => void handleDeleteCampaign(campaign.id)}
-												className="rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-700"
-											>
-												Delete
-											</button>
+											<button type="button" onClick={() => void handleDeleteCampaign(campaign.id)} className="rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-700">Delete</button>
 										</div>
 									</div>
 								))}
-								{campaigns.length === 0 && <p className="text-xs text-zinc-500">No campaigns yet.</p>}
+								{campaigns.length === 0 && <p className="text-xs text-zinc-500">No campaigns launched yet.</p>}
 							</div>
 						</div>
 					</div>
@@ -1864,32 +1905,35 @@ export default function CrmPage() {
 							</ul>
 						</div>
 					</div>
-				) : activeTab === "automation" ? (
-					<div className="mt-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-						<p className="text-sm font-semibold text-zinc-900">Automation Playbooks</p>
-						<div className="mt-2 space-y-2">
-							{automationItems.map((item) => (
-								<div key={item} className="flex items-center justify-between rounded-lg border border-zinc-200 p-2">
-									<p className="text-xs text-zinc-700">{item}</p>
-									<span className="rounded-full border border-zinc-300 bg-zinc-50 px-2 py-0.5 text-[10px] font-semibold text-zinc-700">Enabled</span>
-								</div>
-							))}
-						</div>
-					</div>
 				) : activeTab === "governance" ? (
-					<div className="mt-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-						<p className="text-sm font-semibold text-zinc-900">Compliance & Control Checklist</p>
-						<p className="mt-1 text-xs text-zinc-600">These controls protect customer data, maintain trust, and keep CRM operations compliant.</p>
-						<div className="mt-2 space-y-2">
-							{governanceItems.map((item) => (
-								<div key={item.title} className="flex items-start justify-between rounded-lg border border-zinc-200 p-2">
-									<div>
-										<p className="text-xs font-semibold text-zinc-700">{item.title}</p>
-										<p className="mt-0.5 text-[11px] text-zinc-500">{item.description}</p>
+					<div className="mt-4 space-y-4">
+						<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+							<p className="text-sm font-semibold text-zinc-900">Automation Playbooks</p>
+							<p className="mt-1 text-xs text-zinc-600">Automated triggers and workflow rules active across your CRM workspace.</p>
+							<div className="mt-3 space-y-2">
+								{automationItems.map((item) => (
+									<div key={item} className="flex items-center justify-between rounded-lg border border-zinc-200 p-2">
+										<p className="text-xs text-zinc-700">{item}</p>
+										<span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Active</span>
 									</div>
-									<span className="rounded-full border border-zinc-300 bg-zinc-50 px-2 py-0.5 text-[10px] font-semibold text-zinc-700">Tracked</span>
-								</div>
-							))}
+								))}
+							</div>
+						</div>
+
+						<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+							<p className="text-sm font-semibold text-zinc-900">Compliance & Enterprise Controls</p>
+							<p className="mt-1 text-xs text-zinc-600">Data privacy, GDPR consent, role-based access, and security audit logs.</p>
+							<div className="mt-3 space-y-2">
+								{governanceItems.map((item) => (
+									<div key={item.title} className="flex items-start justify-between rounded-lg border border-zinc-200 p-2">
+										<div>
+											<p className="text-xs font-semibold text-zinc-700">{item.title}</p>
+											<p className="mt-0.5 text-[11px] text-zinc-500">{item.description}</p>
+										</div>
+										<span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">Enforced</span>
+									</div>
+								))}
+							</div>
 						</div>
 					</div>
 				) : null}
