@@ -421,23 +421,18 @@ export default function HrmPage() {
 
 	const startEnrollCamera = async () => {
 		try {
-			if (typeof window !== "undefined" && navigator.mediaDevices?.getUserMedia) {
-				const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).catch(() => 
-					navigator.mediaDevices.getUserMedia({ video: true })
-				);
-				
+			if (typeof window !== "undefined" && window.isSecureContext && navigator.mediaDevices?.getUserMedia) {
+				const stream = await navigator.mediaDevices.getUserMedia({ video: true }).catch(() => null);
 				if (enrollVideoRef.current && stream) {
 					enrollVideoRef.current.srcObject = stream;
 					enrollVideoRef.current.play().catch(() => {});
+					setIsCameraSupported(true);
+					setIsCameraBlocked(false);
+					return;
 				}
-				setIsCameraSupported(true);
-				setIsCameraBlocked(false);
-			} else {
-				setIsCameraSupported(false);
-				setIsCameraBlocked(true);
 			}
-		} catch (err) {
-			console.warn("Camera access error:", err);
+			setIsCameraBlocked(true);
+		} catch {
 			setIsCameraBlocked(true);
 		}
 	};
