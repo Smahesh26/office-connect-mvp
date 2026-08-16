@@ -218,13 +218,25 @@ const parseCSV = (text: string) => {
 	return { headers, rows };
 };
 
+const parseNumber = (val: any): number => {
+	if (typeof val === "number") return isNaN(val) ? 0 : val;
+	if (!val) return 0;
+	const cleanStr = String(val).replace(/[^0-9.]/g, "");
+	const num = parseFloat(cleanStr);
+	return isNaN(num) ? 0 : num;
+};
+
 const IMPORT_MODULE_FIELDS = {
 	products: [
-		{ key: "name", label: "Product Name", required: true, aliases: ["name", "productname", "product", "item", "itemname", "title", "description"] },
-		{ key: "sku", label: "SKU", required: true, aliases: ["sku", "stockcode", "stock code", "item code", "itemcode", "product code", "productcode", "barcode", "part no", "partno", "partnumber"] },
-		{ key: "unitPrice", label: "Unit Price", required: true, aliases: ["unitprice", "unit price", "price", "selling price", "sellingprice", "mrp", "rate", "cost"] },
-		{ key: "costPrice", label: "Cost Price", required: false, aliases: ["costprice", "cost price", "purchase price", "purchaseprice", "buying price", "buyingprice"] },
-		{ key: "category", label: "Category", required: false, aliases: ["category", "type", "producttype", "product type", "group", "subcategory", "department"] },
+		{ key: "name", label: "Product Name", required: true, aliases: ["product name", "productname", "name", "product", "item", "item name", "title"] },
+		{ key: "sku", label: "SKU", required: true, aliases: ["sku", "stock code", "stockcode", "item code", "product code", "code", "barcode"] },
+		{ key: "unitPrice", label: "Unit Price", required: true, aliases: ["unit price", "unitprice", "price", "selling price", "sellingprice", "mrp", "rate"] },
+		{ key: "costPrice", label: "Cost Price", required: false, aliases: ["cost price", "costprice", "purchase price", "purchaseprice", "buying price", "cost"] },
+		{ key: "category", label: "Category", required: false, aliases: ["category", "cat", "product category", "type", "product type", "group"] },
+		{ key: "unit", label: "Unit", required: false, aliases: ["unit", "uom", "unit of measure", "measurement unit", "pcs", "kg"] },
+		{ key: "reorderLevel", label: "Reorder Level", required: false, aliases: ["reorder level", "reorderlevel", "reorder point", "min stock", "minimum stock", "threshold"] },
+		{ key: "taxRate", label: "Tax Rate (%)", required: false, aliases: ["tax rate", "taxrate", "tax", "gst", "gst rate", "vat", "tax %"] },
+		{ key: "description", label: "Description", required: false, aliases: ["description", "desc", "details", "notes", "product description"] },
 	],
 	warehouses: [
 		{ key: "name", label: "Warehouse Name", required: true, aliases: ["name", "warehousename", "warehouse", "store", "branch", "location name"] },
@@ -1277,14 +1289,23 @@ export default function InventoryPage() {
 
 			if (importModule === "products") {
 				const promises = importData.map(async (row) => {
+					const getVal = (fieldKey: string, fallback: string = "") => {
+						const mapObj = columnMapping[fieldKey];
+						if (mapObj?.csvColumn && row[mapObj.csvColumn] !== undefined) return row[mapObj.csvColumn];
+						if (mapObj?.defaultValue) return mapObj.defaultValue;
+						return fallback;
+					};
+
 					const payload = {
-						name: (columnMapping.name.csvColumn ? row[columnMapping.name.csvColumn] : columnMapping.name.defaultValue) || "Unknown Product",
-						sku: (columnMapping.sku.csvColumn ? row[columnMapping.sku.csvColumn] : columnMapping.sku.defaultValue) || `SKU-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-						unitPrice: Number(columnMapping.unitPrice?.csvColumn ? row[columnMapping.unitPrice.csvColumn] : columnMapping.unitPrice?.defaultValue) || 0,
-						costPrice: Number(columnMapping.costPrice?.csvColumn ? row[columnMapping.costPrice.csvColumn] : columnMapping.costPrice?.defaultValue) || 0,
-						category: (columnMapping.category?.csvColumn ? row[columnMapping.category.csvColumn] : columnMapping.category?.defaultValue) || "General",
-						unit: "pcs",
-						reorderLevel: 10,
+						name: getVal("name", "Unknown Product"),
+						sku: getVal("sku", `SKU-${Date.now()}-${Math.floor(Math.random() * 1000)}`),
+						unitPrice: parseNumber(getVal("unitPrice", "0")),
+						costPrice: parseNumber(getVal("costPrice", "0")),
+						category: getVal("category", "General"),
+						unit: getVal("unit", "pcs"),
+						reorderLevel: parseNumber(getVal("reorderLevel", "10")),
+						taxRate: parseNumber(getVal("taxRate", "0")),
+						description: getVal("description", ""),
 					};
 					return fetch("/api/inventory/products", {
 						method: "POST",
