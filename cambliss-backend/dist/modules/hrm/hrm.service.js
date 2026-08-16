@@ -391,8 +391,8 @@ exports.createEmployee = createEmployee;
 // Helper to generate a temporary ID for new employees (for hierarchy validation)
 const generateTempId = () => `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 const getEmployees = (organizationId) => __awaiter(void 0, void 0, void 0, function* () {
-    return prisma_1.default.employee.findMany({
-        where: { organizationId, status: "ACTIVE" },
+    const employees = yield prisma_1.default.employee.findMany({
+        where: { organizationId },
         include: {
             user: true,
             department: true,
@@ -415,6 +415,7 @@ const getEmployees = (organizationId) => __awaiter(void 0, void 0, void 0, funct
         },
         orderBy: { createdAt: "desc" },
     });
+    return employees.map((emp) => (Object.assign(Object.assign({}, emp), { salary: emp.salary ? Number(emp.salary) : 0 })));
 });
 exports.getEmployees = getEmployees;
 const getEmployeeById = (employeeId, organizationId) => __awaiter(void 0, void 0, void 0, function* () {
@@ -461,7 +462,7 @@ const getEmployeeById = (employeeId, organizationId) => __awaiter(void 0, void 0
     if (employee.organizationId !== organizationId) {
         throw new HttpError(403, "Employee does not belong to this organization");
     }
-    return employee;
+    return Object.assign(Object.assign({}, employee), { salary: employee.salary ? Number(employee.salary) : 0 });
 });
 exports.getEmployeeById = getEmployeeById;
 const updateEmployee = (employeeId, organizationId, input) => __awaiter(void 0, void 0, void 0, function* () {
@@ -514,7 +515,7 @@ const updateEmployee = (employeeId, organizationId, input) => __awaiter(void 0, 
     }
     if (input.dateOfBirth !== undefined)
         data.dateOfBirth = parseDateInput(input.dateOfBirth, "dateOfBirth");
-    return prisma_1.default.employee.update({
+    const updated = yield prisma_1.default.employee.update({
         where: { id: employeeId },
         data,
         include: {
@@ -545,6 +546,7 @@ const updateEmployee = (employeeId, organizationId, input) => __awaiter(void 0, 
             },
         },
     });
+    return Object.assign(Object.assign({}, updated), { salary: updated.salary ? Number(updated.salary) : 0 });
 });
 exports.updateEmployee = updateEmployee;
 const changeEmployeeStatus = (employeeId, organizationId, newStatus) => __awaiter(void 0, void 0, void 0, function* () {

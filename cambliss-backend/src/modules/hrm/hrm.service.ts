@@ -517,8 +517,8 @@ export const createEmployee = async (organizationId: string, input: CreateEmploy
 const generateTempId = () => `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 export const getEmployees = async (organizationId: string) => {
-	return prisma.employee.findMany({
-		where: { organizationId, status: "ACTIVE" },
+	const employees = await prisma.employee.findMany({
+		where: { organizationId },
 		include: {
 			user: true,
 			department: true,
@@ -541,6 +541,11 @@ export const getEmployees = async (organizationId: string) => {
 		},
 		orderBy: { createdAt: "desc" },
 	});
+
+	return employees.map((emp) => ({
+		...emp,
+		salary: emp.salary ? Number(emp.salary) : 0,
+	}));
 };
 
 export const getEmployeeById = async (employeeId: string, organizationId: string) => {
@@ -590,7 +595,10 @@ export const getEmployeeById = async (employeeId: string, organizationId: string
 		throw new HttpError(403, "Employee does not belong to this organization");
 	}
 
-	return employee;
+	return {
+		...employee,
+		salary: employee.salary ? Number(employee.salary) : 0,
+	};
 };
 
 export const updateEmployee = async (
@@ -642,7 +650,7 @@ export const updateEmployee = async (
 	}
 	if (input.dateOfBirth !== undefined) data.dateOfBirth = parseDateInput(input.dateOfBirth, "dateOfBirth");
 
-	return prisma.employee.update({
+	const updated = await prisma.employee.update({
 		where: { id: employeeId },
 		data,
 		include: {
@@ -673,6 +681,11 @@ export const updateEmployee = async (
 			},
 		},
 	});
+
+	return {
+		...updated,
+		salary: updated.salary ? Number(updated.salary) : 0,
+	};
 };
 
 export const changeEmployeeStatus = async (
