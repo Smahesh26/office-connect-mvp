@@ -374,7 +374,8 @@ export default function HrmPage() {
 	const [connectedHrms, setConnectedHrms] = useState<string[]>([]);
 
 	// Smart Attendance Kiosk State
-	const [isCameraActive, setIsCameraActive] = useState(false);
+	const [selectedKioskEmployeeId, setSelectedKioskEmployeeId] = useState("");
+	const [isCameraActive, setIsCameraActive] = useState(true);
 	const [isScanning, setIsScanning] = useState(false);
 	const [scanResult, setScanResult] = useState<{ name: string, action: string } | null>(null);
 	const webcamRef = useRef<Webcam>(null);
@@ -449,50 +450,52 @@ export default function HrmPage() {
 	}, []);
 
 	const handleSmartScan = async (actionType: "checkin" | "checkout") => {
-		if (!isCameraActive || !webcamRef.current) {
-			setNotice("Please start the camera first.");
-			return;
+		if (!isCameraActive) {
+			setIsCameraActive(true);
 		}
 
 		setIsScanning(true);
 		setScanResult(null);
-		
-		const imageSrc = webcamRef.current.getScreenshot();
-		if (!imageSrc) {
-			setNotice("Failed to capture image.");
-			setIsScanning(false);
-			return;
-		}
 
-		try {
-			const headers = getAuthHeaders();
-			headers.set("Content-Type", "application/json");
-			
-			const response = await fetch("/api/hrm/attendance/smart-scan", {
-				method: "POST",
-				headers,
-				body: JSON.stringify({
-					imageBase64: imageSrc,
-					actionType,
-				}),
-			});
-
-			if (response.ok) {
-				const result = await response.json();
-				setNotice(result.message);
-				setScanResult({ 
-					name: result.employeeCode, 
-					action: actionType === "checkin" ? "Checked In" : "Checked Out" 
-				});
-				await loadAll();
-			} else {
-				setNotice(await getApiErrorMessage(response, `Smart ${actionType} failed.`));
+		setTimeout(async () => {
+			const imageSrc = webcamRef.current?.getScreenshot();
+			if (!imageSrc) {
+				setNotice("Unable to access camera feed. Please check browser camera permissions.");
+				setIsScanning(false);
+				return;
 			}
-		} catch (error) {
-			setNotice("Network error during face scan.");
-		} finally {
-			setIsScanning(false);
-		}
+
+			try {
+				const headers = getAuthHeaders();
+				headers.set("Content-Type", "application/json");
+
+				const response = await fetch("/api/hrm/attendance/smart-scan", {
+					method: "POST",
+					headers,
+					body: JSON.stringify({
+						imageBase64: imageSrc,
+						employeeId: selectedKioskEmployeeId || undefined,
+						actionType,
+					}),
+				});
+
+				if (response.ok) {
+					const result = await response.json();
+					setNotice(result.message || `Attendance recorded successfully.`);
+					setScanResult({ 
+						name: result.employeeCode || "Employee", 
+						action: actionType === "checkin" ? "Checked In" : "Checked Out" 
+					});
+					await loadAll();
+				} else {
+					setNotice(await getApiErrorMessage(response, `Smart ${actionType} failed. Please ensure face is enrolled.`));
+				}
+			} catch {
+				setNotice("Network error during face scan.");
+			} finally {
+				setIsScanning(false);
+			}
+		}, 400);
 	};
 	const [isConnectingHrm, setIsConnectingHrm] = useState(false);
 	const [structureModalError, setStructureModalError] = useState<string | null>(null);
@@ -1806,68 +1809,71 @@ export default function HrmPage() {
 								</div>
 
 								{/* Controls Area */}
-								<div className="flex flex-col justify-center space-y-4">
-									{!isCameraActive ? (
+								<div className="flex flex-col justify-center space-y-3">
+									<div className="p-4 bg-white rounded-xl border border-zinc-200 shadow-sm space-y-2">
+										<label className="text-xs font-bold text-zinc-900 block">1. Select Employee for Face Check-In:</label>
+										<select 
+											value={selectedKioskEmployeeId}
+											onChange={(e) => setSelectedKioskEmployeeId(e.target.value)} 
+											className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm bg-zinc-50 font-semibold text-zinc-900 shadow-sm"
+										>
+											<option value="">-- All Employees (Auto-Recognize) --</option>
+											{employees.map(emp => (
+												<option key={emp.id} value={emp.id}>
+													{emp.user?.firstName || emp.employeeCode} {emp.user?.lastName || ''} ({emp.employeeCode})
+												</option>
+											))}
+										</select>
+										<div className="flex justify-between items-center pt-1">
+											<span className="text-[11px] text-zinc-500">Need to register initial photo?</span>
+											<button
+												type="button"
+												onClick={() => {
+													if (selectedKioskEmployeeId) {
+														setEnrollingEmployee(selectedKioskEmployeeId);
+													} else {
+														setNotice("Please select an employee from the dropdown above to enroll.");
+													}
+												}}
+												className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline"
+											>
+												Register/Enroll Face Photo ➔
+											</button>
+										</div>
+									</div>
+
+									<div className="w-full h-px bg-zinc-200 my-1"></div>
+									<p className="text-xs font-bold text-zinc-700 text-center">2. Scan Face for Attendance:</p>
+
+									<button 
+										type="button" 
+										onClick={() => void handleSmartScan("checkin")} 
+										disabled={isScanning}
+										className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#404d85] to-[#252f5a] hover:from-[#323d6a] hover:to-[#1a2245] text-white font-bold text-base shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+									>
+										<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
+										{isScanning ? "Scanning Face..." : "Scan Face to Check-In"}
+									</button>
+									
+									<button 
+										type="button" 
+										onClick={() => void handleSmartScan("checkout")} 
+										disabled={isScanning}
+										className="w-full py-2.5 rounded-xl bg-white hover:bg-zinc-50 border-2 border-[#404d85] text-[#404d85] font-bold text-sm shadow-sm transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+									>
+										<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+										Scan Face to Check-Out
+									</button>
+
+									<div className="flex justify-center pt-1">
 										<button 
 											type="button" 
-											onClick={startCamera} 
-											className="w-full py-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-lg shadow-lg transition-colors flex items-center justify-center gap-2"
+											onClick={() => setIsCameraActive(prev => !prev)} 
+											className="text-xs font-semibold text-zinc-500 hover:text-zinc-800 transition-colors"
 										>
-											<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-											Initialize Kiosk
+											{isCameraActive ? "Turn Off Camera Preview" : "Turn On Camera Preview"}
 										</button>
-									) : (
-										<>
-											<div className="p-4 bg-zinc-100 rounded-xl border border-zinc-200 shadow-sm mb-4">
-												<p className="text-sm font-bold text-zinc-900 mb-2">1. First time? Enroll Face Here:</p>
-												<select 
-													onChange={(e) => {
-														if(e.target.value) setEnrollingEmployee(e.target.value);
-													}} 
-													value={""} 
-													className="w-full rounded-lg border border-zinc-300 px-2 py-2 text-sm bg-white"
-												>
-													<option value="">Select Employee to Enroll...</option>
-													{employees.map(emp => (
-														<option key={emp.id} value={emp.id}>
-															{emp.user?.firstName || emp.employeeCode} ({emp.employeeCode})
-														</option>
-													))}
-												</select>
-												<p className="text-xs text-zinc-500 mt-2">Required before you can check-in below.</p>
-											</div>
-
-											<div className="w-full h-px bg-zinc-200 my-2"></div>
-											<p className="text-sm font-bold text-zinc-900 mt-2 text-center">2. Everyday Check-In:</p>
-
-											<button 
-												type="button" 
-												onClick={() => void handleSmartScan("checkin")} 
-												disabled={isScanning}
-												className="w-full py-4 rounded-xl bg-gradient-to-r from-[#404d85] to-[#252f5a] hover:from-[#323d6a] hover:to-[#1a2245] text-white font-bold text-lg shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-											>
-												<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
-												{isScanning ? "Scanning Face..." : "Scan Face to Check-In"}
-											</button>
-											<button 
-												type="button" 
-												onClick={() => void handleSmartScan("checkout")} 
-												disabled={isScanning}
-												className="w-full py-3 rounded-xl bg-white hover:bg-zinc-50 border-2 border-[#404d85] text-[#404d85] font-bold text-md shadow-sm transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-											>
-												<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-												Scan Face to Check-Out
-											</button>
-											<button 
-												type="button" 
-												onClick={stopCamera} 
-												disabled={isScanning}
-												className="w-full py-2 mt-4 text-xs font-semibold text-zinc-500 hover:text-rose-600 transition-colors"
-											>
-												Turn Off Camera
-											</button>
-										</>
-									)}
+									</div>
 								</div>
 							</div>
 							
