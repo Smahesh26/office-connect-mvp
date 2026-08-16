@@ -432,6 +432,7 @@ export default function HrmPage() {
 				}
 			}
 			setIsCameraBlocked(true);
+			setNotice("Webcam hardware streams require an HTTPS connection or localhost (like Google Meet). On HTTP IP servers, use 'Upload Photo File' or click 'Capture & Save'.");
 		} catch {
 			setIsCameraBlocked(true);
 		}
@@ -2293,7 +2294,7 @@ export default function HrmPage() {
 													</svg>
 												</div>
 												<p className="text-sm font-bold text-white mb-1">WebCam Stream Standby</p>
-												<p className="text-xs text-zinc-400 mb-3 max-w-xs">Click below to allow browser camera permission & start live webcam stream.</p>
+												<p className="text-xs text-zinc-400 mb-3 max-w-xs">Hardware webcams require <strong>HTTPS</strong> or <strong>localhost</strong> (like Google Meet). On HTTP IP servers, click <strong>Upload Photo</strong> or <strong>Capture & Save</strong> below.</p>
 												
 												<div className="flex gap-2">
 													<button
