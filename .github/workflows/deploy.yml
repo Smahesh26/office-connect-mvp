@@ -37,13 +37,14 @@ jobs:
             npx prisma generate
             npx prisma migrate deploy
             npm run build
-            pm2 restart cambliss-backend || pm2 start dist/server.js --name "cambliss-backend"
+            pm2 restart officeconnect-backend || pm2 restart cambliss-backend || pm2 start dist/server.js --name "officeconnect-backend"
 
             echo "🎨 Installing & Building Frontend..."
             cd /var/www/officeconnect-cambliss/cambliss-frontend
             npm install
             rm -rf .next
             npm run build
-            pm2 restart cambliss-frontend || pm2 start npm --name "cambliss-frontend" -- start -- -p 3000
+            pm2 restart officeconnect-frontend || pm2 restart cambliss-frontend || pm2 start npm --name "officeconnect-frontend" -- start -- -p 3000
+            pm2 save
 
             echo "🎉 Automated deployment completed successfully!"
