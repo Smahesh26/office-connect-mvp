@@ -427,10 +427,13 @@ export default function HrmPage() {
 					enrollVideoRef.current.srcObject = stream;
 					enrollVideoRef.current.play().catch(() => {});
 				}
+			} else {
+				setEnrollTab("upload");
 			}
 		} catch (err) {
 			console.error("Enroll camera error:", err);
-			setEnrollCameraError("Camera permission blocked or HTTP restricted. Click 'Upload Photo File' tab above.");
+			setEnrollCameraError("Camera access restricted on HTTP. Switched to Photo Upload mode.");
+			setEnrollTab("upload");
 		}
 	};
 
@@ -457,7 +460,7 @@ export default function HrmPage() {
 
 		let imageSrc = enrollTab === "upload" ? enrollPhotoFile : enrollWebcamRef.current?.getScreenshot();
 
-		if (!imageSrc && enrollVideoRef.current) {
+		if (!imageSrc && enrollVideoRef.current && enrollVideoRef.current.videoWidth) {
 			try {
 				const canvas = document.createElement("canvas");
 				canvas.width = enrollVideoRef.current.videoWidth || 640;
@@ -473,7 +476,12 @@ export default function HrmPage() {
 		}
 
 		if (!imageSrc) {
-			setNotice(enrollTab === "upload" ? "Please select an image photo file first." : "Unable to access camera feed. Please click 'Upload Photo File' tab above to select employee photo.");
+			if (enrollTab === "camera") {
+				setEnrollTab("upload");
+				setNotice("Camera feed unavailable. Switched to 'Upload Photo File' mode. Please select a photo.");
+			} else {
+				setNotice("Please select a photo file to enroll employee face.");
+			}
 			return;
 		}
 
@@ -2281,16 +2289,25 @@ export default function HrmPage() {
 								</div>
 							) : (
 								<div className="space-y-3">
-									<div className="border-2 border-dashed border-zinc-300 rounded-xl p-6 text-center hover:bg-zinc-50 transition relative">
-										<input type="file" accept="image/*" onChange={handlePhotoFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+									<div className="border-2 border-dashed border-indigo-200 bg-indigo-50/50 rounded-xl p-6 text-center hover:bg-indigo-50 transition relative">
+										<input type="file" accept="image/*" onChange={handlePhotoFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
 										{enrollPhotoFile ? (
-											<img src={enrollPhotoFile} alt="Selected preview" className="max-h-48 mx-auto rounded-lg shadow-sm" />
+											<div className="space-y-2">
+												<img src={enrollPhotoFile} alt="Selected preview" className="max-h-44 mx-auto rounded-xl shadow-md border-2 border-indigo-500" />
+												<p className="text-xs font-bold text-emerald-600">✓ Photo Selected — Ready to Save</p>
+											</div>
 										) : (
-											<div>
-												<svg className="mx-auto h-10 w-10 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-													<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-												</svg>
-												<p className="mt-2 text-xs text-zinc-600 font-medium">Click or drag a clear employee face photo (.jpg, .png)</p>
+											<div className="py-2">
+												<div className="mx-auto w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mb-2">
+													<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+														<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+													</svg>
+												</div>
+												<p className="text-sm font-bold text-zinc-800">Click to Select Employee Face Photo</p>
+												<p className="text-xs text-zinc-500 mt-1">Supports JPG, PNG, WEBP files</p>
+												<span className="inline-block mt-3 px-4 py-2 rounded-lg bg-indigo-600 text-white font-bold text-xs shadow-md">
+													📂 Browse Photo File
+												</span>
 											</div>
 										)}
 									</div>
