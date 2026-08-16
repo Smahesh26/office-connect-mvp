@@ -35,26 +35,33 @@ export default function VideoMeetingRoomPage() {
 	const [audioEnabled, setAudioEnabled] = useState(true);
 	const [videoEnabled, setVideoEnabled] = useState(true);
 
+	const [isMounted, setIsMounted] = useState(false);
+	useEffect(() => {
+		setIsMounted(true);
+	}, []);
+
+	const defaultStart = useMemo(() => "2026-08-16T10:00:00.000Z", []);
+
 	const invite = useMemo<VideoMeetingInvite>(
 		() => ({
 			meetingId,
 			title: searchParams.get("title") || "Office Connect Meeting",
 			hostName: searchParams.get("host") || "Office Connect",
-			scheduledStart: searchParams.get("start") || new Date().toISOString(),
+			scheduledStart: searchParams.get("start") || defaultStart,
 			durationMinutes: Number(searchParams.get("duration") || 30),
 			attendeeEmails: parseAttendees(searchParams.get("attendees")),
 			notes: searchParams.get("notes") || "",
 		}),
-		[meetingId, searchParams],
+		[meetingId, searchParams, defaultStart],
 	);
 
 	const meetingUrl = useMemo(() => {
-		if (typeof window === "undefined") {
+		if (typeof window === "undefined" || !isMounted) {
 			return "";
 		}
 
 		return buildMeetingUrl(window.location.origin, invite);
-	}, [invite]);
+	}, [invite, isMounted]);
 
 	const copyLink = async () => {
 		if (!meetingUrl) return;
