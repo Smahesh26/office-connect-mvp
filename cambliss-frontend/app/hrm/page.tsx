@@ -414,7 +414,31 @@ export default function HrmPage() {
 	const [isEnrollScanning, setIsEnrollScanning] = useState(false);
 	const [enrollTab, setEnrollTab] = useState<"camera" | "upload">("camera");
 	const [enrollPhotoFile, setEnrollPhotoFile] = useState<string | null>(null);
+	const [enrollCameraError, setEnrollCameraError] = useState<string | null>(null);
 	const enrollWebcamRef = useRef<Webcam>(null);
+	const enrollVideoRef = useRef<HTMLVideoElement>(null);
+
+	const startEnrollCamera = async () => {
+		setEnrollCameraError(null);
+		try {
+			if (typeof window !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+				const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+				if (enrollVideoRef.current) {
+					enrollVideoRef.current.srcObject = stream;
+					enrollVideoRef.current.play().catch(() => {});
+				}
+			}
+		} catch (err) {
+			console.error("Enroll camera error:", err);
+			setEnrollCameraError("Camera permission blocked or HTTP restricted. Click 'Upload Photo File' tab above.");
+		}
+	};
+
+	useEffect(() => {
+		if (enrollingEmployee && enrollTab === "camera") {
+			void startEnrollCamera();
+		}
+	}, [enrollingEmployee, enrollTab]);
 
 	const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
@@ -431,9 +455,25 @@ export default function HrmPage() {
 	const handleEnrollFace = async () => {
 		if (!enrollingEmployee) return;
 
-		const imageSrc = enrollTab === "upload" ? enrollPhotoFile : enrollWebcamRef.current?.getScreenshot();
+		let imageSrc = enrollTab === "upload" ? enrollPhotoFile : enrollWebcamRef.current?.getScreenshot();
+
+		if (!imageSrc && enrollVideoRef.current) {
+			try {
+				const canvas = document.createElement("canvas");
+				canvas.width = enrollVideoRef.current.videoWidth || 640;
+				canvas.height = enrollVideoRef.current.videoHeight || 480;
+				const ctx = canvas.getContext("2d");
+				if (ctx) {
+					ctx.drawImage(enrollVideoRef.current, 0, 0, canvas.width, canvas.height);
+					imageSrc = canvas.toDataURL("image/jpeg");
+				}
+			} catch (err) {
+				console.error("Frame capture error:", err);
+			}
+		}
+
 		if (!imageSrc) {
-			setNotice(enrollTab === "upload" ? "Please select an image photo file first." : "Unable to access camera feed. Please check browser camera permissions or switch to 'Upload Photo'.");
+			setNotice(enrollTab === "upload" ? "Please select an image photo file first." : "Unable to access camera feed. Please click 'Upload Photo File' tab above to select employee photo.");
 			return;
 		}
 
@@ -2206,15 +2246,38 @@ export default function HrmPage() {
 							{enrollTab === "camera" ? (
 								<div>
 									<div className="relative overflow-hidden rounded-xl bg-zinc-900 aspect-video shadow-inner flex items-center justify-center">
+										<video ref={enrollVideoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
 										<Webcam
 											ref={enrollWebcamRef}
 											audio={false}
 											screenshotFormat="image/jpeg"
-											videoConstraints={{ facingMode: "user" }}
-											className="h-full w-full object-cover"
+											onUserMedia={() => setEnrollCameraError(null)}
+											onUserMediaError={() => setEnrollCameraError("Camera access blocked by browser or HTTP. Use 'Upload Photo File' tab above.")}
+											className="absolute inset-0 h-full w-full object-cover opacity-0 pointer-events-none"
 										/>
+										{enrollCameraError && (
+											<div className="absolute inset-0 bg-zinc-900/90 flex flex-col items-center justify-center p-4 text-center text-zinc-300">
+												<p className="text-xs font-semibold text-rose-400 mb-3">{enrollCameraError}</p>
+												<button
+													type="button"
+													onClick={() => setEnrollTab("upload")}
+													className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-indigo-700 transition"
+												>
+													📁 Switch to Upload Photo File
+												</button>
+											</div>
+										)}
 									</div>
-									<p className="mt-2 text-xs text-zinc-500 text-center">Ensure the face is clearly visible and well-lit. (If camera feed is dark/blocked, check browser permissions or switch to 'Upload Photo File').</p>
+									<div className="flex justify-between items-center mt-2">
+										<p className="text-xs text-zinc-500">Ensure face is clear & well-lit.</p>
+										<button
+											type="button"
+											onClick={() => void startEnrollCamera()}
+											className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline"
+										>
+											🎥 Turn On Camera
+										</button>
+									</div>
 								</div>
 							) : (
 								<div className="space-y-3">
