@@ -2276,34 +2276,12 @@ export default function HrmPage() {
 											ref={enrollWebcamRef}
 											audio={false}
 											screenshotFormat="image/jpeg"
-											onUserMedia={() => setEnrollCameraError(null)}
-											onUserMediaError={() => setEnrollCameraError("Camera permission prompt blocked. Please click 'Turn On Camera' below.")}
+											videoConstraints={{ width: 1280, height: 720 }}
 											className="w-full h-full object-cover"
 										/>
 										<video ref={enrollVideoRef} autoPlay playsInline muted className="hidden" />
-										{enrollCameraError && (
-											<div className="absolute inset-0 bg-zinc-900/90 flex flex-col items-center justify-center p-4 text-center text-zinc-300">
-												<p className="text-xs font-semibold text-rose-400 mb-3">{enrollCameraError}</p>
-												<button
-													type="button"
-													onClick={() => void startEnrollCamera()}
-													className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-indigo-700 transition"
-												>
-													🎥 Retry / Turn On Camera
-												</button>
-											</div>
-										)}
 									</div>
-									<div className="flex justify-between items-center mt-2">
-										<p className="text-xs text-zinc-500">Ensure face is clear & well-lit.</p>
-										<button
-											type="button"
-											onClick={() => void startEnrollCamera()}
-											className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline"
-										>
-											🎥 Turn On Camera
-										</button>
-									</div>
+									<p className="mt-2 text-xs text-zinc-500 text-center">Ensure face is clear & well-lit.</p>
 								</div>
 							) : (
 								<div className="space-y-3">
