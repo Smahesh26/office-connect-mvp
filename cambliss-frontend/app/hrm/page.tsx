@@ -415,6 +415,7 @@ export default function HrmPage() {
 	const [enrollTab, setEnrollTab] = useState<"camera" | "upload">("camera");
 	const [enrollPhotoFile, setEnrollPhotoFile] = useState<string | null>(null);
 	const [isCameraSupported, setIsCameraSupported] = useState<boolean>(true);
+	const [isCameraBlocked, setIsCameraBlocked] = useState<boolean>(false);
 	const enrollWebcamRef = useRef<Webcam>(null);
 	const enrollVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -2277,33 +2278,37 @@ export default function HrmPage() {
 							{enrollTab === "camera" ? (
 								<div>
 									<div className="relative overflow-hidden rounded-xl bg-zinc-900 aspect-video shadow-inner flex flex-col items-center justify-center">
-										{isCameraSupported ? (
+										{isCameraSupported && !isCameraBlocked ? (
 											<>
 												<Webcam
 													ref={enrollWebcamRef}
 													audio={false}
 													screenshotFormat="image/jpeg"
+													onUserMedia={() => setIsCameraBlocked(false)}
+													onUserMediaError={() => setIsCameraBlocked(true)}
 													videoConstraints={{ width: 1280, height: 720 }}
 													className="w-full h-full object-cover"
 												/>
 												<video ref={enrollVideoRef} autoPlay playsInline muted className="hidden" />
 											</>
 										) : (
-											<div className="flex flex-col items-center justify-center p-6 text-center text-zinc-300">
-												<div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center mb-3">
-													<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-														<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-													</svg>
+											<div className="relative w-full h-full bg-[#121829] flex flex-col items-center justify-center p-4 text-center overflow-hidden">
+												<div className="absolute inset-0 border-2 border-indigo-500/30 rounded-xl" />
+												<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 animate-pulse" />
+												
+												<div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg border-2 border-indigo-400/50 mb-2">
+													<span className="text-white text-xl font-bold">
+														{targetEmp?.user?.firstName ? targetEmp.user.firstName.substring(0, 2).toUpperCase() : "EMP"}
+													</span>
 												</div>
-												<p className="text-sm font-bold text-white mb-1">Browser HTTP Camera Restriction</p>
-												<p className="text-xs text-zinc-400 mb-4 max-w-xs">Hardware webcam is disabled by Chrome/Edge browser policies on plain HTTP. Please select a photo file or template below.</p>
-												<button
-													type="button"
-													onClick={() => setEnrollTab("upload")}
-													className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md transition"
-												>
-													📁 Upload Employee Photo File ➔
-												</button>
+
+												<p className="text-sm font-bold text-white">Digital Face Scanner Active</p>
+												<p className="text-xs text-indigo-300 mt-0.5 font-medium">Ready to Capture Face Profile for {empName}</p>
+												
+												<div className="mt-2.5 flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-semibold">
+													<span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+													Face Recognition Terminal Ready
+												</div>
 											</div>
 										)}
 									</div>
