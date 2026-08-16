@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.enrollFace = exports.processSmartScan = exports.getOrganizationHierarchy = exports.getOrgStructureSummary = exports.createLocation = exports.createTeam = exports.createDesignation = exports.createDepartment = exports.getFullHRAnalytics = exports.getPerformanceDashboard = exports.getEmployeePerformanceHistory = exports.createPerformanceReview = exports.unassignSalaryComponentFromEmployee = exports.assignSalaryComponentToEmployee = exports.deleteSalaryComponent = exports.updateSalaryComponent = exports.createSalaryComponent = exports.listSalaryComponents = exports.getPayrollAuditTrail = exports.reconcilePayrollPayment = exports.updatePayrollPayment = exports.updatePayrollAdjustments = exports.updatePayrollLifecycleStatus = exports.getPayslipWithMetaById = exports.getPayrollRegister = exports.getPayslips = exports.getPayrollDashboard = exports.generatePayrollBulk = exports.generatePayroll = exports.getDailyAttendanceRecords = exports.markAbsentForDate = exports.getAttendanceDashboard = exports.checkOut = exports.checkIn = exports.assignShiftToEmployee = exports.assignShift = exports.assignManager = exports.changeEmployeeStatus = exports.updateEmployee = exports.getEmployeeById = exports.getEmployees = exports.createEmployee = exports.validateEmployeeBelongsToOrg = exports.HttpError = void 0;
+exports.enrollFace = exports.processSmartScan = exports.getOrganizationHierarchy = exports.getOrgStructureSummary = exports.createLocation = exports.createTeam = exports.createDesignation = exports.createDepartment = exports.getFullHRAnalytics = exports.getPerformanceDashboard = exports.getEmployeePerformanceHistory = exports.createPerformanceReview = exports.unassignSalaryComponentFromEmployee = exports.assignSalaryComponentToEmployee = exports.deleteSalaryComponent = exports.updateSalaryComponent = exports.createSalaryComponent = exports.listSalaryComponents = exports.getPayrollAuditTrail = exports.reconcilePayrollPayment = exports.updatePayrollPayment = exports.updatePayrollAdjustments = exports.updatePayrollLifecycleStatus = exports.getPayslipWithMetaById = exports.getPayrollRegister = exports.getPayslips = exports.getPayrollDashboard = exports.generatePayrollBulk = exports.generatePayroll = exports.getDailyAttendanceRecords = exports.markAbsentForDate = exports.getAttendanceDashboard = exports.checkOut = exports.checkIn = exports.assignShiftToEmployee = exports.assignShift = exports.assignManager = exports.changeEmployeeStatus = exports.deleteEmployee = exports.updateEmployee = exports.getEmployeeById = exports.getEmployees = exports.createEmployee = exports.validateEmployeeBelongsToOrg = exports.HttpError = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const fs_1 = require("fs");
@@ -576,6 +576,27 @@ const updateEmployee = (employeeId, organizationId, input) => __awaiter(void 0, 
     return Object.assign(Object.assign({}, updated), { salary: updated.salary ? Number(updated.salary) : 0 });
 });
 exports.updateEmployee = updateEmployee;
+const deleteEmployee = (employeeId, organizationId) => __awaiter(void 0, void 0, void 0, function* () {
+    const employee = yield prisma_1.default.employee.findUnique({
+        where: { id: employeeId },
+        select: { id: true, organizationId: true },
+    });
+    if (!employee) {
+        throw new HttpError(404, "Employee not found");
+    }
+    if (employee.organizationId !== organizationId) {
+        throw new HttpError(403, "Employee does not belong to this organization");
+    }
+    yield prisma_1.default.$transaction([
+        prisma_1.default.attendanceRecord.deleteMany({ where: { employeeId } }),
+        prisma_1.default.payrollRecord.deleteMany({ where: { employeeId } }),
+        prisma_1.default.performanceReview.deleteMany({ where: { employeeId } }),
+        prisma_1.default.employeeShift.deleteMany({ where: { employeeId } }),
+        prisma_1.default.employee.delete({ where: { id: employeeId } }),
+    ]);
+    return { success: true };
+});
+exports.deleteEmployee = deleteEmployee;
 const changeEmployeeStatus = (employeeId, organizationId, newStatus) => __awaiter(void 0, void 0, void 0, function* () {
     yield validateEmployeeExists(employeeId, organizationId);
     const validStatuses = ["ACTIVE", "RESIGNED", "TERMINATED", "ON_LEAVE"];

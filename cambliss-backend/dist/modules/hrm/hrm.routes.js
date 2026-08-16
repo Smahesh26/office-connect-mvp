@@ -17,6 +17,7 @@ hrmRouter.post("/employees", hrm_controller_1.createEmployeeController);
 hrmRouter.get("/employees", hrm_controller_1.getEmployeesController);
 hrmRouter.get("/employees/:employeeId", hrm_controller_1.getEmployeeByIdController);
 hrmRouter.put("/employees/:employeeId", hrm_controller_1.updateEmployeeController);
+hrmRouter.delete("/employees/:employeeId", hrm_controller_1.deleteEmployeeController);
 hrmRouter.put("/employees/:employeeId/status", hrm_controller_1.changeEmployeeStatusController);
 hrmRouter.put("/employees/:employeeId/manager", hrm_controller_1.assignManagerController);
 hrmRouter.post("/employees/:employeeId/enroll-face", hrm_controller_1.enrollFaceController);

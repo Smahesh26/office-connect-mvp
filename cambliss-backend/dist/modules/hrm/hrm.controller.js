@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getOrganizationHierarchyController = exports.getOrgStructureSummaryController = exports.createLocationController = exports.createTeamController = exports.createDesignationController = exports.createDepartmentController = exports.getFullHRAnalyticsController = exports.getPerformanceDashboardController = exports.getEmployeePerformanceHistoryController = exports.createPerformanceReviewController = exports.unassignSalaryComponentController = exports.assignSalaryComponentController = exports.deleteSalaryComponentController = exports.updateSalaryComponentController = exports.createSalaryComponentController = exports.listSalaryComponentsController = exports.downloadPayslipPdfController = exports.getPayrollAuditTrailController = exports.reconcilePayrollPaymentController = exports.updatePayrollPaymentController = exports.updatePayrollAdjustmentsController = exports.updatePayrollStatusController = exports.exportPayrollRegisterController = exports.getPayrollRegisterController = exports.getPayslipsController = exports.getPayrollDashboardController = exports.generatePayrollBulkController = exports.generatePayrollController = exports.getDailyAttendanceController = exports.getAttendanceDashboardController = exports.smartScanController = exports.checkOutController = exports.checkInController = exports.assignShiftController = exports.assignManagerController = exports.changeEmployeeStatusController = exports.enrollFaceController = exports.updateEmployeeController = exports.getEmployeeByIdController = exports.getEmployeesController = exports.createEmployeeController = void 0;
+exports.deleteEmployeeController = exports.getOrganizationHierarchyController = exports.getOrgStructureSummaryController = exports.createLocationController = exports.createTeamController = exports.createDesignationController = exports.createDepartmentController = exports.getFullHRAnalyticsController = exports.getPerformanceDashboardController = exports.getEmployeePerformanceHistoryController = exports.createPerformanceReviewController = exports.unassignSalaryComponentController = exports.assignSalaryComponentController = exports.deleteSalaryComponentController = exports.updateSalaryComponentController = exports.createSalaryComponentController = exports.listSalaryComponentsController = exports.downloadPayslipPdfController = exports.getPayrollAuditTrailController = exports.reconcilePayrollPaymentController = exports.updatePayrollPaymentController = exports.updatePayrollAdjustmentsController = exports.updatePayrollStatusController = exports.exportPayrollRegisterController = exports.getPayrollRegisterController = exports.getPayslipsController = exports.getPayrollDashboardController = exports.generatePayrollBulkController = exports.generatePayrollController = exports.getDailyAttendanceController = exports.getAttendanceDashboardController = exports.smartScanController = exports.checkOutController = exports.checkInController = exports.assignShiftController = exports.assignManagerController = exports.changeEmployeeStatusController = exports.enrollFaceController = exports.updateEmployeeController = exports.getEmployeeByIdController = exports.getEmployeesController = exports.createEmployeeController = void 0;
 const pdfkit_1 = __importDefault(require("pdfkit"));
 const hrm_service_1 = require("./hrm.service");
 const handleControllerError = (res, error) => {
@@ -856,3 +856,19 @@ const getOrganizationHierarchyController = (req, res) => __awaiter(void 0, void 
     }
 });
 exports.getOrganizationHierarchyController = getOrganizationHierarchyController;
+const deleteEmployeeController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a.organizationId)) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+        const { employeeId } = req.params;
+        yield (0, hrm_service_1.deleteEmployee)(employeeId, req.user.organizationId);
+        res.status(200).json({ message: "Employee deleted successfully" });
+    }
+    catch (error) {
+        handleControllerError(res, error);
+    }
+});
+exports.deleteEmployeeController = deleteEmployeeController;

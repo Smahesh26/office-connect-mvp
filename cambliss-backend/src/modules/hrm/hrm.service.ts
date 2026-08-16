@@ -731,8 +731,6 @@ export const deleteEmployee = async (employeeId: string, organizationId: string)
 	}
 
 	await prisma.$transaction([
-		prisma.attendanceRecord.deleteMany({ where: { employeeId } }),
-		prisma.payrollRecord.deleteMany({ where: { employeeId } }),
 		prisma.performanceReview.deleteMany({ where: { employeeId } }),
 		prisma.employeeShift.deleteMany({ where: { employeeId } }),
 		prisma.employee.delete({ where: { id: employeeId } }),

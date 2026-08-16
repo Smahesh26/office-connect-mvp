@@ -15,6 +15,8 @@ crmRouter.get("/dashboard", crm_controller_1.getSalesDashboardController);
 crmRouter.get("/setup/options", crm_controller_1.getCrmSetupOptionsController);
 crmRouter.get("/no-cost-profile", crm_controller_1.getNoCostCrmProfileController);
 crmRouter.post("/reset-data", crm_controller_1.resetCrmDataController);
+crmRouter.post("/reset", crm_controller_1.resetCrmDataController);
+crmRouter.delete("/reset", crm_controller_1.resetCrmDataController);
 // ============================================
 // Lead Routes
 // ============================================

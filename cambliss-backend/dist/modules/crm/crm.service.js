@@ -2119,6 +2119,7 @@ const resetCrmData = (organizationId) => __awaiter(void 0, void 0, void 0, funct
         const deletedLeads = yield tx.lead.deleteMany({ where: { organizationId } });
         const deletedStages = yield tx.stage.deleteMany({ where: { pipeline: { organizationId } } });
         const deletedPipelines = yield tx.pipeline.deleteMany({ where: { organizationId } });
+        const deletedContacts = yield tx.contact.deleteMany({ where: { organizationId } });
         return {
             deletedActivities: deletedActivities.count,
             deletedStageHistory: deletedStageHistory.count,
@@ -2126,8 +2127,9 @@ const resetCrmData = (organizationId) => __awaiter(void 0, void 0, void 0, funct
             deletedLeads: deletedLeads.count,
             deletedStages: deletedStages.count,
             deletedPipelines: deletedPipelines.count,
+            deletedContacts: deletedContacts.count,
         };
     }));
-    return Object.assign({ message: "CRM data deleted successfully" }, result);
+    return Object.assign({ message: "Entire CRM data reset successfully" }, result);
 });
 exports.resetCrmData = resetCrmData;

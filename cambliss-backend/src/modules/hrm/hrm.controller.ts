@@ -938,7 +938,7 @@ export const deleteEmployeeController = async (req: Request, res: Response): Pro
 			return;
 		}
 
-		const { employeeId } = req.params;
+		const employeeId = Array.isArray(req.params.employeeId) ? req.params.employeeId[0] : req.params.employeeId;
 		await deleteEmployee(employeeId, req.user.organizationId);
 		res.status(200).json({ message: "Employee deleted successfully" });
 	} catch (error) {
