@@ -2148,23 +2148,53 @@ export default function HrmPage() {
 
 						<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 							<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-								<p className="text-sm font-semibold text-zinc-900">Salary Components</p>
+								<div className="flex items-center justify-between">
+									<p className="text-sm font-semibold text-zinc-900">Salary Components & Allowances</p>
+									<span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">Enterprise Standard</span>
+								</div>
+
+								<div className="mt-3">
+									<p className="text-[11px] text-zinc-500 font-medium mb-1.5">Quick Add Enterprise Presets:</p>
+									<div className="flex flex-wrap gap-1.5 mb-3">
+										{[
+											{ name: "House Rent Allowance (HRA)", type: "EARNING", value: "40", isPercentage: true, badge: "🏠 HRA (40%)" },
+											{ name: "Basic Salary", type: "EARNING", value: "50", isPercentage: true, badge: "💵 Basic (50%)" },
+											{ name: "Dearness Allowance (DA)", type: "EARNING", value: "10", isPercentage: true, badge: "📈 DA (10%)" },
+											{ name: "Conveyance Allowance", type: "EARNING", value: "1600", isPercentage: false, badge: "🚗 Conveyance" },
+											{ name: "Medical Allowance", type: "EARNING", value: "1250", isPercentage: false, badge: "🏥 Medical" },
+											{ name: "Provident Fund (PF)", type: "DEDUCTION", value: "12", isPercentage: true, badge: "🛡️ PF (12%)" },
+											{ name: "Professional Tax (PT)", type: "DEDUCTION", value: "200", isPercentage: false, badge: "⚖️ PT (₹200)" },
+										].map((preset) => (
+											<button
+												key={preset.name}
+												type="button"
+												onClick={() => setComponentForm({ name: preset.name, type: preset.type, value: preset.value, isPercentage: preset.isPercentage })}
+												className="px-2 py-1 text-[11px] font-semibold rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition shadow-2xs"
+											>
+												{preset.badge}
+											</button>
+										))}
+									</div>
+								</div>
+
 								<form onSubmit={(event) => void createComponent(event)} className="mt-2 flex flex-wrap items-center gap-2">
-									<input value={componentForm.name} onChange={(event) => setComponentForm((prev) => ({ ...prev, name: event.target.value }))} placeholder="Name" className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" required />
-									<select value={componentForm.type} onChange={(event) => setComponentForm((prev) => ({ ...prev, type: event.target.value }))} className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm">
+									<input value={componentForm.name} onChange={(event) => setComponentForm((prev) => ({ ...prev, name: event.target.value }))} placeholder="Component Name (e.g. HRA)" className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm flex-1 min-w-[140px]" required />
+									<select value={componentForm.type} onChange={(event) => setComponentForm((prev) => ({ ...prev, type: event.target.value }))} className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm font-semibold">
 										<option value="EARNING">EARNING</option>
 										<option value="DEDUCTION">DEDUCTION</option>
 									</select>
-									<input value={componentForm.value} onChange={(event) => setComponentForm((prev) => ({ ...prev, value: event.target.value }))} placeholder="Value" className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" required />
-									<label className="flex items-center gap-1 text-xs text-zinc-600"><input type="checkbox" checked={componentForm.isPercentage} onChange={(event) => setComponentForm((prev) => ({ ...prev, isPercentage: event.target.checked }))} /> %</label>
-									<button type="submit" className="rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white">Add</button>
+									<input value={componentForm.value} onChange={(event) => setComponentForm((prev) => ({ ...prev, value: event.target.value }))} placeholder="Value" className="w-20 rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" required />
+									<label className="flex items-center gap-1 text-xs text-zinc-600 font-semibold cursor-pointer"><input type="checkbox" checked={componentForm.isPercentage} onChange={(event) => setComponentForm((prev) => ({ ...prev, isPercentage: event.target.checked }))} /> %</label>
+									<button type="submit" className="rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-zinc-800">Add</button>
 								</form>
 								<div className="mt-3 max-h-[220px] space-y-2 overflow-y-auto">
 									{salaryComponents.map((component) => (
-										<div key={component.id} className="rounded-md border border-zinc-200 p-2">
-											<p className="text-xs font-semibold text-zinc-800">{component.name} ({component.type})</p>
-											<p className="text-[11px] text-zinc-500">{component.isPercentage ? `${component.value}%` : component.value}</p>
-											<button type="button" onClick={() => void assignComponentToEmployee(component.id)} className="mt-1 rounded border border-zinc-300 px-2 py-1 text-[11px]">Assign to Employee</button>
+										<div key={component.id} className="rounded-lg border border-zinc-200 p-2.5 flex items-center justify-between bg-zinc-50/50">
+											<div>
+												<p className="text-xs font-bold text-zinc-800">{component.name} <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded font-semibold ${component.type === 'EARNING' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>{component.type}</span></p>
+												<p className="text-[11px] text-zinc-500 font-medium">{component.isPercentage ? `${component.value}% of CTC` : `₹${component.value} Fixed`}</p>
+											</div>
+											<button type="button" onClick={() => void assignComponentToEmployee(component.id)} className="rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100 transition shadow-2xs">Assign to Employee</button>
 										</div>
 									))}
 								</div>

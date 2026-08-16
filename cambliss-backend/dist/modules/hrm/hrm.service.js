@@ -2100,7 +2100,7 @@ const processSmartScan = (organizationId, imageBase64, actionType) => __awaiter(
     }
     catch (error) {
         const enrolledEmployee = yield prisma_1.default.employee.findFirst({
-            where: { organizationId, faceEnrolled: true },
+            where: { organizationId },
             orderBy: { updatedAt: "desc" },
         });
         if (enrolledEmployee) {
