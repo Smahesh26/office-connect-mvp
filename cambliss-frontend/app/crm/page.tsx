@@ -280,6 +280,13 @@ export default function CrmPage() {
 	const [isConnectingCrm, setIsConnectingCrm] = useState(false);
 	const [noCostProfile, setNoCostProfile] = useState<NoCostCrmProfile | null>(null);
 
+	// Full Edit Modals State
+	const [editingLead, setEditingLead] = useState<Lead | null>(null);
+	const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
+	const [editingServiceCase, setEditingServiceCase] = useState<ServiceCase | null>(null);
+	const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+	const [isUpdatingItem, setIsUpdatingItem] = useState(false);
+
 	const [isSavingLead, setIsSavingLead] = useState(false);
 	const [isSavingDeal, setIsSavingDeal] = useState(false);
 	const [isSavingServiceCase, setIsSavingServiceCase] = useState(false);
@@ -769,6 +776,125 @@ export default function CrmPage() {
 			return;
 		}
 		await loadAll();
+	};
+
+	const handleSaveEditLead = async (e: FormEvent) => {
+		e.preventDefault();
+		if (!editingLead) return;
+		setIsUpdatingItem(true);
+		try {
+			const authHeaders = getAuthHeaders();
+			authHeaders.set("Content-Type", "application/json");
+			const response = await fetch(`/api/crm/leads/${editingLead.id}`, {
+				method: "PUT",
+				headers: authHeaders,
+				body: JSON.stringify({
+					firstName: editingLead.firstName,
+					lastName: editingLead.lastName,
+					email: editingLead.email,
+					phone: editingLead.phone,
+					companyName: editingLead.companyName,
+					source: editingLead.source,
+					status: editingLead.status,
+				}),
+			});
+			if (!response.ok) {
+				setNotice("Failed to update lead.");
+				return;
+			}
+			setEditingLead(null);
+			await loadAll();
+			setNotice("Lead updated successfully.");
+		} finally {
+			setIsUpdatingItem(false);
+		}
+	};
+
+	const handleSaveEditDeal = async (e: FormEvent) => {
+		e.preventDefault();
+		if (!editingDeal) return;
+		setIsUpdatingItem(true);
+		try {
+			const authHeaders = getAuthHeaders();
+			authHeaders.set("Content-Type", "application/json");
+			const response = await fetch(`/api/crm/deals/${editingDeal.id}`, {
+				method: "PUT",
+				headers: authHeaders,
+				body: JSON.stringify({
+					contactId: editingDeal.contactId,
+					pipelineId: editingDeal.pipelineId,
+					stageId: editingDeal.stageId,
+					value: Number(editingDeal.value || 0),
+					probability: Number(editingDeal.probability || 0),
+					status: editingDeal.status,
+				}),
+			});
+			if (!response.ok) {
+				setNotice("Failed to update deal.");
+				return;
+			}
+			setEditingDeal(null);
+			await loadAll();
+			setNotice("Deal updated successfully.");
+		} finally {
+			setIsUpdatingItem(false);
+		}
+	};
+
+	const handleSaveEditServiceCase = async (e: FormEvent) => {
+		e.preventDefault();
+		if (!editingServiceCase) return;
+		setIsUpdatingItem(true);
+		try {
+			const authHeaders = getAuthHeaders();
+			authHeaders.set("Content-Type", "application/json");
+			const response = await fetch(`/api/crm/service/cases/${editingServiceCase.id}`, {
+				method: "PUT",
+				headers: authHeaders,
+				body: JSON.stringify({
+					subject: editingServiceCase.subject,
+					priority: editingServiceCase.priority,
+					status: editingServiceCase.status,
+				}),
+			});
+			if (!response.ok) {
+				setNotice("Failed to update service case.");
+				return;
+			}
+			setEditingServiceCase(null);
+			await loadAll();
+			setNotice("Support ticket updated successfully.");
+		} finally {
+			setIsUpdatingItem(false);
+		}
+	};
+
+	const handleSaveEditCampaign = async (e: FormEvent) => {
+		e.preventDefault();
+		if (!editingCampaign) return;
+		setIsUpdatingItem(true);
+		try {
+			const authHeaders = getAuthHeaders();
+			authHeaders.set("Content-Type", "application/json");
+			const response = await fetch(`/api/crm/marketing/campaigns/${editingCampaign.id}`, {
+				method: "PUT",
+				headers: authHeaders,
+				body: JSON.stringify({
+					name: editingCampaign.name,
+					segment: editingCampaign.segment,
+					status: editingCampaign.status,
+				}),
+			});
+			if (!response.ok) {
+				setNotice("Failed to update campaign.");
+				return;
+			}
+			setEditingCampaign(null);
+			await loadAll();
+			setNotice("Campaign updated successfully.");
+		} finally {
+			setIsUpdatingItem(false);
+		}
 	};
 
 	const handleEditCampaign = async (campaign: Campaign) => {
@@ -1690,6 +1816,7 @@ export default function CrmPage() {
 										<p className="text-[11px] text-zinc-500">Value: {deal.value} · Probability: {deal.probability}% · Status: {deal.status}</p>
 										<p className="text-[11px] text-zinc-500">Pipeline: {getPipelineName(deal.pipelineId)} · Stage: {getStageName(deal.pipelineId, deal.stageId)}</p>
 										<div className="mt-2 flex flex-wrap items-center gap-1">
+											<button type="button" onClick={() => setEditingDeal(deal)} className="rounded-md border border-zinc-300 px-2 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-100">Edit Deal</button>
 											<select
 												value={nextStageValue}
 												onChange={(event) => setStageUpdate((prev) => ({ ...prev, [deal.id]: event.target.value }))}
@@ -1937,6 +2064,208 @@ export default function CrmPage() {
 						</div>
 					</div>
 				) : null}
+
+				{/* EDIT LEAD MODAL */}
+				{editingLead && (
+					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+						<div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+							<div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+								<h3 className="text-lg font-bold text-zinc-900">Edit Lead Details</h3>
+								<button type="button" onClick={() => setEditingLead(null)} className="text-zinc-400 hover:text-zinc-600">✕</button>
+							</div>
+							<form onSubmit={(e) => void handleSaveEditLead(e)} className="space-y-3">
+								<div className="grid grid-cols-2 gap-2">
+									<div>
+										<label className="text-xs font-semibold text-zinc-700">First Name</label>
+										<input value={editingLead.firstName || ""} onChange={(e) => setEditingLead({ ...editingLead, firstName: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+									</div>
+									<div>
+										<label className="text-xs font-semibold text-zinc-700">Last Name</label>
+										<input value={editingLead.lastName || ""} onChange={(e) => setEditingLead({ ...editingLead, lastName: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+									</div>
+								</div>
+								<div>
+									<label className="text-xs font-semibold text-zinc-700">Email Address</label>
+									<input value={editingLead.email || ""} onChange={(e) => setEditingLead({ ...editingLead, email: e.target.value })} type="email" className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+								</div>
+								<div className="grid grid-cols-2 gap-2">
+									<div>
+										<label className="text-xs font-semibold text-zinc-700">Phone</label>
+										<input value={editingLead.phone || ""} onChange={(e) => setEditingLead({ ...editingLead, phone: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+									</div>
+									<div>
+										<label className="text-xs font-semibold text-zinc-700">Company</label>
+										<input value={editingLead.companyName || ""} onChange={(e) => setEditingLead({ ...editingLead, companyName: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+									</div>
+								</div>
+								<div className="grid grid-cols-2 gap-2">
+									<div>
+										<label className="text-xs font-semibold text-zinc-700">Source</label>
+										<input value={editingLead.source || ""} onChange={(e) => setEditingLead({ ...editingLead, source: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+									</div>
+									<div>
+										<label className="text-xs font-semibold text-zinc-700">Status</label>
+										<select value={editingLead.status || "NEW"} onChange={(e) => setEditingLead({ ...editingLead, status: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm">
+											<option value="NEW">NEW</option>
+											<option value="CONTACTED">CONTACTED</option>
+											<option value="QUALIFIED">QUALIFIED</option>
+											<option value="UNQUALIFIED">UNQUALIFIED</option>
+										</select>
+									</div>
+								</div>
+								<div className="flex justify-end gap-2 pt-2 border-t border-zinc-200">
+									<button type="button" onClick={() => setEditingLead(null)} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700">Cancel</button>
+									<button type="submit" disabled={isUpdatingItem} className="rounded-lg bg-zinc-900 px-4 py-1.5 text-xs font-semibold text-white">{isUpdatingItem ? "Saving..." : "Save All Changes"}</button>
+								</div>
+							</form>
+						</div>
+					</div>
+				)}
+
+				{/* EDIT DEAL MODAL */}
+				{editingDeal && (
+					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+						<div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+							<div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+								<h3 className="text-lg font-bold text-zinc-900">Edit Deal Details</h3>
+								<button type="button" onClick={() => setEditingDeal(null)} className="text-zinc-400 hover:text-zinc-600">✕</button>
+							</div>
+							<form onSubmit={(e) => void handleSaveEditDeal(e)} className="space-y-3">
+								<div>
+									<label className="text-xs font-semibold text-zinc-700">Linked Contact</label>
+									<select value={editingDeal.contactId} onChange={(e) => setEditingDeal({ ...editingDeal, contactId: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" required>
+										{setupOptions.contacts.map((contact) => (
+											<option key={contact.id} value={contact.id}>{contact.label}</option>
+										))}
+									</select>
+								</div>
+								<div className="grid grid-cols-2 gap-2">
+									<div>
+										<label className="text-xs font-semibold text-zinc-700">Pipeline</label>
+										<select
+											value={editingDeal.pipelineId}
+											onChange={(e) => {
+												const pipelineId = e.target.value;
+												const firstStageId = setupOptions.pipelines.find((p) => p.id === pipelineId)?.stages[0]?.id ?? "";
+												setEditingDeal({ ...editingDeal, pipelineId, stageId: firstStageId });
+											}}
+											className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm"
+										>
+											{setupOptions.pipelines.map((pipeline) => (
+												<option key={pipeline.id} value={pipeline.id}>{pipeline.name}</option>
+											))}
+										</select>
+									</div>
+									<div>
+										<label className="text-xs font-semibold text-zinc-700">Stage</label>
+										<select value={editingDeal.stageId} onChange={(e) => setEditingDeal({ ...editingDeal, stageId: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm">
+											{getStagesForPipeline(editingDeal.pipelineId).map((stage) => (
+												<option key={stage.id} value={stage.id}>{stage.name}</option>
+											))}
+										</select>
+									</div>
+								</div>
+								<div className="grid grid-cols-3 gap-2">
+									<div>
+										<label className="text-xs font-semibold text-zinc-700">Value ($)</label>
+										<input value={editingDeal.value || 0} onChange={(e) => setEditingDeal({ ...editingDeal, value: Number(e.target.value) })} type="number" className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+									</div>
+									<div>
+										<label className="text-xs font-semibold text-zinc-700">Probability (%)</label>
+										<input value={editingDeal.probability || 0} onChange={(e) => setEditingDeal({ ...editingDeal, probability: Number(e.target.value) })} type="number" className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+									</div>
+									<div>
+										<label className="text-xs font-semibold text-zinc-700">Status</label>
+										<select value={editingDeal.status || "OPEN"} onChange={(e) => setEditingDeal({ ...editingDeal, status: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm">
+											<option value="OPEN">OPEN</option>
+											<option value="WON">WON</option>
+											<option value="LOST">LOST</option>
+										</select>
+									</div>
+								</div>
+								<div className="flex justify-end gap-2 pt-2 border-t border-zinc-200">
+									<button type="button" onClick={() => setEditingDeal(null)} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700">Cancel</button>
+									<button type="submit" disabled={isUpdatingItem} className="rounded-lg bg-zinc-900 px-4 py-1.5 text-xs font-semibold text-white">{isUpdatingItem ? "Saving..." : "Save All Changes"}</button>
+								</div>
+							</form>
+						</div>
+					</div>
+				)}
+
+				{/* EDIT SERVICE CASE MODAL */}
+				{editingServiceCase && (
+					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+						<div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+							<div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+								<h3 className="text-lg font-bold text-zinc-900">Edit Support Ticket Details</h3>
+								<button type="button" onClick={() => setEditingServiceCase(null)} className="text-zinc-400 hover:text-zinc-600">✕</button>
+							</div>
+							<form onSubmit={(e) => void handleSaveEditServiceCase(e)} className="space-y-3">
+								<div>
+									<label className="text-xs font-semibold text-zinc-700">Ticket Subject / Issue</label>
+									<input value={editingServiceCase.subject} onChange={(e) => setEditingServiceCase({ ...editingServiceCase, subject: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" required />
+								</div>
+								<div className="grid grid-cols-2 gap-2">
+									<div>
+										<label className="text-xs font-semibold text-zinc-700">Priority</label>
+										<select value={editingServiceCase.priority} onChange={(e) => setEditingServiceCase({ ...editingServiceCase, priority: e.target.value as any })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm">
+											<option value="LOW">LOW</option>
+											<option value="MEDIUM">MEDIUM</option>
+											<option value="HIGH">HIGH</option>
+											<option value="URGENT">URGENT</option>
+										</select>
+									</div>
+									<div>
+										<label className="text-xs font-semibold text-zinc-700">Status</label>
+										<select value={editingServiceCase.status} onChange={(e) => setEditingServiceCase({ ...editingServiceCase, status: e.target.value as any })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm">
+											<option value="OPEN">OPEN</option>
+											<option value="IN_PROGRESS">IN_PROGRESS</option>
+											<option value="RESOLVED">RESOLVED</option>
+										</select>
+									</div>
+								</div>
+								<div className="flex justify-end gap-2 pt-2 border-t border-zinc-200">
+									<button type="button" onClick={() => setEditingServiceCase(null)} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700">Cancel</button>
+									<button type="submit" disabled={isUpdatingItem} className="rounded-lg bg-zinc-900 px-4 py-1.5 text-xs font-semibold text-white">{isUpdatingItem ? "Saving..." : "Save All Changes"}</button>
+								</div>
+							</form>
+						</div>
+					</div>
+				)}
+
+				{/* EDIT CAMPAIGN MODAL */}
+				{editingCampaign && (
+					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+						<div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+							<div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+								<h3 className="text-lg font-bold text-zinc-900">Edit Campaign Details</h3>
+								<button type="button" onClick={() => setEditingCampaign(null)} className="text-zinc-400 hover:text-zinc-600">✕</button>
+							</div>
+							<form onSubmit={(e) => void handleSaveEditCampaign(e)} className="space-y-3">
+								<div>
+									<label className="text-xs font-semibold text-zinc-700">Campaign Name</label>
+									<input value={editingCampaign.name} onChange={(e) => setEditingCampaign({ ...editingCampaign, name: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" required />
+								</div>
+								<div>
+									<label className="text-xs font-semibold text-zinc-700">Channel & Target Segment</label>
+									<input value={editingCampaign.segment} onChange={(e) => setEditingCampaign({ ...editingCampaign, segment: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" required />
+								</div>
+								<div>
+									<label className="text-xs font-semibold text-zinc-700">Status</label>
+									<select value={editingCampaign.status} onChange={(e) => setEditingCampaign({ ...editingCampaign, status: e.target.value as any })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm">
+										<option value="DRAFT">DRAFT</option>
+										<option value="RUNNING">RUNNING</option>
+										<option value="PAUSED">PAUSED</option>
+									</select>
+								</div>
+								<div className="flex justify-end gap-2 pt-2 border-t border-zinc-200">
+									<button type="button" onClick={() => setEditingCampaign(null)} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700">Cancel</button>
+									<button type="submit" disabled={isUpdatingItem} className="rounded-lg bg-zinc-900 px-4 py-1.5 text-xs font-semibold text-white">{isUpdatingItem ? "Saving..." : "Save All Changes"}</button>
+								</div>
+							</form>
+						</div>
+					</div>
+				)}
 			</div>
 		</WorkspaceShell>
 	);

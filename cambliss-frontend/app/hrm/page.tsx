@@ -352,6 +352,10 @@ export default function HrmPage() {
 	const [structureModalAddress, setStructureModalAddress] = useState("");
 	const [isSavingStructure, setIsSavingStructure] = useState(false);
 
+	// Full Edit Employee State
+	const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+	const [isUpdatingEmployee, setIsUpdatingEmployee] = useState(false);
+
 	// External HRM Integration State
 	const [selectedHrmToConnect, setSelectedHrmToConnect] = useState<string | null>(null);
 	const [connectedHrms, setConnectedHrms] = useState<string[]>([]);
@@ -707,39 +711,44 @@ export default function HrmPage() {
 		setNotice(`${type.slice(0, -1)} created.`);
 	};
 
-	const handleEditEmployee = async (employee: Employee) => {
-		const phone = window.prompt("Phone", "");
-		if (phone === null) {
-			return;
-		}
-		const address = window.prompt("Address", "");
-		if (address === null) {
-			return;
-		}
-		const salaryRaw = window.prompt("Salary", String(employee.salary || 0));
-		if (salaryRaw === null) {
-			return;
-		}
+	const handleSaveEditEmployee = async (e: FormEvent) => {
+		e.preventDefault();
+		if (!editingEmployee) return;
+		setIsUpdatingEmployee(true);
+		try {
+			const headers = getAuthHeaders();
+			headers.set("Content-Type", "application/json");
+			const response = await fetch(`/api/hrm/employees/${editingEmployee.id}`, {
+				method: "PUT",
+				headers,
+				body: JSON.stringify({
+					employeeCode: editingEmployee.employeeCode,
+					status: editingEmployee.status,
+					employmentType: editingEmployee.employmentType,
+					workMode: editingEmployee.workMode,
+					salary: Number(editingEmployee.salary || 0),
+					joinDate: editingEmployee.joinDate ? editingEmployee.joinDate.split("T")[0] : undefined,
+					departmentId: editingEmployee.department?.id || undefined,
+					designationId: editingEmployee.designation?.id || undefined,
+					teamId: editingEmployee.team?.id || undefined,
+					locationId: editingEmployee.location?.id || undefined,
+					firstName: editingEmployee.user?.firstName || undefined,
+					lastName: editingEmployee.user?.lastName || undefined,
+					email: editingEmployee.user?.email || undefined,
+				}),
+			});
 
-		const headers = getAuthHeaders();
-		headers.set("Content-Type", "application/json");
-		const response = await fetch(`/api/hrm/employees/${employee.id}`, {
-			method: "PUT",
-			headers,
-			body: JSON.stringify({
-				phone: phone.trim() || null,
-				address: address.trim() || null,
-				salary: Number(salaryRaw || 0),
-			}),
-		});
+			if (!response.ok) {
+				setNotice(await getApiErrorMessage(response, "Unable to update employee."));
+				return;
+			}
 
-		if (!response.ok) {
-			setNotice(await getApiErrorMessage(response, "Unable to update employee."));
-			return;
+			setEditingEmployee(null);
+			await loadAll();
+			setNotice("Employee details updated successfully.");
+		} finally {
+			setIsUpdatingEmployee(false);
 		}
-
-		await loadAll();
-		setNotice("Employee updated.");
 	};
 
 	const handleChangeEmployeeStatus = async (employeeId: string) => {
@@ -1637,7 +1646,7 @@ export default function HrmPage() {
 										<p className="text-[11px] text-zinc-500">Salary: {employee.salary} · Mode: {employee.workMode}</p>
 										<p className="text-[11px] text-zinc-500">Manager: {employee.manager?.employeeCode || "Not assigned"}</p>
 										<div className="mt-2 flex flex-wrap gap-1">
-											<button type="button" onClick={() => void handleEditEmployee(employee)} className="rounded-md border border-zinc-300 px-2 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-100">Edit</button>
+											<button type="button" onClick={() => setEditingEmployee(employee)} className="rounded-md border border-zinc-300 px-2 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-100">Edit</button>
 											<button type="button" onClick={() => void handleChangeEmployeeStatus(employee.id)} className="rounded-md border border-zinc-300 px-2 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-100">Status</button>
 											<button type="button" onClick={() => void handleAssignManager(employee.id)} className="rounded-md border border-zinc-300 px-2 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-100">Assign Manager</button>
 											<button type="button" onClick={() => setEnrollingEmployee(employee.id)} className="rounded-md border border-zinc-300 bg-zinc-900 px-2 py-1 text-[11px] font-semibold text-white hover:bg-zinc-800">Enroll Face</button>
@@ -2074,6 +2083,98 @@ export default function HrmPage() {
 								{isEnrollScanning ? "Saving Face..." : "Capture & Save"}
 							</button>
 						</div>
+					</div>
+				</div>
+			)}
+
+			{/* EDIT EMPLOYEE MODAL */}
+			{editingEmployee && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+					<div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+						<div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+							<h3 className="text-lg font-bold text-zinc-900">Edit Employee Details</h3>
+							<button type="button" onClick={() => setEditingEmployee(null)} className="text-zinc-400 hover:text-zinc-600">✕</button>
+						</div>
+						<form onSubmit={(e) => void handleSaveEditEmployee(e)} className="space-y-3">
+							<div className="grid grid-cols-2 gap-2">
+								<div>
+									<label className="text-xs font-semibold text-zinc-700">First Name</label>
+									<input value={editingEmployee.user?.firstName || ""} onChange={(e) => setEditingEmployee({ ...editingEmployee, user: { ...editingEmployee.user, firstName: e.target.value } })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+								</div>
+								<div>
+									<label className="text-xs font-semibold text-zinc-700">Last Name</label>
+									<input value={editingEmployee.user?.lastName || ""} onChange={(e) => setEditingEmployee({ ...editingEmployee, user: { ...editingEmployee.user, lastName: e.target.value } })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+								</div>
+							</div>
+							<div>
+								<label className="text-xs font-semibold text-zinc-700">Email Address</label>
+								<input value={editingEmployee.user?.email || ""} onChange={(e) => setEditingEmployee({ ...editingEmployee, user: { ...editingEmployee.user, email: e.target.value } })} type="email" className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+							</div>
+							<div className="grid grid-cols-2 gap-2">
+								<div>
+									<label className="text-xs font-semibold text-zinc-700">Employee Code</label>
+									<input value={editingEmployee.employeeCode} onChange={(e) => setEditingEmployee({ ...editingEmployee, employeeCode: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" required />
+								</div>
+								<div>
+									<label className="text-xs font-semibold text-zinc-700">Status</label>
+									<select value={editingEmployee.status || "ACTIVE"} onChange={(e) => setEditingEmployee({ ...editingEmployee, status: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm">
+										<option value="ACTIVE">ACTIVE</option>
+										<option value="INACTIVE">INACTIVE</option>
+										<option value="ON_LEAVE">ON_LEAVE</option>
+										<option value="TERMINATED">TERMINATED</option>
+									</select>
+								</div>
+							</div>
+							<div className="grid grid-cols-3 gap-2">
+								<div>
+									<label className="text-xs font-semibold text-zinc-700">Employment Type</label>
+									<select value={editingEmployee.employmentType || "FULL_TIME"} onChange={(e) => setEditingEmployee({ ...editingEmployee, employmentType: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm">
+										<option value="FULL_TIME">FULL_TIME</option>
+										<option value="PART_TIME">PART_TIME</option>
+										<option value="CONTRACT">CONTRACT</option>
+										<option value="INTERN">INTERN</option>
+									</select>
+								</div>
+								<div>
+									<label className="text-xs font-semibold text-zinc-700">Work Mode</label>
+									<select value={editingEmployee.workMode || "OFFICE"} onChange={(e) => setEditingEmployee({ ...editingEmployee, workMode: e.target.value })} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm">
+										<option value="OFFICE">OFFICE</option>
+										<option value="HYBRID">HYBRID</option>
+										<option value="REMOTE">REMOTE</option>
+									</select>
+								</div>
+								<div>
+									<label className="text-xs font-semibold text-zinc-700">Salary ($)</label>
+									<input value={editingEmployee.salary || 0} onChange={(e) => setEditingEmployee({ ...editingEmployee, salary: Number(e.target.value) })} type="number" className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm" />
+								</div>
+							</div>
+							<div className="grid grid-cols-2 gap-2">
+								<div>
+									<label className="text-xs font-semibold text-zinc-700">Department</label>
+									<select value={editingEmployee.department?.id || ""} onChange={(e) => {
+										const dept = structure.departments.find(d => d.id === e.target.value);
+										setEditingEmployee({ ...editingEmployee, department: dept ? { id: dept.id, name: dept.name || "" } : null });
+									}} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm">
+										<option value="">None</option>
+										{structure.departments.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+									</select>
+								</div>
+								<div>
+									<label className="text-xs font-semibold text-zinc-700">Designation</label>
+									<select value={editingEmployee.designation?.id || ""} onChange={(e) => {
+										const desig = structure.designations.find(d => d.id === e.target.value);
+										setEditingEmployee({ ...editingEmployee, designation: desig ? { id: desig.id, title: desig.title || "" } : null });
+									}} className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm">
+										<option value="">None</option>
+										{structure.designations.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
+									</select>
+								</div>
+							</div>
+							<div className="flex justify-end gap-2 pt-2 border-t border-zinc-200">
+								<button type="button" onClick={() => setEditingEmployee(null)} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700">Cancel</button>
+								<button type="submit" disabled={isUpdatingEmployee} className="rounded-lg bg-zinc-900 px-4 py-1.5 text-xs font-semibold text-white">{isUpdatingEmployee ? "Saving..." : "Save All Changes"}</button>
+							</div>
+						</form>
 					</div>
 				</div>
 			)}

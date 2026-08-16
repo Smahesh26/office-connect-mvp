@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resetCrmData = exports.setIntegrationConnection = exports.listIntegrationModules = exports.deleteStage = exports.updateStage = exports.createStage = exports.deletePipeline = exports.updatePipeline = exports.createPipeline = exports.deleteCampaign = exports.updateCampaign = exports.updateCampaignStatus = exports.createCampaign = exports.listCampaigns = exports.deleteServiceCase = exports.updateServiceCase = exports.updateServiceCaseStatus = exports.createServiceCase = exports.listServiceCases = exports.getStageHistory = exports.updateDealStage = exports.getDealTimeline = exports.createDeal = exports.updateLead = exports.getDealById = exports.getDeals = exports.getLeadById = exports.getLeads = exports.deleteDeal = exports.deleteLead = exports.restoreDeal = exports.archiveDeal = exports.restoreLead = exports.archiveLead = exports.createLead = exports.markDealAsWon = exports.getSalesDashboard = exports.getCrmSetupOptions = exports.getNoCostCrmProfile = exports.HttpError = void 0;
+exports.resetCrmData = exports.setIntegrationConnection = exports.listIntegrationModules = exports.deleteStage = exports.updateStage = exports.createStage = exports.deletePipeline = exports.updatePipeline = exports.createPipeline = exports.deleteCampaign = exports.updateCampaign = exports.updateCampaignStatus = exports.createCampaign = exports.listCampaigns = exports.deleteServiceCase = exports.updateServiceCase = exports.updateServiceCaseStatus = exports.createServiceCase = exports.listServiceCases = exports.getStageHistory = exports.updateDealStage = exports.getDealTimeline = exports.updateDeal = exports.createDeal = exports.updateLead = exports.getDealById = exports.getDeals = exports.getLeadById = exports.getLeads = exports.deleteDeal = exports.deleteLead = exports.restoreDeal = exports.archiveDeal = exports.restoreLead = exports.archiveLead = exports.createLead = exports.markDealAsWon = exports.getSalesDashboard = exports.getCrmSetupOptions = exports.getNoCostCrmProfile = exports.HttpError = void 0;
 const prisma_1 = __importDefault(require("../../config/prisma"));
 const client_1 = require("@prisma/client");
 const accounting_service_1 = require("../accounting/accounting.service");
@@ -1118,6 +1118,48 @@ const createDeal = (organizationId, input) => __awaiter(void 0, void 0, void 0, 
     });
 });
 exports.createDeal = createDeal;
+const updateDeal = (dealId, organizationId, input) => __awaiter(void 0, void 0, void 0, function* () {
+    const deal = yield prisma_1.default.deal.findUnique({
+        where: { id: dealId },
+        select: { organizationId: true },
+    });
+    if (!deal) {
+        throw new HttpError(404, "Deal not found");
+    }
+    if (deal.organizationId !== organizationId) {
+        throw new HttpError(403, "Deal does not belong to this organization");
+    }
+    const data = {};
+    if (input.contactId !== undefined) {
+        const contact = yield prisma_1.default.contact.findUnique({
+            where: { id: input.contactId },
+            select: { organizationId: true },
+        });
+        if (contact && contact.organizationId === organizationId) {
+            data.contact = { connect: { id: input.contactId } };
+        }
+    }
+    if (input.pipelineId !== undefined)
+        data.pipeline = { connect: { id: input.pipelineId } };
+    if (input.stageId !== undefined)
+        data.stage = { connect: { id: input.stageId } };
+    if (input.value !== undefined)
+        data.value = new client_1.Prisma.Decimal(input.value);
+    if (input.probability !== undefined)
+        data.probability = Math.min(100, Math.max(0, Number(input.probability)));
+    if (input.status !== undefined)
+        data.status = input.status;
+    return prisma_1.default.deal.update({
+        where: { id: dealId },
+        data,
+        include: {
+            contact: true,
+            pipeline: true,
+            stage: true,
+        },
+    });
+});
+exports.updateDeal = updateDeal;
 const getDealTimeline = (dealId, organizationId) => __awaiter(void 0, void 0, void 0, function* () {
     // Get deal with validation
     const deal = yield prisma_1.default.deal.findUnique({

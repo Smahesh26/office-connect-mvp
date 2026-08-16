@@ -31,6 +31,7 @@ crmRouter.delete("/leads/:leadId", crm_controller_1.deleteLeadController);
 crmRouter.post("/deals", crm_controller_1.createDealController);
 crmRouter.get("/deals", crm_controller_1.getDealsController);
 crmRouter.get("/deals/:dealId", crm_controller_1.getDealByIdController);
+crmRouter.put("/deals/:dealId", crm_controller_1.updateDealController);
 crmRouter.post("/deals/:dealId/archive", crm_controller_1.archiveDealController);
 crmRouter.post("/deals/:dealId/restore", crm_controller_1.restoreDealController);
 crmRouter.delete("/deals/:dealId", crm_controller_1.deleteDealController);

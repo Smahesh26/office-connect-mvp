@@ -1372,6 +1372,60 @@ export const createDeal = async (organizationId: string, input: {
 	});
 };
 
+export const updateDeal = async (
+	dealId: string,
+	organizationId: string,
+	input: {
+		contactId?: string;
+		pipelineId?: string;
+		stageId?: string;
+		value?: number;
+		probability?: number;
+		status?: string;
+	},
+) => {
+	const deal = await prisma.deal.findUnique({
+		where: { id: dealId },
+		select: { organizationId: true },
+	});
+
+	if (!deal) {
+		throw new HttpError(404, "Deal not found");
+	}
+
+	if (deal.organizationId !== organizationId) {
+		throw new HttpError(403, "Deal does not belong to this organization");
+	}
+
+	const data: Record<string, any> = {};
+
+	if (input.contactId !== undefined) {
+		const contact = await prisma.contact.findUnique({
+			where: { id: input.contactId },
+			select: { organizationId: true },
+		});
+		if (contact && contact.organizationId === organizationId) {
+			data.contact = { connect: { id: input.contactId } };
+		}
+	}
+
+	if (input.pipelineId !== undefined) data.pipeline = { connect: { id: input.pipelineId } };
+	if (input.stageId !== undefined) data.stage = { connect: { id: input.stageId } };
+	if (input.value !== undefined) data.value = new Prisma.Decimal(input.value);
+	if (input.probability !== undefined) data.probability = Math.min(100, Math.max(0, Number(input.probability)));
+	if (input.status !== undefined) data.status = input.status;
+
+	return prisma.deal.update({
+		where: { id: dealId },
+		data,
+		include: {
+			contact: true,
+			pipeline: true,
+			stage: true,
+		},
+	});
+};
+
 // ============================================
 // STEP 5: Deal Timeline (Activity History + Stage Changes)
 // ============================================

@@ -40,6 +40,7 @@ import {
 	updateServiceCaseStatusController,
 	updateStageController,
 	updateLeadController,
+	updateDealController,
 } from "./crm.controller";
 
 const crmRouter = Router();
@@ -78,6 +79,7 @@ crmRouter.delete("/leads/:leadId", deleteLeadController);
 crmRouter.post("/deals", createDealController);
 crmRouter.get("/deals", getDealsController);
 crmRouter.get("/deals/:dealId", getDealByIdController);
+crmRouter.put("/deals/:dealId", updateDealController);
 crmRouter.post("/deals/:dealId/archive", archiveDealController);
 crmRouter.post("/deals/:dealId/restore", restoreDealController);
 crmRouter.delete("/deals/:dealId", deleteDealController);

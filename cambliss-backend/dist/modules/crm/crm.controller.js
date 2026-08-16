@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resetCrmDataController = exports.setIntegrationConnectionController = exports.listIntegrationsController = exports.deleteStageController = exports.updateStageController = exports.createStageController = exports.deletePipelineController = exports.updatePipelineController = exports.createPipelineController = exports.deleteCampaignController = exports.updateCampaignController = exports.updateCampaignStatusController = exports.createCampaignController = exports.listCampaignsController = exports.deleteServiceCaseController = exports.updateServiceCaseController = exports.updateServiceCaseStatusController = exports.createServiceCaseController = exports.listServiceCasesController = exports.getStageHistoryController = exports.markDealAsWonController = exports.updateDealStageController = exports.getDealTimelineController = exports.deleteDealController = exports.restoreDealController = exports.archiveDealController = exports.getDealByIdController = exports.getDealsController = exports.createDealController = exports.deleteLeadController = exports.restoreLeadController = exports.archiveLeadController = exports.updateLeadController = exports.getLeadByIdController = exports.getLeadsController = exports.createLeadController = exports.getNoCostCrmProfileController = exports.getCrmSetupOptionsController = exports.getSalesDashboardController = void 0;
+exports.resetCrmDataController = exports.setIntegrationConnectionController = exports.listIntegrationsController = exports.deleteStageController = exports.updateStageController = exports.createStageController = exports.deletePipelineController = exports.updatePipelineController = exports.createPipelineController = exports.deleteCampaignController = exports.updateCampaignController = exports.updateCampaignStatusController = exports.createCampaignController = exports.listCampaignsController = exports.deleteServiceCaseController = exports.updateServiceCaseController = exports.updateServiceCaseStatusController = exports.createServiceCaseController = exports.listServiceCasesController = exports.getStageHistoryController = exports.markDealAsWonController = exports.updateDealStageController = exports.getDealTimelineController = exports.updateDealController = exports.deleteDealController = exports.restoreDealController = exports.archiveDealController = exports.getDealByIdController = exports.getDealsController = exports.createDealController = exports.deleteLeadController = exports.restoreLeadController = exports.archiveLeadController = exports.updateLeadController = exports.getLeadByIdController = exports.getLeadsController = exports.createLeadController = exports.getNoCostCrmProfileController = exports.getCrmSetupOptionsController = exports.getSalesDashboardController = void 0;
 const crm_service_1 = require("./crm.service");
 const handleControllerError = (res, error) => {
     if (error instanceof crm_service_1.HttpError) {
@@ -287,6 +287,22 @@ const deleteDealController = (req, res) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 exports.deleteDealController = deleteDealController;
+const updateDealController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a.organizationId)) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+        const dealId = getRequiredParam(req.params.dealId, "dealId");
+        const deal = yield (0, crm_service_1.updateDeal)(dealId, req.user.organizationId, req.body);
+        res.status(200).json(deal);
+    }
+    catch (error) {
+        handleControllerError(res, error);
+    }
+});
+exports.updateDealController = updateDealController;
 // ============================================
 // STEP 5: Deal Timeline Controller
 // ============================================

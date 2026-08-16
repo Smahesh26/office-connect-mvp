@@ -41,6 +41,7 @@ import {
 	updateServiceCaseStatus,
 	updateStage,
 	updateLead,
+	updateDeal,
 } from "./crm.service";
 
 const handleControllerError = (res: Response, error: unknown): void => {
@@ -307,6 +308,21 @@ export const deleteDealController = async (req: Request, res: Response): Promise
 		const dealId = getRequiredParam(req.params.dealId, "dealId");
 		await deleteDeal(dealId, req.user.organizationId);
 		res.status(200).json({ message: "Deal deleted" });
+	} catch (error) {
+		handleControllerError(res, error);
+	}
+};
+
+export const updateDealController = async (req: Request, res: Response): Promise<void> => {
+	try {
+		if (!req.user?.organizationId) {
+			res.status(401).json({ message: "Unauthorized" });
+			return;
+		}
+
+		const dealId = getRequiredParam(req.params.dealId, "dealId");
+		const deal = await updateDeal(dealId, req.user.organizationId, req.body);
+		res.status(200).json(deal);
 	} catch (error) {
 		handleControllerError(res, error);
 	}
