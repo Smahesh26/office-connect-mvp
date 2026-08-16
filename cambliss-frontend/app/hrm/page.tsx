@@ -375,10 +375,39 @@ export default function HrmPage() {
 
 	// Smart Attendance Kiosk State
 	const [selectedKioskEmployeeId, setSelectedKioskEmployeeId] = useState("");
-	const [isCameraActive, setIsCameraActive] = useState(true);
+	const [isCameraActive, setIsCameraActive] = useState(false);
 	const [isScanning, setIsScanning] = useState(false);
 	const [scanResult, setScanResult] = useState<{ name: string, action: string } | null>(null);
 	const webcamRef = useRef<Webcam>(null);
+	const videoRef = useRef<HTMLVideoElement>(null);
+	const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+
+	const startCameraStream = async () => {
+		try {
+			if (typeof window !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+				const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+				setCameraStream(stream);
+				if (videoRef.current) {
+					videoRef.current.srcObject = stream;
+					videoRef.current.play().catch(() => {});
+				}
+				setIsCameraActive(true);
+			} else {
+				setIsCameraActive(true);
+			}
+		} catch (err) {
+			console.error("Camera permission error:", err);
+			setIsCameraActive(true);
+		}
+	};
+
+	const stopCameraStream = () => {
+		if (cameraStream) {
+			cameraStream.getTracks().forEach((track) => track.stop());
+			setCameraStream(null);
+		}
+		setIsCameraActive(false);
+	};
 
 	// Enrollment State
 	const [enrollingEmployee, setEnrollingEmployee] = useState<string | null>(null);
@@ -450,17 +479,38 @@ export default function HrmPage() {
 	}, []);
 
 	const handleSmartScan = async (actionType: "checkin" | "checkout") => {
-		if (!isCameraActive) {
-			setIsCameraActive(true);
+		if (!selectedKioskEmployeeId) {
+			setNotice("Please select an employee from the dropdown list first.");
+			return;
+		}
+
+		if (!isCameraActive || !cameraStream) {
+			await startCameraStream();
 		}
 
 		setIsScanning(true);
 		setScanResult(null);
 
 		setTimeout(async () => {
-			const imageSrc = webcamRef.current?.getScreenshot();
+			let imageSrc = webcamRef.current?.getScreenshot();
+
+			if (!imageSrc && videoRef.current) {
+				try {
+					const canvas = document.createElement("canvas");
+					canvas.width = videoRef.current.videoWidth || 640;
+					canvas.height = videoRef.current.videoHeight || 480;
+					const ctx = canvas.getContext("2d");
+					if (ctx) {
+						ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+						imageSrc = canvas.toDataURL("image/jpeg");
+					}
+				} catch (err) {
+					console.error("Frame capture error:", err);
+				}
+			}
+
 			if (!imageSrc) {
-				setNotice("Unable to access camera feed. Please check browser camera permissions.");
+				setNotice("Camera is initializing... Please grant camera permission in your browser and click again.");
 				setIsScanning(false);
 				return;
 			}
@@ -474,16 +524,19 @@ export default function HrmPage() {
 					headers,
 					body: JSON.stringify({
 						imageBase64: imageSrc,
-						employeeId: selectedKioskEmployeeId || undefined,
+						employeeId: selectedKioskEmployeeId,
 						actionType,
 					}),
 				});
 
 				if (response.ok) {
 					const result = await response.json();
+					const targetEmp = employees.find(e => e.id === selectedKioskEmployeeId);
+					const empDisplayName = targetEmp ? `${targetEmp.user?.firstName || ''} ${targetEmp.user?.lastName || ''} (${targetEmp.employeeCode})`.trim() : (result.employeeCode || "Employee");
+
 					setNotice(result.message || `Attendance recorded successfully.`);
 					setScanResult({ 
-						name: result.employeeCode || "Employee", 
+						name: empDisplayName, 
 						action: actionType === "checkin" ? "Checked In" : "Checked Out" 
 					});
 					await loadAll();
@@ -495,7 +548,7 @@ export default function HrmPage() {
 			} finally {
 				setIsScanning(false);
 			}
-		}, 400);
+		}, 500);
 	};
 	const [isConnectingHrm, setIsConnectingHrm] = useState(false);
 	const [structureModalError, setStructureModalError] = useState<string | null>(null);
@@ -1774,21 +1827,29 @@ export default function HrmPage() {
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-zinc-50 p-4 rounded-xl border border-zinc-200">
 								{/* Camera View Area */}
 								<div className="relative aspect-video bg-black rounded-lg overflow-hidden border-2 border-zinc-300 shadow-inner flex flex-col items-center justify-center">
-									{isCameraActive && (
-										<Webcam
-											audio={false}
-											ref={webcamRef}
-											screenshotFormat="image/jpeg"
-											className="w-full h-full object-cover"
-										/>
-									)}
-									
-									{!isCameraActive && (
-										<div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-400">
-											<svg className="w-12 h-12 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									{isCameraActive ? (
+										<div className="w-full h-full relative">
+											<video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+											<Webcam
+												audio={false}
+												ref={webcamRef}
+												screenshotFormat="image/jpeg"
+												className="absolute inset-0 w-full h-full object-cover opacity-0 pointer-events-none"
+											/>
+										</div>
+									) : (
+										<div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-400 p-4 text-center">
+											<svg className="w-12 h-12 mb-2 opacity-50 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
 											</svg>
-											<p className="text-sm font-medium">Camera Offline</p>
+											<p className="text-sm font-medium">Camera Feed Standby</p>
+											<button
+												type="button"
+												onClick={() => void startCameraStream()}
+												className="mt-3 rounded-lg bg-zinc-800 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-700 shadow-sm"
+											>
+												🎥 Turn On Camera
+											</button>
 										</div>
 									)}
 
@@ -1811,39 +1872,22 @@ export default function HrmPage() {
 								{/* Controls Area */}
 								<div className="flex flex-col justify-center space-y-3">
 									<div className="p-4 bg-white rounded-xl border border-zinc-200 shadow-sm space-y-2">
-										<label className="text-xs font-bold text-zinc-900 block">1. Select Employee for Face Check-In:</label>
+										<label className="text-xs font-bold text-zinc-900 block">Select Employee for Attendance:</label>
 										<select 
 											value={selectedKioskEmployeeId}
 											onChange={(e) => setSelectedKioskEmployeeId(e.target.value)} 
 											className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm bg-zinc-50 font-semibold text-zinc-900 shadow-sm"
 										>
-											<option value="">-- All Employees (Auto-Recognize) --</option>
+											<option value="">-- Select Employee --</option>
 											{employees.map(emp => (
 												<option key={emp.id} value={emp.id}>
 													{emp.user?.firstName || emp.employeeCode} {emp.user?.lastName || ''} ({emp.employeeCode})
 												</option>
 											))}
 										</select>
-										<div className="flex justify-between items-center pt-1">
-											<span className="text-[11px] text-zinc-500">Need to register initial photo?</span>
-											<button
-												type="button"
-												onClick={() => {
-													if (selectedKioskEmployeeId) {
-														setEnrollingEmployee(selectedKioskEmployeeId);
-													} else {
-														setNotice("Please select an employee from the dropdown above to enroll.");
-													}
-												}}
-												className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline"
-											>
-												Register/Enroll Face Photo ➔
-											</button>
-										</div>
 									</div>
 
 									<div className="w-full h-px bg-zinc-200 my-1"></div>
-									<p className="text-xs font-bold text-zinc-700 text-center">2. Scan Face for Attendance:</p>
 
 									<button 
 										type="button" 
@@ -1868,7 +1912,13 @@ export default function HrmPage() {
 									<div className="flex justify-center pt-1">
 										<button 
 											type="button" 
-											onClick={() => setIsCameraActive(prev => !prev)} 
+											onClick={() => {
+												if (isCameraActive) {
+													stopCameraStream();
+												} else {
+													void startCameraStream();
+												}
+											}} 
 											className="text-xs font-semibold text-zinc-500 hover:text-zinc-800 transition-colors"
 										>
 											{isCameraActive ? "Turn Off Camera Preview" : "Turn On Camera Preview"}
