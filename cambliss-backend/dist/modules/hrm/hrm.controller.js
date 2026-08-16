@@ -863,7 +863,7 @@ const deleteEmployeeController = (req, res) => __awaiter(void 0, void 0, void 0,
             res.status(401).json({ message: "Unauthorized" });
             return;
         }
-        const { employeeId } = req.params;
+        const employeeId = Array.isArray(req.params.employeeId) ? req.params.employeeId[0] : req.params.employeeId;
         yield (0, hrm_service_1.deleteEmployee)(employeeId, req.user.organizationId);
         res.status(200).json({ message: "Employee deleted successfully" });
     }

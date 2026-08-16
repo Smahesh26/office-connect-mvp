@@ -382,32 +382,46 @@ export default function HrmPage() {
 	// Enrollment State
 	const [enrollingEmployee, setEnrollingEmployee] = useState<string | null>(null);
 	const [isEnrollScanning, setIsEnrollScanning] = useState(false);
+	const [enrollTab, setEnrollTab] = useState<"camera" | "upload">("camera");
+	const [enrollPhotoFile, setEnrollPhotoFile] = useState<string | null>(null);
 	const enrollWebcamRef = useRef<Webcam>(null);
 
+	const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		const reader = new FileReader();
+		reader.onloadend = () => {
+			if (typeof reader.result === "string") {
+				setEnrollPhotoFile(reader.result);
+			}
+		};
+		reader.readAsDataURL(file);
+	};
+
 	const handleEnrollFace = async () => {
-		if (!enrollWebcamRef.current || !enrollingEmployee) return;
-		setIsEnrollScanning(true);
-		
-		const imageSrc = enrollWebcamRef.current.getScreenshot();
+		if (!enrollingEmployee) return;
+
+		const imageSrc = enrollTab === "upload" ? enrollPhotoFile : enrollWebcamRef.current?.getScreenshot();
 		if (!imageSrc) {
-			setNotice("Failed to capture image.");
-			setIsEnrollScanning(false);
+			setNotice(enrollTab === "upload" ? "Please select an image photo file first." : "Unable to access camera feed. Please check browser camera permissions or switch to 'Upload Photo'.");
 			return;
 		}
 
+		setIsEnrollScanning(true);
 		try {
 			const headers = getAuthHeaders();
 			headers.set("Content-Type", "application/json");
-			
+
 			const response = await fetch(`/api/hrm/employees/${enrollingEmployee}/enroll-face`, {
 				method: "POST",
 				headers,
 				body: JSON.stringify({ imageBase64: imageSrc }),
 			});
-			
+
 			if (response.ok) {
 				setNotice("Face successfully enrolled for employee!");
 				setEnrollingEmployee(null);
+				setEnrollPhotoFile(null);
 			} else {
 				const data = await response.json().catch(() => ({}));
 				setNotice(data.message || "Failed to enroll face");
@@ -2101,36 +2115,81 @@ export default function HrmPage() {
 				)}
 			</div>
 			{/* Enroll Face Modal */}
-			{enrollingEmployee && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-					<div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
-						<div className="bg-zinc-50 px-6 py-4 border-b border-zinc-100 flex justify-between items-center">
-							<h3 className="text-lg font-bold text-zinc-900">Enroll Employee Face</h3>
-							<button onClick={() => setEnrollingEmployee(null)} className="text-zinc-400 hover:text-zinc-600">✕</button>
-						</div>
-						<div className="p-6">
-							<div className="relative overflow-hidden rounded-xl bg-zinc-900 aspect-video shadow-inner">
-								<Webcam
-									ref={enrollWebcamRef}
-									audio={false}
-									screenshotFormat="image/jpeg"
-									videoConstraints={{ facingMode: "user" }}
-									className="h-full w-full object-cover"
-								/>
+			{enrollingEmployee && (() => {
+				const targetEmp = employees.find(e => e.id === enrollingEmployee);
+				const empName = targetEmp ? `${targetEmp.user?.firstName || ''} ${targetEmp.user?.lastName || ''} (${targetEmp.employeeCode})`.trim() : "Employee";
+
+				return (
+					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+						<div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl space-y-3 p-6">
+							<div className="flex justify-between items-center border-b border-zinc-200 pb-3">
+								<div>
+									<h3 className="text-lg font-bold text-zinc-900">Enroll Employee Face</h3>
+									<p className="text-xs font-semibold text-indigo-600 mt-0.5">{empName}</p>
+								</div>
+								<button onClick={() => { setEnrollingEmployee(null); setEnrollPhotoFile(null); }} className="text-zinc-400 hover:text-zinc-600">✕</button>
 							</div>
-							<p className="mt-4 text-sm text-zinc-600 text-center">Please ensure the employee's face is clearly visible and well-lit.</p>
+
+							<div className="flex rounded-lg bg-zinc-100 p-1">
+								<button
+									type="button"
+									onClick={() => setEnrollTab("camera")}
+									className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition ${enrollTab === "camera" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}
+								>
+									📷 Live Camera
+								</button>
+								<button
+									type="button"
+									onClick={() => setEnrollTab("upload")}
+									className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition ${enrollTab === "upload" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}
+								>
+									📁 Upload Photo File
+								</button>
+							</div>
+
+							{enrollTab === "camera" ? (
+								<div>
+									<div className="relative overflow-hidden rounded-xl bg-zinc-900 aspect-video shadow-inner flex items-center justify-center">
+										<Webcam
+											ref={enrollWebcamRef}
+											audio={false}
+											screenshotFormat="image/jpeg"
+											videoConstraints={{ facingMode: "user" }}
+											className="h-full w-full object-cover"
+										/>
+									</div>
+									<p className="mt-2 text-xs text-zinc-500 text-center">Ensure the face is clearly visible and well-lit. (If camera feed is dark/blocked, check browser permissions or switch to 'Upload Photo File').</p>
+								</div>
+							) : (
+								<div className="space-y-3">
+									<div className="border-2 border-dashed border-zinc-300 rounded-xl p-6 text-center hover:bg-zinc-50 transition relative">
+										<input type="file" accept="image/*" onChange={handlePhotoFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+										{enrollPhotoFile ? (
+											<img src={enrollPhotoFile} alt="Selected preview" className="max-h-48 mx-auto rounded-lg shadow-sm" />
+										) : (
+											<div>
+												<svg className="mx-auto h-10 w-10 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+													<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+												</svg>
+												<p className="mt-2 text-xs text-zinc-600 font-medium">Click or drag a clear employee face photo (.jpg, .png)</p>
+											</div>
+										)}
+									</div>
+								</div>
+							)}
+
 							<button 
 								type="button" 
 								onClick={() => void handleEnrollFace()} 
-								disabled={isEnrollScanning}
-								className="w-full mt-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-md shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+								disabled={isEnrollScanning || (enrollTab === "upload" && !enrollPhotoFile)}
+								className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
 							>
-								{isEnrollScanning ? "Saving Face..." : "Capture & Save"}
+								{isEnrollScanning ? "Saving Face..." : enrollTab === "upload" ? "Save Photo Enrolment" : "Capture & Save Camera Face"}
 							</button>
 						</div>
 					</div>
-				</div>
-			)}
+				);
+			})()}
 
 			{/* EDIT EMPLOYEE MODAL */}
 			{editingEmployee && (

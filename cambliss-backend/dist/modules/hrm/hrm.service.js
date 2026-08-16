@@ -588,8 +588,6 @@ const deleteEmployee = (employeeId, organizationId) => __awaiter(void 0, void 0,
         throw new HttpError(403, "Employee does not belong to this organization");
     }
     yield prisma_1.default.$transaction([
-        prisma_1.default.attendanceRecord.deleteMany({ where: { employeeId } }),
-        prisma_1.default.payrollRecord.deleteMany({ where: { employeeId } }),
         prisma_1.default.performanceReview.deleteMany({ where: { employeeId } }),
         prisma_1.default.employeeShift.deleteMany({ where: { employeeId } }),
         prisma_1.default.employee.delete({ where: { id: employeeId } }),
