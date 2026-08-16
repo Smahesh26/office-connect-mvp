@@ -421,8 +421,8 @@ export default function HrmPage() {
 
 	const startEnrollCamera = async () => {
 		try {
-			if (typeof window !== "undefined" && window.isSecureContext && navigator.mediaDevices?.getUserMedia) {
-				const stream = await navigator.mediaDevices.getUserMedia({ video: true }).catch(() => null);
+			if (typeof window !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+				const stream = await navigator.mediaDevices.getUserMedia({ video: true });
 				if (enrollVideoRef.current && stream) {
 					enrollVideoRef.current.srcObject = stream;
 					enrollVideoRef.current.play().catch(() => {});
@@ -431,11 +431,10 @@ export default function HrmPage() {
 					return;
 				}
 			}
-			setIsCameraBlocked(true);
-			setNotice("Webcam hardware streams require an HTTPS connection or localhost (like Google Meet). On HTTP IP servers, use 'Upload Photo File' or click 'Capture & Save'.");
-		} catch {
-			setIsCameraBlocked(true);
+		} catch (err) {
+			console.log("Webcam access attempt:", err);
 		}
+		setIsCameraBlocked(true);
 	};
 
 	useEffect(() => {
