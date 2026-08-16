@@ -17,10 +17,10 @@ jobs:
       - name: Deploy to Hostinger VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.HOSTINGER_HOST || '200.141.13.198' }}
-          username: ${{ secrets.HOSTINGER_USERNAME || 'root' }}
+          host: "200.141.13.198"
+          username: "root"
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          port: ${{ secrets.HOSTINGER_PORT || 22 }}
+          port: 22
           script: |
             echo "🚀 Starting automated deployment on Hostinger VPS..."
             
