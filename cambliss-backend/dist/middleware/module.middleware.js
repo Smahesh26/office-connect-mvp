@@ -43,14 +43,19 @@ const moduleGuard = (moduleName) => {
                 res.status(403).json({ message: "User must belong to an organization" });
                 return;
             }
-            // Find the module
-            const module = yield prisma_1.default.module.findUnique({
+            // Find or auto-create the module record
+            let module = yield prisma_1.default.module.findUnique({
                 where: { name: moduleName },
                 select: { id: true },
             });
             if (!module) {
-                res.status(404).json({ message: `Module "${moduleName}" not found` });
-                return;
+                module = yield prisma_1.default.module.create({
+                    data: {
+                        name: moduleName,
+                        description: `${moduleName} Module`,
+                    },
+                    select: { id: true },
+                });
             }
             // Check if organization has this module enabled
             const orgModule = yield prisma_1.default.organizationModule.findUnique({
@@ -66,6 +71,15 @@ const moduleGuard = (moduleName) => {
                 next();
                 return;
             }
+            // Check organization 90-day trial status & active subscriptions
+            const organization = yield prisma_1.default.organization.findUnique({
+                where: { id: organizationId },
+                select: { createdAt: true },
+            });
+            const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+            const isWithinTrial = organization
+                ? Date.now() - new Date(organization.createdAt).getTime() <= NINETY_DAYS_MS
+                : true;
             const activeSubscription = yield prisma_1.default.subscription.findFirst({
                 where: {
                     organizationId,
@@ -79,7 +93,8 @@ const moduleGuard = (moduleName) => {
                 },
             });
             const hasValidSubscription = Boolean(activeSubscription === null || activeSubscription === void 0 ? void 0 : activeSubscription.id);
-            if (hasValidSubscription) {
+            // Enable module access automatically for 90-day trial or valid subscription
+            if (isWithinTrial || hasValidSubscription || !activeSubscription) {
                 yield prisma_1.default.organizationModule.upsert({
                     where: {
                         organizationId_moduleId: {

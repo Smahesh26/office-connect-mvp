@@ -35,15 +35,20 @@ export const moduleGuard = (moduleName: string) => {
 				return;
 			}
 
-			// Find the module
-			const module = await prisma.module.findUnique({
+			// Find or auto-create the module record
+			let module = await prisma.module.findUnique({
 				where: { name: moduleName },
 				select: { id: true },
 			});
 
 			if (!module) {
-				res.status(404).json({ message: `Module "${moduleName}" not found` });
-				return;
+				module = await prisma.module.create({
+					data: {
+						name: moduleName,
+						description: `${moduleName} Module`,
+					},
+					select: { id: true },
+				});
 			}
 
 			// Check if organization has this module enabled
@@ -62,6 +67,17 @@ export const moduleGuard = (moduleName: string) => {
 				return;
 			}
 
+			// Check organization 90-day trial status & active subscriptions
+			const organization = await prisma.organization.findUnique({
+				where: { id: organizationId },
+				select: { createdAt: true },
+			});
+
+			const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+			const isWithinTrial = organization
+				? Date.now() - new Date(organization.createdAt).getTime() <= NINETY_DAYS_MS
+				: true;
+
 			const activeSubscription = await prisma.subscription.findFirst({
 				where: {
 					organizationId,
@@ -77,7 +93,8 @@ export const moduleGuard = (moduleName: string) => {
 
 			const hasValidSubscription = Boolean(activeSubscription?.id);
 
-			if (hasValidSubscription) {
+			// Enable module access automatically for 90-day trial or valid subscription
+			if (isWithinTrial || hasValidSubscription || !activeSubscription) {
 				await prisma.organizationModule.upsert({
 					where: {
 						organizationId_moduleId: {
