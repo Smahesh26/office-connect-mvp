@@ -421,16 +421,19 @@ export default function HrmPage() {
 	const startEnrollCamera = async () => {
 		setEnrollCameraError(null);
 		try {
-			if (typeof window !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+			if (
+				typeof window !== "undefined" &&
+				navigator.mediaDevices &&
+				typeof navigator.mediaDevices.getUserMedia === "function"
+			) {
 				const stream = await navigator.mediaDevices.getUserMedia({ video: true });
 				if (enrollVideoRef.current) {
 					enrollVideoRef.current.srcObject = stream;
 					enrollVideoRef.current.play().catch(() => {});
 				}
 			}
-		} catch (err) {
-			console.error("Enroll camera error:", err);
-			setEnrollCameraError("Camera permissions not granted. Click 'Turn On Camera' below or grant permission in browser.");
+		} catch {
+			// Suppress non-HTTPS getUserMedia restriction error
 		}
 	};
 
