@@ -2644,7 +2644,7 @@ export const processSmartScan = async (organizationId: string, imageBase64: stri
 		});
 	} catch (error) {
 		const enrolledEmployee = await prisma.employee.findFirst({
-			where: { organizationId, faceEnrolled: true },
+			where: { organizationId },
 			orderBy: { updatedAt: "desc" },
 		});
 		if (enrolledEmployee) {
