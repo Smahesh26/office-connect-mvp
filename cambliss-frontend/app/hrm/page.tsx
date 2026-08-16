@@ -421,22 +421,24 @@ export default function HrmPage() {
 
 	const startEnrollCamera = async () => {
 		try {
-			if (
-				typeof window !== "undefined" &&
-				navigator.mediaDevices &&
-				typeof navigator.mediaDevices.getUserMedia === "function"
-			) {
-				const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-				if (enrollVideoRef.current) {
+			if (typeof window !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+				const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).catch(() => 
+					navigator.mediaDevices.getUserMedia({ video: true })
+				);
+				
+				if (enrollVideoRef.current && stream) {
 					enrollVideoRef.current.srcObject = stream;
 					enrollVideoRef.current.play().catch(() => {});
 				}
 				setIsCameraSupported(true);
+				setIsCameraBlocked(false);
 			} else {
 				setIsCameraSupported(false);
+				setIsCameraBlocked(true);
 			}
-		} catch {
-			setIsCameraSupported(false);
+		} catch (err) {
+			console.warn("Camera access error:", err);
+			setIsCameraBlocked(true);
 		}
 	};
 
@@ -2278,36 +2280,41 @@ export default function HrmPage() {
 							{enrollTab === "camera" ? (
 								<div>
 									<div className="relative overflow-hidden rounded-xl bg-zinc-900 aspect-video shadow-inner flex flex-col items-center justify-center">
-										{isCameraSupported && !isCameraBlocked ? (
-											<>
-												<Webcam
-													ref={enrollWebcamRef}
-													audio={false}
-													screenshotFormat="image/jpeg"
-													onUserMedia={() => setIsCameraBlocked(false)}
-													onUserMediaError={() => setIsCameraBlocked(true)}
-													videoConstraints={{ width: 1280, height: 720 }}
-													className="w-full h-full object-cover"
-												/>
-												<video ref={enrollVideoRef} autoPlay playsInline muted className="hidden" />
-											</>
-										) : (
-											<div className="relative w-full h-full bg-[#121829] flex flex-col items-center justify-center p-4 text-center overflow-hidden">
-												<div className="absolute inset-0 border-2 border-indigo-500/30 rounded-xl" />
-												<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 animate-pulse" />
-												
-												<div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg border-2 border-indigo-400/50 mb-2">
-													<span className="text-white text-xl font-bold">
-														{targetEmp?.user?.firstName ? targetEmp.user.firstName.substring(0, 2).toUpperCase() : "EMP"}
-													</span>
-												</div>
+										<video ref={enrollVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+										<Webcam
+											ref={enrollWebcamRef}
+											audio={false}
+											screenshotFormat="image/jpeg"
+											onUserMedia={() => setIsCameraBlocked(false)}
+											onUserMediaError={() => setIsCameraBlocked(true)}
+											className="absolute inset-0 w-full h-full object-cover opacity-0 pointer-events-none"
+										/>
 
-												<p className="text-sm font-bold text-white">Digital Face Scanner Active</p>
-												<p className="text-xs text-indigo-300 mt-0.5 font-medium">Ready to Capture Face Profile for {empName}</p>
+										{isCameraBlocked && (
+											<div className="absolute inset-0 bg-zinc-950/85 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center z-20">
+												<div className="w-12 h-12 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-2">
+													<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+														<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+													</svg>
+												</div>
+												<p className="text-sm font-bold text-white mb-1">WebCam Stream Standby</p>
+												<p className="text-xs text-zinc-400 mb-3 max-w-xs">Click below to allow browser camera permission & start live webcam stream.</p>
 												
-												<div className="mt-2.5 flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-semibold">
-													<span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-													Face Recognition Terminal Ready
+												<div className="flex gap-2">
+													<button
+														type="button"
+														onClick={() => void startEnrollCamera()}
+														className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md transition transform active:scale-95 flex items-center gap-1.5"
+													>
+														🎥 Start Live WebCam
+													</button>
+													<button
+														type="button"
+														onClick={() => setEnrollTab("upload")}
+														className="px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold shadow-sm transition"
+													>
+														📁 Upload Photo
+													</button>
 												</div>
 											</div>
 										)}
