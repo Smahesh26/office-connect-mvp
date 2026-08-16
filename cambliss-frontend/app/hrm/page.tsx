@@ -2062,19 +2062,18 @@ export default function HrmPage() {
 									<p className="text-xs text-zinc-500">Year</p>
 									<input type="number" min={2000} max={2100} value={year} onChange={(event) => setYear(Number(event.target.value || new Date().getFullYear()))} className="rounded-lg border border-zinc-300 px-2 py-1 text-sm" />
 								</div>
-								<input value={payrollSearch} onChange={(event) => setPayrollSearch(event.target.value)} placeholder="Search employee" className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" />
 								<button type="button" onClick={() => void refreshDashboards()} disabled={isRefreshingDash} className="rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white">{isRefreshingDash ? "Refreshing..." : "Refresh"}</button>
 								<button type="button" onClick={() => void handleExportPayrollRegister()} disabled={isExportingPayroll} className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">{isExportingPayroll ? "Exporting..." : "Export Register"}</button>
 							</div>
 							<div className="mt-3 flex flex-wrap items-center gap-2">
-								<select value={payrollEmployeeId} onChange={(event) => setPayrollEmployeeId(event.target.value)} className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm">
+								<select value={payrollEmployeeId} onChange={(event) => setPayrollEmployeeId(event.target.value)} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium">
 									<option value="">Select Employee for Payroll</option>
 									{employees.map((employee) => (
-										<option key={employee.id} value={employee.id}>{employee.user?.firstName || employee.employeeCode} ({employee.employeeCode})</option>
+										<option key={employee.id} value={employee.id}>{employee.user?.firstName || employee.employeeCode} {employee.user?.lastName || ""} ({employee.employeeCode})</option>
 									))}
 								</select>
-								<button type="button" onClick={() => void handleGeneratePayroll()} disabled={isGeneratingPayroll} className="rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white">{isGeneratingPayroll ? "Generating..." : "Generate Payroll"}</button>
-								<button type="button" onClick={() => void handleBulkGeneratePayroll()} disabled={isBulkGeneratingPayroll} className="rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700">{isBulkGeneratingPayroll ? "Running..." : "Bulk Generate"}</button>
+								<button type="button" onClick={() => void handleGeneratePayroll()} disabled={isGeneratingPayroll} className="rounded-lg border border-zinc-900 bg-zinc-900 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-zinc-800">{isGeneratingPayroll ? "Generating..." : "Generate Payroll"}</button>
+								<button type="button" onClick={() => void handleBulkGeneratePayroll()} disabled={isBulkGeneratingPayroll} className="rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-1.5 text-xs font-bold text-indigo-700 shadow-sm hover:bg-indigo-100">{isBulkGeneratingPayroll ? "Running..." : "Bulk Generate"}</button>
 							</div>
 							<div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
 								{[
@@ -2109,22 +2108,30 @@ export default function HrmPage() {
 									</thead>
 									<tbody className="divide-y divide-zinc-100 bg-white">
 										{payrollRegister.map((record) => (
-											<tr key={record.id}>
-												<td className="px-3 py-2 text-zinc-700">{record.employee.user?.firstName || record.employee.employeeCode} ({record.employee.employeeCode})</td>
-												<td className="px-3 py-2 text-zinc-700">{record.grossSalary}</td>
-												<td className="px-3 py-2 text-zinc-700">{record.netSalary}</td>
-												<td className="px-3 py-2 text-zinc-700">{record.finalNetSalary}</td>
-												<td className="px-3 py-2 text-zinc-700">{record.status}</td>
-												<td className="px-3 py-2 text-zinc-700">{record.paymentStatus} {record.paymentReconciled ? "(Reconciled)" : ""}</td>
-												<td className="px-3 py-2 text-zinc-700">
-													<div className="flex flex-wrap gap-1">
-														<button type="button" onClick={() => void updatePayrollStatus(record.id, "APPROVED")} className="rounded border border-zinc-300 px-2 py-1">Approve</button>
-														<button type="button" onClick={() => void updatePayrollStatus(record.id, "PAID")} className="rounded border border-zinc-300 px-2 py-1">Mark Paid</button>
-														<button type="button" onClick={() => void updatePayrollStatus(record.id, "LOCKED")} className="rounded border border-zinc-300 px-2 py-1">Lock</button>
-														<button type="button" onClick={() => void openPayrollAdjustments(record)} className="rounded border border-zinc-300 px-2 py-1">Adjust</button>
-														<button type="button" onClick={() => void markPayrollPayment(record)} className="rounded border border-zinc-300 px-2 py-1">Payment</button>
-														<button type="button" onClick={() => void reconcilePayroll(record, !record.paymentReconciled)} className="rounded border border-zinc-300 px-2 py-1">Reconcile</button>
-														<button type="button" onClick={() => downloadPayslipPdf(record.id)} className="rounded border border-zinc-300 px-2 py-1">PDF</button>
+											<tr key={record.id} className="hover:bg-zinc-50/80 transition-colors">
+												<td className="px-3 py-2.5 text-zinc-800 font-semibold">{record.employee.user?.firstName || record.employee.employeeCode} {record.employee.user?.lastName || ""} <span className="text-zinc-500 font-normal">({record.employee.employeeCode})</span></td>
+												<td className="px-3 py-2.5 text-zinc-700 font-medium">₹{record.grossSalary}</td>
+												<td className="px-3 py-2.5 text-zinc-700 font-medium">₹{record.netSalary}</td>
+												<td className="px-3 py-2.5 text-emerald-700 font-bold">₹{record.finalNetSalary}</td>
+												<td className="px-3 py-2.5">
+													<span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${record.status === 'APPROVED' ? 'bg-blue-100 text-blue-800' : record.status === 'PAID' ? 'bg-emerald-100 text-emerald-800' : record.status === 'LOCKED' ? 'bg-zinc-200 text-zinc-800' : 'bg-amber-100 text-amber-800'}`}>
+														{record.status}
+													</span>
+												</td>
+												<td className="px-3 py-2.5">
+													<span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${record.paymentStatus === 'PAID' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+														{record.paymentStatus} {record.paymentReconciled ? "✓ Reconciled" : ""}
+													</span>
+												</td>
+												<td className="px-3 py-2.5">
+													<div className="flex flex-wrap items-center gap-1.5">
+														<button type="button" onClick={() => void updatePayrollStatus(record.id, "APPROVED")} className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition shadow-2xs">Approve</button>
+														<button type="button" onClick={() => void updatePayrollStatus(record.id, "PAID")} className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition shadow-2xs">Mark Paid</button>
+														<button type="button" onClick={() => void updatePayrollStatus(record.id, "LOCKED")} className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-zinc-800 text-zinc-100 hover:bg-zinc-900 transition shadow-2xs">Lock</button>
+														<button type="button" onClick={() => void openPayrollAdjustments(record)} className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition shadow-2xs">Adjust</button>
+														<button type="button" onClick={() => void markPayrollPayment(record)} className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition shadow-2xs">Payment</button>
+														<button type="button" onClick={() => void reconcilePayroll(record, !record.paymentReconciled)} className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition shadow-2xs">Reconcile</button>
+														<button type="button" onClick={() => downloadPayslipPdf(record.id)} className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition shadow-2xs">📄 PDF</button>
 													</div>
 												</td>
 											</tr>
