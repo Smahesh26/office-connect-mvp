@@ -764,6 +764,25 @@ export default function HrmPage() {
 		}
 	};
 
+	const handleDeleteEmployee = async (employeeId: string) => {
+		if (!window.confirm("Are you sure you want to delete this employee? This action cannot be undone.")) return;
+		try {
+			const headers = getAuthHeaders();
+			const response = await fetch(`/api/hrm/employees/${employeeId}`, {
+				method: "DELETE",
+				headers,
+			});
+			if (!response.ok) {
+				setNotice(await getApiErrorMessage(response, "Failed to delete employee."));
+				return;
+			}
+			await loadAll();
+			setNotice("Employee deleted successfully.");
+		} catch {
+			setNotice("Unable to delete employee.");
+		}
+	};
+
 	const handleChangeEmployeeStatus = async (employeeId: string) => {
 		const status = window.prompt("New status (ACTIVE, RESIGNED, TERMINATED, ON_LEAVE)", "ACTIVE");
 		if (!status) {
@@ -1672,6 +1691,7 @@ export default function HrmPage() {
 										<p className="text-[11px] text-zinc-500">Manager: {employee.manager?.employeeCode || "Not assigned"}</p>
 										<div className="mt-2 flex flex-wrap gap-1">
 											<button type="button" onClick={() => setEditingEmployee(employee)} className="rounded-md border border-zinc-300 px-2 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-100">Edit</button>
+											<button type="button" onClick={() => void handleDeleteEmployee(employee.id)} className="rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100">Delete</button>
 											<button type="button" onClick={() => void handleChangeEmployeeStatus(employee.id)} className="rounded-md border border-zinc-300 px-2 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-100">Status</button>
 											<button type="button" onClick={() => void handleAssignManager(employee.id)} className="rounded-md border border-zinc-300 px-2 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-100">Assign Manager</button>
 											<button type="button" onClick={() => setEnrollingEmployee(employee.id)} className="rounded-md border border-zinc-300 bg-zinc-900 px-2 py-1 text-[11px] font-semibold text-white hover:bg-zinc-800">Enroll Face</button>

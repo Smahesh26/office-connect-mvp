@@ -43,6 +43,7 @@ import {
 	updatePayrollStatusController,
 	updateSalaryComponentController,
 	updateEmployeeController,
+	deleteEmployeeController,
 	enrollFaceController,
 } from "./hrm.controller";
 
@@ -62,6 +63,7 @@ hrmRouter.post("/employees", createEmployeeController);
 hrmRouter.get("/employees", getEmployeesController);
 hrmRouter.get("/employees/:employeeId", getEmployeeByIdController);
 hrmRouter.put("/employees/:employeeId", updateEmployeeController);
+hrmRouter.delete("/employees/:employeeId", deleteEmployeeController);
 hrmRouter.put("/employees/:employeeId/status", changeEmployeeStatusController);
 hrmRouter.put("/employees/:employeeId/manager", assignManagerController);
 hrmRouter.post("/employees/:employeeId/enroll-face", enrollFaceController);

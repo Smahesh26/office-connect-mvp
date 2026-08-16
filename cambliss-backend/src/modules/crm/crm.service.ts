@@ -2650,6 +2650,7 @@ export const resetCrmData = async (organizationId: string) => {
 		const deletedLeads = await tx.lead.deleteMany({ where: { organizationId } });
 		const deletedStages = await tx.stage.deleteMany({ where: { pipeline: { organizationId } } });
 		const deletedPipelines = await tx.pipeline.deleteMany({ where: { organizationId } });
+		const deletedContacts = await tx.contact.deleteMany({ where: { organizationId } });
 
 		return {
 			deletedActivities: deletedActivities.count,
@@ -2658,11 +2659,12 @@ export const resetCrmData = async (organizationId: string) => {
 			deletedLeads: deletedLeads.count,
 			deletedStages: deletedStages.count,
 			deletedPipelines: deletedPipelines.count,
+			deletedContacts: deletedContacts.count,
 		};
 	});
 
 	return {
-		message: "CRM data deleted successfully",
+		message: "Entire CRM data reset successfully",
 		...result,
 	};
 };

@@ -41,6 +41,7 @@ import {
 	updateSalaryComponent,
 	deleteSalaryComponent,
 	updateEmployee,
+	deleteEmployee,
 	processSmartScan,
 	enrollFace,
 } from "./hrm.service";
@@ -925,6 +926,21 @@ export const getOrganizationHierarchyController = async (req: Request, res: Resp
 
 		const hierarchy = await getOrganizationHierarchy(req.user.organizationId);
 		res.status(200).json(hierarchy);
+	} catch (error) {
+		handleControllerError(res, error);
+	}
+};
+
+export const deleteEmployeeController = async (req: Request, res: Response): Promise<void> => {
+	try {
+		if (!req.user?.organizationId) {
+			res.status(401).json({ message: "Unauthorized" });
+			return;
+		}
+
+		const { employeeId } = req.params;
+		await deleteEmployee(employeeId, req.user.organizationId);
+		res.status(200).json({ message: "Employee deleted successfully" });
 	} catch (error) {
 		handleControllerError(res, error);
 	}

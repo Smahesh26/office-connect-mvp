@@ -2062,6 +2062,18 @@ export default function CrmPage() {
 								))}
 							</div>
 						</div>
+						<div className="rounded-xl border border-rose-200 bg-rose-50/50 p-4 shadow-sm">
+							<p className="text-sm font-semibold text-rose-900">⚠️ Danger Zone: Reset CRM Data</p>
+							<p className="mt-1 text-xs text-rose-700">Permanently wipe all leads, deals, pipeline stages, support cases, marketing campaigns, and contacts for your organization.</p>
+							<button
+								type="button"
+								onClick={() => void handleResetCrmData()}
+								disabled={isResettingCrm || isLoading}
+								className="mt-3 rounded-lg border border-rose-300 bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-700 shadow-sm disabled:opacity-60"
+							>
+								{isResettingCrm ? "Deleting..." : "Reset Entire CRM Data"}
+							</button>
+						</div>
 					</div>
 				) : null}
 

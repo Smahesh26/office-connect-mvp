@@ -716,6 +716,31 @@ export const updateEmployee = async (
 	};
 };
 
+export const deleteEmployee = async (employeeId: string, organizationId: string) => {
+	const employee = await prisma.employee.findUnique({
+		where: { id: employeeId },
+		select: { id: true, organizationId: true },
+	});
+
+	if (!employee) {
+		throw new HttpError(404, "Employee not found");
+	}
+
+	if (employee.organizationId !== organizationId) {
+		throw new HttpError(403, "Employee does not belong to this organization");
+	}
+
+	await prisma.$transaction([
+		prisma.attendanceRecord.deleteMany({ where: { employeeId } }),
+		prisma.payrollRecord.deleteMany({ where: { employeeId } }),
+		prisma.performanceReview.deleteMany({ where: { employeeId } }),
+		prisma.employeeShift.deleteMany({ where: { employeeId } }),
+		prisma.employee.delete({ where: { id: employeeId } }),
+	]);
+
+	return { success: true };
+};
+
 export const changeEmployeeStatus = async (
 	employeeId: string,
 	organizationId: string,
