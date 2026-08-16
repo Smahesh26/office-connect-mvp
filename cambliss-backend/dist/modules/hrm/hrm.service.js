@@ -241,6 +241,7 @@ const parseDateInput = (value, fieldName, required = false) => {
     return parsed;
 };
 const createEmployee = (organizationId, input) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     const joinDate = parseDateInput(input.joinDate, "joinDate", true);
     const confirmationDate = parseDateInput(input.confirmationDate, "confirmationDate");
     const dateOfBirth = parseDateInput(input.dateOfBirth, "dateOfBirth");
@@ -314,12 +315,38 @@ const createEmployee = (organizationId, input) => __awaiter(void 0, void 0, void
             });
         }
     }
-    // Validate all org-scoped relations belong to this org
-    if (input.departmentId) {
-        yield validateDepartmentExists(input.departmentId, organizationId);
+    let departmentId = input.departmentId;
+    if (!departmentId && ((_a = input.departmentName) === null || _a === void 0 ? void 0 : _a.trim())) {
+        const deptName = String(input.departmentName).trim();
+        let dept = yield prisma_1.default.department.findFirst({
+            where: { organizationId, name: deptName },
+        });
+        if (!dept) {
+            dept = yield prisma_1.default.department.create({
+                data: { organizationId, name: deptName },
+            });
+        }
+        departmentId = dept.id;
     }
-    if (input.designationId) {
-        yield validateDesignationExists(input.designationId, organizationId);
+    let designationId = input.designationId;
+    if (!designationId && ((_b = input.designationTitle) === null || _b === void 0 ? void 0 : _b.trim())) {
+        const desigTitle = String(input.designationTitle).trim();
+        let desig = yield prisma_1.default.designation.findFirst({
+            where: { organizationId, title: desigTitle },
+        });
+        if (!desig) {
+            desig = yield prisma_1.default.designation.create({
+                data: { organizationId, title: desigTitle },
+            });
+        }
+        designationId = desig.id;
+    }
+    // Validate all org-scoped relations belong to this org
+    if (departmentId) {
+        yield validateDepartmentExists(departmentId, organizationId);
+    }
+    if (designationId) {
+        yield validateDesignationExists(designationId, organizationId);
     }
     if (input.teamId) {
         yield validateTeamExists(input.teamId, organizationId);
@@ -336,8 +363,8 @@ const createEmployee = (organizationId, input) => __awaiter(void 0, void 0, void
             organizationId,
             employeeCode: input.employeeCode,
             userId: finalUserId,
-            departmentId: input.departmentId,
-            designationId: input.designationId,
+            departmentId,
+            designationId,
             teamId: input.teamId,
             locationId: input.locationId,
             managerId: input.managerId,

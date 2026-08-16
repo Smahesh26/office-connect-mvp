@@ -276,13 +276,26 @@ const parseCSV = (text: string) => {
 	return { headers, rows };
 };
 
+const parseSalaryNumber = (val: any): number => {
+	if (typeof val === "number") return isNaN(val) ? 0 : val;
+	if (!val) return 0;
+	const cleanStr = String(val).replace(/[^0-9.]/g, "");
+	const num = parseFloat(cleanStr);
+	return isNaN(num) ? 0 : num;
+};
+
 const IMPORT_MODULE_FIELDS = {
 	employees: [
 		{ key: "employeeCode", label: "Employee Code", required: true, aliases: ["employeecode", "empcode", "emp code", "emp id", "empid", "employee id", "employeeid", "staff id", "staffid", "id"] },
-		{ key: "firstName", label: "First Name", required: true, aliases: ["firstname", "first", "fname", "frstname", "given name", "givenname", "forename"] },
+		{ key: "firstName", label: "First Name", required: true, aliases: ["firstname", "first", "fname", "frstname", "given name", "givenname", "forename", "name", "fullname", "full name", "employee name"] },
 		{ key: "lastName", label: "Last Name", required: false, aliases: ["lastname", "last", "lname", "surname", "family name", "familyname"] },
 		{ key: "email", label: "Email Address", required: true, aliases: ["email", "emailaddress", "e-mail", "email id", "emailid", "mail", "work email"] },
 		{ key: "salary", label: "Salary", required: false, aliases: ["salary", "pay", "ctc", "gross salary", "grosssalary", "basic", "wages", "compensation"] },
+		{ key: "departmentName", label: "Department", required: false, aliases: ["department", "dept", "department name", "dept name", "division"] },
+		{ key: "designationTitle", label: "Designation", required: false, aliases: ["designation", "title", "job title", "role", "position", "designation title"] },
+		{ key: "phone", label: "Phone Number", required: false, aliases: ["phone", "phone number", "mobile", "mobile number", "contact", "contact number", "tel"] },
+		{ key: "workMode", label: "Work Mode", required: false, aliases: ["work mode", "workmode", "mode", "location mode", "workplace"] },
+		{ key: "employmentType", label: "Employment Type", required: false, aliases: ["employment type", "employmenttype", "type", "job type", "emp type"] },
 	],
 	attendance: [
 		{ key: "employeeCode", label: "Employee Code", required: true, aliases: ["employeecode", "empcode", "emp code", "emp id", "empid", "employee id", "employeeid"] },
@@ -1222,14 +1235,26 @@ export default function HrmPage() {
 
 			if (importModule === "employees") {
 				const promises = importData.map(async (row) => {
+					const rawSalary = columnMapping.salary?.csvColumn ? row[columnMapping.salary.csvColumn] : columnMapping.salary?.defaultValue;
+					const parsedSalary = parseSalaryNumber(rawSalary);
+
+					const deptVal = columnMapping.departmentName?.csvColumn ? row[columnMapping.departmentName.csvColumn] : columnMapping.departmentName?.defaultValue;
+					const desigVal = columnMapping.designationTitle?.csvColumn ? row[columnMapping.designationTitle.csvColumn] : columnMapping.designationTitle?.defaultValue;
+					const phoneVal = columnMapping.phone?.csvColumn ? row[columnMapping.phone.csvColumn] : columnMapping.phone?.defaultValue;
+					const modeVal = columnMapping.workMode?.csvColumn ? row[columnMapping.workMode.csvColumn] : columnMapping.workMode?.defaultValue;
+					const empTypeVal = columnMapping.employmentType?.csvColumn ? row[columnMapping.employmentType.csvColumn] : columnMapping.employmentType?.defaultValue;
+
 					const payload = {
-						firstName: (columnMapping.firstName.csvColumn ? row[columnMapping.firstName.csvColumn] : columnMapping.firstName.defaultValue) || "",
-						lastName: (columnMapping.lastName.csvColumn ? row[columnMapping.lastName.csvColumn] : columnMapping.lastName.defaultValue) || "",
-						email: (columnMapping.email.csvColumn ? row[columnMapping.email.csvColumn] : columnMapping.email.defaultValue) || "",
-						employeeCode: (columnMapping.employeeCode.csvColumn ? row[columnMapping.employeeCode.csvColumn] : columnMapping.employeeCode.defaultValue) || "",
-						employmentType: "FULL_TIME",
-						workMode: "ON_SITE",
-						salary: Number(columnMapping.salary?.csvColumn ? row[columnMapping.salary.csvColumn] : columnMapping.salary?.defaultValue) || 0,
+						firstName: (columnMapping.firstName?.csvColumn ? row[columnMapping.firstName.csvColumn] : columnMapping.firstName?.defaultValue) || "",
+						lastName: (columnMapping.lastName?.csvColumn ? row[columnMapping.lastName.csvColumn] : columnMapping.lastName?.defaultValue) || "",
+						email: (columnMapping.email?.csvColumn ? row[columnMapping.email.csvColumn] : columnMapping.email?.defaultValue) || "",
+						employeeCode: (columnMapping.employeeCode?.csvColumn ? row[columnMapping.employeeCode.csvColumn] : columnMapping.employeeCode?.defaultValue) || "",
+						employmentType: empTypeVal || "FULL_TIME",
+						workMode: modeVal || "OFFICE",
+						salary: parsedSalary,
+						phone: phoneVal || undefined,
+						departmentName: deptVal || undefined,
+						designationTitle: desigVal || undefined,
 						joinDate: new Date().toISOString(),
 					};
 					return fetch("/api/hrm/employees", {

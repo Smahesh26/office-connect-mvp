@@ -434,13 +434,41 @@ export const createEmployee = async (organizationId: string, input: CreateEmploy
 		}
 	}
 
-	// Validate all org-scoped relations belong to this org
-	if (input.departmentId) {
-		await validateDepartmentExists(input.departmentId, organizationId);
+	let departmentId = input.departmentId;
+	if (!departmentId && (input as any).departmentName?.trim()) {
+		const deptName = String((input as any).departmentName).trim();
+		let dept = await prisma.department.findFirst({
+			where: { organizationId, name: deptName },
+		});
+		if (!dept) {
+			dept = await prisma.department.create({
+				data: { organizationId, name: deptName },
+			});
+		}
+		departmentId = dept.id;
 	}
 
-	if (input.designationId) {
-		await validateDesignationExists(input.designationId, organizationId);
+	let designationId = input.designationId;
+	if (!designationId && (input as any).designationTitle?.trim()) {
+		const desigTitle = String((input as any).designationTitle).trim();
+		let desig = await prisma.designation.findFirst({
+			where: { organizationId, title: desigTitle },
+		});
+		if (!desig) {
+			desig = await prisma.designation.create({
+				data: { organizationId, title: desigTitle },
+			});
+		}
+		designationId = desig.id;
+	}
+
+	// Validate all org-scoped relations belong to this org
+	if (departmentId) {
+		await validateDepartmentExists(departmentId, organizationId);
+	}
+
+	if (designationId) {
+		await validateDesignationExists(designationId, organizationId);
 	}
 
 	if (input.teamId) {
@@ -461,8 +489,8 @@ export const createEmployee = async (organizationId: string, input: CreateEmploy
 			organizationId,
 			employeeCode: input.employeeCode,
 			userId: finalUserId,
-			departmentId: input.departmentId,
-			designationId: input.designationId,
+			departmentId,
+			designationId,
 			teamId: input.teamId,
 			locationId: input.locationId,
 			managerId: input.managerId,
