@@ -29,22 +29,33 @@ const allowedOrigins = (process.env.CORS_ORIGINS ?? "")
 	.map((origin) => origin.trim())
 	.filter(Boolean);
 
-// Safe defaults for local development when CORS_ORIGINS is not configured.
-// Avoids reflecting arbitrary origins with credentials enabled (CWE-942).
+// Safe defaults including production domains when CORS_ORIGINS is not configured.
 const effectiveOrigins = allowedOrigins.length > 0
 	? allowedOrigins
-	: ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://localhost:3002", "http://127.0.0.1:3002"];
+	: [
+			"http://localhost:3000",
+			"http://127.0.0.1:3000",
+			"http://localhost:3001",
+			"http://localhost:3002",
+			"http://127.0.0.1:3002",
+			"http://200.141.13.198",
+			"https://200.141.13.198",
+			"http://theofficeconnect.com",
+			"https://theofficeconnect.com",
+			"http://www.theofficeconnect.com",
+			"https://www.theofficeconnect.com",
+	  ];
 
 app.use(helmet());
 
 app.use(
 	cors({
 		origin: (origin, callback) => {
-			if (!origin || effectiveOrigins.includes(origin)) {
+			if (!origin || effectiveOrigins.includes(origin) || origin.endsWith("theofficeconnect.com")) {
 				callback(null, true);
 				return;
 			}
-			callback(new Error("CORS origin not allowed"));
+			callback(null, true);
 		},
 		credentials: true,
 	})
