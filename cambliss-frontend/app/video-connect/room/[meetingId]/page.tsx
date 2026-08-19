@@ -72,13 +72,23 @@ export default function VideoMeetingRoomPage() {
 		[meetingId, searchParams, defaultStart],
 	);
 
-	// Default display name based on host param if guest hasn't typed anything
+	// Differentiate Host vs Guest display name
 	useEffect(() => {
-		if (!displayName) {
-			const hostParam = searchParams.get("host");
-			setDisplayName(hostParam ? `${hostParam} (Host)` : "Guest User");
+		if (typeof window === "undefined") return;
+		const authUser = localStorage.getItem("authUser");
+		if (authUser) {
+			try {
+				const parsed = JSON.parse(authUser) as { firstName?: string; name?: string; email?: string };
+				const name = parsed.firstName || parsed.name || parsed.email?.split("@")[0];
+				if (name) {
+					setDisplayName(`${name} (Host)`);
+					return;
+				}
+			} catch {}
 		}
-	}, [searchParams, displayName]);
+		// Unauthenticated Guest Participant
+		setDisplayName("");
+	}, []);
 
 	const meetingUrl = useMemo(() => {
 		if (typeof window === "undefined" || !isMounted) {

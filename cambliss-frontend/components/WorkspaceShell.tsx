@@ -196,9 +196,17 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
 	};
 
 	useEffect(() => {
+		const isPublicRoomPath = pathname.startsWith("/video-connect/room/");
 		const token = localStorage.getItem("authToken");
-		if (!token) {
+
+		if (!token && !isPublicRoomPath) {
 			router.replace("/login");
+			return;
+		}
+
+		if (!token) {
+			setAuthRole(null);
+			setAuthAccesses([]);
 			return;
 		}
 
@@ -217,7 +225,7 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
 			setAuthRole(getRoleFromToken(token));
 			setAuthAccesses([]);
 		}
-	}, [router]);
+	}, [pathname, router]);
 
 	useEffect(() => {
 		if (!ENABLE_ONBOARDING_REDIRECT) {
@@ -340,6 +348,10 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
 		const [baseHref, hashPart] = item.href.split("#");
 		return pathname === baseHref && currentHash === `#${hashPart}`;
 	});
+
+	if (pathname.startsWith("/video-connect/room/")) {
+		return <div className="min-h-screen bg-[#f8faff] text-[#1f2430]">{children}</div>;
+	}
 
 	return (
 		<div className="flex h-screen overflow-hidden bg-[#eef2fa] text-[#1f2430]">
