@@ -349,7 +349,9 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
 		return pathname === baseHref && currentHash === `#${hashPart}`;
 	});
 
-	if (pathname.startsWith("/video-connect/room/")) {
+	const isGuestUser = typeof window !== "undefined" && !localStorage.getItem("authToken");
+
+	if (pathname.startsWith("/video-connect/room/") && isGuestUser) {
 		return <div className="min-h-screen bg-[#f8faff] text-[#1f2430]">{children}</div>;
 	}
 

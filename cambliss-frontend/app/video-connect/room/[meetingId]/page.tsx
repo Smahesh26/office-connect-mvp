@@ -72,7 +72,7 @@ export default function VideoMeetingRoomPage() {
 		[meetingId, searchParams, defaultStart],
 	);
 
-	// Differentiate Host vs Guest display name
+	// Differentiate Host vs Guest display name & auto-join logged in Host
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		const authUser = localStorage.getItem("authUser");
@@ -82,11 +82,12 @@ export default function VideoMeetingRoomPage() {
 				const name = parsed.firstName || parsed.name || parsed.email?.split("@")[0];
 				if (name) {
 					setDisplayName(`${name} (Host)`);
+					void enableDevicesAndJoin();
 					return;
 				}
 			} catch {}
 		}
-		// Unauthenticated Guest Participant
+		// Unauthenticated Guest Participant -> Stay in Pre-Join Lobby
 		setDisplayName("");
 	}, []);
 
