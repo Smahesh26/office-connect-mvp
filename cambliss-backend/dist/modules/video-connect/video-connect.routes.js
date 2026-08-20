@@ -24,10 +24,15 @@ function cleanupStaleParticipants(room) {
         }
     }
 }
+function extractMeetingId(param) {
+    if (Array.isArray(param))
+        return param[0] || "";
+    return param || "";
+}
 const router = (0, express_1.Router)();
 // Heartbeat & Presence Sync Route
 router.post("/room/:meetingId/sync", (req, res) => {
-    const { meetingId } = req.params;
+    const meetingId = extractMeetingId(req.params.meetingId);
     const { participantId, name, isHost, audioEnabled, videoEnabled } = req.body;
     if (!meetingId || !participantId) {
         res.status(400).json({ message: "Missing meetingId or participantId" });
@@ -57,7 +62,7 @@ router.post("/room/:meetingId/sync", (req, res) => {
 });
 // Leave Meeting Route
 router.post("/room/:meetingId/leave", (req, res) => {
-    const { meetingId } = req.params;
+    const meetingId = extractMeetingId(req.params.meetingId);
     const { participantId } = req.body;
     if (meetingId && participantId && rooms.has(meetingId)) {
         const room = rooms.get(meetingId);
@@ -67,12 +72,12 @@ router.post("/room/:meetingId/leave", (req, res) => {
 });
 // Fetch & Send Chat Messages
 router.get("/room/:meetingId/chat", (req, res) => {
-    const { meetingId } = req.params;
+    const meetingId = extractMeetingId(req.params.meetingId);
     const room = getOrCreateRoom(meetingId);
     res.json({ messages: room.messages });
 });
 router.post("/room/:meetingId/chat", (req, res) => {
-    const { meetingId } = req.params;
+    const meetingId = extractMeetingId(req.params.meetingId);
     const { sender, text } = req.body;
     if (!text || !text.trim()) {
         res.status(400).json({ message: "Text is required" });

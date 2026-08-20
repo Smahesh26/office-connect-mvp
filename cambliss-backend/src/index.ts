@@ -65,6 +65,10 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+// Public Video Connect signaling routes (No auth token required for guest access)
+app.use("/api/video-connect", videoConnectRoutes);
+
 app.use("/api/admin", adminRoutes);
 app.use("/api/accounting", accountingRoutes);
 app.use("/api/crm", crmRoutes);
@@ -82,7 +86,6 @@ app.use("/api/gst", gstRoutes);
 app.use("/api/ai/insights", aiInsightsRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/user-management", userManagementRoutes);
-app.use("/api/video-connect", videoConnectRoutes);
 
 // Centralized error handler: prevents leaking stack traces / internals to clients
 // (OWASP A05 Security Misconfiguration / A09 Logging & Monitoring). Details are
