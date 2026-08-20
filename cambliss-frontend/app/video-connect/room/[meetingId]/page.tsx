@@ -27,6 +27,15 @@ type ChatMessage = {
 	time: string;
 };
 
+type RemoteParticipant = {
+	id: string;
+	name: string;
+	isHost: boolean;
+	audioEnabled: boolean;
+	videoEnabled: boolean;
+	lastSeen: number;
+};
+
 export default function VideoMeetingRoomPage() {
 	const params = useParams<{ meetingId: string }>();
 	const searchParams = useSearchParams();
@@ -37,6 +46,7 @@ export default function VideoMeetingRoomPage() {
 
 	const [displayName, setDisplayName] = useState("");
 	const [isHost, setIsHost] = useState(false);
+	const [myId] = useState(() => `user_${Math.random().toString(36).substring(2, 9)}`);
 	const [joined, setJoined] = useState(false);
 	const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
 	const [mediaState, setMediaState] = useState<"idle" | "loading" | "ready" | "blocked">("idle");
@@ -54,6 +64,8 @@ export default function VideoMeetingRoomPage() {
 	const [chatInput, setChatInput] = useState("");
 	const [copyNotice, setCopyNotice] = useState(false);
 	const [timerSeconds, setTimerSeconds] = useState(0);
+
+	const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipant[]>([]);
 
 	const [isMounted, setIsMounted] = useState(false);
 	useEffect(() => {
@@ -118,6 +130,64 @@ export default function VideoMeetingRoomPage() {
 		setCopyNotice(true);
 		setTimeout(() => setCopyNotice(false), 2500);
 	};
+
+	// Real-Time Dynamic Participant Presence Tracking (Google Meet Style)
+	useEffect(() => {
+		if (typeof window === "undefined" || !meetingId || !joined) return;
+
+		const channelName = `video_connect_presence_${meetingId}`;
+		const channel = new BroadcastChannel(channelName);
+
+		const broadcastMyPresence = () => {
+			channel.postMessage({
+				type: "PRESENCE_PING",
+				participant: {
+					id: myId,
+					name: displayName || (isHost ? invite.hostName : "Guest"),
+					isHost,
+					audioEnabled,
+					videoEnabled,
+					lastSeen: Date.now(),
+				},
+			});
+		};
+
+		// Broadcast immediately upon joining & every 2 seconds
+		broadcastMyPresence();
+		const interval = setInterval(broadcastMyPresence, 2000);
+
+		channel.onmessage = (event) => {
+			if (event.data?.type === "PRESENCE_PING" && event.data.participant) {
+				const incoming: RemoteParticipant = event.data.participant;
+				if (incoming.id === myId) return;
+
+				setRemoteParticipants((prev) => {
+					const existingIndex = prev.findIndex((p) => p.id === incoming.id);
+					if (existingIndex >= 0) {
+						const updated = [...prev];
+						updated[existingIndex] = incoming;
+						return updated;
+					}
+					return [...prev, incoming];
+				});
+			} else if (event.data?.type === "PRESENCE_LEAVE" && event.data.id) {
+				setRemoteParticipants((prev) => prev.filter((p) => p.id !== event.data.id));
+			}
+		};
+
+		// Cleanup stale participants who haven't pinged in > 6 seconds
+		const cleanupInterval = setInterval(() => {
+			const now = Date.now();
+			setRemoteParticipants((prev) => prev.filter((p) => now - p.lastSeen < 6000));
+		}, 3000);
+
+		return () => {
+			channel.postMessage({ type: "PRESENCE_LEAVE", id: myId });
+			channel.close();
+			clearInterval(interval);
+			clearInterval(cleanupInterval);
+		};
+	}, [joined, meetingId, myId, displayName, isHost, audioEnabled, videoEnabled, invite.hostName]);
 
 	// Real-Time Cross-Tab / Cross-Window Chat Sync via BroadcastChannel & Storage
 	useEffect(() => {
@@ -301,6 +371,8 @@ export default function VideoMeetingRoomPage() {
 		setTimerSeconds(0);
 	};
 
+	const totalParticipantsCount = 1 + remoteParticipants.length;
+
 	return (
 		<WorkspaceShell>
 			{!joined ? (
@@ -455,7 +527,7 @@ export default function VideoMeetingRoomPage() {
 								onClick={() => setActiveTab(activeTab === "participants" ? null : "participants")}
 								className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${activeTab === "participants" ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"}`}
 							>
-								<span>👥</span> Participants
+								<span>👥</span> Participants ({totalParticipantsCount})
 							</button>
 							<button
 								type="button"
@@ -488,77 +560,121 @@ export default function VideoMeetingRoomPage() {
 						</div>
 					)}
 
-					{/* MAIN VIDEO STAGE AREA */}
-					<div className="flex-1 flex overflow-hidden relative p-4 gap-4">
-						{/* Video Grid */}
-						<div className="flex-1 grid gap-4 auto-rows-fr grid-cols-1 md:grid-cols-2 items-center justify-center max-w-6xl mx-auto w-full">
+					{/* MAIN VIDEO STAGE AREA - DYNAMIC GOOGLE MEET LAYOUT */}
+					<div className="flex-1 flex flex-col overflow-hidden relative p-4 gap-4">
+						{/* Video Grid Container */}
+						<div className="flex-1 flex flex-col items-center justify-center max-w-6xl mx-auto w-full relative">
 							
-							{/* TILE 1: HOST TILE (Bhasker) */}
-							<div className="relative h-full min-h-[240px] w-full rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col justify-between p-4 shadow-lg group">
-								<div className="flex items-center justify-between z-10">
-									<span className="text-xs font-bold bg-black/60 px-2.5 py-1 rounded-md border border-white/10 backdrop-blur-xs">
-										{invite.hostName} <span className="text-indigo-400 font-extrabold ml-1">HOST</span>
-									</span>
-									<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-										{isHost && mediaStream ? "WEBCAM LIVE" : "HOST FEED"}
-									</span>
-								</div>
+							{remoteParticipants.length === 0 ? (
+								/* ==================== 1 SINGLE FULL-SIZE TILE (HOST ALONE) ==================== */
+								<div className="relative h-full w-full max-h-[85vh] rounded-3xl border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col justify-between p-6 shadow-2xl group">
+									<div className="flex items-center justify-between z-10">
+										<span className="text-xs font-bold bg-black/60 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md flex items-center gap-2">
+											<span>{displayName || (isHost ? invite.hostName : "Participant")}</span>
+											{isHost && <span className="text-indigo-400 font-black">HOST</span>}
+											<span className="text-zinc-400 text-[10px]">(You)</span>
+										</span>
+										<span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${mediaStream ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-indigo-500/20 text-indigo-400 border-indigo-500/30"}`}>
+											{mediaStream ? "WEBCAM LIVE" : "CAMERA ACTIVE"}
+										</span>
+									</div>
 
-								{/* Video Feed if You are Host, else Host Avatar */}
-								{isHost && mediaStream && videoEnabled ? (
-									<video ref={previewRef} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
-								) : (
-									<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-indigo-950/40 to-zinc-950">
-										<div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-black border-2 border-indigo-400 shadow-xl mb-2">
-											{invite.hostName.substring(0, 2).toUpperCase()}
+									{/* Main Live Webcam Stream */}
+									{mediaStream && videoEnabled ? (
+										<video ref={previewRef} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
+									) : (
+										<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-indigo-950/40 to-zinc-950">
+											<div className="w-28 h-28 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-black border-4 border-indigo-400 shadow-2xl mb-3">
+												{(displayName || invite.hostName).substring(0, 2).toUpperCase()}
+											</div>
+											<p className="text-base font-bold text-zinc-200">{displayName || invite.hostName}</p>
+											<p className="text-xs text-zinc-400 mt-1">Ready in meeting room</p>
 										</div>
-										<p className="text-xs font-bold text-zinc-300">{invite.hostName}</p>
-										<div className="mt-2 flex items-center gap-1">
-											<span className="w-1 h-3 bg-emerald-400 rounded animate-pulse" />
-											<span className="w-1 h-4 bg-emerald-400 rounded animate-pulse delay-75" />
-											<span className="w-1 h-2 bg-emerald-400 rounded animate-pulse delay-150" />
+									)}
+
+									{/* Bottom Invite Floating Banner when alone */}
+									<div className="z-10 flex items-center justify-between bg-black/70 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 max-w-xl mx-auto w-full shadow-lg">
+										<div className="flex items-center gap-2 text-xs text-zinc-300">
+											<span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+											<span>You are the only person here. Share link to invite others:</span>
+										</div>
+										<button
+											type="button"
+											onClick={() => void copyLink()}
+											className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-xs whitespace-nowrap"
+										>
+											{copyNotice ? "Copied!" : "📋 Copy Link"}
+										</button>
+									</div>
+								</div>
+							) : (
+								/* ==================== MULTI PARTICIPANTS GRID (2+ TILES) ==================== */
+								<div className="w-full h-full grid gap-4 auto-rows-fr grid-cols-1 md:grid-cols-2 items-center justify-center">
+									{/* MY TILE */}
+									<div className="relative h-full min-h-[240px] w-full rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col justify-between p-4 shadow-lg group">
+										<div className="flex items-center justify-between z-10">
+											<span className="text-xs font-bold bg-black/60 px-2.5 py-1 rounded-md border border-white/10 backdrop-blur-xs">
+												{displayName || (isHost ? invite.hostName : "Participant")}
+												{isHost && <span className="text-indigo-400 font-extrabold ml-1">HOST</span>}
+												<span className="text-zinc-400 text-[10px] ml-1">(You)</span>
+											</span>
+											<span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${mediaStream ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-indigo-500/20 text-indigo-400 border-indigo-500/30"}`}>
+												{mediaStream ? "WEBCAM LIVE" : "CAMERA ACTIVE"}
+											</span>
+										</div>
+
+										{mediaStream && videoEnabled ? (
+											<video ref={previewRef} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
+										) : (
+											<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-indigo-950/40 to-zinc-950">
+												<div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-black border-2 border-indigo-400 shadow-xl mb-2">
+													{(displayName || invite.hostName).substring(0, 2).toUpperCase()}
+												</div>
+												<p className="text-xs font-bold text-zinc-300">{displayName || invite.hostName}</p>
+											</div>
+										)}
+
+										<div className="z-10 flex items-center gap-2">
+											<span className={`text-xs px-2.5 py-1 rounded-md border ${audioEnabled ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" : "bg-rose-500/20 text-rose-300 border-rose-500/30"}`}>
+												{audioEnabled ? "🎤 Mic On" : "🔇 Mic Muted"}
+											</span>
 										</div>
 									</div>
-								)}
 
-								<div className="z-10 flex items-center gap-2">
-									<span className="text-xs bg-black/60 px-2.5 py-1 rounded-md text-emerald-400 border border-emerald-500/30">
-										🎤 Mic Active
-									</span>
-								</div>
-							</div>
+									{/* REMOTE PARTICIPANTS TILES */}
+									{remoteParticipants.map((participant) => (
+										<div key={participant.id} className="relative h-full min-h-[240px] w-full rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col justify-between p-4 shadow-lg group">
+											<div className="flex items-center justify-between z-10">
+												<span className="text-xs font-bold bg-black/60 px-2.5 py-1 rounded-md border border-white/10 backdrop-blur-xs">
+													{participant.name}
+													{participant.isHost && <span className="text-indigo-400 font-extrabold ml-1">HOST</span>}
+												</span>
+												<span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-purple-500/20 text-purple-300 border-purple-500/30">
+													CONNECTED
+												</span>
+											</div>
 
-							{/* TILE 2: GUEST TILE (Somalingam / Participant) */}
-							<div className="relative h-full min-h-[240px] w-full rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col justify-between p-4 shadow-lg group">
-								<div className="flex items-center justify-between z-10">
-									<span className="text-xs font-bold bg-black/60 px-2.5 py-1 rounded-md border border-white/10 backdrop-blur-xs">
-										{!isHost ? `${displayName || "Guest"}` : "Guest Participant"}
-										{!isHost && <span className="text-zinc-400 text-[10px] ml-1">(You)</span>}
-									</span>
-									<span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${!isHost && mediaStream ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-purple-500/20 text-purple-400 border-purple-500/30"}`}>
-										{!isHost && mediaStream ? "WEBCAM LIVE" : "CONNECTED"}
-									</span>
-								</div>
+											<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-purple-950/40 to-zinc-950">
+												<div className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black border-2 border-purple-400 shadow-xl mb-2">
+													{participant.name.substring(0, 2).toUpperCase()}
+												</div>
+												<p className="text-xs font-bold text-zinc-300">{participant.name}</p>
+												<div className="mt-2 flex items-center gap-1">
+													<span className="w-1 h-3 bg-emerald-400 rounded animate-pulse" />
+													<span className="w-1 h-4 bg-emerald-400 rounded animate-pulse delay-75" />
+													<span className="w-1 h-2 bg-emerald-400 rounded animate-pulse delay-150" />
+												</div>
+											</div>
 
-								{/* Video Feed if You are Guest, else Guest Avatar */}
-								{!isHost && mediaStream && videoEnabled ? (
-									<video ref={previewRef} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
-								) : (
-									<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-purple-950/40 to-zinc-950">
-										<div className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black border-2 border-purple-400 shadow-xl mb-2">
-											{(!isHost && displayName) ? displayName.substring(0, 2).toUpperCase() : "GP"}
+											<div className="z-10 flex items-center gap-2">
+												<span className="text-xs px-2.5 py-1 rounded-md border bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+													🎤 Mic Active
+												</span>
+											</div>
 										</div>
-										<p className="text-xs font-bold text-zinc-300">{!isHost ? displayName : "Guest Participant"}</p>
-										<p className="text-[11px] text-zinc-400 mt-0.5">Connected to Meeting</p>
-									</div>
-								)}
-
-								<div className="z-10 flex items-center gap-2">
-									<span className={`text-xs px-2.5 py-1 rounded-md border ${audioEnabled ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" : "bg-rose-500/20 text-rose-300 border-rose-500/30"}`}>
-										{audioEnabled ? "🎤 Mic On" : "🔇 Mic Muted"}
-									</span>
+									))}
 								</div>
-							</div>
+							)}
 
 						</div>
 
@@ -567,7 +683,7 @@ export default function VideoMeetingRoomPage() {
 							<div className="w-80 rounded-2xl border border-zinc-800 bg-zinc-900 flex flex-col shadow-2xl z-20">
 								<div className="flex items-center justify-between p-3 border-b border-zinc-800">
 									<h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300">
-										{activeTab === "chat" ? "Live Meeting Chat" : "Participants"}
+										{activeTab === "chat" ? "Live Meeting Chat" : `Participants (${totalParticipantsCount})`}
 									</h2>
 									<button type="button" onClick={() => setActiveTab(null)} className="text-zinc-400 hover:text-white text-sm">
 										✕
@@ -602,35 +718,35 @@ export default function VideoMeetingRoomPage() {
 									</div>
 								) : (
 									<div className="p-3 space-y-2 overflow-y-auto flex-1 text-xs">
-										{/* Host Item */}
+										{/* My Profile Item */}
 										<div className="flex items-center justify-between p-2 rounded-xl bg-zinc-800 border border-zinc-700">
 											<div className="flex items-center gap-2">
 												<div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white">
-													{invite.hostName.substring(0, 2).toUpperCase()}
+													{(displayName || invite.hostName).substring(0, 2).toUpperCase()}
 												</div>
 												<div>
-													<p className="font-bold text-zinc-200">{invite.hostName}</p>
-													<span className="text-[10px] text-indigo-400">Meeting Host</span>
+													<p className="font-bold text-zinc-200">{displayName || invite.hostName} (You)</p>
+													<span className="text-[10px] text-indigo-400">{isHost ? "Meeting Host" : "Participant"}</span>
 												</div>
 											</div>
 											<span className="text-emerald-400">🎤</span>
 										</div>
 
-										{/* Guest Item */}
-										<div className="flex items-center justify-between p-2 rounded-xl bg-zinc-800 border border-zinc-700">
-											<div className="flex items-center gap-2">
-												<div className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center font-bold text-white">
-													{(!isHost && displayName ? displayName : "Guest").substring(0, 2).toUpperCase()}
+										{/* Remote Participants List */}
+										{remoteParticipants.map((p) => (
+											<div key={p.id} className="flex items-center justify-between p-2 rounded-xl bg-zinc-800 border border-zinc-700">
+												<div className="flex items-center gap-2">
+													<div className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center font-bold text-white">
+														{p.name.substring(0, 2).toUpperCase()}
+													</div>
+													<div>
+														<p className="font-bold text-zinc-200">{p.name}</p>
+														<span className="text-[10px] text-zinc-400">{p.isHost ? "Meeting Host" : "Participant"}</span>
+													</div>
 												</div>
-												<div>
-													<p className="font-bold text-zinc-200">{!isHost ? displayName : "Guest Participant"}</p>
-													<span className="text-[10px] text-zinc-400">Guest Participant</span>
-												</div>
+												<span className="text-emerald-400">🎤</span>
 											</div>
-											<span className={audioEnabled ? "text-emerald-400" : "text-rose-400"}>
-												{audioEnabled ? "🎤" : "🔇"}
-											</span>
-										</div>
+										))}
 									</div>
 								)}
 							</div>
