@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import WorkspaceShell from "../../components/WorkspaceShell";
 import {
@@ -21,13 +21,28 @@ const defaultStart = () => toDateTimeLocalValue(new Date(Date.now() + 30 * 60 * 
 export default function VideoConnectPage() {
 	const router = useRouter();
 	const [title, setTitle] = useState("Team meeting");
-	const [hostName, setHostName] = useState("Office Connect");
+	const [hostName, setHostName] = useState("Host");
 	const [scheduledStart, setScheduledStart] = useState(defaultStart());
 	const [durationMinutes, setDurationMinutes] = useState(30);
 	const [attendees, setAttendees] = useState("team@company.com");
 	const [notes, setNotes] = useState("Join from the meeting link. Open Google Calendar to add a reminder.");
 	const [createdInvite, setCreatedInvite] = useState<VideoMeetingInvite | null>(null);
 	const [notice, setNotice] = useState<string | null>(null);
+
+	// Automatically set host name from logged in user profile
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const authUser = localStorage.getItem("authUser");
+		if (authUser) {
+			try {
+				const parsed = JSON.parse(authUser) as { firstName?: string; name?: string; email?: string };
+				const name = parsed.firstName || parsed.name || parsed.email?.split("@")[0];
+				if (name) {
+					setHostName(name);
+				}
+			} catch {}
+		}
+	}, []);
 
 	const meetingUrl = useMemo(() => {
 		if (!createdInvite || typeof window === "undefined") {
