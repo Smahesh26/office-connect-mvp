@@ -26,6 +26,7 @@ const auth_routes_1 = __importDefault(require("./modules/auth/auth.routes"));
 const chat_routes_1 = __importDefault(require("./modules/chat/chat.routes"));
 const user_management_routes_1 = __importDefault(require("./modules/user-management/user-management.routes"));
 const tools_routes_1 = __importDefault(require("./modules/tools/tools.routes"));
+const video_connect_routes_1 = __importDefault(require("./modules/video-connect/video-connect.routes"));
 const app = (0, express_1.default)();
 const allowedOrigins = ((_a = process.env.CORS_ORIGINS) !== null && _a !== void 0 ? _a : "")
     .split(",")
@@ -78,6 +79,7 @@ app.use("/api/gst", gst_routes_1.default);
 app.use("/api/ai/insights", insights_routes_1.default);
 app.use("/api/chat", chat_routes_1.default);
 app.use("/api/user-management", user_management_routes_1.default);
+app.use("/api/video-connect", video_connect_routes_1.default);
 // Centralized error handler: prevents leaking stack traces / internals to clients
 // (OWASP A05 Security Misconfiguration / A09 Logging & Monitoring). Details are
 // logged server-side only; the response body stays generic.

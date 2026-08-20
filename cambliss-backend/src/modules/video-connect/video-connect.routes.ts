@@ -48,11 +48,16 @@ function cleanupStaleParticipants(room: RoomState) {
 	}
 }
 
+function extractMeetingId(param: string | string[] | undefined): string {
+	if (Array.isArray(param)) return param[0] || "";
+	return param || "";
+}
+
 const router = Router();
 
 // Heartbeat & Presence Sync Route
 router.post("/room/:meetingId/sync", (req: Request, res: Response) => {
-	const { meetingId } = req.params;
+	const meetingId = extractMeetingId(req.params.meetingId);
 	const { participantId, name, isHost, audioEnabled, videoEnabled } = req.body as {
 		participantId?: string;
 		name?: string;
@@ -95,7 +100,7 @@ router.post("/room/:meetingId/sync", (req: Request, res: Response) => {
 
 // Leave Meeting Route
 router.post("/room/:meetingId/leave", (req: Request, res: Response) => {
-	const { meetingId } = req.params;
+	const meetingId = extractMeetingId(req.params.meetingId);
 	const { participantId } = req.body as { participantId?: string };
 
 	if (meetingId && participantId && rooms.has(meetingId)) {
@@ -108,13 +113,13 @@ router.post("/room/:meetingId/leave", (req: Request, res: Response) => {
 
 // Fetch & Send Chat Messages
 router.get("/room/:meetingId/chat", (req: Request, res: Response) => {
-	const { meetingId } = req.params;
+	const meetingId = extractMeetingId(req.params.meetingId);
 	const room = getOrCreateRoom(meetingId);
 	res.json({ messages: room.messages });
 });
 
 router.post("/room/:meetingId/chat", (req: Request, res: Response) => {
-	const { meetingId } = req.params;
+	const meetingId = extractMeetingId(req.params.meetingId);
 	const { sender, text } = req.body as { sender?: string; text?: string };
 
 	if (!text || !text.trim()) {
