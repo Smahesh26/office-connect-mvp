@@ -62,6 +62,8 @@ app.use((0, cors_1.default)({
 app.use(express_1.default.json());
 app.use((0, cookie_parser_1.default)());
 app.use("/uploads", express_1.default.static(path_1.default.join(__dirname, "../uploads")));
+// Public Video Connect signaling routes (No auth token required for guest access)
+app.use("/api/video-connect", video_connect_routes_1.default);
 app.use("/api/admin", admin_routes_1.default);
 app.use("/api/accounting", accounting_routes_1.default);
 app.use("/api/crm", crm_routes_1.default);
@@ -79,7 +81,6 @@ app.use("/api/gst", gst_routes_1.default);
 app.use("/api/ai/insights", insights_routes_1.default);
 app.use("/api/chat", chat_routes_1.default);
 app.use("/api/user-management", user_management_routes_1.default);
-app.use("/api/video-connect", video_connect_routes_1.default);
 // Centralized error handler: prevents leaking stack traces / internals to clients
 // (OWASP A05 Security Misconfiguration / A09 Logging & Monitoring). Details are
 // logged server-side only; the response body stays generic.

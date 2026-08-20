@@ -35,6 +35,14 @@ type RemoteParticipant = {
 	videoEnabled: boolean;
 };
 
+const RTC_CONFIG: RTCConfiguration = {
+	iceServers: [
+		{ urls: "stun:stun.l.google.com:19302" },
+		{ urls: "stun:stun1.l.google.com:19302" },
+		{ urls: "stun:stun2.l.google.com:19302" },
+	],
+};
+
 export default function VideoMeetingRoomPage() {
 	const params = useParams<{ meetingId: string }>();
 	const searchParams = useSearchParams();
@@ -42,6 +50,7 @@ export default function VideoMeetingRoomPage() {
 
 	const previewRef = useRef<HTMLVideoElement | null>(null);
 	const screenRef = useRef<HTMLVideoElement | null>(null);
+	const peerConnections = useRef<{ [key: string]: RTCPeerConnection }>({});
 
 	const [displayName, setDisplayName] = useState("");
 	const [isHost, setIsHost] = useState(false);
@@ -62,9 +71,9 @@ export default function VideoMeetingRoomPage() {
 	]);
 	const [chatInput, setChatInput] = useState("");
 	const [copyNotice, setCopyNotice] = useState(false);
-	const [timerSeconds, setTimerSeconds] = useState(0);
 
 	const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipant[]>([]);
+	const [remoteStreams, setRemoteStreams] = useState<{ [key: string]: MediaStream }>({});
 
 	const [isMounted, setIsMounted] = useState(false);
 	useEffect(() => {
@@ -130,7 +139,7 @@ export default function VideoMeetingRoomPage() {
 		setTimeout(() => setCopyNotice(false), 2500);
 	};
 
-	// Backend Real-Time Room Presence & Dynamic Participant Synchronization across ANY device/IP
+	// Backend Real-Time Room Presence & Dynamic Participant Synchronization
 	useEffect(() => {
 		if (typeof window === "undefined" || !meetingId || !joined) return;
 
@@ -151,7 +160,6 @@ export default function VideoMeetingRoomPage() {
 				if (res.ok) {
 					const data = (await res.json()) as { participants: RemoteParticipant[] };
 					if (Array.isArray(data.participants)) {
-						// Filter out my own participant object to get remote participants
 						const remotes = data.participants.filter((p) => p.id !== myId);
 						setRemoteParticipants(remotes);
 					}
@@ -161,7 +169,6 @@ export default function VideoMeetingRoomPage() {
 			}
 		};
 
-		// Initial sync + poll every 2 seconds
 		void syncRoomState();
 		const interval = setInterval(() => {
 			void syncRoomState();
@@ -177,7 +184,122 @@ export default function VideoMeetingRoomPage() {
 		};
 	}, [joined, meetingId, myId, displayName, isHost, audioEnabled, videoEnabled, invite.hostName]);
 
-	// Backend Real-Time Chat Synchronization across ANY device/IP
+	// WebRTC Signaling & Real P2P Video/Audio Connection Setup
+	const sendSignal = async (targetId: string, signalData: any) => {
+		try {
+			await fetch(`/api/video-connect/room/${meetingId}/signal`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					senderId: myId,
+					targetId,
+					signal: signalData,
+				}),
+			});
+		} catch (e) {
+			console.log("Send signal error:", e);
+		}
+	};
+
+	const createPeerConnection = (targetId: string) => {
+		if (peerConnections.current[targetId]) {
+			return peerConnections.current[targetId];
+		}
+
+		const pc = new RTCPeerConnection(RTC_CONFIG);
+		peerConnections.current[targetId] = pc;
+
+		if (mediaStream) {
+			mediaStream.getTracks().forEach((track) => {
+				pc.addTrack(track, mediaStream);
+			});
+		}
+
+		pc.ontrack = (event) => {
+			if (event.streams && event.streams[0]) {
+				setRemoteStreams((prev) => ({
+					...prev,
+					[targetId]: event.streams[0],
+				}));
+			}
+		};
+
+		pc.onicecandidate = (event) => {
+			if (event.candidate) {
+				void sendSignal(targetId, { type: "candidate", candidate: event.candidate });
+			}
+		};
+
+		return pc;
+	};
+
+	// Initiate WebRTC Calls to Remote Participants
+	useEffect(() => {
+		if (!joined || remoteParticipants.length === 0) return;
+
+		remoteParticipants.forEach((p) => {
+			if (!peerConnections.current[p.id] && myId < p.id) {
+				const pc = createPeerConnection(p.id);
+				void (async () => {
+					try {
+						const offer = await pc.createOffer();
+						await pc.setLocalDescription(offer);
+						void sendSignal(p.id, { type: "offer", sdp: offer });
+					} catch (e) {
+						console.log("Create offer error:", e);
+					}
+				})();
+			}
+		});
+	}, [joined, remoteParticipants, myId, mediaStream]);
+
+	// Process Incoming WebRTC Signals (Offers, Answers, ICE Candidates)
+	useEffect(() => {
+		if (!joined || !meetingId) return;
+
+		const pollSignals = async () => {
+			try {
+				const res = await fetch(`/api/video-connect/room/${meetingId}/signal/${myId}`);
+				if (!res.ok) return;
+
+				const data = (await res.json()) as { signals: { senderId: string; signal: any }[] };
+				if (!Array.isArray(data.signals)) return;
+
+				for (const item of data.signals) {
+					const { senderId, signal } = item;
+					if (!signal) continue;
+
+					if (signal.type === "offer") {
+						const pc = createPeerConnection(senderId);
+						await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+						const answer = await pc.createAnswer();
+						await pc.setLocalDescription(answer);
+						void sendSignal(senderId, { type: "answer", sdp: answer });
+					} else if (signal.type === "answer") {
+						const pc = peerConnections.current[senderId];
+						if (pc) {
+							await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+						}
+					} else if (signal.type === "candidate") {
+						const pc = peerConnections.current[senderId];
+						if (pc && signal.candidate) {
+							await pc.addIceCandidate(new RTCIceCandidate(signal.candidate)).catch(() => {});
+						}
+					}
+				}
+			} catch (e) {
+				console.log("Poll signals error:", e);
+			}
+		};
+
+		const interval = setInterval(() => {
+			void pollSignals();
+		}, 1000);
+
+		return () => clearInterval(interval);
+	}, [joined, meetingId, myId, mediaStream]);
+
+	// Backend Real-Time Chat Synchronization
 	useEffect(() => {
 		if (typeof window === "undefined" || !meetingId || !joined) return;
 
@@ -227,7 +349,7 @@ export default function VideoMeetingRoomPage() {
 		} catch {}
 	};
 
-	// Camera Video Stream Ref Assignment
+	// Local Video Stream Assignment
 	useEffect(() => {
 		if (!previewRef.current) return;
 		previewRef.current.srcObject = mediaStream;
@@ -247,23 +369,6 @@ export default function VideoMeetingRoomPage() {
 		screenRef.current.srcObject = screenStream;
 		void screenRef.current.play().catch(() => {});
 	}, [screenStream, screenSharing]);
-
-	// Live Meeting Timer
-	useEffect(() => {
-		if (!joined) return;
-		const interval = setInterval(() => {
-			setTimerSeconds((prev) => prev + 1);
-		}, 1000);
-		return () => clearInterval(interval);
-	}, [joined]);
-
-	const formatTimer = (seconds: number) => {
-		const hrs = Math.floor(seconds / 3600);
-		const mins = Math.floor((seconds % 3600) / 60);
-		const secs = seconds % 60;
-		const pad = (n: number) => String(n).padStart(2, "0");
-		return hrs > 0 ? `${pad(hrs)}:${pad(mins)}:${pad(secs)}` : `${pad(mins)}:${pad(secs)}`;
-	};
 
 	const enableDevicesAndJoin = async () => {
 		setMediaState("loading");
@@ -314,7 +419,6 @@ export default function VideoMeetingRoomPage() {
 		setVideoEnabled(nextState);
 	};
 
-	// Real Browser Screen Sharing Implementation
 	const toggleScreenShare = async () => {
 		if (screenSharing && screenStream) {
 			screenStream.getTracks().forEach((track) => track.stop());
@@ -329,7 +433,6 @@ export default function VideoMeetingRoomPage() {
 				setScreenStream(displayStream);
 				setScreenSharing(true);
 
-				// Automatically revert when user stops sharing via browser top bar
 				displayStream.getVideoTracks()[0].onended = () => {
 					setScreenStream(null);
 					setScreenSharing(false);
@@ -343,6 +446,8 @@ export default function VideoMeetingRoomPage() {
 	};
 
 	const leaveRoom = () => {
+		Object.values(peerConnections.current).forEach((pc) => pc.close());
+		peerConnections.current = {};
 		mediaStream?.getTracks().forEach((track) => track.stop());
 		screenStream?.getTracks().forEach((track) => track.stop());
 		setMediaStream(null);
@@ -351,7 +456,6 @@ export default function VideoMeetingRoomPage() {
 		setJoined(false);
 		setMediaState("idle");
 		setMediaError(null);
-		setTimerSeconds(0);
 	};
 
 	const totalParticipantsCount = 1 + remoteParticipants.length;
@@ -485,7 +589,7 @@ export default function VideoMeetingRoomPage() {
 			) : (
 				/* ==================== LIVE MEETING STUDIO ROOM ==================== */
 				<div className="flex flex-col h-[calc(100vh-80px)] -m-6 bg-zinc-950 text-white overflow-hidden relative">
-					{/* TOP HEADER BAR */}
+					{/* TOP HEADER BAR (Cleaned - No Recording Pill / Number at top) */}
 					<header className="flex items-center justify-between px-6 py-3 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md">
 						<div className="flex items-center gap-3">
 							<div>
@@ -499,16 +603,12 @@ export default function VideoMeetingRoomPage() {
 							</div>
 						</div>
 
-						{/* Live Timer & Copy Badge */}
+						{/* Clean Copy Meeting Link Button */}
 						<div className="hidden sm:flex items-center gap-3">
-							<div className="flex items-center gap-2 rounded-full bg-zinc-800 px-3 py-1 text-xs font-bold text-emerald-400 border border-zinc-700">
-								<span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-								{formatTimer(timerSeconds)}
-							</div>
 							<button
 								type="button"
 								onClick={() => void copyLink()}
-								className="flex items-center gap-1.5 rounded-full bg-indigo-600/20 px-3 py-1 text-xs font-bold text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/30 transition"
+								className="flex items-center gap-1.5 rounded-full bg-indigo-600/20 px-3 py-1.5 text-xs font-bold text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/30 transition"
 							>
 								<span>📋</span> {copyNotice ? "Copied Link!" : "Copy Meeting Link"}
 							</button>
@@ -554,9 +654,8 @@ export default function VideoMeetingRoomPage() {
 						</div>
 					)}
 
-					{/* MAIN VIDEO STAGE AREA - DYNAMIC GOOGLE MEET LAYOUT */}
+					{/* MAIN VIDEO STAGE AREA */}
 					<div className="flex-1 flex flex-col overflow-hidden relative p-4 gap-4">
-						{/* Video Grid Container */}
 						<div className="flex-1 flex flex-col items-center justify-center max-w-6xl mx-auto w-full relative">
 							
 							{remoteParticipants.length === 0 ? (
@@ -613,7 +712,7 @@ export default function VideoMeetingRoomPage() {
 							) : (
 								/* ==================== MULTI PARTICIPANTS GRID (MERGED 2+ TILES) ==================== */
 								<div className="w-full h-full grid gap-4 auto-rows-fr grid-cols-1 md:grid-cols-2 items-center justify-center">
-									{/* MY TILE */}
+									{/* MY TILE (Muted locally to prevent self-echo) */}
 									<div className="relative h-full min-h-[240px] w-full rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col justify-between p-4 shadow-lg group">
 										<div className="flex items-center justify-between z-10">
 											<span className="text-xs font-bold bg-black/60 px-2.5 py-1 rounded-md border border-white/10 backdrop-blur-xs">
@@ -644,7 +743,7 @@ export default function VideoMeetingRoomPage() {
 										</div>
 									</div>
 
-									{/* REMOTE PARTICIPANTS TILES */}
+									{/* REMOTE PARTICIPANTS TILES (Unmuted for audible voice & WebRTC stream) */}
 									{remoteParticipants.map((participant) => (
 										<div key={participant.id} className="relative h-full min-h-[240px] w-full rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col justify-between p-4 shadow-lg group">
 											<div className="flex items-center justify-between z-10">
@@ -652,26 +751,42 @@ export default function VideoMeetingRoomPage() {
 													{participant.name}
 													{participant.isHost && <span className="text-indigo-400 font-extrabold ml-1">HOST</span>}
 												</span>
-												<span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-purple-500/20 text-purple-300 border-purple-500/30">
-													CONNECTED
+												<span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+													LIVE AUDIO & VIDEO
 												</span>
 											</div>
 
-											<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-purple-950/40 to-zinc-950">
-												<div className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black border-2 border-purple-400 shadow-xl mb-2">
-													{participant.name.substring(0, 2).toUpperCase()}
+											{/* Remote WebRTC Video/Audio Stream Element */}
+											{remoteStreams[participant.id] ? (
+												<video
+													ref={(el) => {
+														if (el && remoteStreams[participant.id]) {
+															el.srcObject = remoteStreams[participant.id];
+															void el.play().catch(() => {});
+														}
+													}}
+													autoPlay
+													playsInline
+													muted={false}
+													className="absolute inset-0 h-full w-full object-cover"
+												/>
+											) : (
+												<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-purple-950/40 to-zinc-950">
+													<div className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black border-2 border-purple-400 shadow-xl mb-2">
+														{participant.name.substring(0, 2).toUpperCase()}
+													</div>
+													<p className="text-xs font-bold text-zinc-300">{participant.name}</p>
+													<div className="mt-2 flex items-center gap-1">
+														<span className="w-1 h-3 bg-emerald-400 rounded animate-pulse" />
+														<span className="w-1 h-4 bg-emerald-400 rounded animate-pulse delay-75" />
+														<span className="w-1 h-2 bg-emerald-400 rounded animate-pulse delay-150" />
+													</div>
 												</div>
-												<p className="text-xs font-bold text-zinc-300">{participant.name}</p>
-												<div className="mt-2 flex items-center gap-1">
-													<span className="w-1 h-3 bg-emerald-400 rounded animate-pulse" />
-													<span className="w-1 h-4 bg-emerald-400 rounded animate-pulse delay-75" />
-													<span className="w-1 h-2 bg-emerald-400 rounded animate-pulse delay-150" />
-												</div>
-											</div>
+											)}
 
 											<div className="z-10 flex items-center gap-2">
 												<span className="text-xs px-2.5 py-1 rounded-md border bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
-													🎤 Mic Active
+													🎤 Voice Active
 												</span>
 											</div>
 										</div>
