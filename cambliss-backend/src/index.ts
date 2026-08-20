@@ -21,6 +21,7 @@ import authRoutes from "./modules/auth/auth.routes";
 import chatRoutes from "./modules/chat/chat.routes";
 import userManagementRoutes from "./modules/user-management/user-management.routes";
 import toolsRoutes from "./modules/tools/tools.routes";
+import videoConnectRoutes from "./modules/video-connect/video-connect.routes";
 
 const app = express();
 
@@ -81,6 +82,7 @@ app.use("/api/gst", gstRoutes);
 app.use("/api/ai/insights", aiInsightsRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/user-management", userManagementRoutes);
+app.use("/api/video-connect", videoConnectRoutes);
 
 // Centralized error handler: prevents leaking stack traces / internals to clients
 // (OWASP A05 Security Misconfiguration / A09 Logging & Monitoring). Details are

@@ -33,7 +33,6 @@ type RemoteParticipant = {
 	isHost: boolean;
 	audioEnabled: boolean;
 	videoEnabled: boolean;
-	lastSeen: number;
 };
 
 export default function VideoMeetingRoomPage() {
@@ -131,116 +130,100 @@ export default function VideoMeetingRoomPage() {
 		setTimeout(() => setCopyNotice(false), 2500);
 	};
 
-	// Real-Time Dynamic Participant Presence Tracking (Google Meet Style)
+	// Backend Real-Time Room Presence & Dynamic Participant Synchronization across ANY device/IP
 	useEffect(() => {
 		if (typeof window === "undefined" || !meetingId || !joined) return;
 
-		const channelName = `video_connect_presence_${meetingId}`;
-		const channel = new BroadcastChannel(channelName);
-
-		const broadcastMyPresence = () => {
-			channel.postMessage({
-				type: "PRESENCE_PING",
-				participant: {
-					id: myId,
-					name: displayName || (isHost ? invite.hostName : "Guest"),
-					isHost,
-					audioEnabled,
-					videoEnabled,
-					lastSeen: Date.now(),
-				},
-			});
-		};
-
-		// Broadcast immediately upon joining & every 2 seconds
-		broadcastMyPresence();
-		const interval = setInterval(broadcastMyPresence, 2000);
-
-		channel.onmessage = (event) => {
-			if (event.data?.type === "PRESENCE_PING" && event.data.participant) {
-				const incoming: RemoteParticipant = event.data.participant;
-				if (incoming.id === myId) return;
-
-				setRemoteParticipants((prev) => {
-					const existingIndex = prev.findIndex((p) => p.id === incoming.id);
-					if (existingIndex >= 0) {
-						const updated = [...prev];
-						updated[existingIndex] = incoming;
-						return updated;
-					}
-					return [...prev, incoming];
+		const syncRoomState = async () => {
+			try {
+				const res = await fetch(`/api/video-connect/room/${meetingId}/sync`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						participantId: myId,
+						name: displayName || (isHost ? invite.hostName : "Guest"),
+						isHost,
+						audioEnabled,
+						videoEnabled,
+					}),
 				});
-			} else if (event.data?.type === "PRESENCE_LEAVE" && event.data.id) {
-				setRemoteParticipants((prev) => prev.filter((p) => p.id !== event.data.id));
+
+				if (res.ok) {
+					const data = (await res.json()) as { participants: RemoteParticipant[] };
+					if (Array.isArray(data.participants)) {
+						// Filter out my own participant object to get remote participants
+						const remotes = data.participants.filter((p) => p.id !== myId);
+						setRemoteParticipants(remotes);
+					}
+				}
+			} catch (err) {
+				console.log("Room sync poll error:", err);
 			}
 		};
 
-		// Cleanup stale participants who haven't pinged in > 6 seconds
-		const cleanupInterval = setInterval(() => {
-			const now = Date.now();
-			setRemoteParticipants((prev) => prev.filter((p) => now - p.lastSeen < 6000));
-		}, 3000);
+		// Initial sync + poll every 2 seconds
+		void syncRoomState();
+		const interval = setInterval(() => {
+			void syncRoomState();
+		}, 2000);
 
 		return () => {
-			channel.postMessage({ type: "PRESENCE_LEAVE", id: myId });
-			channel.close();
 			clearInterval(interval);
-			clearInterval(cleanupInterval);
+			void fetch(`/api/video-connect/room/${meetingId}/leave`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ participantId: myId }),
+			}).catch(() => {});
 		};
 	}, [joined, meetingId, myId, displayName, isHost, audioEnabled, videoEnabled, invite.hostName]);
 
-	// Real-Time Cross-Tab / Cross-Window Chat Sync via BroadcastChannel & Storage
+	// Backend Real-Time Chat Synchronization across ANY device/IP
 	useEffect(() => {
-		if (typeof window === "undefined" || !meetingId) return;
-		const channel = new BroadcastChannel(`video_connect_chat_${meetingId}`);
+		if (typeof window === "undefined" || !meetingId || !joined) return;
 
-		channel.onmessage = (event) => {
-			if (event.data && event.data.text) {
-				setMessages((prev) => {
-					if (prev.some((m) => m.id === event.data.id)) return prev;
-					return [...prev, event.data];
-				});
-			}
+		const fetchChat = async () => {
+			try {
+				const res = await fetch(`/api/video-connect/room/${meetingId}/chat`);
+				if (res.ok) {
+					const data = (await res.json()) as { messages: ChatMessage[] };
+					if (Array.isArray(data.messages) && data.messages.length > 0) {
+						setMessages(data.messages);
+					}
+				}
+			} catch {}
 		};
 
-		const handleStorage = (e: StorageEvent) => {
-			if (e.key === `video_connect_chat_${meetingId}` && e.newValue) {
-				try {
-					const msg = JSON.parse(e.newValue) as ChatMessage;
-					setMessages((prev) => {
-						if (prev.some((m) => m.id === msg.id)) return prev;
-						return [...prev, msg];
-					});
-				} catch {}
-			}
-		};
+		void fetchChat();
+		const interval = setInterval(() => {
+			void fetchChat();
+		}, 2000);
 
-		window.addEventListener("storage", handleStorage);
+		return () => clearInterval(interval);
+	}, [joined, meetingId]);
 
-		return () => {
-			channel.close();
-			window.removeEventListener("storage", handleStorage);
-		};
-	}, [meetingId]);
-
-	const sendMessage = (e: React.FormEvent) => {
+	const sendMessage = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!chatInput.trim()) return;
-		const newMsg: ChatMessage = {
-			id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-			sender: displayName || (isHost ? invite.hostName : "Guest"),
-			text: chatInput.trim(),
-			time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-		};
-		setMessages((prev) => [...prev, newMsg]);
+
+		const textToSend = chatInput.trim();
 		setChatInput("");
 
-		// Broadcast to other participants
 		try {
-			const channel = new BroadcastChannel(`video_connect_chat_${meetingId}`);
-			channel.postMessage(newMsg);
-			channel.close();
-			localStorage.setItem(`video_connect_chat_${meetingId}`, JSON.stringify(newMsg));
+			const res = await fetch(`/api/video-connect/room/${meetingId}/chat`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					sender: displayName || (isHost ? invite.hostName : "Guest"),
+					text: textToSend,
+				}),
+			});
+
+			if (res.ok) {
+				const data = (await res.json()) as { messages: ChatMessage[] };
+				if (Array.isArray(data.messages)) {
+					setMessages(data.messages);
+				}
+			}
 		} catch {}
 	};
 
@@ -566,7 +549,7 @@ export default function VideoMeetingRoomPage() {
 						<div className="flex-1 flex flex-col items-center justify-center max-w-6xl mx-auto w-full relative">
 							
 							{remoteParticipants.length === 0 ? (
-								/* ==================== 1 SINGLE FULL-SIZE TILE (HOST ALONE) ==================== */
+								/* ==================== 1 SINGLE FULL-SIZE TILE (WHEN ALONE) ==================== */
 								<div className="relative h-full w-full max-h-[85vh] rounded-3xl border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col justify-between p-6 shadow-2xl group">
 									<div className="flex items-center justify-between z-10">
 										<span className="text-xs font-bold bg-black/60 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md flex items-center gap-2">
@@ -592,23 +575,32 @@ export default function VideoMeetingRoomPage() {
 										</div>
 									)}
 
-									{/* Bottom Invite Floating Banner when alone */}
-									<div className="z-10 flex items-center justify-between bg-black/70 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 max-w-xl mx-auto w-full shadow-lg">
-										<div className="flex items-center gap-2 text-xs text-zinc-300">
-											<span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
-											<span>You are the only person here. Share link to invite others:</span>
+									{/* Bottom Banner (Host vs Guest) */}
+									{isHost ? (
+										<div className="z-10 flex items-center justify-between bg-black/70 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 max-w-xl mx-auto w-full shadow-lg">
+											<div className="flex items-center gap-2 text-xs text-zinc-300">
+												<span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+												<span>You are the only person here. Share link to invite others:</span>
+											</div>
+											<button
+												type="button"
+												onClick={() => void copyLink()}
+												className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-xs whitespace-nowrap"
+											>
+												{copyNotice ? "Copied!" : "📋 Copy Link"}
+											</button>
 										</div>
-										<button
-											type="button"
-											onClick={() => void copyLink()}
-											className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-xs whitespace-nowrap"
-										>
-											{copyNotice ? "Copied!" : "📋 Copy Link"}
-										</button>
-									</div>
+									) : (
+										<div className="z-10 flex items-center justify-center bg-black/70 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 max-w-xl mx-auto w-full shadow-lg">
+											<div className="flex items-center gap-2 text-xs text-zinc-300">
+												<span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+												<span>Waiting for host or other participants to join...</span>
+											</div>
+										</div>
+									)}
 								</div>
 							) : (
-								/* ==================== MULTI PARTICIPANTS GRID (2+ TILES) ==================== */
+								/* ==================== MULTI PARTICIPANTS GRID (MERGED 2+ TILES) ==================== */
 								<div className="w-full h-full grid gap-4 auto-rows-fr grid-cols-1 md:grid-cols-2 items-center justify-center">
 									{/* MY TILE */}
 									<div className="relative h-full min-h-[240px] w-full rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col justify-between p-4 shadow-lg group">
