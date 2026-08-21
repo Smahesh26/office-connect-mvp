@@ -487,7 +487,78 @@ function StoreContent() {
 					<div className="space-y-4 rounded-2xl border border-zinc-200 bg-gradient-to-br from-white via-zinc-50 to-zinc-100 p-6 shadow-[0_28px_56px_-30px_rgba(0,0,0,0.85)] ring-1 ring-white/80">
 						<h1 className="text-2xl font-semibold tracking-tight text-zinc-900 mb-6">Free Tools</h1>
 						<div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-						<div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_20px_44px_-28px_rgba(0,0,0,0.9)] xl:col-span-2">
+							{/* Accounting & Finance Open-Source Tools Suite */}
+							<div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-5 shadow-[0_20px_44px_-28px_rgba(0,0,0,0.9)] xl:col-span-2 space-y-4">
+								<div className="flex items-center justify-between gap-3">
+									<div>
+										<h2 className="text-base font-bold text-zinc-900 flex items-center gap-2">
+											<span>💰</span> Accounting & Finance Suite
+										</h2>
+										<p className="mt-0.5 text-xs text-zinc-600">Free open-source accounting platforms integrated directly into your workspace.</p>
+									</div>
+									<span className="rounded-full bg-emerald-500/20 px-2.5 py-1 text-xs font-bold text-emerald-800 border border-emerald-500/30">
+										Open Source ERP
+									</span>
+								</div>
+
+								<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+									{/* Card 1: Akaunting Open Source */}
+									<div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3 shadow-2xs hover:border-emerald-500 transition">
+										<div className="flex items-center justify-between">
+											<span className="font-bold text-sm text-zinc-900 flex items-center gap-1.5">
+												<span>⚡</span> Akaunting Cloud & ERP
+											</span>
+											<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+												NEW
+											</span>
+										</div>
+										<p className="text-xs text-zinc-600">
+											Free online accounting software for invoices, expenses, vendor bills, client ledgers, and multi-currency tracking.
+										</p>
+										<div className="flex items-center gap-2 pt-2 border-t border-zinc-100">
+											<Link
+												href="/akaunting"
+												className="flex-1 rounded-xl bg-emerald-600 py-2 text-center text-xs font-bold text-white hover:bg-emerald-700 transition shadow-xs"
+											>
+												Open Akaunting Workspace
+											</Link>
+											<a
+												href="https://github.com/akaunting/akaunting"
+												target="_blank"
+												rel="noreferrer"
+												className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-100 transition"
+											>
+												GitHub Repo ↗
+											</a>
+										</div>
+									</div>
+
+									{/* Card 2: Accountech */}
+									<div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3 shadow-2xs hover:border-indigo-500 transition">
+										<div className="flex items-center justify-between">
+											<span className="font-bold text-sm text-zinc-900 flex items-center gap-1.5">
+												<span>📊</span> Accountech ERP
+											</span>
+											<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">
+												INTEGRATED
+											</span>
+										</div>
+										<p className="text-xs text-zinc-600">
+											Complete business accounting, invoices, quotes, customer balances, and corporate financial reporting.
+										</p>
+										<div className="flex items-center gap-2 pt-2 border-t border-zinc-100">
+											<Link
+												href="/accountech"
+												className="w-full rounded-xl bg-zinc-900 py-2 text-center text-xs font-bold text-white hover:bg-zinc-800 transition shadow-xs"
+											>
+												Open Accountech ERP
+											</Link>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_20px_44px_-28px_rgba(0,0,0,0.9)] xl:col-span-2">
 						<div className="flex items-center justify-between gap-3">
 							<p className="text-sm font-semibold text-zinc-900">Document Converter</p>
 							<span className="text-xs text-zinc-500">PDF, Word, Excel, CSV</span>
