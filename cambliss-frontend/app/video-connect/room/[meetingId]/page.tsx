@@ -40,8 +40,97 @@ const RTC_CONFIG: RTCConfiguration = {
 		{ urls: "stun:stun.l.google.com:19302" },
 		{ urls: "stun:stun1.l.google.com:19302" },
 		{ urls: "stun:stun2.l.google.com:19302" },
+		{ urls: "stun:stun3.l.google.com:19302" },
+		{ urls: "stun:stun4.l.google.com:19302" },
 	],
 };
+
+function RemoteParticipantMediaTile({
+	participant,
+	stream,
+}: {
+	participant: RemoteParticipant;
+	stream?: MediaStream;
+}) {
+	const videoRef = useRef<HTMLVideoElement | null>(null);
+	const audioRef = useRef<HTMLAudioElement | null>(null);
+	const [hasVideoTrack, setHasVideoTrack] = useState(false);
+
+	useEffect(() => {
+		if (!stream) return;
+
+		const videoTracks = stream.getVideoTracks();
+		setHasVideoTrack(videoTracks.length > 0 && videoTracks.some((t) => t.enabled));
+
+		if (videoRef.current) {
+			videoRef.current.srcObject = stream;
+			void videoRef.current.play().catch(() => {});
+		}
+
+		if (audioRef.current) {
+			audioRef.current.srcObject = stream;
+			void audioRef.current.play().catch(() => {});
+		}
+	}, [stream]);
+
+	return (
+		<div className="relative h-full min-h-[240px] w-full rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col justify-between p-4 shadow-lg group">
+			<div className="flex items-center justify-between z-10">
+				<span className="text-xs font-bold bg-black/60 px-2.5 py-1 rounded-md border border-white/10 backdrop-blur-xs">
+					{participant.name}
+					{participant.isHost && <span className="text-indigo-400 font-extrabold ml-1">HOST</span>}
+				</span>
+				<span
+					className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+						stream
+							? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+							: "bg-amber-500/20 text-amber-400 border-amber-500/30"
+					}`}
+				>
+					{stream ? "LIVE P2P STREAM" : "CONNECTING..."}
+				</span>
+			</div>
+
+			{/* Audio Element for Unmuted Audible Remote Microphone Voice */}
+			<audio ref={audioRef} autoPlay playsInline muted={false} />
+
+			{/* Video Element for Remote Camera Stream */}
+			<video
+				ref={videoRef}
+				autoPlay
+				playsInline
+				muted={false}
+				className={`absolute inset-0 h-full w-full object-cover ${hasVideoTrack && stream ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+			/>
+
+			{(!stream || !hasVideoTrack) && (
+				<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-purple-950/40 to-zinc-950">
+					<div className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black border-2 border-purple-400 shadow-xl mb-2">
+						{participant.name.substring(0, 2).toUpperCase()}
+					</div>
+					<p className="text-xs font-bold text-zinc-300">{participant.name}</p>
+					<div className="mt-2 flex items-center gap-1">
+						<span className="w-1 h-3 bg-emerald-400 rounded animate-pulse" />
+						<span className="w-1 h-4 bg-emerald-400 rounded animate-pulse delay-75" />
+						<span className="w-1 h-2 bg-emerald-400 rounded animate-pulse delay-150" />
+					</div>
+				</div>
+			)}
+
+			<div className="z-10 flex items-center gap-2">
+				<span
+					className={`text-xs px-2.5 py-1 rounded-md border ${
+						participant.audioEnabled
+							? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+							: "bg-rose-500/20 text-rose-300 border-rose-500/30"
+					}`}
+				>
+					{participant.audioEnabled ? "🎤 Mic Active" : "🔇 Mic Muted"}
+				</span>
+			</div>
+		</div>
+	);
+}
 
 export default function VideoMeetingRoomPage() {
 	const params = useParams<{ meetingId: string }>();
@@ -51,6 +140,7 @@ export default function VideoMeetingRoomPage() {
 	const previewRef = useRef<HTMLVideoElement | null>(null);
 	const screenRef = useRef<HTMLVideoElement | null>(null);
 	const peerConnections = useRef<{ [key: string]: RTCPeerConnection }>({});
+	const mediaStreamRef = useRef<MediaStream | null>(null);
 
 	const [displayName, setDisplayName] = useState("");
 	const [isHost, setIsHost] = useState(false);
@@ -139,6 +229,29 @@ export default function VideoMeetingRoomPage() {
 		setTimeout(() => setCopyNotice(false), 2500);
 	};
 
+	// Keep mediaStreamRef synchronized with state
+	useEffect(() => {
+		mediaStreamRef.current = mediaStream;
+	}, [mediaStream]);
+
+	// Sync active MediaStream tracks into existing RTCPeerConnections whenever mediaStream updates
+	useEffect(() => {
+		if (!mediaStream) return;
+		Object.values(peerConnections.current).forEach((pc) => {
+			const senders = pc.getSenders();
+			mediaStream.getTracks().forEach((track) => {
+				const existing = senders.find((s) => s.track?.kind === track.kind);
+				if (existing) {
+					void existing.replaceTrack(track).catch(() => {});
+				} else {
+					try {
+						pc.addTrack(track, mediaStream);
+					} catch {}
+				}
+			});
+		});
+	}, [mediaStream]);
+
 	// Backend Real-Time Room Presence & Dynamic Participant Synchronization
 	useEffect(() => {
 		if (typeof window === "undefined" || !meetingId || !joined) return;
@@ -209,17 +322,21 @@ export default function VideoMeetingRoomPage() {
 		const pc = new RTCPeerConnection(RTC_CONFIG);
 		peerConnections.current[targetId] = pc;
 
-		if (mediaStream) {
-			mediaStream.getTracks().forEach((track) => {
-				pc.addTrack(track, mediaStream);
+		const currentStream = mediaStreamRef.current || mediaStream;
+		if (currentStream) {
+			currentStream.getTracks().forEach((track) => {
+				try {
+					pc.addTrack(track, currentStream);
+				} catch {}
 			});
 		}
 
 		pc.ontrack = (event) => {
 			if (event.streams && event.streams[0]) {
+				const stream = event.streams[0];
 				setRemoteStreams((prev) => ({
 					...prev,
-					[targetId]: event.streams[0],
+					[targetId]: stream,
 				}));
 			}
 		};
@@ -238,11 +355,14 @@ export default function VideoMeetingRoomPage() {
 		if (!joined || remoteParticipants.length === 0) return;
 
 		remoteParticipants.forEach((p) => {
-			if (!peerConnections.current[p.id] && myId < p.id) {
+			if (!peerConnections.current[p.id]) {
 				const pc = createPeerConnection(p.id);
 				void (async () => {
 					try {
-						const offer = await pc.createOffer();
+						const offer = await pc.createOffer({
+							offerToReceiveAudio: true,
+							offerToReceiveVideo: true,
+						});
 						await pc.setLocalDescription(offer);
 						void sendSignal(p.id, { type: "offer", sdp: offer });
 					} catch (e) {
@@ -278,7 +398,7 @@ export default function VideoMeetingRoomPage() {
 					} else if (signal.type === "answer") {
 						const pc = peerConnections.current[senderId];
 						if (pc) {
-							await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+							await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp)).catch(() => {});
 						}
 					} else if (signal.type === "candidate") {
 						const pc = peerConnections.current[senderId];
@@ -374,29 +494,31 @@ export default function VideoMeetingRoomPage() {
 		setMediaState("loading");
 		setMediaError(null);
 
+		let stream: MediaStream | null = null;
 		try {
 			if (typeof window !== "undefined" && navigator.mediaDevices?.getUserMedia) {
-				const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true }).catch(() =>
-					navigator.mediaDevices.getUserMedia({ video: true })
-				);
-				if (stream) {
-					setMediaStream(stream);
-					setJoined(true);
-					setMediaState("ready");
-					setAudioEnabled(true);
-					setVideoEnabled(true);
-					return;
-				}
+				stream = await navigator.mediaDevices
+					.getUserMedia({
+						audio: { echoCancellation: true, noiseSuppression: true },
+						video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+					})
+					.catch(() => navigator.mediaDevices.getUserMedia({ audio: true, video: true }))
+					.catch(() => navigator.mediaDevices.getUserMedia({ video: true }))
+					.catch(() => null);
 			}
 		} catch (err) {
 			console.log("Hardware device note:", err);
 		}
 
-		// Virtual Room Fallback (when hardware camera is restricted by browser HTTP origin rules)
+		if (stream) {
+			mediaStreamRef.current = stream;
+			setMediaStream(stream);
+			setAudioEnabled(true);
+			setVideoEnabled(true);
+		}
+
 		setJoined(true);
 		setMediaState("ready");
-		setAudioEnabled(true);
-		setVideoEnabled(true);
 	};
 
 	const toggleAudio = () => {
@@ -450,6 +572,7 @@ export default function VideoMeetingRoomPage() {
 		peerConnections.current = {};
 		mediaStream?.getTracks().forEach((track) => track.stop());
 		screenStream?.getTracks().forEach((track) => track.stop());
+		mediaStreamRef.current = null;
 		setMediaStream(null);
 		setScreenStream(null);
 		setScreenSharing(false);
@@ -743,53 +866,13 @@ export default function VideoMeetingRoomPage() {
 										</div>
 									</div>
 
-									{/* REMOTE PARTICIPANTS TILES (Unmuted for audible voice & WebRTC stream) */}
+									{/* REMOTE PARTICIPANTS TILES (Unmuted for audible voice & WebRTC stream via RemoteParticipantMediaTile) */}
 									{remoteParticipants.map((participant) => (
-										<div key={participant.id} className="relative h-full min-h-[240px] w-full rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col justify-between p-4 shadow-lg group">
-											<div className="flex items-center justify-between z-10">
-												<span className="text-xs font-bold bg-black/60 px-2.5 py-1 rounded-md border border-white/10 backdrop-blur-xs">
-													{participant.name}
-													{participant.isHost && <span className="text-indigo-400 font-extrabold ml-1">HOST</span>}
-												</span>
-												<span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-													LIVE AUDIO & VIDEO
-												</span>
-											</div>
-
-											{/* Remote WebRTC Video/Audio Stream Element */}
-											{remoteStreams[participant.id] ? (
-												<video
-													ref={(el) => {
-														if (el && remoteStreams[participant.id]) {
-															el.srcObject = remoteStreams[participant.id];
-															void el.play().catch(() => {});
-														}
-													}}
-													autoPlay
-													playsInline
-													muted={false}
-													className="absolute inset-0 h-full w-full object-cover"
-												/>
-											) : (
-												<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-purple-950/40 to-zinc-950">
-													<div className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black border-2 border-purple-400 shadow-xl mb-2">
-														{participant.name.substring(0, 2).toUpperCase()}
-													</div>
-													<p className="text-xs font-bold text-zinc-300">{participant.name}</p>
-													<div className="mt-2 flex items-center gap-1">
-														<span className="w-1 h-3 bg-emerald-400 rounded animate-pulse" />
-														<span className="w-1 h-4 bg-emerald-400 rounded animate-pulse delay-75" />
-														<span className="w-1 h-2 bg-emerald-400 rounded animate-pulse delay-150" />
-													</div>
-												</div>
-											)}
-
-											<div className="z-10 flex items-center gap-2">
-												<span className="text-xs px-2.5 py-1 rounded-md border bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
-													🎤 Voice Active
-												</span>
-											</div>
-										</div>
+										<RemoteParticipantMediaTile
+											key={participant.id}
+											participant={participant}
+											stream={remoteStreams[participant.id]}
+										/>
 									))}
 								</div>
 							)}

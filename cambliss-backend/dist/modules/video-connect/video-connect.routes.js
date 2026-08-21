@@ -11,6 +11,7 @@ function getOrCreateRoom(meetingId) {
             messages: [
                 { id: "1", sender: "System", text: "Welcome to the meeting room!", time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }
             ],
+            signals: [],
         };
         rooms.set(meetingId, room);
     }
@@ -69,6 +70,40 @@ router.post("/room/:meetingId/leave", (req, res) => {
         room.participants.delete(participantId);
     }
     res.json({ success: true });
+});
+// WebRTC Signaling Routes (Peer-to-Peer Video & Audio Exchange)
+router.post("/room/:meetingId/signal", (req, res) => {
+    const meetingId = extractMeetingId(req.params.meetingId);
+    const { senderId, targetId, signal } = req.body;
+    if (!meetingId || !senderId || !targetId || !signal) {
+        res.status(400).json({ message: "Missing signal parameters" });
+        return;
+    }
+    const room = getOrCreateRoom(meetingId);
+    room.signals.push({
+        id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        senderId,
+        targetId,
+        signal,
+    });
+    // Keep max 100 signals in memory
+    if (room.signals.length > 100) {
+        room.signals = room.signals.slice(-100);
+    }
+    res.json({ success: true });
+});
+router.get("/room/:meetingId/signal/:myId", (req, res) => {
+    const meetingId = extractMeetingId(req.params.meetingId);
+    const myId = extractMeetingId(req.params.myId);
+    if (!meetingId || !myId || !rooms.has(meetingId)) {
+        res.json({ signals: [] });
+        return;
+    }
+    const room = rooms.get(meetingId);
+    const mySignals = room.signals.filter((s) => s.targetId === myId);
+    // Remove consumed signals
+    room.signals = room.signals.filter((s) => s.targetId !== myId);
+    res.json({ signals: mySignals });
 });
 // Fetch & Send Chat Messages
 router.get("/room/:meetingId/chat", (req, res) => {
