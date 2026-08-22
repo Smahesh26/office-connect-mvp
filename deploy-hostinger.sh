@@ -1,5 +1,5 @@
 #!/bin/bash
-# Hostinger VPS Fresh Clone Deployment Script (Robust Next.js & Express PM2 Setup)
+# Hostinger VPS Fresh Clone Deployment Script (Robust PM2 Ecosystem & Nginx Diagnostic)
 
 set -e
 
@@ -41,10 +41,6 @@ npx prisma db push --accept-data-loss || npx prisma migrate deploy || true
 npx ts-node scripts/seed-credentials.ts || true
 npm run build
 
-# Launch Dual Backend Listeners on Ports 5000 & 4000
-PORT=5000 pm2 start dist/server.js --name "cambliss-backend"
-PORT=4000 pm2 start dist/server.js --name "cambliss-backend-4000"
-
 # Setup Frontend Environment
 echo "🌐 Setting up Frontend (cambliss-frontend)..."
 cd "$PROJECT_DIR/cambliss-frontend"
@@ -57,26 +53,30 @@ EOT
 npm install
 npm run build
 
-# Launch Next.js Frontend using direct binary for 100% PM2 stability
-PORT=3000 pm2 start node_modules/next/dist/bin/next --name "cambliss-frontend" -- start -p 3000
-
-# Wait 3 seconds for servers to initialize
-sleep 3
-
-# Save PM2 state
+# Start ALL applications via PM2 ecosystem.config.js
+cd "$PROJECT_DIR"
+echo "🚀 Starting PM2 Ecosystem..."
+pm2 start ecosystem.config.js
 pm2 save
 
-# Verify PM2 status
+# Wait 4 seconds for servers to bind
+sleep 4
+
+# Print PM2 Logs & Status
 echo "📋 PM2 Status:"
 pm2 status
 
-# Verify local HTTP connectivity
-echo "🔍 Verifying Local Services..."
-curl -Is http://127.0.0.1:3000 | head -n 1 || echo "⚠️ Frontend port 3000 check warning"
-curl -Is http://127.0.0.1:5000/api/auth/login || echo "⚠️ Backend port 5000 check warning"
+echo "🔍 Active Nginx Proxy Passes:"
+grep -rn "proxy_pass" /etc/nginx/ || true
+
+# Verify HTTP Connectivity
+echo "🧪 HTTP Health Verification:"
+curl -Is http://127.0.0.1:3000 | head -n 2 || echo "⚠️ Port 3000 unreachable"
+curl -Is http://127.0.0.1:5000/api/auth/login | head -n 2 || echo "⚠️ Port 5000 unreachable"
+curl -Is http://127.0.0.1:4000/api/auth/login | head -n 2 || echo "⚠️ Port 4000 unreachable"
 
 # Test Nginx & Restart
 echo "🔁 Restarting Nginx Reverse Proxy..."
 sudo nginx -t && sudo systemctl restart nginx
 
-echo "🎉 Hostinger VPS Deployment Successfully Completed & Verified!"
+echo "🎉 Hostinger VPS Deployment Finished!"
