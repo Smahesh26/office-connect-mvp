@@ -61,11 +61,11 @@ function createFallbackSyntheticStream(label: string): MediaStream {
 		ctx.fillStyle = "#ffffff";
 		ctx.font = "bold 28px sans-serif";
 		ctx.textAlign = "center";
-		ctx.fillText(label || "Guest Stream", 320, 220);
+		ctx.fillText(label || "Participant Stream", 320, 220);
 
 		ctx.fillStyle = "#10b981";
 		ctx.font = "bold 16px sans-serif";
-		ctx.fillText("● Live Stream Active", 320, 260);
+		ctx.fillText("● Live WebRTC Feed Active", 320, 260);
 
 		requestAnimationFrame(draw);
 	};
@@ -73,7 +73,7 @@ function createFallbackSyntheticStream(label: string): MediaStream {
 
 	const videoTrack = canvas.captureStream(30).getVideoTracks()[0];
 
-	// Synthetic Audio Oscillator Tone
+	// Synthetic Audio Oscillator Tone for P2P Verification
 	const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
 	const osc = audioCtx.createOscillator();
 	const dst = audioCtx.createMediaStreamDestination();
@@ -92,10 +92,13 @@ function createFallbackSyntheticStream(label: string): MediaStream {
 function RemoteParticipantMediaTile({
 	participant,
 	stream,
+	logDebug,
 }: {
 	participant: RemoteParticipant;
 	stream?: MediaStream;
+	logDebug: (msg: string) => void;
 }) {
+	const videoRef = useRef<HTMLVideoElement | null>(null);
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const [hasVideoTrack, setHasVideoTrack] = useState(false);
 	const [audioBlocked, setAudioBlocked] = useState(false);
@@ -103,14 +106,42 @@ function RemoteParticipantMediaTile({
 	useEffect(() => {
 		if (!stream) return;
 
-		const videoTracks = stream.getVideoTracks();
-		setHasVideoTrack(videoTracks.length > 0 && videoTracks.some((t) => t.enabled));
-	}, [stream]);
+		const vTracks = stream.getVideoTracks();
+		const aTracks = stream.getAudioTracks();
+		setHasVideoTrack(vTracks.length > 0 && vTracks.some((t) => t.enabled));
+
+		logDebug(
+			`[MediaTile] Stream update for ${participant.name}: ${vTracks.length} video, ${aTracks.length} audio tracks`,
+		);
+
+		if (videoRef.current && videoRef.current.srcObject !== stream) {
+			videoRef.current.srcObject = stream;
+			videoRef.current.muted = false;
+			void videoRef.current.play().catch((e) => logDebug(`Video play err: ${e}`));
+		}
+
+		if (audioRef.current && audioRef.current.srcObject !== stream) {
+			audioRef.current.srcObject = stream;
+			audioRef.current.muted = false;
+			void audioRef.current.play().catch((err) => {
+				logDebug(`Audio play block: ${err}`);
+				if (err.name === "NotAllowedError") {
+					setAudioBlocked(true);
+				}
+			});
+		}
+	}, [stream, participant.name, logDebug]);
 
 	const manualUnmuteAudio = () => {
 		if (audioRef.current) {
 			audioRef.current.muted = false;
-			void audioRef.current.play().then(() => setAudioBlocked(false)).catch(() => {});
+			void audioRef.current
+				.play()
+				.then(() => {
+					setAudioBlocked(false);
+					logDebug("Unmuted audio successfully");
+				})
+				.catch((e) => logDebug(`Unmute failed: ${e}`));
 		}
 	};
 
@@ -132,18 +163,14 @@ function RemoteParticipantMediaTile({
 				</span>
 			</div>
 
-			{/* Remote Audio Element using valid Callback Ref */}
+			{/* Dedicated Audio Element */}
 			<audio
 				ref={(el) => {
 					audioRef.current = el;
 					if (el && stream && el.srcObject !== stream) {
 						el.srcObject = stream;
 						el.muted = false;
-						void el.play().catch((err) => {
-							if (err.name === "NotAllowedError") {
-								setAudioBlocked(true);
-							}
-						});
+						void el.play().catch(() => setAudioBlocked(true));
 					}
 				}}
 				autoPlay
@@ -151,9 +178,10 @@ function RemoteParticipantMediaTile({
 				muted={false}
 			/>
 
-			{/* Remote Video Element */}
+			{/* Dedicated Video Element */}
 			<video
 				ref={(el) => {
+					videoRef.current = el;
 					if (el && stream && el.srcObject !== stream) {
 						el.srcObject = stream;
 						el.muted = false;
@@ -200,7 +228,7 @@ function RemoteParticipantMediaTile({
 						onClick={manualUnmuteAudio}
 						className="text-xs font-bold bg-amber-500 text-black px-3 py-1 rounded-md animate-bounce shadow-md"
 					>
-						🔊 Unmute Remote Voice
+						🔊 Click to Unmute Audio
 					</button>
 				)}
 			</div>
@@ -215,6 +243,7 @@ export default function VideoMeetingRoomPage() {
 
 	const screenRef = useRef<HTMLVideoElement | null>(null);
 	const peerConnections = useRef<{ [key: string]: RTCPeerConnection }>({});
+	const pendingCandidates = useRef<{ [key: string]: RTCIceCandidateInit[] }>({});
 	const mediaStreamRef = useRef<MediaStream | null>(null);
 
 	const [displayName, setDisplayName] = useState("");
@@ -228,7 +257,8 @@ export default function VideoMeetingRoomPage() {
 	const [screenSharing, setScreenSharing] = useState(false);
 	const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
 
-	const [activeTab, setActiveTab] = useState<"chat" | "participants" | null>(null);
+	const [activeTab, setActiveTab] = useState<"chat" | "participants" | "debug" | null>(null);
+	const [debugLogs, setDebugLogs] = useState<string[]>([]);
 	const [messages, setMessages] = useState<ChatMessage[]>([
 		{ id: "1", sender: "System", text: "Welcome to the meeting room!", time: "10:00 AM" },
 	]);
@@ -238,6 +268,11 @@ export default function VideoMeetingRoomPage() {
 
 	const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipant[]>([]);
 	const [remoteStreams, setRemoteStreams] = useState<{ [key: string]: MediaStream }>({});
+
+	const logDebug = (msg: string) => {
+		const timestamp = new Date().toLocaleTimeString();
+		setDebugLogs((prev) => [`[${timestamp}] ${msg}`, ...prev.slice(0, 50)]);
+	};
 
 	const [isMounted, setIsMounted] = useState(false);
 	useEffect(() => {
@@ -302,11 +337,11 @@ export default function VideoMeetingRoomPage() {
 
 	const unlockBrowserAudio = () => {
 		setAudioUnlocked(true);
-		// Play all remote audio/video elements
+		logDebug("Unlocking browser audio elements...");
 		document.querySelectorAll("audio, video").forEach((media) => {
 			if (media instanceof HTMLMediaElement) {
 				media.muted = false;
-				void media.play().catch(() => {});
+				void media.play().catch((e) => logDebug(`Media unlock err: ${e}`));
 			}
 		});
 	};
@@ -315,6 +350,7 @@ export default function VideoMeetingRoomPage() {
 		mediaStreamRef.current = mediaStream;
 	}, [mediaStream]);
 
+	// Sync local tracks into existing Peer Connections
 	useEffect(() => {
 		if (!mediaStream) return;
 		Object.values(peerConnections.current).forEach((pc) => {
@@ -333,6 +369,7 @@ export default function VideoMeetingRoomPage() {
 		});
 	}, [mediaStream]);
 
+	// Room Presence Poll
 	useEffect(() => {
 		if (typeof window === "undefined" || !meetingId || !joined) return;
 
@@ -394,8 +431,17 @@ export default function VideoMeetingRoomPage() {
 			return peerConnections.current[targetId];
 		}
 
+		logDebug(`[WebRTC] Creating RTCPeerConnection for target: ${targetId}`);
 		const pc = new RTCPeerConnection(RTC_CONFIG);
 		peerConnections.current[targetId] = pc;
+
+		// Add Bi-Directional Transceivers
+		try {
+			pc.addTransceiver("audio", { direction: "sendrecv" });
+			pc.addTransceiver("video", { direction: "sendrecv" });
+		} catch (e) {
+			logDebug(`Transceiver warning: ${e}`);
+		}
 
 		const currentStream = mediaStreamRef.current || mediaStream;
 		if (currentStream) {
@@ -403,11 +449,13 @@ export default function VideoMeetingRoomPage() {
 				track.enabled = true;
 				try {
 					pc.addTrack(track, currentStream);
+					logDebug(`[WebRTC] Added ${track.kind} track to ${targetId}`);
 				} catch {}
 			});
 		}
 
 		pc.ontrack = (event) => {
+			logDebug(`[WebRTC] Incoming ontrack event from ${targetId}: ${event.track.kind}`);
 			if (event.streams && event.streams[0]) {
 				const stream = event.streams[0];
 				setRemoteStreams((prev) => ({
@@ -419,13 +467,19 @@ export default function VideoMeetingRoomPage() {
 
 		pc.onicecandidate = (event) => {
 			if (event.candidate) {
+				logDebug(`[WebRTC] Generated ICE Candidate for ${targetId}`);
 				void sendSignal(targetId, { type: "candidate", candidate: event.candidate });
 			}
+		};
+
+		pc.oniceconnectionstatechange = () => {
+			logDebug(`[WebRTC] ICE Connection State for ${targetId}: ${pc.iceConnectionState}`);
 		};
 
 		return pc;
 	};
 
+	// Initiate WebRTC Offers
 	useEffect(() => {
 		if (!joined || remoteParticipants.length === 0) return;
 
@@ -434,18 +488,23 @@ export default function VideoMeetingRoomPage() {
 				const pc = createPeerConnection(p.id);
 				void (async () => {
 					try {
+						logDebug(`[WebRTC] Creating offer for ${p.id}...`);
 						const offer = await pc.createOffer({
 							offerToReceiveAudio: true,
 							offerToReceiveVideo: true,
 						});
 						await pc.setLocalDescription(offer);
 						void sendSignal(p.id, { type: "offer", sdp: offer });
-					} catch {}
+						logDebug(`[WebRTC] Offer sent to ${p.id}`);
+					} catch (e) {
+						logDebug(`Create offer error: ${e}`);
+					}
 				})();
 			}
 		});
 	}, [joined, remoteParticipants, myId, mediaStream]);
 
+	// Process Signals & Drain Pending ICE Candidates
 	useEffect(() => {
 		if (!joined || !meetingId) return;
 
@@ -462,20 +521,43 @@ export default function VideoMeetingRoomPage() {
 					if (!signal) continue;
 
 					if (signal.type === "offer") {
+						logDebug(`[WebRTC] Received offer from ${senderId}`);
 						const pc = createPeerConnection(senderId);
 						await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+						
+						// Flush pending candidates
+						if (pendingCandidates.current[senderId]) {
+							for (const cand of pendingCandidates.current[senderId]) {
+								await pc.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
+							}
+							pendingCandidates.current[senderId] = [];
+						}
+
 						const answer = await pc.createAnswer();
 						await pc.setLocalDescription(answer);
 						void sendSignal(senderId, { type: "answer", sdp: answer });
+						logDebug(`[WebRTC] Answer sent back to ${senderId}`);
 					} else if (signal.type === "answer") {
+						logDebug(`[WebRTC] Received answer from ${senderId}`);
 						const pc = peerConnections.current[senderId];
 						if (pc) {
 							await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp)).catch(() => {});
+							if (pendingCandidates.current[senderId]) {
+								for (const cand of pendingCandidates.current[senderId]) {
+									await pc.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
+								}
+								pendingCandidates.current[senderId] = [];
+							}
 						}
 					} else if (signal.type === "candidate") {
 						const pc = peerConnections.current[senderId];
-						if (pc && signal.candidate) {
+						if (pc && pc.remoteDescription) {
 							await pc.addIceCandidate(new RTCIceCandidate(signal.candidate)).catch(() => {});
+						} else {
+							if (!pendingCandidates.current[senderId]) {
+								pendingCandidates.current[senderId] = [];
+							}
+							pendingCandidates.current[senderId].push(signal.candidate);
 						}
 					}
 				}
@@ -545,7 +627,7 @@ export default function VideoMeetingRoomPage() {
 			if (typeof window !== "undefined" && navigator.mediaDevices?.getUserMedia) {
 				stream = await navigator.mediaDevices
 					.getUserMedia({
-						audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true },
+						audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true },
 						video: { width: { ideal: 1280 }, height: { ideal: 720 } },
 					})
 					.catch(() => navigator.mediaDevices.getUserMedia({ audio: true, video: true }))
@@ -555,14 +637,15 @@ export default function VideoMeetingRoomPage() {
 		} catch {}
 
 		if (!stream) {
+			logDebug("Hardware camera locked by another tab. Activating P2P Synthetic stream...");
 			stream = createFallbackSyntheticStream(displayName || (isHost ? invite.hostName : "Guest"));
 		}
 
-		// Ensure all audio tracks are explicitly enabled
 		stream.getAudioTracks().forEach((t) => {
 			t.enabled = true;
 		});
 
+		logDebug(`Local stream acquired: ${stream.getVideoTracks().length} video, ${stream.getAudioTracks().length} audio tracks`);
 		mediaStreamRef.current = stream;
 		setMediaStream(stream);
 		setAudioEnabled(true);
@@ -578,6 +661,7 @@ export default function VideoMeetingRoomPage() {
 			});
 		}
 		setAudioEnabled(nextState);
+		logDebug(`Microphone state toggled to: ${nextState}`);
 	};
 
 	const toggleVideo = () => {
@@ -588,6 +672,7 @@ export default function VideoMeetingRoomPage() {
 			});
 		}
 		setVideoEnabled(nextState);
+		logDebug(`Camera state toggled to: ${nextState}`);
 	};
 
 	const toggleScreenShare = async () => {
@@ -797,6 +882,13 @@ export default function VideoMeetingRoomPage() {
 						<div className="flex items-center gap-2">
 							<button
 								type="button"
+								onClick={() => setActiveTab(activeTab === "debug" ? null : "debug")}
+								className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${activeTab === "debug" ? "bg-amber-600 text-white" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"}`}
+							>
+								<span>⚙️</span> WebRTC Debug Log
+							</button>
+							<button
+								type="button"
 								onClick={() => setActiveTab(activeTab === "participants" ? null : "participants")}
 								className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${activeTab === "participants" ? "bg-indigo-600 text-white" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"}`}
 							>
@@ -956,25 +1048,33 @@ export default function VideoMeetingRoomPage() {
 											key={participant.id}
 											participant={participant}
 											stream={remoteStreams[participant.id]}
+											logDebug={logDebug}
 										/>
 									))}
 								</div>
 							)}
 						</div>
 
-						{/* SIDEBAR: CHAT / PARTICIPANTS */}
+						{/* SIDEBAR: CHAT / PARTICIPANTS / DEBUG LOG */}
 						{activeTab && (
 							<div className="w-80 rounded-2xl border border-zinc-800 bg-zinc-900 flex flex-col shadow-2xl z-20">
 								<div className="flex items-center justify-between p-3 border-b border-zinc-800">
 									<h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300">
-										{activeTab === "chat" ? "Live Meeting Chat" : `Participants (${totalParticipantsCount})`}
+										{activeTab === "chat" ? "Live Chat" : activeTab === "debug" ? "WebRTC High-Scale Debug Log" : `Participants (${totalParticipantsCount})`}
 									</h2>
 									<button type="button" onClick={() => setActiveTab(null)} className="text-zinc-400 hover:text-white text-sm">
 										✕
 									</button>
 								</div>
 
-								{activeTab === "chat" ? (
+								{activeTab === "debug" ? (
+									<div className="p-3 overflow-y-auto flex-1 font-mono text-[11px] space-y-1 bg-black text-amber-300 leading-relaxed">
+										<p className="text-zinc-400 font-bold border-b border-zinc-800 pb-1">-- Realtime WebRTC Event Log --</p>
+										{debugLogs.map((log, index) => (
+											<p key={index} className="break-all">{log}</p>
+										))}
+									</div>
+								) : activeTab === "chat" ? (
 									<div className="flex-1 flex flex-col justify-between p-3 overflow-hidden">
 										<div className="space-y-3 overflow-y-auto flex-1 pr-1">
 											{messages.map((msg) => (
