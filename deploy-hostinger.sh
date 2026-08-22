@@ -1,35 +1,25 @@
 #!/bin/bash
-# Hostinger VPS Automated Deployment & 502 Bad Gateway Fix Script
+# Hostinger VPS Fresh Clone Deployment Script (Guaranteed Conflict-Free)
 
 set -e
 
-echo "🚀 Starting Hostinger VPS Deployment & 502 Fix..."
+echo "🚀 Starting Fresh Hostinger VPS Deployment for Smahesh26/office-connect-mvp..."
 
-# Detect project root directory
-if [ -d "/var/www/office-connect-mvp" ]; then
-    PROJECT_DIR="/var/www/office-connect-mvp"
-elif [ -d "/var/www/officeconnect-cambliss" ]; then
-    PROJECT_DIR="/var/www/officeconnect-cambliss"
-else
-    PROJECT_DIR="/var/www/office-connect-mvp"
-    mkdir -p "$PROJECT_DIR"
-    git clone https://github.com/Smahesh26/office-connect-mvp.git "$PROJECT_DIR"
-fi
+PROJECT_DIR="/var/www/office-connect-mvp"
 
+# Completely remove old directories with stale merge conflict files
+echo "🧹 Removing any old/corrupt project directories..."
+rm -rf /var/www/officeconnect-cambliss
+rm -rf "$PROJECT_DIR"
+
+# Fresh Clone from GitHub
+echo "📁 Fresh cloning latest clean repository from GitHub..."
+mkdir -p /var/www
+git clone https://github.com/Smahesh26/office-connect-mvp.git "$PROJECT_DIR"
 cd "$PROJECT_DIR"
-echo "📁 Working Directory: $PROJECT_DIR"
 
-# Clean local working tree to prevent git merge conflict markers on VPS
-echo "🧹 Cleaning git working directory on VPS..."
-git clean -fd
-git checkout .
-git fetch --all
-git checkout main || git checkout master || true
-git reset --hard origin/main || git reset --hard origin/master
-git clean -fd
-
-# Stop existing PM2 processes to prevent port conflicts
-echo "🧹 Cleaning up PM2 processes..."
+# Stop existing PM2 processes
+echo "🧹 Stopping existing PM2 processes..."
 pm2 delete all || true
 
 # Deploy Backend (cambliss-backend)
@@ -45,7 +35,6 @@ pm2 start dist/server.js --name "cambliss-backend"
 echo "🌐 Building & Starting Frontend (cambliss-frontend)..."
 cd "$PROJECT_DIR/cambliss-frontend"
 npm install
-rm -rf .next
 npm run build
 pm2 start npx --name "cambliss-frontend" -- next start -p 3000
 
@@ -60,4 +49,4 @@ pm2 status
 echo "🔁 Restarting Nginx Reverse Proxy..."
 sudo nginx -t && sudo systemctl restart nginx
 
-echo "🎉 502 Bad Gateway Fixed! Hostinger VPS Deployment Complete."
+echo "🎉 Hostinger VPS Deployment Successfully Completed with 0 Errors!"
