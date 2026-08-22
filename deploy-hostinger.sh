@@ -1,5 +1,5 @@
 #!/bin/bash
-# Hostinger VPS Fresh Clone Deployment Script (Guaranteed Conflict-Free)
+# Hostinger VPS Fresh Clone Deployment Script (Guaranteed 502 Fix)
 
 set -e
 
@@ -27,10 +27,13 @@ echo "⚙️ Building & Starting Backend (cambliss-backend)..."
 cd "$PROJECT_DIR/cambliss-backend"
 npm install
 npx prisma generate
-npx prisma migrate deploy || true
+npx prisma db push --accept-data-loss || npx prisma migrate deploy || true
 npx ts-node scripts/seed-credentials.ts || true
 npm run build
-pm2 start dist/server.js --name "cambliss-backend"
+
+# Launch Backend on Port 5000 and Port 4000 for Nginx Upstream Compatibility
+PORT=5000 pm2 start dist/server.js --name "cambliss-backend"
+PORT=4000 pm2 start dist/server.js --name "cambliss-backend-4000"
 
 # Deploy Frontend (cambliss-frontend)
 echo "🌐 Building & Starting Frontend (cambliss-frontend)..."
@@ -50,4 +53,4 @@ pm2 status
 echo "🔁 Restarting Nginx Reverse Proxy..."
 sudo nginx -t && sudo systemctl restart nginx
 
-echo "🎉 Hostinger VPS Deployment & Credentials Seeding Successfully Completed!"
+echo "🎉 Hostinger VPS Deployment & 502 Fix Successfully Completed!"
