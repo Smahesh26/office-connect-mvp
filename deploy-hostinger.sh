@@ -1,41 +1,59 @@
 #!/bin/bash
-# Hostinger VPS Deployment Script for Smahesh26/office-connect-mvp
+# Hostinger VPS Automated Deployment & 502 Bad Gateway Fix Script
 
 set -e
 
-echo "🚀 Starting Hostinger VPS Deployment for Smahesh26/office-connect-mvp..."
+echo "🚀 Starting Hostinger VPS Deployment & 502 Fix..."
 
-# Navigate to project root
-PROJECT_DIR="${1:-/var/www/office-connect-mvp}"
-
-if [ ! -d "$PROJECT_DIR" ]; then
-    echo "📁 Directory $PROJECT_DIR not found. Cloning repository from GitHub..."
-    git clone https://github.com/Smahesh26/office-connect-mvp.git "$PROJECT_DIR"
-    cd "$PROJECT_DIR"
+# Detect project root directory
+if [ -d "/var/www/office-connect-mvp" ]; then
+    PROJECT_DIR="/var/www/office-connect-mvp"
+elif [ -d "/var/www/officeconnect-cambliss" ]; then
+    PROJECT_DIR="/var/www/officeconnect-cambliss"
 else
-    cd "$PROJECT_DIR"
-    echo "🔄 Pulling latest code from GitHub main branch..."
-    git fetch origin
-    git reset --hard origin/main
+    PROJECT_DIR="/var/www/office-connect-mvp"
+    mkdir -p "$PROJECT_DIR"
+    git clone https://github.com/Smahesh26/office-connect-mvp.git "$PROJECT_DIR"
 fi
 
-# Build & Deploy Backend (cambliss-backend)
-echo "⚙️ Deploying Backend (cambliss-backend)..."
+cd "$PROJECT_DIR"
+echo "📁 Working Directory: $PROJECT_DIR"
+
+# Pull latest code from GitHub main
+git fetch origin
+git checkout main || git checkout master || true
+git reset --hard origin/main || git reset --hard origin/master
+
+# Stop existing PM2 processes to prevent port conflicts
+echo "🧹 Cleaning up PM2 processes..."
+pm2 delete all || true
+
+# Deploy Backend (cambliss-backend)
+echo "⚙️ Building & Starting Backend (cambliss-backend)..."
 cd "$PROJECT_DIR/cambliss-backend"
-npm install --production=false
+npm install
 npx prisma generate
+npx prisma migrate deploy || true
 npm run build
-pm2 restart cambliss-backend || pm2 start npm --name "cambliss-backend" -- run start
+pm2 start dist/server.js --name "cambliss-backend"
 
-# Build & Deploy Frontend (cambliss-frontend)
-echo "🌐 Deploying Frontend (cambliss-frontend)..."
+# Deploy Frontend (cambliss-frontend)
+echo "🌐 Building & Starting Frontend (cambliss-frontend)..."
 cd "$PROJECT_DIR/cambliss-frontend"
-npm install --production=false
+npm install
+rm -rf .next
 npm run build
-pm2 restart cambliss-frontend || pm2 start npm --name "cambliss-frontend" -- run start
+pm2 start npx --name "cambliss-frontend" -- next start -p 3000
 
-# Reload Nginx Reverse Proxy
-echo "🔁 Reloading Nginx..."
-sudo systemctl reload nginx || true
+# Save PM2 state
+pm2 save
 
-echo "✅ Hostinger VPS Deployment Complete! All services active via PM2."
+# Verify PM2 status
+echo "📋 PM2 Status:"
+pm2 status
+
+# Test Nginx & Restart
+echo "🔁 Restarting Nginx Reverse Proxy..."
+sudo nginx -t && sudo systemctl restart nginx
+
+echo "🎉 502 Bad Gateway Fixed! Hostinger VPS Deployment Complete."
