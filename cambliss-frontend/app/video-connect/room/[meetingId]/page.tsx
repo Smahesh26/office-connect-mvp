@@ -5,8 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import WorkspaceShell from "../../../../components/WorkspaceShell";
 import {
-	buildGoogleCalendarUrl,
-	buildMailtoUrl,
 	buildMeetingUrl,
 	formatDateTime,
 	type VideoMeetingInvite,
@@ -45,6 +43,53 @@ const RTC_CONFIG: RTCConfiguration = {
 	],
 };
 
+// Helper: Create Synthetic Stream for Same-Laptop Multi-Tab Camera Lock Scenarios
+function createFallbackSyntheticStream(label: string): MediaStream {
+	if (typeof window === "undefined") return new MediaStream();
+
+	const canvas = document.createElement("canvas");
+	canvas.width = 640;
+	canvas.height = 480;
+	const ctx = canvas.getContext("2d");
+
+	let hue = 0;
+	const draw = () => {
+		if (!ctx) return;
+		hue = (hue + 1) % 360;
+		ctx.fillStyle = `hsl(${hue}, 70%, 25%)`;
+		ctx.fillRect(0, 0, 640, 480);
+
+		ctx.fillStyle = "#ffffff";
+		ctx.font = "bold 28px sans-serif";
+		ctx.textAlign = "center";
+		ctx.fillText(label || "Guest Stream", 320, 220);
+
+		ctx.fillStyle = "#10b981";
+		ctx.font = "bold 16px sans-serif";
+		ctx.fillText("● Live Synthetic Stream", 320, 260);
+
+		requestAnimationFrame(draw);
+	};
+	draw();
+
+	const videoTrack = canvas.captureStream(30).getVideoTracks()[0];
+
+	// Synthetic Audio
+	const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+	const osc = audioCtx.createOscillator();
+	const dst = audioCtx.createMediaStreamDestination();
+	osc.type = "sine";
+	osc.frequency.value = 440;
+	const gain = audioCtx.createGain();
+	gain.gain.value = 0.01;
+	osc.connect(gain);
+	gain.connect(dst);
+	osc.start();
+
+	const audioTrack = dst.stream.getAudioTracks()[0];
+	return new MediaStream([videoTrack, audioTrack]);
+}
+
 function RemoteParticipantMediaTile({
 	participant,
 	stream,
@@ -55,6 +100,7 @@ function RemoteParticipantMediaTile({
 	const videoRef = useRef<HTMLVideoElement | null>(null);
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const [hasVideoTrack, setHasVideoTrack] = useState(false);
+	const [audioBlocked, setAudioBlocked] = useState(false);
 
 	useEffect(() => {
 		if (!stream) return;
@@ -62,23 +108,33 @@ function RemoteParticipantMediaTile({
 		const videoTracks = stream.getVideoTracks();
 		setHasVideoTrack(videoTracks.length > 0 && videoTracks.some((t) => t.enabled));
 
-		if (videoRef.current) {
+		if (videoRef.current && videoRef.current.srcObject !== stream) {
 			videoRef.current.srcObject = stream;
 			void videoRef.current.play().catch(() => {});
 		}
 
-		if (audioRef.current) {
+		if (audioRef.current && audioRef.current.srcObject !== stream) {
 			audioRef.current.srcObject = stream;
-			void audioRef.current.play().catch(() => {});
+			void audioRef.current.play().catch((err) => {
+				if (err.name === "NotAllowedError") {
+					setAudioBlocked(true);
+				}
+			});
 		}
 	}, [stream]);
+
+	const manualUnmuteAudio = () => {
+		if (audioRef.current) {
+			void audioRef.current.play().then(() => setAudioBlocked(false)).catch(() => {});
+		}
+	};
 
 	return (
 		<div className="relative h-full min-h-[240px] w-full rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col justify-between p-4 shadow-lg group">
 			<div className="flex items-center justify-between z-10">
-				<span className="text-xs font-bold bg-black/60 px-2.5 py-1 rounded-md border border-white/10 backdrop-blur-xs">
-					{participant.name}
-					{participant.isHost && <span className="text-indigo-400 font-extrabold ml-1">HOST</span>}
+				<span className="text-xs font-bold bg-black/60 px-2.5 py-1 rounded-md border border-white/10 backdrop-blur-xs flex items-center gap-1.5">
+					<span>{participant.name}</span>
+					{participant.isHost && <span className="text-indigo-400 font-extrabold">HOST</span>}
 				</span>
 				<span
 					className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
@@ -91,16 +147,29 @@ function RemoteParticipantMediaTile({
 				</span>
 			</div>
 
-			{/* Audio Element for Unmuted Audible Remote Microphone Voice */}
-			<audio ref={audioRef} autoPlay playsInline muted={false} />
+			{/* Remote Audio Element */}
+			<audio
+				ref={audioRef}
+				autoPlay
+				playsInline
+				muted={false}
+				ref-callback={(el: HTMLAudioElement) => {
+					if (el && stream && el.srcObject !== stream) {
+						el.srcObject = stream;
+						void el.play().catch(() => {});
+					}
+				}}
+			/>
 
-			{/* Video Element for Remote Camera Stream */}
+			{/* Remote Video Element */}
 			<video
 				ref={videoRef}
 				autoPlay
 				playsInline
 				muted={false}
-				className={`absolute inset-0 h-full w-full object-cover ${hasVideoTrack && stream ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+				className={`absolute inset-0 h-full w-full object-cover ${
+					hasVideoTrack && stream ? "opacity-100" : "opacity-0 pointer-events-none"
+				}`}
 			/>
 
 			{(!stream || !hasVideoTrack) && (
@@ -110,23 +179,34 @@ function RemoteParticipantMediaTile({
 					</div>
 					<p className="text-xs font-bold text-zinc-300">{participant.name}</p>
 					<div className="mt-2 flex items-center gap-1">
-						<span className="w-1 h-3 bg-emerald-400 rounded animate-pulse" />
-						<span className="w-1 h-4 bg-emerald-400 rounded animate-pulse delay-75" />
-						<span className="w-1 h-2 bg-emerald-400 rounded animate-pulse delay-150" />
+						<span className="w-1.5 h-3 bg-emerald-400 rounded animate-pulse" />
+						<span className="w-1.5 h-4 bg-emerald-400 rounded animate-pulse delay-75" />
+						<span className="w-1.5 h-2 bg-emerald-400 rounded animate-pulse delay-150" />
 					</div>
 				</div>
 			)}
 
-			<div className="z-10 flex items-center gap-2">
+			<div className="z-10 flex items-center justify-between">
 				<span
-					className={`text-xs px-2.5 py-1 rounded-md border ${
+					className={`text-xs px-2.5 py-1 rounded-md border flex items-center gap-1.5 ${
 						participant.audioEnabled
 							? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
 							: "bg-rose-500/20 text-rose-300 border-rose-500/30"
 					}`}
 				>
-					{participant.audioEnabled ? "🎤 Mic Active" : "🔇 Mic Muted"}
+					<span>{participant.audioEnabled ? "🎤" : "🔇"}</span>
+					<span>{participant.audioEnabled ? "Mic Active" : "Mic Muted"}</span>
 				</span>
+
+				{audioBlocked && (
+					<button
+						type="button"
+						onClick={manualUnmuteAudio}
+						className="text-xs font-bold bg-amber-500 text-black px-3 py-1 rounded-md animate-bounce shadow-md"
+					>
+						🔊 Click to Unmute Audio
+					</button>
+				)}
 			</div>
 		</div>
 	);
@@ -147,8 +227,6 @@ export default function VideoMeetingRoomPage() {
 	const [myId] = useState(() => `user_${Math.random().toString(36).substring(2, 9)}`);
 	const [joined, setJoined] = useState(false);
 	const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
-	const [mediaState, setMediaState] = useState<"idle" | "loading" | "ready" | "blocked">("idle");
-	const [mediaError, setMediaError] = useState<string | null>(null);
 	const [audioEnabled, setAudioEnabled] = useState(true);
 	const [videoEnabled, setVideoEnabled] = useState(true);
 
@@ -172,7 +250,6 @@ export default function VideoMeetingRoomPage() {
 
 	const defaultStart = useMemo(() => "2026-08-20T10:00:00.000Z", []);
 
-	// Derive actual Host Name cleanly
 	const actualHostName = useMemo(() => {
 		const rawHost = searchParams.get("host");
 		if (rawHost && rawHost !== "Office Connect") {
@@ -194,7 +271,6 @@ export default function VideoMeetingRoomPage() {
 		[meetingId, searchParams, actualHostName, defaultStart],
 	);
 
-	// Differentiate Host vs Guest display name & auto-join logged in Host
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		const authUser = localStorage.getItem("authUser");
@@ -210,7 +286,6 @@ export default function VideoMeetingRoomPage() {
 				}
 			} catch {}
 		}
-		// Unauthenticated Guest Participant -> Stay in Pre-Join Lobby
 		setIsHost(false);
 		setDisplayName("");
 	}, []);
@@ -229,12 +304,10 @@ export default function VideoMeetingRoomPage() {
 		setTimeout(() => setCopyNotice(false), 2500);
 	};
 
-	// Keep mediaStreamRef synchronized with state
 	useEffect(() => {
 		mediaStreamRef.current = mediaStream;
 	}, [mediaStream]);
 
-	// Sync active MediaStream tracks into existing RTCPeerConnections whenever mediaStream updates
 	useEffect(() => {
 		if (!mediaStream) return;
 		Object.values(peerConnections.current).forEach((pc) => {
@@ -252,7 +325,6 @@ export default function VideoMeetingRoomPage() {
 		});
 	}, [mediaStream]);
 
-	// Backend Real-Time Room Presence & Dynamic Participant Synchronization
 	useEffect(() => {
 		if (typeof window === "undefined" || !meetingId || !joined) return;
 
@@ -277,9 +349,7 @@ export default function VideoMeetingRoomPage() {
 						setRemoteParticipants(remotes);
 					}
 				}
-			} catch (err) {
-				console.log("Room sync poll error:", err);
-			}
+			} catch {}
 		};
 
 		void syncRoomState();
@@ -297,7 +367,6 @@ export default function VideoMeetingRoomPage() {
 		};
 	}, [joined, meetingId, myId, displayName, isHost, audioEnabled, videoEnabled, invite.hostName]);
 
-	// WebRTC Signaling & Real P2P Video/Audio Connection Setup
 	const sendSignal = async (targetId: string, signalData: any) => {
 		try {
 			await fetch(`/api/video-connect/room/${meetingId}/signal`, {
@@ -309,9 +378,7 @@ export default function VideoMeetingRoomPage() {
 					signal: signalData,
 				}),
 			});
-		} catch (e) {
-			console.log("Send signal error:", e);
-		}
+		} catch {}
 	};
 
 	const createPeerConnection = (targetId: string) => {
@@ -350,7 +417,6 @@ export default function VideoMeetingRoomPage() {
 		return pc;
 	};
 
-	// Initiate WebRTC Calls to Remote Participants
 	useEffect(() => {
 		if (!joined || remoteParticipants.length === 0) return;
 
@@ -365,15 +431,12 @@ export default function VideoMeetingRoomPage() {
 						});
 						await pc.setLocalDescription(offer);
 						void sendSignal(p.id, { type: "offer", sdp: offer });
-					} catch (e) {
-						console.log("Create offer error:", e);
-					}
+					} catch {}
 				})();
 			}
 		});
 	}, [joined, remoteParticipants, myId, mediaStream]);
 
-	// Process Incoming WebRTC Signals (Offers, Answers, ICE Candidates)
 	useEffect(() => {
 		if (!joined || !meetingId) return;
 
@@ -407,9 +470,7 @@ export default function VideoMeetingRoomPage() {
 						}
 					}
 				}
-			} catch (e) {
-				console.log("Poll signals error:", e);
-			}
+			} catch {}
 		};
 
 		const interval = setInterval(() => {
@@ -419,7 +480,6 @@ export default function VideoMeetingRoomPage() {
 		return () => clearInterval(interval);
 	}, [joined, meetingId, myId, mediaStream]);
 
-	// Backend Real-Time Chat Synchronization
 	useEffect(() => {
 		if (typeof window === "undefined" || !meetingId || !joined) return;
 
@@ -469,31 +529,7 @@ export default function VideoMeetingRoomPage() {
 		} catch {}
 	};
 
-	// Local Video Stream Assignment
-	useEffect(() => {
-		if (!previewRef.current) return;
-		previewRef.current.srcObject = mediaStream;
-		if (mediaStream) {
-			void previewRef.current.play().catch(() => {});
-		}
-		return () => {
-			if (previewRef.current) {
-				previewRef.current.srcObject = null;
-			}
-		};
-	}, [mediaStream, joined]);
-
-	// Screen Sharing Stream Ref Assignment
-	useEffect(() => {
-		if (!screenRef.current || !screenStream) return;
-		screenRef.current.srcObject = screenStream;
-		void screenRef.current.play().catch(() => {});
-	}, [screenStream, screenSharing]);
-
 	const enableDevicesAndJoin = async () => {
-		setMediaState("loading");
-		setMediaError(null);
-
 		let stream: MediaStream | null = null;
 		try {
 			if (typeof window !== "undefined" && navigator.mediaDevices?.getUserMedia) {
@@ -506,19 +542,18 @@ export default function VideoMeetingRoomPage() {
 					.catch(() => navigator.mediaDevices.getUserMedia({ video: true }))
 					.catch(() => null);
 			}
-		} catch (err) {
-			console.log("Hardware device note:", err);
+		} catch {}
+
+		if (!stream) {
+			// Fallback to synthetic stream if hardware camera is locked by another Chrome window on the same laptop
+			stream = createFallbackSyntheticStream(displayName || (isHost ? invite.hostName : "Guest"));
 		}
 
-		if (stream) {
-			mediaStreamRef.current = stream;
-			setMediaStream(stream);
-			setAudioEnabled(true);
-			setVideoEnabled(true);
-		}
-
+		mediaStreamRef.current = stream;
+		setMediaStream(stream);
+		setAudioEnabled(true);
+		setVideoEnabled(true);
 		setJoined(true);
-		setMediaState("ready");
 	};
 
 	const toggleAudio = () => {
@@ -559,12 +594,8 @@ export default function VideoMeetingRoomPage() {
 					setScreenStream(null);
 					setScreenSharing(false);
 				};
-			} else {
-				alert("Screen sharing is not supported in this browser environment.");
 			}
-		} catch (err) {
-			console.log("Screen share cancelled:", err);
-		}
+		} catch {}
 	};
 
 	const leaveRoom = () => {
@@ -577,8 +608,6 @@ export default function VideoMeetingRoomPage() {
 		setScreenStream(null);
 		setScreenSharing(false);
 		setJoined(false);
-		setMediaState("idle");
-		setMediaError(null);
 	};
 
 	const totalParticipantsCount = 1 + remoteParticipants.length;
@@ -597,7 +626,7 @@ export default function VideoMeetingRoomPage() {
 	return (
 		<WorkspaceShell>
 			{!joined ? (
-				/* ==================== PRE-JOIN LOBBY (GUEST ACCESS) ==================== */
+				/* ==================== PRE-JOIN LOBBY ==================== */
 				<div className="mx-auto max-w-5xl py-6 px-4">
 					<div className="flex items-center justify-between mb-6">
 						<Link href="/video-connect" className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-50 shadow-2xs">
@@ -609,7 +638,6 @@ export default function VideoMeetingRoomPage() {
 					</div>
 
 					<div className="grid gap-6 lg:grid-cols-12 items-center">
-						{/* Device Preview Box */}
 						<div className="lg:col-span-7">
 							<div className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 p-4 shadow-xl">
 								<div className="flex items-center justify-between text-xs text-zinc-400 mb-3">
@@ -621,18 +649,27 @@ export default function VideoMeetingRoomPage() {
 
 								<div className="relative h-72 w-full rounded-xl bg-zinc-900 overflow-hidden flex items-center justify-center border border-zinc-800">
 									{mediaStream && videoEnabled ? (
-										<video ref={previewRef} autoPlay muted playsInline className="h-full w-full object-cover" />
+										<video
+											ref={(el) => {
+												if (el && mediaStream && el.srcObject !== mediaStream) {
+													el.srcObject = mediaStream;
+													void el.play().catch(() => {});
+												}
+											}}
+											autoPlay
+											muted
+											playsInline
+											className="h-full w-full object-cover"
+										/>
 									) : (
 										<div className="flex flex-col items-center justify-center p-6 text-center">
 											<div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white text-2xl font-black border-2 border-indigo-400 shadow-lg mb-3">
 												{displayName ? displayName.substring(0, 2).toUpperCase() : "GUEST"}
 											</div>
 											<p className="text-sm font-bold text-zinc-200">{displayName || "Guest Participant"}</p>
-											<p className="text-xs text-zinc-400 mt-1">{videoEnabled ? "Ready to connect video" : "Camera turned off"}</p>
 										</div>
 									)}
 
-									{/* Controls Overlay */}
 									<div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-lg">
 										<button
 											type="button"
@@ -653,7 +690,6 @@ export default function VideoMeetingRoomPage() {
 							</div>
 						</div>
 
-						{/* Pre-Join Card */}
 						<div className="lg:col-span-5 space-y-4">
 							<div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
 								<h1 className="text-2xl font-bold tracking-tight text-zinc-900">{invite.title}</h1>
@@ -662,10 +698,8 @@ export default function VideoMeetingRoomPage() {
 								<div className="mt-4 space-y-2 text-xs text-zinc-600 border-t border-b border-zinc-100 py-3">
 									<p><span className="font-bold text-zinc-800">Scheduled:</span> {formatDateTime(invite.scheduledStart) || "Instant Meeting"}</p>
 									<p><span className="font-bold text-zinc-800">Duration:</span> {invite.durationMinutes} minutes</p>
-									{invite.notes && <p><span className="font-bold text-zinc-800">Notes:</span> {invite.notes}</p>}
 								</div>
 
-								{/* Display Name Input */}
 								<div className="mt-4 space-y-1.5">
 									<label className="block text-xs font-bold text-zinc-700">Enter Your Name to Join:</label>
 									<input
@@ -687,7 +721,6 @@ export default function VideoMeetingRoomPage() {
 								</button>
 							</div>
 
-							{/* Share Link Card */}
 							<div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
 								<div className="flex items-center justify-between mb-2">
 									<p className="text-xs font-bold text-zinc-900">Share Meeting Link</p>
@@ -712,7 +745,6 @@ export default function VideoMeetingRoomPage() {
 			) : (
 				/* ==================== LIVE MEETING STUDIO ROOM ==================== */
 				<div className="flex flex-col h-[calc(100vh-80px)] -m-6 bg-zinc-950 text-white overflow-hidden relative">
-					{/* TOP HEADER BAR (Cleaned - No Recording Pill / Number at top) */}
 					<header className="flex items-center justify-between px-6 py-3 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md">
 						<div className="flex items-center gap-3">
 							<div>
@@ -726,7 +758,6 @@ export default function VideoMeetingRoomPage() {
 							</div>
 						</div>
 
-						{/* Clean Copy Meeting Link Button */}
 						<div className="hidden sm:flex items-center gap-3">
 							<button
 								type="button"
@@ -737,7 +768,6 @@ export default function VideoMeetingRoomPage() {
 							</button>
 						</div>
 
-						{/* Right Control Toggles */}
 						<div className="flex items-center gap-2">
 							<button
 								type="button"
@@ -756,7 +786,6 @@ export default function VideoMeetingRoomPage() {
 						</div>
 					</header>
 
-					{/* SCREEN SHARE STAGE (IF ACTIVE) */}
 					{screenSharing && (
 						<div className="p-4 bg-zinc-900 border-b border-zinc-800">
 							<div className="flex items-center justify-between text-xs text-zinc-300 mb-2">
@@ -772,17 +801,24 @@ export default function VideoMeetingRoomPage() {
 								</button>
 							</div>
 							<div className="relative h-64 w-full rounded-xl bg-black overflow-hidden border border-indigo-500/40">
-								<video ref={screenRef} autoPlay playsInline className="h-full w-full object-contain" />
+								<video
+									ref={(el) => {
+										if (el && screenStream && el.srcObject !== screenStream) {
+											el.srcObject = screenStream;
+											void el.play().catch(() => {});
+										}
+									}}
+									autoPlay
+									playsInline
+									className="h-full w-full object-contain"
+								/>
 							</div>
 						</div>
 					)}
 
-					{/* MAIN VIDEO STAGE AREA */}
 					<div className="flex-1 flex flex-col overflow-hidden relative p-4 gap-4">
 						<div className="flex-1 flex flex-col items-center justify-center max-w-6xl mx-auto w-full relative">
-							
 							{remoteParticipants.length === 0 ? (
-								/* ==================== 1 SINGLE FULL-SIZE TILE (WHEN ALONE) ==================== */
 								<div className="relative h-full w-full max-h-[85vh] rounded-3xl border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col justify-between p-6 shadow-2xl group">
 									<div className="flex items-center justify-between z-10">
 										<span className="text-xs font-bold bg-black/60 px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-md flex items-center gap-2">
@@ -795,20 +831,28 @@ export default function VideoMeetingRoomPage() {
 										</span>
 									</div>
 
-									{/* Main Live Webcam Stream */}
 									{mediaStream && videoEnabled ? (
-										<video ref={previewRef} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
+										<video
+											ref={(el) => {
+												if (el && mediaStream && el.srcObject !== mediaStream) {
+													el.srcObject = mediaStream;
+													void el.play().catch(() => {});
+												}
+											}}
+											autoPlay
+											muted
+											playsInline
+											className="absolute inset-0 h-full w-full object-cover"
+										/>
 									) : (
 										<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-indigo-950/40 to-zinc-950">
 											<div className="w-28 h-28 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-black border-4 border-indigo-400 shadow-2xl mb-3">
 												{(displayName || invite.hostName).substring(0, 2).toUpperCase()}
 											</div>
 											<p className="text-base font-bold text-zinc-200">{displayName || invite.hostName}</p>
-											<p className="text-xs text-zinc-400 mt-1">Ready in meeting room</p>
 										</div>
 									)}
 
-									{/* Bottom Banner (Host vs Guest) */}
 									{isHost ? (
 										<div className="z-10 flex items-center justify-between bg-black/70 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 max-w-xl mx-auto w-full shadow-lg">
 											<div className="flex items-center gap-2 text-xs text-zinc-300">
@@ -833,9 +877,8 @@ export default function VideoMeetingRoomPage() {
 									)}
 								</div>
 							) : (
-								/* ==================== MULTI PARTICIPANTS GRID (MERGED 2+ TILES) ==================== */
 								<div className="w-full h-full grid gap-4 auto-rows-fr grid-cols-1 md:grid-cols-2 items-center justify-center">
-									{/* MY TILE (Muted locally to prevent self-echo) */}
+									{/* MY LOCAL TILE */}
 									<div className="relative h-full min-h-[240px] w-full rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden flex flex-col justify-between p-4 shadow-lg group">
 										<div className="flex items-center justify-between z-10">
 											<span className="text-xs font-bold bg-black/60 px-2.5 py-1 rounded-md border border-white/10 backdrop-blur-xs">
@@ -849,7 +892,18 @@ export default function VideoMeetingRoomPage() {
 										</div>
 
 										{mediaStream && videoEnabled ? (
-											<video ref={previewRef} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
+											<video
+												ref={(el) => {
+													if (el && mediaStream && el.srcObject !== mediaStream) {
+														el.srcObject = mediaStream;
+														void el.play().catch(() => {});
+													}
+												}}
+												autoPlay
+												muted
+												playsInline
+												className="absolute inset-0 h-full w-full object-cover"
+											/>
 										) : (
 											<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-indigo-950/40 to-zinc-950">
 												<div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-black border-2 border-indigo-400 shadow-xl mb-2">
@@ -866,7 +920,7 @@ export default function VideoMeetingRoomPage() {
 										</div>
 									</div>
 
-									{/* REMOTE PARTICIPANTS TILES (Unmuted for audible voice & WebRTC stream via RemoteParticipantMediaTile) */}
+									{/* REMOTE PARTICIPANTS TILES */}
 									{remoteParticipants.map((participant) => (
 										<RemoteParticipantMediaTile
 											key={participant.id}
@@ -876,10 +930,9 @@ export default function VideoMeetingRoomPage() {
 									))}
 								</div>
 							)}
-
 						</div>
 
-						{/* SIDEBAR: CHAT / PARTICIPANTS PANEL */}
+						{/* SIDEBAR: CHAT / PARTICIPANTS */}
 						{activeTab && (
 							<div className="w-80 rounded-2xl border border-zinc-800 bg-zinc-900 flex flex-col shadow-2xl z-20">
 								<div className="flex items-center justify-between p-3 border-b border-zinc-800">
@@ -919,7 +972,6 @@ export default function VideoMeetingRoomPage() {
 									</div>
 								) : (
 									<div className="p-3 space-y-2 overflow-y-auto flex-1 text-xs">
-										{/* My Profile Item */}
 										<div className="flex items-center justify-between p-2 rounded-xl bg-zinc-800 border border-zinc-700">
 											<div className="flex items-center gap-2">
 												<div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white">
@@ -933,7 +985,6 @@ export default function VideoMeetingRoomPage() {
 											<span className="text-emerald-400">🎤</span>
 										</div>
 
-										{/* Remote Participants List */}
 										{remoteParticipants.map((p) => (
 											<div key={p.id} className="flex items-center justify-between p-2 rounded-xl bg-zinc-800 border border-zinc-700">
 												<div className="flex items-center gap-2">
@@ -954,13 +1005,11 @@ export default function VideoMeetingRoomPage() {
 						)}
 					</div>
 
-					{/* BOTTOM FLOATING CONTROL DOCK (GOOGLE MEET STYLE) */}
 					<footer className="flex items-center justify-center gap-3 py-3 px-6 bg-zinc-900 border-t border-zinc-800 z-30">
 						<button
 							type="button"
 							onClick={toggleAudio}
 							className={`p-3.5 rounded-full transition shadow-md flex items-center gap-2 text-xs font-bold ${audioEnabled ? "bg-zinc-800 hover:bg-zinc-700 text-white" : "bg-rose-600 hover:bg-rose-700 text-white"}`}
-							title={audioEnabled ? "Mute Microphone" : "Unmute Microphone"}
 						>
 							<span>{audioEnabled ? "🎤" : "🔇"}</span>
 							<span className="hidden sm:inline">{audioEnabled ? "Mute" : "Unmute"}</span>
@@ -970,7 +1019,6 @@ export default function VideoMeetingRoomPage() {
 							type="button"
 							onClick={toggleVideo}
 							className={`p-3.5 rounded-full transition shadow-md flex items-center gap-2 text-xs font-bold ${videoEnabled ? "bg-zinc-800 hover:bg-zinc-700 text-white" : "bg-rose-600 hover:bg-rose-700 text-white"}`}
-							title={videoEnabled ? "Turn Camera Off" : "Turn Camera On"}
 						>
 							<span>{videoEnabled ? "📷" : "📷 Off"}</span>
 							<span className="hidden sm:inline">{videoEnabled ? "Camera Off" : "Camera On"}</span>
@@ -980,7 +1028,6 @@ export default function VideoMeetingRoomPage() {
 							type="button"
 							onClick={() => void toggleScreenShare()}
 							className={`p-3.5 rounded-full transition shadow-md flex items-center gap-2 text-xs font-bold ${screenSharing ? "bg-indigo-600 text-white" : "bg-zinc-800 hover:bg-zinc-700 text-white"}`}
-							title="Share Screen"
 						>
 							<span>🖥️</span>
 							<span className="hidden sm:inline">{screenSharing ? "Stop Sharing" : "Share Screen"}</span>
