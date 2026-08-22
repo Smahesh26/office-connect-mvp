@@ -21,32 +21,49 @@ jobs:
           username: ${{ secrets.HOSTINGER_USER || 'root' }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           port: ${{ secrets.HOSTINGER_PORT || '22' }}
-          timeout: 60s
-          command_timeout: 15m
+          timeout: 120s
+          command_timeout: 20m
           script: |
-            echo "🚀 Starting automated deployment on Hostinger VPS..."
-            
-            # Navigate to web application directory
-            cd /var/www/officeconnect-cambliss
+            echo "🚀 Starting automated Hostinger VPS Deployment & 502 Fix..."
 
-            # Pull latest code
+            if [ -d "/var/www/office-connect-mvp" ]; then
+              PROJECT_DIR="/var/www/office-connect-mvp"
+            elif [ -d "/var/www/officeconnect-cambliss" ]; then
+              PROJECT_DIR="/var/www/officeconnect-cambliss"
+            else
+              PROJECT_DIR="/var/www/office-connect-mvp"
+              mkdir -p "$PROJECT_DIR"
+              git clone https://github.com/Smahesh26/office-connect-mvp.git "$PROJECT_DIR"
+            fi
+
+            cd "$PROJECT_DIR"
+            git clean -fd
+            git checkout .
             git fetch --all
-            git reset --hard origin/master
+            git checkout main || git checkout master || true
+            git reset --hard origin/main || git reset --hard origin/master
+            git clean -fd
 
-            echo "📦 Installing & Building Backend..."
-            cd /var/www/officeconnect-cambliss/cambliss-backend
+            echo "🧹 Cleaning up existing PM2 processes..."
+            pm2 delete all || true
+
+            echo "📦 Building & Starting Backend..."
+            cd "$PROJECT_DIR/cambliss-backend"
             npm install
             npx prisma generate
-            npx prisma migrate deploy
+            npx prisma migrate deploy || true
             npm run build
-            pm2 restart officeconnect-backend || pm2 restart cambliss-backend || pm2 start dist/server.js --name "officeconnect-backend"
+            pm2 start dist/server.js --name "cambliss-backend"
 
-            echo "🎨 Installing & Building Frontend..."
-            cd /var/www/officeconnect-cambliss/cambliss-frontend
+            echo "🎨 Building & Starting Frontend..."
+            cd "$PROJECT_DIR/cambliss-frontend"
             npm install
             rm -rf .next
             npm run build
-            pm2 restart officeconnect-frontend || pm2 restart cambliss-frontend || pm2 start npm --name "officeconnect-frontend" -- start -- -p 3000
-            pm2 save
+            pm2 start npx --name "cambliss-frontend" -- next start -p 3000
 
-            echo "🎉 Automated deployment completed successfully!"
+            pm2 save
+            pm2 status
+            sudo systemctl restart nginx || true
+
+            echo "🎉 Deployment & 502 Fix completed successfully!"

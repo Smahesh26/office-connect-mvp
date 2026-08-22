@@ -76,7 +76,6 @@ const clientMenuItems: SidebarItem[] = [
 	{ label: "HRM", href: "/hrm", accessKey: "HRM" },
 	{ label: "Inventory", href: "/inventory", accessKey: "INVENTORY" },
 	{ label: "Store", href: "/store" },
-	{ label: "Akaunting", href: "/akaunting", badge: "NEW" },
 	{ label: "File Sharing", href: "/file-sharing", accessKey: "FILE_SHARING" },
 	{ label: "Video Connect", href: "/video-connect" },
 	{ label: "User Management", href: "/user-management", accessKey: "USER_MANAGEMENT" },
@@ -141,13 +140,6 @@ function SidebarIcon({ label }: { label: string }) {
 			return (
 				<svg viewBox="0 0 24 24" fill="none" className={common}>
 					<path d="M14 5.5a4 4 0 0 0-5 5l-5 5 2.5 2.5 5-5a4 4 0 0 0 5-5l-2.5 2.5L11.5 8l2.5-2.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-				</svg>
-			);
-		case "Akaunting":
-			return (
-				<svg viewBox="0 0 24 24" fill="none" className={common}>
-					<path d="M12 2L2 7l10 5 10-5-10-5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-					<path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
 				</svg>
 			);
 		case "File Sharing":

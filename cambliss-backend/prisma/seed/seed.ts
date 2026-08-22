@@ -1,67 +1,23 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient, RoleName, StoreMemberRole, SubscriptionStatus } from "@prisma/client";
+import { PrismaClient, RoleName } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { Pool } from "pg";
 
-const getRequiredEnv = (name: string): string => {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`${name} is not defined`);
-  }
-
-  return value;
-};
-
-const connectionString = getRequiredEnv("DATABASE_URL");
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error("DATABASE_URL is not defined");
+}
 
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const superAdminEmail = getRequiredEnv("SUPER_ADMIN_EMAIL");
-const superAdminPassword = getRequiredEnv("SUPER_ADMIN_PASSWORD");
-const superAdminFirstName = process.env.SUPER_ADMIN_FIRST_NAME ?? "Super";
-const superAdminLastName = process.env.SUPER_ADMIN_LAST_NAME ?? "Admin";
+const superAdminEmail = process.env.SUPER_ADMIN_EMAIL ?? "admin@camblissstudio.com";
+const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD ?? "SecureAdminPassword123!";
 
-const demoOrgName = process.env.DEMO_ORG_NAME ?? "Cambliss Marketplace Demo";
-const demoAdminEmail = process.env.DEMO_ADMIN_EMAIL ?? "admin.marketplace@cambliss.local";
-const demoSellerEmail = process.env.DEMO_SELLER_EMAIL ?? "seller.marketplace@cambliss.local";
-const demoPassword = process.env.DEMO_USER_PASSWORD ?? "Pass@123";
-
-const ensureUser = async (params: {
-  email: string;
-  passwordHash: string;
-  firstName: string;
-  lastName: string;
-  organizationId: string;
-}) => {
-  const existing = await prisma.user.findUnique({
-    where: { email: params.email },
-  });
-
-  if (existing) {
-    return prisma.user.update({
-      where: { id: existing.id },
-      data: {
-        firstName: params.firstName,
-        lastName: params.lastName,
-        passwordHash: params.passwordHash,
-        organizationId: params.organizationId,
-      },
-    });
-  }
-
-  return prisma.user.create({
-    data: {
-      email: params.email,
-      firstName: params.firstName,
-      lastName: params.lastName,
-      passwordHash: params.passwordHash,
-      organizationId: params.organizationId,
-    },
-  });
-};
+const userEmail = "bhaskeradv1@gmail.com";
+const userPassword = "Embpython@2020";
 
 async function main() {
   console.log("🌱 Seeding Cambliss database...");
@@ -77,34 +33,72 @@ async function main() {
 
   console.log("✅ Roles seeded");
 
-  // 2️⃣ Create SUPER_ADMIN
+  // 2️⃣ Ensure Default Organization
+  let defaultOrg = await prisma.organization.findFirst({
+    where: { name: "Cambliss Enterprise Demo" },
+  });
+
+  if (!defaultOrg) {
+    defaultOrg = await prisma.organization.create({
+      data: {
+        name: "Cambliss Enterprise Demo",
+      },
+    });
+  }
+
+  // 3️⃣ Create SUPER_ADMIN (admin@camblissstudio.com)
+  const hashedAdminPassword = await bcrypt.hash(superAdminPassword, 10);
   const existingAdmin = await prisma.user.findUnique({
     where: { email: superAdminEmail },
   });
 
   if (!existingAdmin) {
-    const hashedPassword = await bcrypt.hash(superAdminPassword, 10);
-
     const superAdmin = await prisma.user.create({
       data: {
         email: superAdminEmail,
-        passwordHash: hashedPassword,
-        firstName: superAdminFirstName,
-        lastName: superAdminLastName,
+        passwordHash: hashedAdminPassword,
+        firstName: "Super",
+        lastName: "Admin",
         isPlatformUser: true,
-        organizationId: null,
+        organizationId: defaultOrg.id,
       },
     });
-
-    // Platform user does NOT belong to organization
-    // So we don't create OrganizationUser record
-
     console.log("✅ SUPER_ADMIN created:", superAdmin.email);
   } else {
-    console.log("⚠ SUPER_ADMIN already exists");
+    await prisma.user.update({
+      where: { email: superAdminEmail },
+      data: { passwordHash: hashedAdminPassword, isPlatformUser: true },
+    });
+    console.log("✅ SUPER_ADMIN updated:", superAdminEmail);
   }
 
-  // 3️⃣ Create Default Modules
+  // 4️⃣ Create Standard User (bhaskeradv1@gmail.com)
+  const hashedUserPassword = await bcrypt.hash(userPassword, 10);
+  const existingUser = await prisma.user.findUnique({
+    where: { email: userEmail },
+  });
+
+  if (!existingUser) {
+    const standardUser = await prisma.user.create({
+      data: {
+        email: userEmail,
+        passwordHash: hashedUserPassword,
+        firstName: "Bhasker",
+        lastName: "User",
+        isPlatformUser: false,
+        organizationId: defaultOrg.id,
+      },
+    });
+    console.log("✅ User created:", standardUser.email);
+  } else {
+    await prisma.user.update({
+      where: { email: userEmail },
+      data: { passwordHash: hashedUserPassword, organizationId: defaultOrg.id },
+    });
+    console.log("✅ User updated:", userEmail);
+  }
+
+  // 5️⃣ Create Default Modules
   const defaultModules = [
     { name: "CRM", description: "Customer Relationship Management" },
     { name: "HRM", description: "Human Resource Management" },
