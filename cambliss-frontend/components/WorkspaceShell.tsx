@@ -76,7 +76,6 @@ const clientMenuItems: SidebarItem[] = [
 	{ label: "HRM", href: "/hrm", accessKey: "HRM" },
 	{ label: "Inventory", href: "/inventory", accessKey: "INVENTORY" },
 	{ label: "Store", href: "/store" },
-	{ label: "Akaunting", href: "/akaunting", badge: "NEW" },
 	{ label: "File Sharing", href: "/file-sharing", accessKey: "FILE_SHARING" },
 	{ label: "Video Connect", href: "/video-connect" },
 	{ label: "User Management", href: "/user-management", accessKey: "USER_MANAGEMENT" },

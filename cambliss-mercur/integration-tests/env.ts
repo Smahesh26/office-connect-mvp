@@ -1,4 +1,0 @@
-export const env = {
-    DATABASE_URL: process.env.DATABASE_URL,
-    MEDUSA_FF_SELLER_REGISTRATION: process.env.MEDUSA_FF_SELLER_REGISTRATION
-}
