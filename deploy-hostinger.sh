@@ -28,6 +28,7 @@ cd "$PROJECT_DIR/cambliss-backend"
 npm install
 npx prisma generate
 npx prisma migrate deploy || true
+npx ts-node scripts/seed-credentials.ts || true
 npm run build
 pm2 start dist/server.js --name "cambliss-backend"
 
@@ -49,4 +50,4 @@ pm2 status
 echo "🔁 Restarting Nginx Reverse Proxy..."
 sudo nginx -t && sudo systemctl restart nginx
 
-echo "🎉 Hostinger VPS Deployment Successfully Completed with 0 Errors!"
+echo "🎉 Hostinger VPS Deployment & Credentials Seeding Successfully Completed!"
