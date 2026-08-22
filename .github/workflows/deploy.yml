@@ -37,9 +37,12 @@ jobs:
             fi
 
             cd "$PROJECT_DIR"
+            git clean -fd
+            git checkout .
             git fetch --all
             git checkout main || git checkout master || true
             git reset --hard origin/main || git reset --hard origin/master
+            git clean -fd
 
             echo "🧹 Cleaning up existing PM2 processes..."
             pm2 delete all || true

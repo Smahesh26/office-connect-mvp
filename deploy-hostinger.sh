@@ -19,10 +19,14 @@ fi
 cd "$PROJECT_DIR"
 echo "📁 Working Directory: $PROJECT_DIR"
 
-# Pull latest code from GitHub main
-git fetch origin
+# Clean local working tree to prevent git merge conflict markers on VPS
+echo "🧹 Cleaning git working directory on VPS..."
+git clean -fd
+git checkout .
+git fetch --all
 git checkout main || git checkout master || true
 git reset --hard origin/main || git reset --hard origin/master
+git clean -fd
 
 # Stop existing PM2 processes to prevent port conflicts
 echo "🧹 Cleaning up PM2 processes..."
