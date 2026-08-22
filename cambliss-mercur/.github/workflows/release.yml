@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@3d267786b128fe76c2f16a390aa2448b815359f3 # v2
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Generate GitHub release changelog
+        if: ${{ !contains(github.ref_name, 'canary') && !contains(github.ref_name, 'rc') }}
+        continue-on-error: true
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
+          if [ -n "$PREV_TAG" ]; then
+            npx changelogithub --from "$PREV_TAG" --to "${GITHUB_REF_NAME}"
+          else
+            npx changelogithub
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Determine npm tag
+        id: npm-tag
+        run: |
+          if [[ "${{ github.ref_name }}" == *canary* ]]; then
+            echo "tag=canary" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.ref_name }}" == *rc* ]]; then
+            echo "tag=rc" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to npm
+        run: |
+          for dir in packages/*/ packages/providers/*/; do
+            if [ -f "$dir/package.json" ] && ! grep -q '"private": true' "$dir/package.json"; then
+              echo "Publishing $dir with --tag ${{ steps.npm-tag.outputs.tag }}..."
+              cd "$dir"
+              npm publish --access public --no-git-checks --tag ${{ steps.npm-tag.outputs.tag }}
+              cd -
+            fi
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true

@@ -1,0 +1,47 @@
+{
+  "name": "@mercurjs/types",
+  "version": "2.3.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mercurjs/mercur",
+    "directory": "packages/types"
+  },
+  "keywords": [
+    "marketplace",
+    "multi-vendor",
+    "medusajs",
+    "ecommerce",
+    "marketplace-types"
+  ],
+  "description": "Type definitions for Mercur",
+  "author": "Mercur",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./product": {
+      "types": "./dist/product/index.d.ts",
+      "default": "./dist/product/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@medusajs/types": "2.18.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

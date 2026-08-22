@@ -1,0 +1,58 @@
+<?php
+
+return [
+
+    'payment_received'      => 'Alınan Ödeme',
+    'payment_made'          => 'Yapılan Ödeme',
+    'paid_by'               => 'Ödeyen',
+    'paid_to'               => 'Ödenen',
+    'related_invoice'       => 'İlgili Satış Faturası',
+    'related_bill'          => 'İlgili Satın Alma Faturası',
+    'recurring_income'      => 'Yinelenen Gelir',
+    'recurring_expense'     => 'Yinelenen Gider',
+    'included_tax'          => 'Dahil edilen vergi tutarı',
+    'connected'             => 'Bağlantılı',
+    'connect_message'       => 'Bağlama işlemi sırasında bu :type için vergiler hesaplanmadı. Vergiler bağlanamaz.',
+
+    'form_description' => [
+        'general'           => 'Burada tarih, tutar, hesap, açıklama gibi işlemin genel bilgilerini girebilirsiniz.',
+        'assign_income'     => 'Raporlarınızı daha detaylı hale getirmek için bir kategori ve müşteri seçin.',
+        'assign_expense'    => 'Raporlarınızı daha detaylı hale getirmek için bir kategori ve tedarikçi seçin.',
+        'other'             => 'İşlemi kayıtlarınızla bağlantılı tutmak için bir numara ve referans girin.',
+    ],
+
+    'slider' => [
+        'create'            => ':date tarihinde :user bu işlemi oluşturdu',
+        'attachments'       => 'Bu işleme eklenen dosyaları indir',
+        'create_recurring'  => ':date tarihinde :user bu yinelenen şablonu oluşturdu',
+        'schedule'          => ':date tarihinden itibaren her :interval :frequency tekrarla',
+        'children'          => ':count işlemleri otomatik olarak oluşturuldu',
+        'connect'           => 'Bu işlem :count işlemle bağlantılıdır',
+        'transfer_headline' => '<div> <span class="font-bold">Gönderen: </span> :from_account </div> <div> <span class="font-bold">Alan: </span> :to_account </div>',
+        'transfer_desc'     => 'Transfer :date tarihinde oluşturuldu',
+    ],
+
+    'share' => [
+        'income' => [
+            'show_link'     => 'Müşteriniz işlemi bu linkten görüntüleyebilir',
+            'copy_link'     => 'Bağlantıyı kopyalayın ve müşterinizle paylaşın.',
+        ],
+
+        'expense' => [
+            'show_link'     => 'Tedarikçiniz işlemi bu bağlantıdan görüntüleyebilir',
+            'copy_link'     => 'Bağlantıyı kopyalayın ve tedarikçinizle paylaşın.',
+        ],
+    ],
+
+    'sticky' => [
+        'description'       => 'Tedarikçinizin ödemenizin web sürümünü nasıl göreceğini önizliyorsunuz.',
+    ],
+
+    'messages' => [
+        'update_document_transaction' => 'Bu işlemi güncelleyebilirsiniz. Belgeye gitmeli ve orada düzenlemelisiniz.',
+        'create_document_transaction_error' => 'Bu uç nokta bir belgeye eklenemez. {{akaunting_url}}/documents/{{akaunting_document_id}}/transactions kullanın',
+        'update_document_transaction_error' => 'Bu uç nokta bir belgeye güncellenemez. {{akaunting_url}}/documents/{{akaunting_document_id}}/transactions/{akaunting_transaction_id} kullanın',
+        'delete_document_transaction_error' => 'Bu uç nokta bir belgeden silinemez. {{akaunting_url}}/documents/{{akaunting_document_id}}/transactions/{akaunting_transaction_id} kullanın',
+    ],
+
+];

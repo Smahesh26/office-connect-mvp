@@ -1,0 +1,363 @@
+import { PencilSquare, Trash } from "@medusajs/icons";
+import {
+  Button,
+  Checkbox,
+  Container,
+  Heading,
+  toast,
+  usePrompt,
+} from "@medusajs/ui";
+import { keepPreviousData } from "@tanstack/react-query";
+import {
+  createColumnHelper,
+  RowSelectionState,
+  type ColumnDef,
+} from "@tanstack/react-table";
+import { useExtendableTable } from "@mercurjs/dashboard-shared";
+import { ReactNode, useMemo, useState, Children } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, Outlet, useLoaderData, useNavigate } from "react-router-dom";
+
+import { ActionMenu } from "../../../../../components/common/action-menu";
+import { _DataTable } from "../../../../../components/table/data-table";
+import {
+  useBatchProducts,
+  useDeleteProduct,
+  useProducts,
+} from "../../../../../hooks/api/products";
+import { useProductTableColumns } from "../../../../../hooks/table/columns/use-product-table-columns";
+import { useProductTableFilters } from "../../../../../hooks/table/filters/use-product-table-filters";
+import { useProductTableQuery } from "../../../../../hooks/table/query/use-product-table-query";
+import { useDataTable } from "../../../../../hooks/use-data-table";
+import { PRODUCT_IDS_KEY } from "../../../common/constants";
+import { productsLoader } from "../../loader";
+import { ProductDTO } from "@mercurjs/types";
+
+const PAGE_SIZE = 20;
+
+export const ProductListTitle = () => {
+  const { t } = useTranslation();
+
+  return (
+    <Heading level="h2" data-testid="products-list-title">
+      {t("products.domain")}
+    </Heading>
+  );
+};
+
+export const ProductListCreateButton = () => {
+  const { t } = useTranslation();
+
+  return (
+    <Button
+      size="small"
+      variant="secondary"
+      asChild
+      data-testid="products-create-button"
+    >
+      <Link to="create" data-testid="products-create-link">
+        {t("actions.create")}
+      </Link>
+    </Button>
+  );
+};
+
+export const ProductListActions = ({ children }: { children?: ReactNode }) => {
+  return (
+    <div
+      className="flex items-center justify-center gap-x-2"
+      data-testid="products-list-actions"
+    >
+      {Children.count(children) > 0 ? (
+        children
+      ) : (
+        <>
+          <ProductListCreateButton />
+        </>
+      )}
+    </div>
+  );
+};
+
+export const ProductListHeader = ({ children }: { children?: ReactNode }) => {
+  return (
+    <div
+      className="flex items-center justify-between px-6 py-4"
+      data-testid="products-list-header"
+    >
+      {Children.count(children) > 0 ? (
+        children
+      ) : (
+        <>
+          <ProductListTitle />
+          <ProductListActions />
+        </>
+      )}
+    </div>
+  );
+};
+
+export const ProductListDataTable = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const prompt = usePrompt();
+
+  const [selection, setSelection] = useState<RowSelectionState>({});
+
+  const { mutateAsync: batchProducts } = useBatchProducts();
+
+  const initialData = useLoaderData() as Awaited<
+    ReturnType<ReturnType<typeof productsLoader>>
+  >;
+
+  const { searchParams, raw } = useProductTableQuery({ pageSize: PAGE_SIZE });
+  const { products, count, isLoading, isError, error } = useProducts(
+    {
+      ...searchParams,
+    },
+    {
+      initialData,
+      placeholderData: keepPreviousData,
+    },
+  );
+
+  const baseFilters = useProductTableFilters();
+  const { columns, filters: extFilters } = useColumns();
+  const filters = useMemo(
+    () => [...baseFilters, ...(extFilters as typeof baseFilters)],
+    [baseFilters, extFilters],
+  );
+
+  const { table } = useDataTable({
+    data: products ?? [],
+    columns,
+    count,
+    enablePagination: true,
+    pageSize: PAGE_SIZE,
+    getRowId: (row) => row.id,
+    enableRowSelection: true,
+    rowSelection: {
+      state: selection,
+      updater: setSelection,
+    },
+  });
+
+  if (isError) {
+    throw error;
+  }
+
+  return (
+    <div data-testid="products-data-table">
+      <_DataTable
+        table={table}
+        columns={columns}
+        count={count}
+        pageSize={PAGE_SIZE}
+        filters={filters}
+        search
+        pagination
+        isLoading={isLoading}
+        queryObject={raw}
+        navigateTo={(row) => `${row.original.id}`}
+        orderBy={[
+          { key: "title", label: t("fields.title") },
+          { key: "created_at", label: t("fields.createdAt") },
+          { key: "updated_at", label: t("fields.updatedAt") },
+        ]}
+        defaultOrder={searchParams.order}
+        commands={[
+          {
+            action: async (rowSelection) => {
+              navigate(
+                `bulk-edit?${PRODUCT_IDS_KEY}=${Object.keys(rowSelection).join(
+                  ",",
+                )}`,
+              );
+            },
+            label: t("products.bulkEdit.action"),
+            shortcut: "e",
+          },
+          {
+            action: async (rowSelection) => {
+              const ids = Object.keys(rowSelection);
+
+              if (!ids.length) {
+                return;
+              }
+
+              const confirmed = await prompt({
+                title: t("general.areYouSure"),
+                description: t("products.bulkDelete.warning", {
+                  count: ids.length,
+                }),
+                confirmText: t("actions.delete"),
+                cancelText: t("actions.cancel"),
+              });
+
+              if (!confirmed) {
+                return;
+              }
+
+              await batchProducts(
+                { delete: ids },
+                {
+                  onSuccess: () => {
+                    toast.success(
+                      t("products.bulkDelete.successToast", {
+                        count: ids.length,
+                      }),
+                    );
+                    setSelection({});
+                  },
+                  onError: (e) => {
+                    toast.error(e.message);
+                  },
+                },
+              );
+            },
+            label: t("actions.delete"),
+            shortcut: "d",
+          },
+        ]}
+        noRecords={{
+          message: t("products.list.noRecordsMessage"),
+        }}
+      />
+    </div>
+  );
+};
+
+export const ProductListTable = ({ children }: { children?: ReactNode }) => {
+  return (
+    <Container className="divide-y p-0" data-testid="products-list-table">
+      {Children.count(children) > 0 ? (
+        children
+      ) : (
+        <>
+          <ProductListHeader />
+          <ProductListDataTable />
+        </>
+      )}
+      <Outlet />
+    </Container>
+  );
+};
+
+const ProductActions = ({ product }: { product: ProductDTO }) => {
+  const { t } = useTranslation();
+  const prompt = usePrompt();
+  const { mutateAsync } = useDeleteProduct(product.id);
+
+  const handleDelete = async () => {
+    const res = await prompt({
+      title: t("general.areYouSure"),
+      description: t("products.deleteWarning", {
+        title: product.title,
+      }),
+      confirmText: t("actions.delete"),
+      cancelText: t("actions.cancel"),
+    });
+
+    if (!res) {
+      return;
+    }
+
+    await mutateAsync(undefined, {
+      onSuccess: () => {
+        toast.success(t("products.toasts.delete.success.header"), {
+          description: t("products.toasts.delete.success.description", {
+            title: product.title,
+          }),
+        });
+      },
+      onError: (e) => {
+        toast.error(t("products.toasts.delete.error.header"), {
+          description: e.message,
+        });
+      },
+    });
+  };
+
+  return (
+    <ActionMenu
+      groups={[
+        {
+          actions: [
+            {
+              icon: <PencilSquare />,
+              label: t("actions.edit"),
+              to: `/products/${product.id}/edit`,
+            },
+          ],
+        },
+        {
+          actions: [
+            {
+              icon: <Trash />,
+              label: t("actions.delete"),
+              onClick: handleDelete,
+            },
+          ],
+        },
+      ]}
+      data-testid={`product-actions-${product.id}`}
+    />
+  );
+};
+
+const columnHelper = createColumnHelper<ProductDTO>();
+
+const useColumns = () => {
+  const base = useProductTableColumns();
+  const { columns: extended, filters } = useExtendableTable<ProductDTO>({
+    model: "product",
+    columns: base as unknown as ColumnDef<ProductDTO, unknown>[],
+  });
+
+  const columns = useMemo(
+    () => [
+      columnHelper.display({
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsSomePageRowsSelected()
+                ? "indeterminate"
+                : table.getIsAllPageRowsSelected()
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            data-testid="products-table-header-select-checkbox"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            onClick={(e) => e.stopPropagation()}
+            data-testid={`products-table-cell-${row.id}-select-checkbox`}
+          />
+        ),
+      }),
+      ...extended,
+      columnHelper.display({
+        id: "actions",
+        header: () => (
+          <div
+            className="flex h-full w-full items-center"
+            data-testid="products-table-header-actions"
+          >
+            <span data-testid="products-table-header-actions-text"></span>
+          </div>
+        ),
+        cell: ({ row }) => {
+          return <ProductActions product={row.original} />;
+        },
+      }),
+    ],
+    [extended],
+  );
+
+  return { columns, filters };
+};
