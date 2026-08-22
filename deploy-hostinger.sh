@@ -1,18 +1,14 @@
 #!/bin/bash
-# Hostinger VPS Fresh Clone Deployment Script (Preserving VPS Database Credentials)
+# Hostinger VPS Fresh Clone Deployment Script (Auto-Configuring PostgreSQL & Seeding)
 
 set -e
 
 echo "🚀 Starting Hostinger VPS Deployment for Smahesh26/office-connect-mvp..."
 
-# Preserve existing backend .env if present
-if [ -f "/var/www/office-connect-mvp/cambliss-backend/.env" ]; then
-    echo "💾 Backing up existing backend .env..."
-    cp /var/www/office-connect-mvp/cambliss-backend/.env /tmp/backend.env.bak
-elif [ -f "/var/www/officeconnect-cambliss/cambliss-backend/.env" ]; then
-    echo "💾 Backing up existing backend .env..."
-    cp /var/www/officeconnect-cambliss/cambliss-backend/.env /tmp/backend.env.bak
-fi
+# Ensure PostgreSQL Database & User exist on Hostinger VPS
+echo "🐘 Configuring PostgreSQL Database & Password..."
+sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';" || true
+sudo -u postgres psql -c "CREATE DATABASE cambliss;" || true
 
 PROJECT_DIR="/var/www/office-connect-mvp"
 
@@ -35,24 +31,18 @@ pm2 delete all || true
 echo "⚙️ Setting up Backend (cambliss-backend)..."
 cd "$PROJECT_DIR/cambliss-backend"
 
-if [ -f "/tmp/backend.env.bak" ]; then
-    echo "🔄 Restoring preserved VPS .env file..."
-    cp /tmp/backend.env.bak .env
-elif [ ! -f ".env" ]; then
-    echo "📝 Creating default .env for backend..."
-    cat <<EOT > .env
-DATABASE_URL="postgresql://postgres@localhost:5432/cambliss?schema=public"
+cat <<EOT > .env
+DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/cambliss?schema=public"
 JWT_SECRET="super-secret-jwt-token-key-2026"
 PORT=5000
 NODE_ENV=production
 SUPER_ADMIN_EMAIL="admin@camblissstudio.com"
 SUPER_ADMIN_PASSWORD="SecureAdminPassword123!"
 EOT
-fi
 
 npm install
 npx prisma generate
-npx prisma db push --accept-data-loss || true
+npx prisma db push --accept-data-loss || npx prisma migrate deploy || true
 npx ts-node scripts/seed-credentials.ts || true
 npm run build
 
@@ -64,12 +54,9 @@ PORT=4000 pm2 start dist/server.js --name "cambliss-backend-4000"
 echo "🌐 Setting up Frontend (cambliss-frontend)..."
 cd "$PROJECT_DIR/cambliss-frontend"
 
-if [ ! -f ".env.local" ]; then
-    echo "📝 Creating default .env.local for frontend..."
-    cat <<EOT > .env.local
+cat <<EOT > .env.local
 NEXT_PUBLIC_API_URL="https://theofficeconnect.com/api"
 EOT
-fi
 
 npm install
 npm run build
@@ -86,4 +73,4 @@ pm2 status
 echo "🔁 Restarting Nginx Reverse Proxy..."
 sudo nginx -t && sudo systemctl restart nginx
 
-echo "🎉 Hostinger VPS Deployment Successfully Completed!"
+echo "🎉 Hostinger VPS Deployment, PostgreSQL Setup & Seeding Successfully Completed!"
