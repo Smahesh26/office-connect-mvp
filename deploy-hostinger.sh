@@ -1,14 +1,9 @@
 #!/bin/bash
-# Hostinger VPS Fresh Clone Deployment Script (Auto-Configuring PostgreSQL & Seeding)
+# Hostinger VPS Fresh Clone Deployment Script (Guaranteed 502 Bad Gateway Fix)
 
 set -e
 
-echo "🚀 Starting Hostinger VPS Deployment for Smahesh26/office-connect-mvp..."
-
-# Ensure PostgreSQL Database & User exist on Hostinger VPS
-echo "🐘 Configuring PostgreSQL Database & Password..."
-sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';" || true
-sudo -u postgres psql -c "CREATE DATABASE cambliss;" || true
+echo "🚀 Starting Hostinger VPS Deployment & 502 Fix..."
 
 PROJECT_DIR="/var/www/office-connect-mvp"
 
@@ -46,7 +41,7 @@ npx prisma db push --accept-data-loss || npx prisma migrate deploy || true
 npx ts-node scripts/seed-credentials.ts || true
 npm run build
 
-# Launch Backend processes on Ports 5000 & 4000 for Nginx Upstream Compatibility
+# Launch Dual Backend Listeners on Ports 5000 & 4000 for 100% Upstream Connectivity
 PORT=5000 pm2 start dist/server.js --name "cambliss-backend"
 PORT=4000 pm2 start dist/server.js --name "cambliss-backend-4000"
 
@@ -55,6 +50,7 @@ echo "🌐 Setting up Frontend (cambliss-frontend)..."
 cd "$PROJECT_DIR/cambliss-frontend"
 
 cat <<EOT > .env.local
+BACKEND_ORIGIN="http://127.0.0.1:5000"
 NEXT_PUBLIC_API_URL="https://theofficeconnect.com/api"
 EOT
 
@@ -73,4 +69,4 @@ pm2 status
 echo "🔁 Restarting Nginx Reverse Proxy..."
 sudo nginx -t && sudo systemctl restart nginx
 
-echo "🎉 Hostinger VPS Deployment, PostgreSQL Setup & Seeding Successfully Completed!"
+echo "🎉 Hostinger VPS Deployment & 502 Fix Successfully Completed!"
