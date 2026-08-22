@@ -533,6 +533,37 @@ function StoreContent() {
 										</div>
 									</div>
 
+									{/* Card 1.5: Mercur Multi-Vendor Marketplace */}
+									<div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3 shadow-2xs hover:border-emerald-500 transition">
+										<div className="flex items-center justify-between">
+											<span className="font-bold text-sm text-zinc-900 flex items-center gap-1.5">
+												<span>🛒</span> Mercur Multi-Vendor Engine
+											</span>
+											<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+												NEW
+											</span>
+										</div>
+										<p className="text-xs text-zinc-600">
+											Open-source multi-vendor marketplace engine for multi-merchant onboarding, product catalogs, split orders & commissions.
+										</p>
+										<div className="flex items-center gap-2 pt-2 border-t border-zinc-100">
+											<Link
+												href="/mercur"
+												className="flex-1 rounded-xl bg-emerald-600 py-2 text-center text-xs font-bold text-white hover:bg-emerald-700 transition shadow-xs"
+											>
+												Open Mercur Marketplace
+											</Link>
+											<a
+												href="https://github.com/mercurjs/mercur"
+												target="_blank"
+												rel="noreferrer"
+												className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-100 transition"
+											>
+												GitHub Repo ↗
+											</a>
+										</div>
+									</div>
+
 									{/* Card 2: Accountech */}
 									<div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3 shadow-2xs hover:border-indigo-500 transition">
 										<div className="flex items-center justify-between">
