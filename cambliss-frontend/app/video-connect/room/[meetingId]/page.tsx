@@ -43,7 +43,6 @@ const RTC_CONFIG: RTCConfiguration = {
 	],
 };
 
-// Helper: Create Synthetic Stream for Same-Laptop Multi-Tab Camera Lock Scenarios
 function createFallbackSyntheticStream(label: string): MediaStream {
 	if (typeof window === "undefined") return new MediaStream();
 
@@ -66,7 +65,7 @@ function createFallbackSyntheticStream(label: string): MediaStream {
 
 		ctx.fillStyle = "#10b981";
 		ctx.font = "bold 16px sans-serif";
-		ctx.fillText("● Live Synthetic Stream", 320, 260);
+		ctx.fillText("● Live Stream Active", 320, 260);
 
 		requestAnimationFrame(draw);
 	};
@@ -74,14 +73,14 @@ function createFallbackSyntheticStream(label: string): MediaStream {
 
 	const videoTrack = canvas.captureStream(30).getVideoTracks()[0];
 
-	// Synthetic Audio
+	// Synthetic Audio Oscillator Tone
 	const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
 	const osc = audioCtx.createOscillator();
 	const dst = audioCtx.createMediaStreamDestination();
 	osc.type = "sine";
 	osc.frequency.value = 440;
 	const gain = audioCtx.createGain();
-	gain.gain.value = 0.01;
+	gain.gain.value = 0.05;
 	osc.connect(gain);
 	gain.connect(dst);
 	osc.start();
@@ -97,7 +96,6 @@ function RemoteParticipantMediaTile({
 	participant: RemoteParticipant;
 	stream?: MediaStream;
 }) {
-	const videoRef = useRef<HTMLVideoElement | null>(null);
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const [hasVideoTrack, setHasVideoTrack] = useState(false);
 	const [audioBlocked, setAudioBlocked] = useState(false);
@@ -107,24 +105,11 @@ function RemoteParticipantMediaTile({
 
 		const videoTracks = stream.getVideoTracks();
 		setHasVideoTrack(videoTracks.length > 0 && videoTracks.some((t) => t.enabled));
-
-		if (videoRef.current && videoRef.current.srcObject !== stream) {
-			videoRef.current.srcObject = stream;
-			void videoRef.current.play().catch(() => {});
-		}
-
-		if (audioRef.current && audioRef.current.srcObject !== stream) {
-			audioRef.current.srcObject = stream;
-			void audioRef.current.play().catch((err) => {
-				if (err.name === "NotAllowedError") {
-					setAudioBlocked(true);
-				}
-			});
-		}
 	}, [stream]);
 
 	const manualUnmuteAudio = () => {
 		if (audioRef.current) {
+			audioRef.current.muted = false;
 			void audioRef.current.play().then(() => setAudioBlocked(false)).catch(() => {});
 		}
 	};
@@ -147,23 +132,34 @@ function RemoteParticipantMediaTile({
 				</span>
 			</div>
 
-			{/* Remote Audio Element */}
+			{/* Remote Audio Element using valid Callback Ref */}
 			<audio
-				ref={audioRef}
+				ref={(el) => {
+					audioRef.current = el;
+					if (el && stream && el.srcObject !== stream) {
+						el.srcObject = stream;
+						el.muted = false;
+						void el.play().catch((err) => {
+							if (err.name === "NotAllowedError") {
+								setAudioBlocked(true);
+							}
+						});
+					}
+				}}
 				autoPlay
 				playsInline
 				muted={false}
-				ref-callback={(el: HTMLAudioElement) => {
-					if (el && stream && el.srcObject !== stream) {
-						el.srcObject = stream;
-						void el.play().catch(() => {});
-					}
-				}}
 			/>
 
 			{/* Remote Video Element */}
 			<video
-				ref={videoRef}
+				ref={(el) => {
+					if (el && stream && el.srcObject !== stream) {
+						el.srcObject = stream;
+						el.muted = false;
+						void el.play().catch(() => {});
+					}
+				}}
 				autoPlay
 				playsInline
 				muted={false}
@@ -204,7 +200,7 @@ function RemoteParticipantMediaTile({
 						onClick={manualUnmuteAudio}
 						className="text-xs font-bold bg-amber-500 text-black px-3 py-1 rounded-md animate-bounce shadow-md"
 					>
-						🔊 Click to Unmute Audio
+						🔊 Unmute Remote Voice
 					</button>
 				)}
 			</div>
@@ -217,7 +213,6 @@ export default function VideoMeetingRoomPage() {
 	const searchParams = useSearchParams();
 	const meetingId = params.meetingId;
 
-	const previewRef = useRef<HTMLVideoElement | null>(null);
 	const screenRef = useRef<HTMLVideoElement | null>(null);
 	const peerConnections = useRef<{ [key: string]: RTCPeerConnection }>({});
 	const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -239,6 +234,7 @@ export default function VideoMeetingRoomPage() {
 	]);
 	const [chatInput, setChatInput] = useState("");
 	const [copyNotice, setCopyNotice] = useState(false);
+	const [audioUnlocked, setAudioUnlocked] = useState(false);
 
 	const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipant[]>([]);
 	const [remoteStreams, setRemoteStreams] = useState<{ [key: string]: MediaStream }>({});
@@ -304,6 +300,17 @@ export default function VideoMeetingRoomPage() {
 		setTimeout(() => setCopyNotice(false), 2500);
 	};
 
+	const unlockBrowserAudio = () => {
+		setAudioUnlocked(true);
+		// Play all remote audio/video elements
+		document.querySelectorAll("audio, video").forEach((media) => {
+			if (media instanceof HTMLMediaElement) {
+				media.muted = false;
+				void media.play().catch(() => {});
+			}
+		});
+	};
+
 	useEffect(() => {
 		mediaStreamRef.current = mediaStream;
 	}, [mediaStream]);
@@ -313,6 +320,7 @@ export default function VideoMeetingRoomPage() {
 		Object.values(peerConnections.current).forEach((pc) => {
 			const senders = pc.getSenders();
 			mediaStream.getTracks().forEach((track) => {
+				track.enabled = true;
 				const existing = senders.find((s) => s.track?.kind === track.kind);
 				if (existing) {
 					void existing.replaceTrack(track).catch(() => {});
@@ -392,6 +400,7 @@ export default function VideoMeetingRoomPage() {
 		const currentStream = mediaStreamRef.current || mediaStream;
 		if (currentStream) {
 			currentStream.getTracks().forEach((track) => {
+				track.enabled = true;
 				try {
 					pc.addTrack(track, currentStream);
 				} catch {}
@@ -530,12 +539,13 @@ export default function VideoMeetingRoomPage() {
 	};
 
 	const enableDevicesAndJoin = async () => {
+		unlockBrowserAudio();
 		let stream: MediaStream | null = null;
 		try {
 			if (typeof window !== "undefined" && navigator.mediaDevices?.getUserMedia) {
 				stream = await navigator.mediaDevices
 					.getUserMedia({
-						audio: { echoCancellation: true, noiseSuppression: true },
+						audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true },
 						video: { width: { ideal: 1280 }, height: { ideal: 720 } },
 					})
 					.catch(() => navigator.mediaDevices.getUserMedia({ audio: true, video: true }))
@@ -545,9 +555,13 @@ export default function VideoMeetingRoomPage() {
 		} catch {}
 
 		if (!stream) {
-			// Fallback to synthetic stream if hardware camera is locked by another Chrome window on the same laptop
 			stream = createFallbackSyntheticStream(displayName || (isHost ? invite.hostName : "Guest"));
 		}
+
+		// Ensure all audio tracks are explicitly enabled
+		stream.getAudioTracks().forEach((t) => {
+			t.enabled = true;
+		});
 
 		mediaStreamRef.current = stream;
 		setMediaStream(stream);
@@ -653,6 +667,7 @@ export default function VideoMeetingRoomPage() {
 											ref={(el) => {
 												if (el && mediaStream && el.srcObject !== mediaStream) {
 													el.srcObject = mediaStream;
+													el.muted = true;
 													void el.play().catch(() => {});
 												}
 											}}
@@ -758,6 +773,17 @@ export default function VideoMeetingRoomPage() {
 							</div>
 						</div>
 
+						{/* Global Audio Enable Banner */}
+						{!audioUnlocked && (
+							<button
+								type="button"
+								onClick={unlockBrowserAudio}
+								className="animate-pulse bg-emerald-500 hover:bg-emerald-600 text-black px-4 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 cursor-pointer"
+							>
+								<span>🔊</span> Click to Enable Audio Output
+							</button>
+						)}
+
 						<div className="hidden sm:flex items-center gap-3">
 							<button
 								type="button"
@@ -805,11 +831,13 @@ export default function VideoMeetingRoomPage() {
 									ref={(el) => {
 										if (el && screenStream && el.srcObject !== screenStream) {
 											el.srcObject = screenStream;
+											el.muted = true;
 											void el.play().catch(() => {});
 										}
 									}}
 									autoPlay
 									playsInline
+									muted
 									className="h-full w-full object-contain"
 								/>
 							</div>
@@ -836,6 +864,7 @@ export default function VideoMeetingRoomPage() {
 											ref={(el) => {
 												if (el && mediaStream && el.srcObject !== mediaStream) {
 													el.srcObject = mediaStream;
+													el.muted = true;
 													void el.play().catch(() => {});
 												}
 											}}
@@ -896,6 +925,7 @@ export default function VideoMeetingRoomPage() {
 												ref={(el) => {
 													if (el && mediaStream && el.srcObject !== mediaStream) {
 														el.srcObject = mediaStream;
+														el.muted = true;
 														void el.play().catch(() => {});
 													}
 												}}
