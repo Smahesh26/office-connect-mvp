@@ -42,7 +42,6 @@ async function main() {
     defaultOrg = await prisma.organization.create({
       data: {
         name: "Cambliss Enterprise Demo",
-        slug: "cambliss-enterprise-demo",
       },
     });
   }
