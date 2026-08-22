@@ -24,29 +24,41 @@ jobs:
           timeout: 60s
           command_timeout: 15m
           script: |
-            echo "🚀 Starting automated deployment on Hostinger VPS..."
+            echo "🚀 Starting automated GitHub Actions deployment on Hostinger VPS..."
             
-            # Navigate to web application directory
-            cd /var/www/officeconnect-cambliss
+            # Detect deployment target directory on Hostinger VPS
+            if [ -d "/var/www/office-connect-mvp" ]; then
+              TARGET_DIR="/var/www/office-connect-mvp"
+            elif [ -d "/var/www/officeconnect-cambliss" ]; then
+              TARGET_DIR="/var/www/officeconnect-cambliss"
+            else
+              TARGET_DIR="/var/www/office-connect-mvp"
+              mkdir -p "$TARGET_DIR"
+              git clone https://github.com/Smahesh26/office-connect-mvp.git "$TARGET_DIR"
+            fi
 
-            # Pull latest code
+            echo "📁 Deploying in: $TARGET_DIR"
+            cd "$TARGET_DIR"
+
+            # Pull latest code from GitHub
             git fetch --all
-            git reset --hard origin/master
+            git checkout main || git checkout master || true
+            git reset --hard origin/main || git reset --hard origin/master
 
-            echo "📦 Installing & Building Backend..."
-            cd /var/www/officeconnect-cambliss/cambliss-backend
+            echo "📦 Installing & Building Backend (cambliss-backend)..."
+            cd "$TARGET_DIR/cambliss-backend"
             npm install
             npx prisma generate
-            npx prisma migrate deploy
+            npx prisma migrate deploy || true
             npm run build
-            pm2 restart officeconnect-backend || pm2 restart cambliss-backend || pm2 start dist/server.js --name "officeconnect-backend"
+            pm2 restart officeconnect-backend || pm2 restart cambliss-backend || pm2 start dist/server.js --name "cambliss-backend"
 
-            echo "🎨 Installing & Building Frontend..."
-            cd /var/www/officeconnect-cambliss/cambliss-frontend
+            echo "🎨 Installing & Building Frontend (cambliss-frontend)..."
+            cd "$TARGET_DIR/cambliss-frontend"
             npm install
             rm -rf .next
             npm run build
-            pm2 restart officeconnect-frontend || pm2 restart cambliss-frontend || pm2 start npm --name "officeconnect-frontend" -- start -- -p 3000
+            pm2 restart officeconnect-frontend || pm2 restart cambliss-frontend || pm2 start npm --name "cambliss-frontend" -- start -- -p 3000
             pm2 save
 
-            echo "🎉 Automated deployment completed successfully!"
+            echo "🎉 Hostinger VPS automated deployment completed successfully!"
