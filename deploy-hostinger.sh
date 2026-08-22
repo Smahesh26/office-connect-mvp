@@ -22,22 +22,43 @@ cd "$PROJECT_DIR"
 echo "🧹 Stopping existing PM2 processes..."
 pm2 delete all || true
 
-# Deploy Backend (cambliss-backend)
-echo "⚙️ Building & Starting Backend (cambliss-backend)..."
+# Setup Backend Environment
+echo "⚙️ Setting up Backend (cambliss-backend)..."
 cd "$PROJECT_DIR/cambliss-backend"
+
+if [ ! -f ".env" ]; then
+    echo "📝 Creating default .env for backend..."
+    cat <<EOT > .env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/cambliss?schema=public"
+JWT_SECRET="super-secret-jwt-token-key-2026"
+PORT=5000
+NODE_ENV=production
+SUPER_ADMIN_EMAIL="admin@camblissstudio.com"
+SUPER_ADMIN_PASSWORD="SecureAdminPassword123!"
+EOT
+fi
+
 npm install
 npx prisma generate
-npx prisma db push --accept-data-loss || npx prisma migrate deploy || true
+npx prisma db push --accept-data-loss || true
 npx ts-node scripts/seed-credentials.ts || true
 npm run build
 
-# Launch Backend on Port 5000 and Port 4000 for Nginx Upstream Compatibility
+# Launch Backend processes on Ports 5000 & 4000 for Nginx Upstream Compatibility
 PORT=5000 pm2 start dist/server.js --name "cambliss-backend"
 PORT=4000 pm2 start dist/server.js --name "cambliss-backend-4000"
 
-# Deploy Frontend (cambliss-frontend)
-echo "🌐 Building & Starting Frontend (cambliss-frontend)..."
+# Setup Frontend Environment
+echo "🌐 Setting up Frontend (cambliss-frontend)..."
 cd "$PROJECT_DIR/cambliss-frontend"
+
+if [ ! -f ".env.local" ]; then
+    echo "📝 Creating default .env.local for frontend..."
+    cat <<EOT > .env.local
+NEXT_PUBLIC_API_URL="https://theofficeconnect.com/api"
+EOT
+fi
+
 npm install
 npm run build
 pm2 start npx --name "cambliss-frontend" -- next start -p 3000
