@@ -1,14 +1,23 @@
 #!/bin/bash
-# Hostinger VPS Fresh Clone Deployment Script (Guaranteed 502 Fix)
+# Hostinger VPS Fresh Clone Deployment Script (Preserving VPS Database Credentials)
 
 set -e
 
-echo "🚀 Starting Fresh Hostinger VPS Deployment for Smahesh26/office-connect-mvp..."
+echo "🚀 Starting Hostinger VPS Deployment for Smahesh26/office-connect-mvp..."
+
+# Preserve existing backend .env if present
+if [ -f "/var/www/office-connect-mvp/cambliss-backend/.env" ]; then
+    echo "💾 Backing up existing backend .env..."
+    cp /var/www/office-connect-mvp/cambliss-backend/.env /tmp/backend.env.bak
+elif [ -f "/var/www/officeconnect-cambliss/cambliss-backend/.env" ]; then
+    echo "💾 Backing up existing backend .env..."
+    cp /var/www/officeconnect-cambliss/cambliss-backend/.env /tmp/backend.env.bak
+fi
 
 PROJECT_DIR="/var/www/office-connect-mvp"
 
-# Completely remove old directories with stale merge conflict files
-echo "🧹 Removing any old/corrupt project directories..."
+# Clean up old project directories
+echo "🧹 Cleaning up project directories..."
 rm -rf /var/www/officeconnect-cambliss
 rm -rf "$PROJECT_DIR"
 
@@ -26,10 +35,13 @@ pm2 delete all || true
 echo "⚙️ Setting up Backend (cambliss-backend)..."
 cd "$PROJECT_DIR/cambliss-backend"
 
-if [ ! -f ".env" ]; then
+if [ -f "/tmp/backend.env.bak" ]; then
+    echo "🔄 Restoring preserved VPS .env file..."
+    cp /tmp/backend.env.bak .env
+elif [ ! -f ".env" ]; then
     echo "📝 Creating default .env for backend..."
     cat <<EOT > .env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/cambliss?schema=public"
+DATABASE_URL="postgresql://postgres@localhost:5432/cambliss?schema=public"
 JWT_SECRET="super-secret-jwt-token-key-2026"
 PORT=5000
 NODE_ENV=production
@@ -74,4 +86,4 @@ pm2 status
 echo "🔁 Restarting Nginx Reverse Proxy..."
 sudo nginx -t && sudo systemctl restart nginx
 
-echo "🎉 Hostinger VPS Deployment & 502 Fix Successfully Completed!"
+echo "🎉 Hostinger VPS Deployment Successfully Completed!"
