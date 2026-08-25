@@ -25,4 +25,4 @@ jobs:
           command_timeout: 20m
           script: |
             echo "🚀 Executing automated Hostinger VPS Deployment Script..."
-            curl -sSL https://raw.githubusercontent.com/Smahesh26/office-connect-mvp/main/deploy-hostinger.sh | bash
+            curl -sSL https://raw.githubusercontent.com/Smahesh26/office-connect-mvp/${{ github.ref_name }}/deploy-hostinger.sh | bash
