@@ -60,14 +60,7 @@ function ChevronRightIcon({ className = "" }: { className?: string }) {
 	);
 }
 
-const accountechSubItems: SidebarItem[] = [
-	{ label: "Dashboard", href: "/accountech" },
-	{ label: "Invoices", href: "/accountech?view=invoices" },
-	{ label: "Quotes", href: "/accountech?view=quotes" },
-	{ label: "Customers", href: "/accountech?view=customers" },
-	{ label: "Reports", href: "/accountech?view=reports" },
-	{ label: "Settings", href: "/accountech?view=settings" },
-];
+
 
 const clientMenuItems: SidebarItem[] = [
 	{ label: "Dashboard", href: "/dashboard" },
@@ -79,7 +72,6 @@ const clientMenuItems: SidebarItem[] = [
 	{ label: "File Sharing", href: "/file-sharing", accessKey: "FILE_SHARING" },
 	{ label: "Video Connect", href: "/video-connect" },
 	{ label: "User Management", href: "/user-management", accessKey: "USER_MANAGEMENT" },
-	// { label: "Accountech", href: "/accountech", subItems: accountechSubItems },
 ];
 
 const adminMenuItems: SidebarItem[] = [
@@ -155,13 +147,7 @@ function SidebarIcon({ label }: { label: string }) {
 					<path d="M15 10.5 21 8v8l-6-2.5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
 				</svg>
 			);
-		case "Accountech":
-			return (
-				<svg viewBox="0 0 24 24" fill="none" className={common}>
-					<rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" />
-					<path d="M8 12h8M8 8h4M8 16h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-				</svg>
-			);
+
 		default:
 			return (
 				<svg viewBox="0 0 24 24" fill="none" className={common}>

@@ -18,16 +18,24 @@ const index_1 = __importDefault(require("./index"));
 const chat_socket_1 = require("./modules/chat/chat.socket");
 const chat_files_service_1 = require("./modules/chat/chat-files.service");
 const subscription_service_1 = require("./modules/subscription/subscription.service");
-const port = Number(process.env.PORT) || 4000;
+const port = Number(process.env.PORT) || 5000;
 const httpServer = (0, http_1.createServer)(index_1.default);
 const startServer = () => __awaiter(void 0, void 0, void 0, function* () {
-    httpServer.listen(port, () => {
-        console.log(`Cambliss backend running on http://localhost:${port}`);
+    httpServer.listen(port, "0.0.0.0", () => {
+        console.log(`Cambliss backend server running on http://0.0.0.0:${port}`);
     });
-    void (0, chat_socket_1.initChatSocket)(httpServer).catch((error) => {
-        console.error("[startup] chat socket init failed:", error);
-    });
-    (0, chat_files_service_1.startChatTransferCleanupJob)();
-    (0, subscription_service_1.startTrialReminderJob)();
+    try {
+        yield (0, chat_socket_1.initChatSocket)(httpServer);
+    }
+    catch (error) {
+        console.error("[startup] chat socket init warning:", error);
+    }
+    try {
+        (0, chat_files_service_1.startChatTransferCleanupJob)();
+        (0, subscription_service_1.startTrialReminderJob)();
+    }
+    catch (error) {
+        console.error("[startup] background jobs warning:", error);
+    }
 });
 void startServer();

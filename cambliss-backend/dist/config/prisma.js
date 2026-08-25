@@ -13,16 +13,32 @@ exports.closePrisma = void 0;
 const adapter_pg_1 = require("@prisma/adapter-pg");
 const pg_1 = require("pg");
 const client_1 = require("@prisma/client");
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-    throw new Error("DATABASE_URL is not defined");
+const connectionString = process.env.DATABASE_URL ||
+    "postgresql://postgres:postgres@127.0.0.1:5432/cambliss?schema=public";
+let prismaInstance;
+let poolInstance = null;
+try {
+    poolInstance = new pg_1.Pool({
+        connectionString,
+        connectionTimeoutMillis: 5000,
+    });
+    const adapter = new adapter_pg_1.PrismaPg(poolInstance);
+    prismaInstance = new client_1.PrismaClient({ adapter });
 }
-const pool = new pg_1.Pool({ connectionString });
-const adapter = new adapter_pg_1.PrismaPg(pool);
-const prisma = new client_1.PrismaClient({ adapter });
+catch (err) {
+    console.error("[prisma] Warning initializing PostgreSQL pool:", err);
+    prismaInstance = new client_1.PrismaClient();
+}
 const closePrisma = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield prisma.$disconnect();
-    yield pool.end();
+    try {
+        yield prismaInstance.$disconnect();
+        if (poolInstance) {
+            yield poolInstance.end();
+        }
+    }
+    catch (e) {
+        console.warn("[prisma] Error disconnecting:", e);
+    }
 });
 exports.closePrisma = closePrisma;
-exports.default = prisma;
+exports.default = prismaInstance;

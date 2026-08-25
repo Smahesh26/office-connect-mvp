@@ -17,7 +17,6 @@ const prisma_1 = __importDefault(require("../../config/prisma"));
 const client_1 = require("@prisma/client");
 const accounting_service_1 = require("../accounting/accounting.service");
 const inventory_service_1 = require("../inventory/inventory.service");
-const webhook_1 = require("../../utils/webhook");
 class HttpError extends Error {
     constructor(statusCode, message) {
         super(message);
@@ -719,8 +718,6 @@ const createLead = (organizationId, input) => __awaiter(void 0, void 0, void 0, 
             },
         });
         contactId = contact.id;
-        // Fire webhook asynchronously
-        (0, webhook_1.syncContactToAccountech)(contact).catch(console.error);
     }
     // contactId is now either provided or auto-created
     if (!contactId) {
