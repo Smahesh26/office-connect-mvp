@@ -18,9 +18,9 @@ rm -rf /var/www/officeconnect-cambliss
 if [ -d "$PROJECT_DIR/.git" ]; then
     echo "🔄 Updating existing repository..."
     cd "$PROJECT_DIR"
-    git reset --hard HEAD || true
-    git clean -fd || true
-    git pull origin master
+    git fetch origin master
+    git reset --hard origin/master
+    git clean -fd
 else
     echo "📁 Fresh cloning latest clean repository from GitHub..."
     rm -rf "$PROJECT_DIR"
