@@ -11,16 +11,23 @@ PROJECT_DIR="/var/www/office-connect-mvp"
 echo "🧹 Stopping existing PM2 processes..."
 pm2 delete all || true
 
-# Clean up old project directories
-echo "🧹 Cleaning up project directories..."
+# Clean up legacy directories
 rm -rf /var/www/officeconnect-cambliss
-rm -rf "$PROJECT_DIR"
 
-# Fresh Clone from GitHub
-echo "📁 Fresh cloning latest clean repository from GitHub..."
-mkdir -p /var/www
-git clone https://github.com/Smahesh26/office-connect-mvp.git "$PROJECT_DIR"
-cd "$PROJECT_DIR"
+# Fetch or clone latest code
+if [ -d "$PROJECT_DIR/.git" ]; then
+    echo "🔄 Updating existing repository..."
+    cd "$PROJECT_DIR"
+    git reset --hard HEAD || true
+    git clean -fd || true
+    git pull origin master
+else
+    echo "📁 Fresh cloning latest clean repository from GitHub..."
+    rm -rf "$PROJECT_DIR"
+    mkdir -p /var/www
+    git clone https://github.com/Smahesh26/office-connect-mvp.git "$PROJECT_DIR"
+    cd "$PROJECT_DIR"
+fi
 
 # Setup Backend Environment
 echo "⚙️ Setting up Backend (cambliss-backend)..."
