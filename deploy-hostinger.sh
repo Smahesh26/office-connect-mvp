@@ -7,6 +7,10 @@ echo "🚀 Starting Hostinger VPS Deployment & 502 Fix..."
 
 PROJECT_DIR="/var/www/office-connect-mvp"
 
+# Stop existing PM2 processes
+echo "🧹 Stopping existing PM2 processes..."
+pm2 delete all || true
+
 # Clean up old project directories
 echo "🧹 Cleaning up project directories..."
 rm -rf /var/www/officeconnect-cambliss
@@ -17,10 +21,6 @@ echo "📁 Fresh cloning latest clean repository from GitHub..."
 mkdir -p /var/www
 git clone https://github.com/Smahesh26/office-connect-mvp.git "$PROJECT_DIR"
 cd "$PROJECT_DIR"
-
-# Stop existing PM2 processes
-echo "🧹 Stopping existing PM2 processes..."
-pm2 delete all || true
 
 # Setup Backend Environment
 echo "⚙️ Setting up Backend (cambliss-backend)..."
