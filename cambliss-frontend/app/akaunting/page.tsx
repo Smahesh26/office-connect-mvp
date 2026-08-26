@@ -352,7 +352,7 @@ function AkauntingContent() {
   ]);
 
   const [recurringInvoices, setRecurringInvoices] = useState<RecurringInvoice[]>([
-    { id: "rec-1", customer: "Acme Enterprise", customerEmail: "billing@acme.com", frequency: "Monthly", amount: 1500.00, startDate: "2026-01-01", nextDate: "2026-09-01", paymentMethod: "Stripe Auto-Debit", status: "active" },
+    { id: "rec-1", customer: "Acme Enterprise Corp", customerEmail: "billing@acme.com", frequency: "Monthly", amount: 1500.00, startDate: "2026-01-01", nextDate: "2026-09-01", paymentMethod: "Stripe Auto-Debit", status: "active" },
     { id: "rec-2", customer: "Global Tech Solutions", customerEmail: "finance@globaltech.com", frequency: "Annual", amount: 12000.00, startDate: "2026-01-15", nextDate: "2027-01-15", paymentMethod: "Wire Transfer", status: "active" },
   ]);
 
@@ -442,6 +442,23 @@ function AkauntingContent() {
       creditLimit: 100000,
       paymentTerms: "Net 30",
       balance: 12500.00,
+    },
+    {
+      id: "c3",
+      name: "Nexus Systems Inc",
+      contactPerson: "Elena Rostova",
+      email: "accounts@nexussystems.com",
+      phone: "+1 (555) 881-2099",
+      taxId: "US-TAX-33901",
+      currency: "USD ($)",
+      address: "220 Tech Blvd",
+      city: "Seattle",
+      state: "WA",
+      country: "USA",
+      pincode: "98101",
+      creditLimit: 25000,
+      paymentTerms: "Net 15",
+      balance: 3200.00,
     }
   ]);
 
@@ -483,6 +500,7 @@ function AkauntingContent() {
   const [products, setProducts] = useState<Product[]>([
     { id: "p1", sku: "SKU-SAAS-PRO", barcode: "889123001", name: "SaaS Platform Pro Plan (Annual)", type: "Service", category: "Software Subscriptions", salePrice: 1200.00, purchaseCost: 100.00, taxRate: 0, stockQty: 999, reorderLevel: 10, warehouse: "Digital / Cloud" },
     { id: "p2", sku: "SKU-HW-GATEWAY", barcode: "889123002", name: "IoT Connectivity Gateway Hardware", type: "Physical Product", category: "Hardware", salePrice: 450.00, purchaseCost: 220.00, taxRate: 8.5, stockQty: 45, reorderLevel: 15, warehouse: "Main Fulfillment Warehouse" },
+    { id: "p3", sku: "SKU-INTEG-01", barcode: "889123003", name: "Enterprise API Integration & Setup", type: "Service", category: "Professional Services", salePrice: 900.00, purchaseCost: 200.00, taxRate: 10, stockQty: 999, reorderLevel: 5, warehouse: "Professional Services" },
   ]);
 
   const [projects, setProjects] = useState<Project[]>([
@@ -700,7 +718,7 @@ function AkauntingContent() {
     fetchLiveOrganizationData();
   }, []);
 
-  // Fetch CRM Leads
+  // Fetch Live CRM Leads and sync into Customers list
   useEffect(() => {
     const fetchCrmLeads = async () => {
       try {
@@ -714,6 +732,23 @@ function AkauntingContent() {
           const data = await res.json();
           const leadsArray: CrmLead[] = Array.isArray(data) ? data : (data.leads || data.data || []);
           setCrmLeads(leadsArray);
+
+          const leadCustomers: Customer[] = leadsArray.map((lead) => ({
+            id: `crm-${lead.id}`,
+            name: lead.companyName || [lead.firstName, lead.lastName].filter(Boolean).join(" ") || lead.name || "CRM Lead",
+            email: lead.email || "",
+            phone: lead.phone || "",
+            balance: 0.00,
+            isCrmLead: true,
+            leadStatus: lead.status || "NEW",
+            estimatedValue: Number(lead.value) || 0,
+          }));
+
+          setCustomers((prev) => {
+            const existingNames = new Set(prev.map(c => c.name.toLowerCase()));
+            const newLeads = leadCustomers.filter(lc => !existingNames.has(lc.name.toLowerCase()));
+            return [...prev, ...newLeads];
+          });
         }
       } catch (err) {
         console.error("Failed to fetch CRM leads", err);
@@ -722,6 +757,34 @@ function AkauntingContent() {
 
     fetchCrmLeads();
   }, []);
+
+  // Customer Auto-Fill Handler
+  const handleSelectCustomerToAutoFill = (selectedName: string) => {
+    if (!selectedName) return;
+    setInvCustomer(selectedName);
+    const cust = customers.find(c => c.name === selectedName);
+    if (cust) {
+      if (cust.email) setInvCustomerEmail(cust.email);
+      if (cust.taxId) setInvCustomerTaxId(cust.taxId);
+      const fullAddr = [cust.address, cust.city, cust.state, cust.country, cust.pincode].filter(Boolean).join(", ");
+      if (fullAddr) setInvCustomerAddress(fullAddr);
+      if (cust.shippingAddress) setInvShippingAddress(cust.shippingAddress);
+      if (cust.currency) setInvCurrency(cust.currency);
+      if (cust.paymentTerms) setInvPaymentTerms(cust.paymentTerms);
+    }
+  };
+
+  // Vendor Auto-Fill Handler
+  const handleSelectVendorToAutoFill = (selectedName: string) => {
+    if (!selectedName) return;
+    setBillVendor(selectedName);
+    const v = vendors.find(vend => vend.name === selectedName);
+    if (v) {
+      if (v.email) setBillVendorEmail(v.email);
+      if (v.category) setBillCategory(v.category);
+      if (v.paymentTerms) setBillPaymentTerms(v.paymentTerms);
+    }
+  };
 
   // Item management helpers
   const handleAddInvItemRow = () => {
@@ -1983,13 +2046,32 @@ function AkauntingContent() {
         </div>
       )}
 
-      {/* CREATE INVOICE MODAL */}
+      {/* CREATE INVOICE MODAL WITH GLOBAL DATA AUTO-FILL SELECTORS */}
       {showInvoiceModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="w-full max-w-4xl rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[#d9e2ef] pb-3">
               <h3 className="text-lg font-bold text-[#1f2430]">Create New Sales Invoice</h3>
               <button onClick={() => setShowInvoiceModal(false)} className="text-sm font-bold text-[#5b6472]">✕</button>
+            </div>
+
+            {/* Quick Select Customer Banner */}
+            <div className="rounded-xl border border-[#6678c1]/30 bg-[#f8faff] p-3 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-[#6678c1]">⚡ Quick Auto-Fill from Saved Customer / CRM Profile:</label>
+                <span className="text-[11px] font-medium text-[#5b6472]">{customers.length} Saved Records</span>
+              </div>
+              <select
+                onChange={(e) => handleSelectCustomerToAutoFill(e.target.value)}
+                className="w-full rounded-xl border border-[#6678c1]/40 bg-white p-2.5 text-xs font-bold text-[#1f2430] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#6678c1]"
+              >
+                <option value="">-- Choose Existing Customer Profile to Auto-Fill All Form Fields --</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    🏢 {c.name} ({c.email || "No email"}) {c.taxId ? `[Tax ID: ${c.taxId}]` : ""}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <form onSubmit={handleAddInvoice} className="space-y-4">
@@ -2004,7 +2086,7 @@ function AkauntingContent() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#5b6472]">Customer Company Name *</label>
-                  <input type="text" placeholder="e.g. Acme Enterprise" value={invCustomer} onChange={(e) => setInvCustomer(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
+                  <input type="text" placeholder="e.g. Acme Enterprise" value={invCustomer} onChange={(e) => setInvCustomer(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs font-bold text-[#1f2430]" required />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#5b6472]">Customer Email</label>
@@ -2049,12 +2131,46 @@ function AkauntingContent() {
                 </div>
               </div>
 
-              {/* Line Items */}
+              {/* Line Items with Product Catalog Select */}
               <div className="space-y-2 border-t border-b border-[#d9e2ef] py-4">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center flex-wrap gap-2">
                   <h4 className="text-xs font-bold text-[#1f2430]">Invoice Items & Product Line Items</h4>
-                  <button type="button" onClick={handleAddInvItemRow} className="text-xs font-bold text-[#6678c1] hover:underline">+ Add Line Item</button>
+                  <div className="flex items-center gap-2">
+                    <select
+                      onChange={(e) => {
+                        const prodSku = e.target.value;
+                        if (!prodSku) return;
+                        const prod = products.find((p) => p.sku === prodSku);
+                        if (prod) {
+                          setInvItems((prev) => [
+                            ...prev,
+                            {
+                              id: Date.now().toString(),
+                              sku: prod.sku,
+                              name: prod.name,
+                              quantity: 1,
+                              price: prod.salePrice,
+                              tax: prod.taxRate,
+                              unitOfMeasure: prod.type === "Service" ? "License" : "Units",
+                            },
+                          ]);
+                        }
+                      }}
+                      className="rounded-xl border border-[#6678c1]/40 bg-[#f8faff] px-3 py-1.5 text-xs font-bold text-[#6678c1] shadow-sm"
+                    >
+                      <option value="">+ Add Product Item from Catalog...</option>
+                      {products.map((p) => (
+                        <option key={p.id} value={p.sku}>
+                          📦 {p.name} (${p.salePrice.toFixed(2)}) — SKU: {p.sku}
+                        </option>
+                      ))}
+                    </select>
+                    <button type="button" onClick={handleAddInvItemRow} className="text-xs font-bold text-[#6678c1] hover:underline">
+                      + Add Custom Line Item
+                    </button>
+                  </div>
                 </div>
+
                 {invItems.map((item) => (
                   <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
                     <input
@@ -2069,7 +2185,7 @@ function AkauntingContent() {
                       placeholder="Item Description *"
                       value={item.name}
                       onChange={(e) => handleInvItemChange(item.id, "name", e.target.value)}
-                      className="col-span-4 rounded-xl border border-[#d9e2ef] p-2 text-xs"
+                      className="col-span-4 rounded-xl border border-[#d9e2ef] p-2 text-xs font-semibold"
                       required
                     />
                     <input
@@ -2085,7 +2201,7 @@ function AkauntingContent() {
                       placeholder="Price ($)"
                       value={item.price}
                       onChange={(e) => handleInvItemChange(item.id, "price", parseFloat(e.target.value) || 0)}
-                      className="col-span-2 rounded-xl border border-[#d9e2ef] p-2 text-xs text-right"
+                      className="col-span-2 rounded-xl border border-[#d9e2ef] p-2 text-xs text-right font-semibold"
                     />
                     <input
                       type="number"
@@ -2276,11 +2392,28 @@ function AkauntingContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="w-full max-w-lg rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-2xl space-y-4">
             <h3 className="text-lg font-bold text-[#1f2430]">Record Vendor Bill / Expense</h3>
+
+            {/* Quick Auto-Fill Vendor */}
+            <div className="rounded-xl border border-[#6678c1]/30 bg-[#f8faff] p-3 space-y-1.5">
+              <label className="text-xs font-bold text-[#6678c1]">⚡ Quick Auto-Fill from Saved Vendors:</label>
+              <select
+                onChange={(e) => handleSelectVendorToAutoFill(e.target.value)}
+                className="w-full rounded-xl border border-[#6678c1]/40 bg-white p-2 text-xs font-bold text-[#1f2430] shadow-sm"
+              >
+                <option value="">-- Choose Existing Vendor Profile --</option>
+                {vendors.map((v) => (
+                  <option key={v.id} value={v.name}>
+                    🏬 {v.name} ({v.category}) — {v.email || "No email"}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <form onSubmit={handleAddBill} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[#5b6472]">Vendor Name *</label>
-                  <input type="text" value={billVendor} onChange={(e) => setBillVendor(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
+                  <input type="text" value={billVendor} onChange={(e) => setBillVendor(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs font-bold text-[#1f2430]" required />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#5b6472]">Vendor Invoice #</label>
