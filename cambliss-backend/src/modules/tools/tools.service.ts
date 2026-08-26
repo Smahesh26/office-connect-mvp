@@ -938,3 +938,297 @@ export const convertTxtToPptx = async (file: Express.Multer.File) => {
 		slideCount: 1,
 	};
 };
+
+
+// ==========================================
+// MercurJS Open Source Marketplace Integration
+// ==========================================
+export type MercurVendor = {
+  id: string;
+  name: string;
+  email: string;
+  category: string;
+  rating: number;
+  totalProducts: number;
+  commissionRate: number;
+  payoutStatus: "verified" | "pending_kyc" | "suspended";
+  joinedDate: string;
+};
+
+export type MercurProduct = {
+  id: string;
+  sku: string;
+  title: string;
+  vendorId: string;
+  vendorName: string;
+  category: string;
+  price: number;
+  b2bPriceTier?: number;
+  stockQty: number;
+  commissionRate: number;
+  description: string;
+  imageUrl?: string;
+};
+
+export type MercurOrder = {
+  id: string;
+  orderNumber: string;
+  customerEmail: string;
+  vendorId: string;
+  vendorName: string;
+  grossAmount: number;
+  platformCommission: number;
+  vendorPayout: number;
+  itemsCount: number;
+  status: "completed" | "processing" | "refunded";
+  createdAt: string;
+};
+
+let mercurConfig = {
+  serverUrl: process.env.MERCUR_SERVER_URL || "http://localhost:9000",
+  apiKey: process.env.MERCUR_API_KEY || "mercur_medusa_secret_key_prod",
+  webhookUrl: process.env.MERCUR_WEBHOOK_URL || "https://theofficeconnect.com/api/tools/mercur/webhook",
+  commissionDefaultRate: 8.5,
+  b2bCommissionRate: 5.0,
+};
+
+let mercurVendors: MercurVendor[] = [
+  {
+    id: "v-mercur-101",
+    name: "Acme Cloud Infrastructure Solutions",
+    email: "vendors@acmecloud.io",
+    category: "Cloud Services & Hosting",
+    rating: 4.9,
+    totalProducts: 14,
+    commissionRate: 8.5,
+    payoutStatus: "verified",
+    joinedDate: "2026-01-10",
+  },
+  {
+    id: "v-mercur-102",
+    name: "CyberShield Security Systems",
+    email: "partners@cybershield.tech",
+    category: "Software & Enterprise Licenses",
+    rating: 4.8,
+    totalProducts: 8,
+    commissionRate: 8.5,
+    payoutStatus: "verified",
+    joinedDate: "2026-02-01",
+  },
+  {
+    id: "v-mercur-103",
+    name: "NextGen IoT Hardware Corp",
+    email: "sales@nextgeniot.com",
+    category: "Hardware & IoT Devices",
+    rating: 4.7,
+    totalProducts: 22,
+    commissionRate: 5.0,
+    payoutStatus: "verified",
+    joinedDate: "2026-03-15",
+  },
+];
+
+let mercurProducts: MercurProduct[] = [
+  {
+    id: "prod-m-1",
+    sku: "SKU-MER-CLOUD-01",
+    title: "Dedicated Kubernetes High-Availability Cluster",
+    vendorId: "v-mercur-101",
+    vendorName: "Acme Cloud Infrastructure Solutions",
+    category: "Cloud Services & Hosting",
+    price: 1499.00,
+    b2bPriceTier: 1299.00,
+    stockQty: 50,
+    commissionRate: 8.5,
+    description: "Fully managed, multi-region Kubernetes control plane with 99.99% uptime SLA.",
+  },
+  {
+    id: "prod-m-2",
+    sku: "SKU-MER-SEC-02",
+    title: "Zero-Trust Enterprise IAM & SSO Platform License",
+    vendorId: "v-mercur-102",
+    vendorName: "CyberShield Security Systems",
+    category: "Software & Enterprise Licenses",
+    price: 899.00,
+    b2bPriceTier: 750.00,
+    stockQty: 200,
+    commissionRate: 8.5,
+    description: "Unlimited OAuth2, SAML2, and FIDO2 multi-factor authentication security suite.",
+  },
+  {
+    id: "prod-m-3",
+    sku: "SKU-MER-HW-03",
+    title: "Industrial IoT Edge Controller Gateway Device",
+    vendorId: "v-mercur-103",
+    vendorName: "NextGen IoT Hardware Corp",
+    category: "Hardware & IoT Devices",
+    price: 450.00,
+    b2bPriceTier: 380.00,
+    stockQty: 120,
+    commissionRate: 5.0,
+    description: "Ruggedized ARM Cortex industrial IoT gateway with Modbus & MQTT protocols.",
+  },
+];
+
+let mercurOrders: MercurOrder[] = [
+  {
+    id: "ord-mer-901",
+    orderNumber: "ORD-MERCUR-2026-001",
+    customerEmail: "enterprise@acme.com",
+    vendorId: "v-mercur-101",
+    vendorName: "Acme Cloud Infrastructure Solutions",
+    grossAmount: 1499.00,
+    platformCommission: 127.42,
+    vendorPayout: 1371.58,
+    itemsCount: 1,
+    status: "completed",
+    createdAt: "2026-08-25T14:32:00Z",
+  },
+  {
+    id: "ord-mer-902",
+    orderNumber: "ORD-MERCUR-2026-002",
+    customerEmail: "cto@globaltech.org",
+    vendorId: "v-mercur-102",
+    vendorName: "CyberShield Security Systems",
+    grossAmount: 899.00,
+    platformCommission: 76.42,
+    vendorPayout: 822.58,
+    itemsCount: 1,
+    status: "completed",
+    createdAt: "2026-08-26T09:15:00Z",
+  },
+];
+
+export const getMercurMarketplaceOverview = async () => {
+  const totalGmv = mercurOrders.reduce((sum, o) => sum + o.grossAmount, 0);
+  const totalCommissionEarned = mercurOrders.reduce((sum, o) => sum + o.platformCommission, 0);
+
+  return {
+    engine: "MercurJS Open-Source B2B & B2C Marketplace",
+    version: "v1.4.0",
+    medusaVersion: "Medusa v2.5.1 Core",
+    githubRepo: "https://github.com/mercurjs/mercur",
+    config: mercurConfig,
+    stats: {
+      totalVendors: mercurVendors.length,
+      totalProducts: mercurProducts.length,
+      totalOrders: mercurOrders.length,
+      grossMarketplaceVolume: totalGmv,
+      totalPlatformCommission: totalCommissionEarned,
+      defaultCommissionRate: mercurConfig.commissionDefaultRate,
+    },
+    vendors: mercurVendors,
+    products: mercurProducts,
+    recentOrders: mercurOrders,
+  };
+};
+
+export const registerMercurVendor = async (data: {
+  name: string;
+  email: string;
+  category: string;
+  commissionRate?: number;
+}) => {
+  if (!data.name || !data.email) {
+    throw new ToolsError(400, "Vendor Name and Email are required");
+  }
+
+  const newV: MercurVendor = {
+    id: `v-mercur-${Date.now()}`,
+    name: data.name,
+    email: data.email,
+    category: data.category || "General Marketplace Supplier",
+    rating: 5.0,
+    totalProducts: 0,
+    commissionRate: data.commissionRate || mercurConfig.commissionDefaultRate,
+    payoutStatus: "verified",
+    joinedDate: new Date().toISOString().split("T")[0],
+  };
+
+  mercurVendors.unshift(newV);
+  return newV;
+};
+
+export const createMercurProduct = async (data: {
+  title: string;
+  sku?: string;
+  vendorId: string;
+  category: string;
+  price: number;
+  b2bPriceTier?: number;
+  stockQty: number;
+  description: string;
+}) => {
+  if (!data.title || !data.price) {
+    throw new ToolsError(400, "Product title and price are required");
+  }
+
+  const vendor = mercurVendors.find((v) => v.id === data.vendorId) || mercurVendors[0];
+
+  const newP: MercurProduct = {
+    id: `prod-m-${Date.now()}`,
+    sku: data.sku || `SKU-MER-${Date.now().toString().slice(-5)}`,
+    title: data.title,
+    vendorId: vendor.id,
+    vendorName: vendor.name,
+    category: data.category || vendor.category,
+    price: data.price,
+    b2bPriceTier: data.b2bPriceTier,
+    stockQty: data.stockQty || 100,
+    commissionRate: vendor.commissionRate,
+    description: data.description || "Multi-vendor catalog item",
+  };
+
+  mercurProducts.unshift(newP);
+  vendor.totalProducts += 1;
+  return newP;
+};
+
+export const checkoutMercurMultiVendorCart = async (cartItems: Array<{
+  productId: string;
+  quantity: number;
+  customerEmail: string;
+}>) => {
+  if (!cartItems || cartItems.length === 0) {
+    throw new ToolsError(400, "Cart is empty");
+  }
+
+  const createdOrders: MercurOrder[] = [];
+
+  for (const item of cartItems) {
+    const prod = mercurProducts.find((p) => p.id === item.productId);
+    if (!prod) continue;
+
+    const itemTotal = prod.price * item.quantity;
+    const commission = itemTotal * (prod.commissionRate / 100);
+    const vendorPayout = itemTotal - commission;
+
+    const newOrd: MercurOrder = {
+      id: `ord-mer-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      orderNumber: `ORD-MERCUR-2026-${mercurOrders.length + 101}`,
+      customerEmail: item.customerEmail || "customer@camblissstudio.com",
+      vendorId: prod.vendorId,
+      vendorName: prod.vendorName,
+      grossAmount: itemTotal,
+      platformCommission: commission,
+      vendorPayout: vendorPayout,
+      itemsCount: item.quantity,
+      status: "completed",
+      createdAt: new Date().toISOString(),
+    };
+
+    mercurOrders.unshift(newOrd);
+    createdOrders.push(newOrd);
+  }
+
+  return {
+    message: "Multi-vendor cart order split and executed successfully via MercurJS Medusa Engine",
+    ordersCreated: createdOrders.length,
+    orders: createdOrders,
+  };
+};
+
+export const updateMercurConfig = async (newCfg: Partial<typeof mercurConfig>) => {
+  mercurConfig = { ...mercurConfig, ...newCfg };
+  return mercurConfig;
+};

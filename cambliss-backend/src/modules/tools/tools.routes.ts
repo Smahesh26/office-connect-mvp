@@ -3,7 +3,7 @@ import { upload } from "../../config/multer";
 import { createRateLimitMiddleware } from "../../middleware/rate-limit.middleware";
 import { authenticateJWT } from "../../middleware/auth.middleware";
 import fs from "fs/promises";
-import { compressPdfFile, convertCsvToXlsx, convertCurrency, convertDocxToPdf, convertPdfToDocx, convertPdfToTxt, convertPptxToTxt, convertTxtToDocx, convertTxtToPptx, convertXlsxToCsv, extractDocumentText, generateQrCode, getDailyUtilityCatalog, mergePdfFiles, removeImageBackgroundAdvanced, splitPdfFile, ToolsError, upscaleImageFile } from "./tools.service";
+import { compressPdfFile, convertCsvToXlsx, convertCurrency, convertDocxToPdf, convertPdfToDocx, convertPdfToTxt, convertPptxToTxt, convertTxtToDocx, convertTxtToPptx, convertXlsxToCsv, extractDocumentText, generateQrCode, getDailyUtilityCatalog, mergePdfFiles, removeImageBackgroundAdvanced, splitPdfFile, ToolsError, upscaleImageFile, getMercurMarketplaceOverview, registerMercurVendor, createMercurProduct, checkoutMercurMultiVendorCart, updateMercurConfig } from "./tools.service";
 
 const toolsRouter = Router();
 
@@ -297,5 +297,54 @@ toolsRouter.get("/daily-catalog", (_req: Request, res: Response) => {
 		items: getDailyUtilityCatalog(),
 	});
 });
+
+
+
+// MercurJS Marketplace API Routes
+toolsRouter.get("/mercur/marketplace", async (_req: Request, res: Response) => {
+  try {
+    const result = await getMercurMarketplaceOverview();
+    res.status(200).json(result);
+  } catch (error) {
+    handleToolsError(res, error);
+  }
+});
+
+toolsRouter.post("/mercur/vendor/register", async (req: Request, res: Response) => {
+  try {
+    const result = await registerMercurVendor(req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    handleToolsError(res, error);
+  }
+});
+
+toolsRouter.post("/mercur/products/create", async (req: Request, res: Response) => {
+  try {
+    const result = await createMercurProduct(req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    handleToolsError(res, error);
+  }
+});
+
+toolsRouter.post("/mercur/orders/checkout", async (req: Request, res: Response) => {
+  try {
+    const result = await checkoutMercurMultiVendorCart(req.body.cartItems);
+    res.status(200).json(result);
+  } catch (error) {
+    handleToolsError(res, error);
+  }
+});
+
+toolsRouter.post("/mercur/config", async (req: Request, res: Response) => {
+  try {
+    const result = await updateMercurConfig(req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    handleToolsError(res, error);
+  }
+});
+
 
 export default toolsRouter;
