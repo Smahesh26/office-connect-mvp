@@ -7,10 +7,13 @@ import { useSearchParams } from "next/navigation";
 // Core Data Models
 type InvoiceItem = {
   id: string;
+  sku?: string;
   name: string;
+  unitOfMeasure?: string;
   quantity: number;
   price: number;
   tax: number;
+  discount?: number;
 };
 
 type Invoice = {
@@ -20,6 +23,8 @@ type Invoice = {
   customer: string;
   customerEmail: string;
   customerAddress?: string;
+  shippingAddress?: string;
+  customerTaxId?: string;
   amount: number;
   issueDate: string;
   dueDate: string;
@@ -32,6 +37,7 @@ type Invoice = {
   shipping: number;
   notes?: string;
   terms?: string;
+  remittanceBank?: string;
   attachments?: string[];
   status: "paid" | "pending" | "overdue";
 };
@@ -51,6 +57,7 @@ type RecurringInvoice = {
 type BillItem = {
   id: string;
   name: string;
+  category?: string;
   quantity: number;
   price: number;
   tax: number;
@@ -74,7 +81,6 @@ type Bill = {
   discount: number;
   shipping: number;
   notes?: string;
-  attachments?: string[];
   status: "paid" | "pending";
 };
 
@@ -83,8 +89,9 @@ type Customer = {
   name: string;
   contactPerson?: string;
   email: string;
-  phone: string;
   secondaryEmail?: string;
+  phone: string;
+  mobile?: string;
   taxId?: string;
   currency?: string;
   address?: string;
@@ -92,12 +99,14 @@ type Customer = {
   state?: string;
   country?: string;
   pincode?: string;
+  shippingAddress?: string;
   creditLimit?: number;
   paymentTerms?: string;
   balance: number;
   isCrmLead?: boolean;
   leadStatus?: string;
   estimatedValue?: number;
+  notes?: string;
 };
 
 type Vendor = {
@@ -118,12 +127,13 @@ type Vendor = {
   bankAccountNo?: string;
   bankIfsc?: string;
   paymentTerms?: string;
+  notes?: string;
 };
 
 type BankAccount = {
   id: string;
   name: string;
-  accountType: "Checking Bank Account" | "Savings Account" | "Credit Card" | "Stripe Gateway" | "Cash Wallet";
+  accountType: "Checking Bank Account" | "Savings Account" | "Credit Card" | "Stripe Gateway" | "PayPal Account" | "Cash Wallet";
   accountNumber: string;
   institutionName: string;
   routingNumber?: string;
@@ -134,10 +144,10 @@ type BankAccount = {
 type Product = {
   id: string;
   sku: string;
+  barcode?: string;
   name: string;
   type: "Service" | "Physical Product" | "Digital Download";
   category: string;
-  barcode?: string;
   salePrice: number;
   purchaseCost: number;
   taxRate: number;
@@ -155,9 +165,11 @@ type Project = {
   spent: number;
   hoursLogged: number;
   hourlyRate: number;
+  startDate?: string;
   dueDate: string;
   priority: "High" | "Medium" | "Low";
   status: "In Progress" | "Completed" | "On Hold";
+  description?: string;
 };
 
 type Employee = {
@@ -169,7 +181,7 @@ type Employee = {
   email: string;
   phone: string;
   joinDate: string;
-  employmentType: string;
+  employmentType: "Full-Time" | "Part-Time" | "Contractor";
   monthlySalary: number;
   allowances: number;
   taxDeductions: number;
@@ -232,7 +244,6 @@ function AkauntingContent() {
 
   const [activeTab, setActiveTab] = useState<string>(initialView);
   const [loadingProfile, setLoadingProfile] = useState<boolean>(true);
-  const [saveStatus, setSaveStatus] = useState<string>("");
 
   // Live User & Organization State
   const [userProfile, setUserProfile] = useState<UserProfile>({
@@ -259,8 +270,6 @@ function AkauntingContent() {
 
   // State Collections
   const [crmLeads, setCrmLeads] = useState<CrmLead[]>([]);
-  const [loadingLeads, setLoadingLeads] = useState<boolean>(false);
-
   const [invoices, setInvoices] = useState<Invoice[]>([
     {
       id: "inv-1",
@@ -269,6 +278,8 @@ function AkauntingContent() {
       customer: "Acme Enterprise Corp",
       customerEmail: "billing@acme.com",
       customerAddress: "100 Innovation Way, Austin, TX 78701",
+      shippingAddress: "Building 4, Dock B, Austin, TX 78701",
+      customerTaxId: "US-TAX-88912",
       amount: 4950.00,
       issueDate: "2026-08-01",
       dueDate: "2026-08-31",
@@ -281,9 +292,10 @@ function AkauntingContent() {
       status: "pending",
       notes: "Thank you for choosing Office Connect / Cambliss!",
       terms: "Payment is due within 30 days of issue date.",
+      remittanceBank: "Silicon Valley Bank (Acct **** 4821)",
       items: [
-        { id: "item-1", name: "SaaS Platform Pro Plan (Annual License)", quantity: 3, price: 1200.00, tax: 10 },
-        { id: "item-2", name: "Enterprise API Integration & Setup", quantity: 1, price: 900.00, tax: 10 },
+        { id: "item-1", sku: "SKU-SAAS-PRO", name: "SaaS Platform Pro Plan (Annual License)", unitOfMeasure: "License", quantity: 3, price: 1200.00, tax: 10, discount: 0 },
+        { id: "item-2", sku: "SKU-INTEG-01", name: "Enterprise API Integration & Setup", unitOfMeasure: "Hours", quantity: 1, price: 900.00, tax: 10, discount: 0 },
       ]
     },
     {
@@ -293,6 +305,7 @@ function AkauntingContent() {
       customer: "Global Tech Solutions",
       customerEmail: "finance@globaltech.com",
       customerAddress: "500 Silicon Ave, San Jose, CA 95110",
+      customerTaxId: "US-TAX-44102",
       amount: 12500.00,
       issueDate: "2026-07-15",
       dueDate: "2026-08-15",
@@ -305,8 +318,9 @@ function AkauntingContent() {
       status: "overdue",
       notes: "Annual recurring license invoice.",
       terms: "Overdue payments subject to 1.5% monthly interest.",
+      remittanceBank: "JPMorgan Chase (Acct **** 9902)",
       items: [
-        { id: "item-3", name: "Custom Cloud Deployment & Dedicated Server", quantity: 1, price: 12000.00, tax: 5 },
+        { id: "item-3", sku: "SKU-CLOUD-DEP", name: "Custom Cloud Deployment & Dedicated Server", unitOfMeasure: "Server Instance", quantity: 1, price: 12000.00, tax: 5, discount: 0 },
       ]
     },
     {
@@ -316,6 +330,7 @@ function AkauntingContent() {
       customer: "Nexus Systems Inc",
       customerEmail: "accounts@nexussystems.com",
       customerAddress: "220 Tech Blvd, Seattle, WA 98101",
+      customerTaxId: "US-TAX-33901",
       amount: 3200.00,
       issueDate: "2026-08-10",
       dueDate: "2026-08-25",
@@ -328,9 +343,10 @@ function AkauntingContent() {
       status: "paid",
       notes: "Hardware gateway shipment & licensing.",
       terms: "Paid in full via Stripe.",
+      remittanceBank: "Stripe Gateway (Auto)",
       items: [
-        { id: "item-4", name: "IoT Connectivity Gateway Hardware", quantity: 5, price: 450.00, tax: 8.5 },
-        { id: "item-5", name: "Hardware Setup & Configuration", quantity: 1, price: 750.00, tax: 0 },
+        { id: "item-4", sku: "SKU-HW-GATEWAY", name: "IoT Connectivity Gateway Hardware", unitOfMeasure: "Units", quantity: 5, price: 450.00, tax: 8.5, discount: 0 },
+        { id: "item-5", sku: "SKU-SETUP-01", name: "Hardware Setup & Configuration", unitOfMeasure: "Units", quantity: 1, price: 750.00, tax: 0, discount: 0 },
       ]
     }
   ]);
@@ -393,8 +409,9 @@ function AkauntingContent() {
       name: "Acme Enterprise Corp",
       contactPerson: "John Doe",
       email: "billing@acme.com",
-      phone: "+1 (555) 019-2831",
       secondaryEmail: "accounts@acme.com",
+      phone: "+1 (555) 019-2831",
+      mobile: "+1 (555) 019-9988",
       taxId: "US-TAX-88912",
       currency: "USD ($)",
       address: "100 Innovation Way",
@@ -402,15 +419,18 @@ function AkauntingContent() {
       state: "TX",
       country: "USA",
       pincode: "78701",
+      shippingAddress: "Building 4, Dock B, Austin, TX 78701",
       creditLimit: 50000,
       paymentTerms: "Net 30",
       balance: 4950.00,
+      notes: "Key enterprise account with annual SaaS contract.",
     },
     {
       id: "c2",
       name: "Global Tech Solutions",
       contactPerson: "Marcus Vance",
       email: "finance@globaltech.com",
+      secondaryEmail: "ap@globaltech.com",
       phone: "+1 (555) 342-9912",
       taxId: "US-TAX-44102",
       currency: "USD ($)",
@@ -450,7 +470,7 @@ function AkauntingContent() {
       contactPerson: "Cargo Dispatch",
       email: "invoices@fasttrack.com",
       phone: "+1 (800) 555-8821",
-      category: "Logistics",
+      category: "Freight & Shipping",
       paymentTerms: "Net 30",
     }
   ]);
@@ -461,12 +481,12 @@ function AkauntingContent() {
   ]);
 
   const [products, setProducts] = useState<Product[]>([
-    { id: "p1", sku: "SKU-SAAS-PRO", name: "SaaS Platform Pro Plan (Annual)", type: "Service", category: "Software Subscriptions", barcode: "889123001", salePrice: 1200.00, purchaseCost: 100.00, taxRate: 0, stockQty: 999, reorderLevel: 10, warehouse: "Digital / Cloud" },
-    { id: "p2", sku: "SKU-HW-GATEWAY", name: "IoT Connectivity Gateway Hardware", type: "Physical Product", category: "Hardware", barcode: "889123002", salePrice: 450.00, purchaseCost: 220.00, taxRate: 8.5, stockQty: 45, reorderLevel: 15, warehouse: "Main Fulfillment Warehouse" },
+    { id: "p1", sku: "SKU-SAAS-PRO", barcode: "889123001", name: "SaaS Platform Pro Plan (Annual)", type: "Service", category: "Software Subscriptions", salePrice: 1200.00, purchaseCost: 100.00, taxRate: 0, stockQty: 999, reorderLevel: 10, warehouse: "Digital / Cloud" },
+    { id: "p2", sku: "SKU-HW-GATEWAY", barcode: "889123002", name: "IoT Connectivity Gateway Hardware", type: "Physical Product", category: "Hardware", salePrice: 450.00, purchaseCost: 220.00, taxRate: 8.5, stockQty: 45, reorderLevel: 15, warehouse: "Main Fulfillment Warehouse" },
   ]);
 
   const [projects, setProjects] = useState<Project[]>([
-    { id: "prj-1", name: "Enterprise Custom API Integration", customer: "Acme Corp", manager: "Sarah Jenkins", budget: 15000.00, spent: 4200.00, hoursLogged: 64, hourlyRate: 150.00, dueDate: "2026-11-30", priority: "High", status: "In Progress" },
+    { id: "prj-1", name: "Enterprise Custom API Integration", customer: "Acme Corp", manager: "Sarah Jenkins", budget: 15000.00, spent: 4200.00, hoursLogged: 64, hourlyRate: 150.00, startDate: "2026-03-01", dueDate: "2026-11-30", priority: "High", status: "In Progress", description: "Full integration of REST APIs and OAuth2 SSO endpoints." },
   ]);
 
   const [employees, setEmployees] = useState<Employee[]>([
@@ -486,18 +506,27 @@ function AkauntingContent() {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedInvoiceDetail, setSelectedInvoiceDetail] = useState<Invoice | null>(null);
 
+  // Form Field States - Customer
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [custName, setCustName] = useState("");
   const [custContactPerson, setCustContactPerson] = useState("");
   const [custEmail, setCustEmail] = useState("");
+  const [custSecondaryEmail, setCustSecondaryEmail] = useState("");
   const [custPhone, setCustPhone] = useState("");
+  const [custMobile, setCustMobile] = useState("");
   const [custTaxId, setCustTaxId] = useState("");
+  const [custCurrency, setCustCurrency] = useState("USD ($)");
   const [custAddress, setCustAddress] = useState("");
   const [custCity, setCustCity] = useState("");
+  const [custState, setCustState] = useState("");
   const [custCountry, setCustCountry] = useState("USA");
+  const [custPincode, setCustPincode] = useState("");
+  const [custShippingAddress, setCustShippingAddress] = useState("");
   const [custCreditLimit, setCustCreditLimit] = useState<number>(10000);
   const [custPaymentTerms, setCustPaymentTerms] = useState("Net 30");
+  const [custNotes, setCustNotes] = useState("");
 
+  // Form Field States - Vendor
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [vendName, setVendName] = useState("");
   const [vendContactPerson, setVendContactPerson] = useState("");
@@ -508,10 +537,15 @@ function AkauntingContent() {
   const [vendWebsite, setVendWebsite] = useState("");
   const [vendAddress, setVendAddress] = useState("");
   const [vendCity, setVendCity] = useState("");
+  const [vendState, setVendState] = useState("");
   const [vendCountry, setVendCountry] = useState("USA");
+  const [vendPincode, setVendPincode] = useState("");
   const [vendBankName, setVendBankName] = useState("");
   const [vendBankAccountNo, setVendBankAccountNo] = useState("");
+  const [vendBankIfsc, setVendBankIfsc] = useState("");
+  const [vendPaymentTerms, setVendPaymentTerms] = useState("Net 30");
 
+  // Form Field States - Bill
   const [showBillModal, setShowBillModal] = useState(false);
   const [billVendor, setBillVendor] = useState(vendors[0]?.name || "AWS Cloud Services");
   const [billVendorInvoiceNo, setBillVendorInvoiceNo] = useState("");
@@ -525,45 +559,64 @@ function AkauntingContent() {
   });
   const [billCurrency, setBillCurrency] = useState("USD ($)");
   const [billPaymentTerms, setBillPaymentTerms] = useState("Net 30");
+  const [billNotes, setBillNotes] = useState("");
   const [billItems, setBillItems] = useState<BillItem[]>([
     { id: "1", name: "Monthly Cloud Infrastructure", quantity: 1, price: 1500, tax: 0 }
   ]);
 
+  // Form Field States - Product
   const [showProductModal, setShowProductModal] = useState(false);
   const [prodName, setProdName] = useState("");
   const [prodSku, setProdSku] = useState("");
+  const [prodBarcode, setProdBarcode] = useState("");
   const [prodType, setProdType] = useState<"Service" | "Physical Product" | "Digital Download">("Service");
   const [prodCategory, setProdCategory] = useState("Software Subscriptions");
   const [prodSalePrice, setProdSalePrice] = useState<number>(0);
   const [prodPurchaseCost, setProdPurchaseCost] = useState<number>(0);
   const [prodTaxRate, setProdTaxRate] = useState<number>(0);
   const [prodStockQty, setProdStockQty] = useState<number>(100);
+  const [prodReorderLevel, setProdReorderLevel] = useState<number>(10);
   const [prodWarehouse, setProdWarehouse] = useState("Main Fulfillment Warehouse");
 
+  // Form Field States - Bank Account
   const [showBankModal, setShowBankModal] = useState(false);
   const [bankAccName, setBankAccName] = useState("");
-  const [bankAccType, setBankAccType] = useState<"Checking Bank Account" | "Savings Account" | "Credit Card" | "Stripe Gateway" | "Cash Wallet">("Checking Bank Account");
+  const [bankAccType, setBankAccType] = useState<"Checking Bank Account" | "Savings Account" | "Credit Card" | "Stripe Gateway" | "PayPal Account" | "Cash Wallet">("Checking Bank Account");
   const [bankAccNo, setBankAccNo] = useState("");
   const [bankInstName, setBankInstName] = useState("");
   const [bankRoutingNo, setBankRoutingNo] = useState("");
   const [bankCurrency, setBankCurrency] = useState("USD");
   const [bankOpeningBal, setBankOpeningBal] = useState<number>(0);
 
+  // Form Field States - Project
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [prjName, setPrjName] = useState("");
   const [prjCustomer, setPrjCustomer] = useState("");
   const [prjManager, setPrjManager] = useState("");
   const [prjBudget, setPrjBudget] = useState<number>(5000);
   const [prjHourlyRate, setPrjHourlyRate] = useState<number>(100);
+  const [prjStartDate, setPrjStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [prjDueDate, setPrjDueDate] = useState("2026-12-31");
+  const [prjPriority, setPrjPriority] = useState<"High" | "Medium" | "Low">("Medium");
+  const [prjDescription, setPrjDescription] = useState("");
 
+  // Form Field States - Employee
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [empCode, setEmpCode] = useState(`EMP-00${employees.length + 1}`);
   const [empName, setEmpName] = useState("");
   const [empRole, setEmpRole] = useState("");
   const [empDept, setEmpDept] = useState("Engineering");
   const [empEmail, setEmpEmail] = useState("");
+  const [empPhone, setEmpPhone] = useState("");
+  const [empJoinDate, setEmpJoinDate] = useState(new Date().toISOString().split("T")[0]);
+  const [empType, setEmpType] = useState<"Full-Time" | "Part-Time" | "Contractor">("Full-Time");
   const [empSalary, setEmpSalary] = useState<number>(5000);
+  const [empAllowances, setEmpAllowances] = useState<number>(0);
+  const [empTaxDeductions, setEmpTaxDeductions] = useState<number>(0);
+  const [empBankName, setEmpBankName] = useState("Chase");
+  const [empBankAccountNo, setEmpBankAccountNo] = useState("");
 
+  // Form Field States - Ledger Account
   const [showLedgerModal, setShowLedgerModal] = useState(false);
   const [ledgerCode, setLedgerCode] = useState("");
   const [ledgerName, setLedgerName] = useState("");
@@ -571,11 +624,14 @@ function AkauntingContent() {
   const [ledgerDebit, setLedgerDebit] = useState<number>(0);
   const [ledgerCredit, setLedgerCredit] = useState<number>(0);
 
-  // New Invoice Form
+  // Form Field States - New Invoice Form
   const [invNumber, setInvNumber] = useState(`INV-2026-00${invoices.length + 1}`);
   const [invPoNumber, setInvPoNumber] = useState("");
   const [invCustomer, setInvCustomer] = useState("");
   const [invCustomerEmail, setInvCustomerEmail] = useState("");
+  const [invCustomerTaxId, setInvCustomerTaxId] = useState("");
+  const [invCustomerAddress, setInvCustomerAddress] = useState("");
+  const [invShippingAddress, setInvShippingAddress] = useState("");
   const [invIssueDate, setInvIssueDate] = useState(new Date().toISOString().split("T")[0]);
   const [invDueDate, setInvDueDate] = useState(() => {
     const d = new Date();
@@ -584,8 +640,9 @@ function AkauntingContent() {
   });
   const [invCurrency, setInvCurrency] = useState("USD ($)");
   const [invPaymentTerms, setInvPaymentTerms] = useState("Net 30");
+  const [invRemittanceBank, setInvRemittanceBank] = useState("Silicon Valley Bank (Acct **** 4821)");
   const [invItems, setInvItems] = useState<InvoiceItem[]>([
-    { id: "1", name: "SaaS Enterprise Software License", quantity: 1, price: 1200, tax: 0 },
+    { id: "1", sku: "SKU-SAAS-PRO", name: "SaaS Enterprise Software License", unitOfMeasure: "License", quantity: 1, price: 1200, tax: 0, discount: 0 },
   ]);
   const [invDiscount, setInvDiscount] = useState<number>(0);
   const [invShipping, setInvShipping] = useState<number>(0);
@@ -647,7 +704,6 @@ function AkauntingContent() {
   useEffect(() => {
     const fetchCrmLeads = async () => {
       try {
-        setLoadingLeads(true);
         const token = localStorage.getItem("authToken");
         const res = await fetch("/api/crm/leads", {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -661,8 +717,6 @@ function AkauntingContent() {
         }
       } catch (err) {
         console.error("Failed to fetch CRM leads", err);
-      } finally {
-        setLoadingLeads(false);
       }
     };
 
@@ -673,7 +727,7 @@ function AkauntingContent() {
   const handleAddInvItemRow = () => {
     setInvItems((prev) => [
       ...prev,
-      { id: Date.now().toString(), name: "", quantity: 1, price: 0, tax: 0 },
+      { id: Date.now().toString(), sku: "", name: "", unitOfMeasure: "Units", quantity: 1, price: 0, tax: 0, discount: 0 },
     ]);
   };
 
@@ -688,9 +742,9 @@ function AkauntingContent() {
     );
   };
 
-  // Computations
-  const invSubtotal = invItems.reduce((acc, i) => acc + (i.quantity * i.price), 0);
-  const invTaxTotal = invItems.reduce((acc, i) => acc + ((i.quantity * i.price) * (i.tax / 100)), 0);
+  // Invoice Computations
+  const invSubtotal = invItems.reduce((acc, i) => acc + (i.quantity * i.price) - (i.discount || 0), 0);
+  const invTaxTotal = invItems.reduce((acc, i) => acc + (((i.quantity * i.price) - (i.discount || 0)) * (i.tax / 100)), 0);
   const invGrandTotal = Math.max(0, invSubtotal + invTaxTotal - invDiscount + invShipping);
 
   // Form Submit Handlers
@@ -704,6 +758,9 @@ function AkauntingContent() {
       poNumber: invPoNumber,
       customer: invCustomer,
       customerEmail: invCustomerEmail,
+      customerAddress: invCustomerAddress,
+      shippingAddress: invShippingAddress,
+      customerTaxId: invCustomerTaxId,
       amount: invGrandTotal,
       issueDate: invIssueDate,
       dueDate: invDueDate,
@@ -716,6 +773,7 @@ function AkauntingContent() {
       shipping: invShipping,
       notes: invNotes,
       terms: invTerms,
+      remittanceBank: invRemittanceBank,
       status: "pending",
     };
 
@@ -738,14 +796,21 @@ function AkauntingContent() {
       name: custName,
       contactPerson: custContactPerson,
       email: custEmail,
+      secondaryEmail: custSecondaryEmail,
       phone: custPhone,
+      mobile: custMobile,
       taxId: custTaxId,
+      currency: custCurrency,
       address: custAddress,
       city: custCity,
+      state: custState,
       country: custCountry,
+      pincode: custPincode,
+      shippingAddress: custShippingAddress,
       creditLimit: custCreditLimit,
       paymentTerms: custPaymentTerms,
       balance: 0.00,
+      notes: custNotes,
     };
 
     setCustomers((prev) => [...prev, newC]);
@@ -770,9 +835,13 @@ function AkauntingContent() {
       website: vendWebsite,
       address: vendAddress,
       city: vendCity,
+      state: vendState,
       country: vendCountry,
+      pincode: vendPincode,
       bankName: vendBankName,
       bankAccountNo: vendBankAccountNo,
+      bankIfsc: vendBankIfsc,
+      paymentTerms: vendPaymentTerms,
     };
 
     setVendors((prev) => [...prev, newV]);
@@ -804,6 +873,7 @@ function AkauntingContent() {
       taxTotal: bTaxTotal,
       discount: 0,
       shipping: 0,
+      notes: billNotes,
       status: "pending",
     };
 
@@ -818,6 +888,7 @@ function AkauntingContent() {
     const newP: Product = {
       id: `p-${Date.now()}`,
       sku: prodSku || `SKU-${Date.now().toString().slice(-4)}`,
+      barcode: prodBarcode,
       name: prodName,
       type: prodType,
       category: prodCategory,
@@ -825,7 +896,7 @@ function AkauntingContent() {
       purchaseCost: prodPurchaseCost,
       taxRate: prodTaxRate,
       stockQty: prodStockQty,
-      reorderLevel: 10,
+      reorderLevel: prodReorderLevel,
       warehouse: prodWarehouse,
     };
 
@@ -867,9 +938,11 @@ function AkauntingContent() {
       spent: 0,
       hoursLogged: 0,
       hourlyRate: prjHourlyRate,
+      startDate: prjStartDate,
       dueDate: prjDueDate,
-      priority: "Medium",
+      priority: prjPriority,
       status: "In Progress",
+      description: prjDescription,
     };
 
     setProjects((prev) => [...prev, newP]);
@@ -883,20 +956,20 @@ function AkauntingContent() {
 
     const newE: Employee = {
       id: `emp-${Date.now()}`,
-      employeeCode: `EMP-00${employees.length + 1}`,
+      employeeCode: empCode || `EMP-00${employees.length + 1}`,
       name: empName,
       role: empRole || "Team Member",
       department: empDept,
       email: empEmail,
-      phone: "",
-      joinDate: new Date().toISOString().split("T")[0],
-      employmentType: "Full-Time",
+      phone: empPhone,
+      joinDate: empJoinDate,
+      employmentType: empType,
       monthlySalary: empSalary,
-      allowances: 0,
-      taxDeductions: 0,
+      allowances: empAllowances,
+      taxDeductions: empTaxDeductions,
       expenseClaims: 0,
-      bankAccountNo: "**** 0000",
-      bankName: "Main Bank",
+      bankAccountNo: empBankAccountNo || "**** 0000",
+      bankName: empBankName,
       status: "Active",
     };
 
@@ -1179,7 +1252,7 @@ function AkauntingContent() {
                               onClick={() => setSelectedInvoiceDetail(inv)}
                               className="rounded-lg border border-[#d9e2ef] px-2.5 py-1 text-[11px] font-semibold text-[#1f2430] hover:bg-[#eef2fa]"
                             >
-                              View
+                              View Details
                             </button>
                             {inv.status !== "paid" && (
                               <button
@@ -1417,10 +1490,11 @@ function AkauntingContent() {
 
                 <div className="space-y-1 text-xs text-[#5b6472]">
                   {c.contactPerson && <div>Contact: <strong className="text-[#1f2430]">{c.contactPerson}</strong></div>}
-                  <div>Email: {c.email}</div>
-                  <div>Phone: {c.phone}</div>
+                  <div>Email: {c.email} {c.secondaryEmail && `(${c.secondaryEmail})`}</div>
+                  <div>Phone: {c.phone} {c.mobile && `/ Mobile: ${c.mobile}`}</div>
                   {c.taxId && <div>Tax ID / VAT: <strong className="text-[#1f2430]">{c.taxId}</strong></div>}
-                  {c.address && <div>Address: {c.address}, {c.city || ""} {c.country || ""}</div>}
+                  {c.address && <div>Billing Address: {c.address}, {c.city || ""} {c.state || ""} {c.country || ""} {c.pincode || ""}</div>}
+                  {c.shippingAddress && <div>Shipping Address: {c.shippingAddress}</div>}
                   {c.creditLimit && <div>Credit Limit: <strong>${c.creditLimit.toLocaleString()}</strong> ({c.paymentTerms || "Net 30"})</div>}
                 </div>
 
@@ -1466,7 +1540,8 @@ function AkauntingContent() {
                   <div>Email: {v.email}</div>
                   {v.phone && <div>Phone: {v.phone}</div>}
                   {v.taxId && <div>Tax ID: <strong className="text-[#1f2430]">{v.taxId}</strong></div>}
-                  {v.bankName && <div>Bank: <strong>{v.bankName}</strong> ({v.bankAccountNo || ""})</div>}
+                  {v.address && <div>Address: {v.address}, {v.city || ""} {v.state || ""} {v.country || ""} {v.pincode || ""}</div>}
+                  {v.bankName && <div>Bank Account: <strong>{v.bankName}</strong> ({v.bankAccountNo || ""}) {v.bankIfsc && `[SWIFT/IFSC: ${v.bankIfsc}]`}</div>}
                 </div>
               </div>
             ))}
@@ -1499,8 +1574,8 @@ function AkauntingContent() {
 
                 <div className="space-y-1 text-xs text-[#5b6472]">
                   <div>Institution: <strong className="text-[#1f2430]">{b.institutionName}</strong></div>
-                  <div>Account Number: {b.accountNumber}</div>
-                  {b.routingNumber && <div>Routing / Swift: {b.routingNumber}</div>}
+                  <div>Account Number / IBAN: {b.accountNumber}</div>
+                  {b.routingNumber && <div>Routing / Swift Code: {b.routingNumber}</div>}
                 </div>
 
                 <div className="border-t border-[#d9e2ef] pt-3 flex justify-between items-center">
@@ -1530,7 +1605,7 @@ function AkauntingContent() {
             <table className="w-full text-left text-xs">
               <thead className="border-b border-[#d9e2ef] bg-[#f8faff] text-[#5b6472]">
                 <tr>
-                  <th className="p-3 font-semibold">SKU</th>
+                  <th className="p-3 font-semibold">SKU / Barcode</th>
                   <th className="p-3 font-semibold">Item Name</th>
                   <th className="p-3 font-semibold">Type</th>
                   <th className="p-3 font-semibold">Sale Price</th>
@@ -1542,7 +1617,10 @@ function AkauntingContent() {
               <tbody className="divide-y divide-[#d9e2ef]">
                 {products.map((p) => (
                   <tr key={p.id} className="hover:bg-[#f8faff]">
-                    <td className="p-3 font-bold text-[#6678c1]">{p.sku}</td>
+                    <td className="p-3 font-bold text-[#6678c1]">
+                      <div>{p.sku}</div>
+                      {p.barcode && <div className="text-[10px] text-[#5b6472]">EAN: {p.barcode}</div>}
+                    </td>
                     <td className="p-3 font-semibold text-[#1f2430]">{p.name}</td>
                     <td className="p-3 text-[#5b6472]">{p.type}</td>
                     <td className="p-3 font-bold text-[#1f2430]">${p.salePrice.toFixed(2)}</td>
@@ -1588,7 +1666,15 @@ function AkauntingContent() {
                   <div>Hourly Rate: <strong>${prj.hourlyRate}/hr</strong></div>
                   <div>Hours Logged: <strong className="text-blue-600">{prj.hoursLogged} hrs</strong></div>
                   <div>Manager: <strong>{prj.manager}</strong></div>
+                  <div>Start Date: {prj.startDate || "N/A"}</div>
+                  <div>Target Due: {prj.dueDate}</div>
                 </div>
+
+                {prj.description && (
+                  <div className="text-xs text-[#5b6472] bg-[#f8faff] p-2.5 rounded-xl border border-[#d9e2ef]">
+                    {prj.description}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -1616,6 +1702,7 @@ function AkauntingContent() {
                   <th className="p-3 font-semibold">Employee Name</th>
                   <th className="p-3 font-semibold">Role</th>
                   <th className="p-3 font-semibold">Department</th>
+                  <th className="p-3 font-semibold">Type</th>
                   <th className="p-3 font-semibold">Monthly Salary</th>
                   <th className="p-3 font-semibold">Status</th>
                 </tr>
@@ -1627,6 +1714,7 @@ function AkauntingContent() {
                     <td className="p-3 font-semibold text-[#1f2430]">{emp.name}</td>
                     <td className="p-3 text-[#5b6472]">{emp.role}</td>
                     <td className="p-3 text-[#5b6472]">{emp.department}</td>
+                    <td className="p-3 text-[#5b6472]">{emp.employmentType}</td>
                     <td className="p-3 font-bold text-[#1f2430]">${emp.monthlySalary.toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
                     <td className="p-3">
                       <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800">
@@ -1783,7 +1871,7 @@ function AkauntingContent() {
             <div className="flex items-center justify-between border-b border-[#d9e2ef] pb-4">
               <div>
                 <h3 className="text-xl font-bold text-[#1f2430]">{selectedInvoiceDetail.number}</h3>
-                <p className="text-xs text-[#5b6472]">PO #: {selectedInvoiceDetail.poNumber || "N/A"}</p>
+                <p className="text-xs text-[#5b6472]">PO #: {selectedInvoiceDetail.poNumber || "N/A"} | Currency: {selectedInvoiceDetail.currency}</p>
               </div>
               <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${
                 selectedInvoiceDetail.status === "paid" ? "bg-emerald-100 text-emerald-800" : selectedInvoiceDetail.status === "pending" ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800"
@@ -1797,12 +1885,15 @@ function AkauntingContent() {
                 <span className="text-[#5b6472] block">Billed To:</span>
                 <strong className="text-[#1f2430] block text-sm">{selectedInvoiceDetail.customer}</strong>
                 <span className="text-[#5b6472] block">{selectedInvoiceDetail.customerEmail}</span>
-                <span className="text-[#5b6472] block">{selectedInvoiceDetail.customerAddress}</span>
+                {selectedInvoiceDetail.customerTaxId && <span className="text-[#5b6472] block">Tax ID: {selectedInvoiceDetail.customerTaxId}</span>}
+                <span className="text-[#5b6472] block mt-1">Billing Address: {selectedInvoiceDetail.customerAddress || "N/A"}</span>
+                {selectedInvoiceDetail.shippingAddress && <span className="text-[#5b6472] block">Shipping Destination: {selectedInvoiceDetail.shippingAddress}</span>}
               </div>
-              <div className="text-right">
+              <div className="text-right space-y-1">
                 <span className="text-[#5b6472] block">Issue Date: <strong>{selectedInvoiceDetail.issueDate}</strong></span>
                 <span className="text-[#5b6472] block">Due Date: <strong>{selectedInvoiceDetail.dueDate}</strong></span>
-                <span className="text-[#5b6472] block">Terms: <strong>{selectedInvoiceDetail.paymentTerms}</strong></span>
+                <span className="text-[#5b6472] block">Payment Terms: <strong>{selectedInvoiceDetail.paymentTerms}</strong></span>
+                {selectedInvoiceDetail.remittanceBank && <span className="text-[#5b6472] block">Bank Remittance: <strong>{selectedInvoiceDetail.remittanceBank}</strong></span>}
               </div>
             </div>
 
@@ -1810,20 +1901,26 @@ function AkauntingContent() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#f8faff] border-b border-[#d9e2ef] text-[#5b6472]">
                   <tr>
+                    <th className="p-3">SKU</th>
                     <th className="p-3">Item Description</th>
+                    <th className="p-3 text-center">Unit</th>
                     <th className="p-3 text-center">Qty</th>
                     <th className="p-3 text-right">Price</th>
+                    <th className="p-3 text-right">Tax %</th>
                     <th className="p-3 text-right">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#d9e2ef]">
                   {selectedInvoiceDetail.items.map((item) => (
                     <tr key={item.id}>
+                      <td className="p-3 font-semibold text-[#6678c1]">{item.sku || "N/A"}</td>
                       <td className="p-3 font-semibold text-[#1f2430]">{item.name}</td>
+                      <td className="p-3 text-center text-[#5b6472]">{item.unitOfMeasure || "Units"}</td>
                       <td className="p-3 text-center">{item.quantity}</td>
                       <td className="p-3 text-right">${item.price.toFixed(2)}</td>
+                      <td className="p-3 text-right text-[#5b6472]">{item.tax}%</td>
                       <td className="p-3 text-right font-bold text-[#1f2430]">
-                        ${(item.quantity * item.price).toFixed(2)}
+                        ${((item.quantity * item.price) * (1 + item.tax / 100)).toFixed(2)}
                       </td>
                     </tr>
                   ))}
@@ -1832,7 +1929,7 @@ function AkauntingContent() {
             </div>
 
             <div className="flex justify-end text-xs space-y-1">
-              <div className="w-60 space-y-2">
+              <div className="w-64 space-y-2">
                 <div className="flex justify-between text-[#5b6472]">
                   <span>Subtotal:</span>
                   <strong>${selectedInvoiceDetail.subtotal.toFixed(2)}</strong>
@@ -1841,12 +1938,41 @@ function AkauntingContent() {
                   <span>Tax Total:</span>
                   <strong>${selectedInvoiceDetail.taxTotal.toFixed(2)}</strong>
                 </div>
+                {selectedInvoiceDetail.discount > 0 && (
+                  <div className="flex justify-between text-rose-500">
+                    <span>Discount:</span>
+                    <strong>-${selectedInvoiceDetail.discount.toFixed(2)}</strong>
+                  </div>
+                )}
+                {selectedInvoiceDetail.shipping > 0 && (
+                  <div className="flex justify-between text-[#5b6472]">
+                    <span>Shipping & Handling:</span>
+                    <strong>+${selectedInvoiceDetail.shipping.toFixed(2)}</strong>
+                  </div>
+                )}
                 <div className="flex justify-between text-base font-bold text-[#1f2430] border-t border-[#d9e2ef] pt-2">
-                  <span>Grand Total:</span>
+                  <span>Grand Total Amount:</span>
                   <span className="text-[#6678c1]">${selectedInvoiceDetail.amount.toFixed(2)}</span>
                 </div>
               </div>
             </div>
+
+            {(selectedInvoiceDetail.notes || selectedInvoiceDetail.terms) && (
+              <div className="grid grid-cols-2 gap-4 text-xs border-t border-[#d9e2ef] pt-4">
+                {selectedInvoiceDetail.notes && (
+                  <div className="bg-[#f8faff] p-3 rounded-xl border border-[#d9e2ef]">
+                    <span className="font-bold text-[#1f2430] block">Notes to Customer:</span>
+                    <p className="text-[#5b6472] mt-1">{selectedInvoiceDetail.notes}</p>
+                  </div>
+                )}
+                {selectedInvoiceDetail.terms && (
+                  <div className="bg-[#f8faff] p-3 rounded-xl border border-[#d9e2ef]">
+                    <span className="font-bold text-[#1f2430] block">Terms & Conditions:</span>
+                    <p className="text-[#5b6472] mt-1">{selectedInvoiceDetail.terms}</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex justify-end gap-2 border-t border-[#d9e2ef] pt-4">
               <button onClick={() => setSelectedInvoiceDetail(null)} className="rounded-xl border border-[#d9e2ef] px-4 py-2 text-xs font-semibold">
@@ -1860,8 +1986,12 @@ function AkauntingContent() {
       {/* CREATE INVOICE MODAL */}
       {showInvoiceModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-3xl rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-[#1f2430]">Create New Sales Invoice</h3>
+          <div className="w-full max-w-4xl rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#d9e2ef] pb-3">
+              <h3 className="text-lg font-bold text-[#1f2430]">Create New Sales Invoice</h3>
+              <button onClick={() => setShowInvoiceModal(false)} className="text-sm font-bold text-[#5b6472]">✕</button>
+            </div>
+
             <form onSubmit={handleAddInvoice} className="space-y-4">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <div>
@@ -1869,12 +1999,12 @@ function AkauntingContent() {
                   <input type="text" value={invNumber} onChange={(e) => setInvNumber(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#5b6472]">PO Number</label>
-                  <input type="text" placeholder="e.g. PO-991" value={invPoNumber} onChange={(e) => setInvPoNumber(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                  <label className="block text-xs font-semibold text-[#5b6472]">PO / Order Ref Number</label>
+                  <input type="text" placeholder="e.g. PO-9918" value={invPoNumber} onChange={(e) => setInvPoNumber(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#5b6472]">Customer Name *</label>
-                  <input type="text" placeholder="e.g. Acme Corp" value={invCustomer} onChange={(e) => setInvCustomer(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
+                  <label className="block text-xs font-semibold text-[#5b6472]">Customer Company Name *</label>
+                  <input type="text" placeholder="e.g. Acme Enterprise" value={invCustomer} onChange={(e) => setInvCustomer(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#5b6472]">Customer Email</label>
@@ -1882,20 +2012,64 @@ function AkauntingContent() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Customer Tax / VAT ID</label>
+                  <input type="text" placeholder="US-TAX-88912" value={invCustomerTaxId} onChange={(e) => setInvCustomerTaxId(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Billing Currency</label>
+                  <select value={invCurrency} onChange={(e) => setInvCurrency(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs bg-white">
+                    <option value="USD ($)">USD ($)</option>
+                    <option value="EUR (€)">EUR (€)</option>
+                    <option value="GBP (£)">GBP (£)</option>
+                    <option value="INR (₹)">INR (₹)</option>
+                    <option value="CAD ($)">CAD ($)</option>
+                    <option value="AUD ($)">AUD ($)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Issue Date</label>
+                  <input type="date" value={invIssueDate} onChange={(e) => setInvIssueDate(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Due Date</label>
+                  <input type="date" value={invDueDate} onChange={(e) => setInvDueDate(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Billing Address</label>
+                  <input type="text" placeholder="100 Innovation Way, Austin, TX" value={invCustomerAddress} onChange={(e) => setInvCustomerAddress(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Shipping / Destination Address</label>
+                  <input type="text" placeholder="Building 4 Dock B, Austin, TX" value={invShippingAddress} onChange={(e) => setInvShippingAddress(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+              </div>
+
               {/* Line Items */}
               <div className="space-y-2 border-t border-b border-[#d9e2ef] py-4">
                 <div className="flex justify-between items-center">
-                  <h4 className="text-xs font-bold text-[#1f2430]">Line Items</h4>
+                  <h4 className="text-xs font-bold text-[#1f2430]">Invoice Items & Product Line Items</h4>
                   <button type="button" onClick={handleAddInvItemRow} className="text-xs font-bold text-[#6678c1] hover:underline">+ Add Line Item</button>
                 </div>
                 {invItems.map((item) => (
                   <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
                     <input
                       type="text"
-                      placeholder="Item Description"
+                      placeholder="SKU Code"
+                      value={item.sku || ""}
+                      onChange={(e) => handleInvItemChange(item.id, "sku", e.target.value)}
+                      className="col-span-2 rounded-xl border border-[#d9e2ef] p-2 text-xs"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Item Description *"
                       value={item.name}
                       onChange={(e) => handleInvItemChange(item.id, "name", e.target.value)}
-                      className="col-span-6 rounded-xl border border-[#d9e2ef] p-2 text-xs"
+                      className="col-span-4 rounded-xl border border-[#d9e2ef] p-2 text-xs"
                       required
                     />
                     <input
@@ -1908,24 +2082,63 @@ function AkauntingContent() {
                     />
                     <input
                       type="number"
-                      placeholder="Price"
+                      placeholder="Price ($)"
                       value={item.price}
                       onChange={(e) => handleInvItemChange(item.id, "price", parseFloat(e.target.value) || 0)}
-                      className="col-span-3 rounded-xl border border-[#d9e2ef] p-2 text-xs text-right"
+                      className="col-span-2 rounded-xl border border-[#d9e2ef] p-2 text-xs text-right"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Tax %"
+                      value={item.tax}
+                      onChange={(e) => handleInvItemChange(item.id, "tax", parseFloat(e.target.value) || 0)}
+                      className="col-span-1 rounded-xl border border-[#d9e2ef] p-2 text-xs text-center"
                     />
                     <button type="button" onClick={() => handleRemoveInvItemRow(item.id)} className="col-span-1 text-center font-bold text-rose-500 hover:text-rose-700">✕</button>
                   </div>
                 ))}
               </div>
 
-              <div className="flex justify-between items-center text-xs pt-2">
-                <div className="text-[#5b6472]">
-                  Grand Total Amount: <strong className="text-lg text-[#6678c1] font-bold">${invGrandTotal.toFixed(2)}</strong>
+              {/* Adjustments & Notes */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#5b6472]">Customer Notes</label>
+                    <textarea rows={2} value={invNotes} onChange={(e) => setInvNotes(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#5b6472]">Payment Terms & Remittance Instructions</label>
+                    <textarea rows={2} value={invTerms} onChange={(e) => setInvTerms(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setShowInvoiceModal(false)} className="rounded-xl border border-[#d9e2ef] px-4 py-2">Cancel</button>
-                  <button type="submit" className="rounded-xl bg-[#6678c1] px-4 py-2 font-semibold text-white">Save & Issue Invoice</button>
+
+                <div className="space-y-2 text-xs bg-[#f8faff] p-4 rounded-xl border border-[#d9e2ef]">
+                  <div className="flex justify-between items-center">
+                    <span>Subtotal:</span>
+                    <strong>${invSubtotal.toFixed(2)}</strong>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Tax Total:</span>
+                    <strong>${invTaxTotal.toFixed(2)}</strong>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Order Discount ($):</span>
+                    <input type="number" value={invDiscount} onChange={(e) => setInvDiscount(parseFloat(e.target.value) || 0)} className="w-24 rounded-lg border border-[#d9e2ef] p-1 text-right text-xs" />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Shipping Fee ($):</span>
+                    <input type="number" value={invShipping} onChange={(e) => setInvShipping(parseFloat(e.target.value) || 0)} className="w-24 rounded-lg border border-[#d9e2ef] p-1 text-right text-xs" />
+                  </div>
+                  <div className="flex justify-between items-center text-sm font-bold text-[#1f2430] border-t border-[#d9e2ef] pt-2">
+                    <span>Grand Total:</span>
+                    <span className="text-[#6678c1] text-base">${invGrandTotal.toFixed(2)}</span>
+                  </div>
                 </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#d9e2ef]">
+                <button type="button" onClick={() => setShowInvoiceModal(false)} className="rounded-xl border border-[#d9e2ef] px-4 py-2 text-xs">Cancel</button>
+                <button type="submit" className="rounded-xl bg-[#6678c1] px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-[#404d85]">Save & Issue Sales Invoice</button>
               </div>
             </form>
           </div>
@@ -1935,30 +2148,70 @@ function AkauntingContent() {
       {/* CREATE CUSTOMER MODAL */}
       {showCustomerModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-[#1f2430]">Add New Customer Profile</h3>
             <form onSubmit={handleAddCustomer} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[#5b6472]">Customer Company Name *</label>
-                  <input type="text" value={custName} onChange={(e) => setCustName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" required />
+                  <input type="text" placeholder="e.g. Acme Enterprise" value={custName} onChange={(e) => setCustName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#5b6472]">Contact Person</label>
-                  <input type="text" value={custContactPerson} onChange={(e) => setCustContactPerson(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" />
+                  <label className="block text-xs font-semibold text-[#5b6472]">Primary Contact Person</label>
+                  <input type="text" placeholder="John Doe" value={custContactPerson} onChange={(e) => setCustContactPerson(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#5b6472]">Email *</label>
-                  <input type="email" value={custEmail} onChange={(e) => setCustEmail(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" required />
+                  <label className="block text-xs font-semibold text-[#5b6472]">Primary Billing Email *</label>
+                  <input type="email" placeholder="billing@acme.com" value={custEmail} onChange={(e) => setCustEmail(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#5b6472]">Phone</label>
-                  <input type="text" value={custPhone} onChange={(e) => setCustPhone(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" />
+                  <label className="block text-xs font-semibold text-[#5b6472]">Secondary Email</label>
+                  <input type="email" placeholder="ap@acme.com" value={custSecondaryEmail} onChange={(e) => setCustSecondaryEmail(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Office Phone Number</label>
+                  <input type="text" placeholder="+1 (555) 019-2831" value={custPhone} onChange={(e) => setCustPhone(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Direct Mobile</label>
+                  <input type="text" placeholder="+1 (555) 998-1122" value={custMobile} onChange={(e) => setCustMobile(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Tax ID / VAT / GSTIN</label>
+                  <input type="text" placeholder="US-TAX-88912" value={custTaxId} onChange={(e) => setCustTaxId(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Credit Limit ($)</label>
+                  <input type="number" value={custCreditLimit} onChange={(e) => setCustCreditLimit(parseFloat(e.target.value) || 0)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-[#5b6472]">Street Address</label>
+                  <input type="text" placeholder="100 Innovation Way" value={custAddress} onChange={(e) => setCustAddress(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">City</label>
+                  <input type="text" placeholder="Austin" value={custCity} onChange={(e) => setCustCity(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">State / Province</label>
+                  <input type="text" placeholder="TX" value={custState} onChange={(e) => setCustState(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Country</label>
+                  <input type="text" value={custCountry} onChange={(e) => setCustCountry(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Zip / Pincode</label>
+                  <input type="text" placeholder="78701" value={custPincode} onChange={(e) => setCustPincode(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#d9e2ef]">
                 <button type="button" onClick={() => setShowCustomerModal(false)} className="rounded-xl border border-[#d9e2ef] px-4 py-2 text-xs">Cancel</button>
-                <button type="submit" className="rounded-xl bg-[#6678c1] px-4 py-2 text-xs font-semibold text-white">Save Customer</button>
+                <button type="submit" className="rounded-xl bg-[#6678c1] px-5 py-2 text-xs font-semibold text-white shadow-md hover:bg-[#404d85]">Save Customer Record</button>
               </div>
             </form>
           </div>
@@ -1968,22 +2221,50 @@ function AkauntingContent() {
       {/* CREATE VENDOR MODAL */}
       {showVendorModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-[#1f2430]">Add New Vendor Profile</h3>
             <form onSubmit={handleAddVendor} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#5b6472]">Vendor Name *</label>
-                  <input type="text" value={vendName} onChange={(e) => setVendName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" required />
+                  <label className="block text-xs font-semibold text-[#5b6472]">Vendor Company Name *</label>
+                  <input type="text" placeholder="e.g. AWS Cloud Services" value={vendName} onChange={(e) => setVendName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Contact Person</label>
+                  <input type="text" placeholder="Enterprise Accounts" value={vendContactPerson} onChange={(e) => setVendContactPerson(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#5b6472]">Vendor Email</label>
-                  <input type="email" value={vendEmail} onChange={(e) => setVendEmail(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" />
+                  <input type="email" placeholder="billing@aws.com" value={vendEmail} onChange={(e) => setVendEmail(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Vendor Phone</label>
+                  <input type="text" placeholder="+1 (800) 289-4357" value={vendPhone} onChange={(e) => setVendPhone(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Expense Category</label>
+                  <input type="text" placeholder="Infrastructure" value={vendCategory} onChange={(e) => setVendCategory(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Tax ID / VAT / GSTIN</label>
+                  <input type="text" placeholder="AWS-TAX-101" value={vendTaxId} onChange={(e) => setVendTaxId(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Bank Name for Remittance</label>
+                  <input type="text" placeholder="JPMorgan Chase" value={vendBankName} onChange={(e) => setVendBankName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Bank Account / IBAN #</label>
+                  <input type="text" placeholder="**** 4901" value={vendBankAccountNo} onChange={(e) => setVendBankAccountNo(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#d9e2ef]">
                 <button type="button" onClick={() => setShowVendorModal(false)} className="rounded-xl border border-[#d9e2ef] px-4 py-2 text-xs">Cancel</button>
-                <button type="submit" className="rounded-xl bg-[#6678c1] px-4 py-2 text-xs font-semibold text-white">Save Vendor</button>
+                <button type="submit" className="rounded-xl bg-[#6678c1] px-5 py-2 text-xs font-semibold text-white shadow-md hover:bg-[#404d85]">Save Vendor Profile</button>
               </div>
             </form>
           </div>
@@ -1999,16 +2280,24 @@ function AkauntingContent() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[#5b6472]">Vendor Name *</label>
-                  <input type="text" value={billVendor} onChange={(e) => setBillVendor(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" required />
+                  <input type="text" value={billVendor} onChange={(e) => setBillVendor(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#5b6472]">Category</label>
-                  <input type="text" value={billCategory} onChange={(e) => setBillCategory(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" />
+                  <label className="block text-xs font-semibold text-[#5b6472]">Vendor Invoice #</label>
+                  <input type="text" placeholder="INV-AWS-88712" value={billVendorInvoiceNo} onChange={(e) => setBillVendorInvoiceNo(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Expense Category</label>
+                  <input type="text" value={billCategory} onChange={(e) => setBillCategory(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Due Date</label>
+                  <input type="date" value={billDueDate} onChange={(e) => setBillDueDate(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#d9e2ef]">
                 <button type="button" onClick={() => setShowBillModal(false)} className="rounded-xl border border-[#d9e2ef] px-4 py-2 text-xs">Cancel</button>
-                <button type="submit" className="rounded-xl bg-[#6678c1] px-4 py-2 text-xs font-semibold text-white">Save Bill</button>
+                <button type="submit" className="rounded-xl bg-[#6678c1] px-5 py-2 text-xs font-semibold text-white shadow-md hover:bg-[#404d85]">Save Bill</button>
               </div>
             </form>
           </div>
@@ -2023,17 +2312,40 @@ function AkauntingContent() {
             <form onSubmit={handleAddBank} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#5b6472]">Account Name *</label>
-                  <input type="text" value={bankAccName} onChange={(e) => setBankAccName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" required />
+                  <label className="block text-xs font-semibold text-[#5b6472]">Account Display Name *</label>
+                  <input type="text" placeholder="Operating Checking Account" value={bankAccName} onChange={(e) => setBankAccName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#5b6472]">Institution Name</label>
-                  <input type="text" value={bankInstName} onChange={(e) => setBankInstName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" />
+                  <label className="block text-xs font-semibold text-[#5b6472]">Institution / Bank Name</label>
+                  <input type="text" placeholder="Silicon Valley Bank" value={bankInstName} onChange={(e) => setBankInstName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Account Type</label>
+                  <select value={bankAccType} onChange={(e) => setBankAccType(e.target.value as any)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs bg-white">
+                    <option value="Checking Bank Account">Checking Bank Account</option>
+                    <option value="Savings Account">Savings Account</option>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="Stripe Gateway">Stripe Gateway</option>
+                    <option value="PayPal Account">PayPal Account</option>
+                    <option value="Cash Wallet">Cash Wallet</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Account Number / IBAN</label>
+                  <input type="text" placeholder="**** 4821" value={bankAccNo} onChange={(e) => setBankAccNo(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Routing / Swift Code</label>
+                  <input type="text" placeholder="121141821" value={bankRoutingNo} onChange={(e) => setBankRoutingNo(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Opening Balance ($)</label>
+                  <input type="number" value={bankOpeningBal} onChange={(e) => setBankOpeningBal(parseFloat(e.target.value) || 0)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#d9e2ef]">
                 <button type="button" onClick={() => setShowBankModal(false)} className="rounded-xl border border-[#d9e2ef] px-4 py-2 text-xs">Cancel</button>
-                <button type="submit" className="rounded-xl bg-[#6678c1] px-4 py-2 text-xs font-semibold text-white">Save Account</button>
+                <button type="submit" className="rounded-xl bg-[#6678c1] px-5 py-2 text-xs font-semibold text-white shadow-md hover:bg-[#404d85]">Save Bank Account</button>
               </div>
             </form>
           </div>
@@ -2049,16 +2361,32 @@ function AkauntingContent() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[#5b6472]">Product Name *</label>
-                  <input type="text" value={prodName} onChange={(e) => setProdName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" required />
+                  <input type="text" value={prodName} onChange={(e) => setProdName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">SKU Code</label>
+                  <input type="text" placeholder="SKU-SAAS-PRO" value={prodSku} onChange={(e) => setProdSku(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#5b6472]">Sale Price ($)</label>
-                  <input type="number" value={prodSalePrice} onChange={(e) => setProdSalePrice(parseFloat(e.target.value) || 0)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" />
+                  <input type="number" value={prodSalePrice} onChange={(e) => setProdSalePrice(parseFloat(e.target.value) || 0)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Purchase Cost ($)</label>
+                  <input type="number" value={prodPurchaseCost} onChange={(e) => setProdPurchaseCost(parseFloat(e.target.value) || 0)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Stock Quantity</label>
+                  <input type="number" value={prodStockQty} onChange={(e) => setProdStockQty(parseInt(e.target.value) || 0)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Warehouse Location</label>
+                  <input type="text" value={prodWarehouse} onChange={(e) => setProdWarehouse(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#d9e2ef]">
                 <button type="button" onClick={() => setShowProductModal(false)} className="rounded-xl border border-[#d9e2ef] px-4 py-2 text-xs">Cancel</button>
-                <button type="submit" className="rounded-xl bg-[#6678c1] px-4 py-2 text-xs font-semibold text-white">Save Product Item</button>
+                <button type="submit" className="rounded-xl bg-[#6678c1] px-5 py-2 text-xs font-semibold text-white shadow-md hover:bg-[#404d85]">Save Product Item</button>
               </div>
             </form>
           </div>
@@ -2071,13 +2399,27 @@ function AkauntingContent() {
           <div className="w-full max-w-lg rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-2xl space-y-4">
             <h3 className="text-lg font-bold text-[#1f2430]">Add New Client Project</h3>
             <form onSubmit={handleAddProject} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#5b6472]">Project Name *</label>
-                <input type="text" value={prjName} onChange={(e) => setPrjName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" required />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Project Name *</label>
+                  <input type="text" value={prjName} onChange={(e) => setPrjName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Client / Customer</label>
+                  <input type="text" value={prjCustomer} onChange={(e) => setPrjCustomer(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Budget ($)</label>
+                  <input type="number" value={prjBudget} onChange={(e) => setPrjBudget(parseFloat(e.target.value) || 0)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Hourly Billing Rate ($)</label>
+                  <input type="number" value={prjHourlyRate} onChange={(e) => setPrjHourlyRate(parseFloat(e.target.value) || 0)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#d9e2ef]">
                 <button type="button" onClick={() => setShowProjectModal(false)} className="rounded-xl border border-[#d9e2ef] px-4 py-2 text-xs">Cancel</button>
-                <button type="submit" className="rounded-xl bg-[#6678c1] px-4 py-2 text-xs font-semibold text-white">Create Project</button>
+                <button type="submit" className="rounded-xl bg-[#6678c1] px-5 py-2 text-xs font-semibold text-white shadow-md hover:bg-[#404d85]">Create Project</button>
               </div>
             </form>
           </div>
@@ -2090,13 +2432,27 @@ function AkauntingContent() {
           <div className="w-full max-w-lg rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-2xl space-y-4">
             <h3 className="text-lg font-bold text-[#1f2430]">Add Employee Profile</h3>
             <form onSubmit={handleAddEmployee} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#5b6472]">Full Name *</label>
-                <input type="text" value={empName} onChange={(e) => setEmpName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" required />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Full Name *</label>
+                  <input type="text" value={empName} onChange={(e) => setEmpName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Role / Designation</label>
+                  <input type="text" value={empRole} onChange={(e) => setEmpRole(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Work Email</label>
+                  <input type="email" value={empEmail} onChange={(e) => setEmpEmail(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Monthly Base Salary ($)</label>
+                  <input type="number" value={empSalary} onChange={(e) => setEmpSalary(parseFloat(e.target.value) || 0)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+                </div>
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#d9e2ef]">
                 <button type="button" onClick={() => setShowEmployeeModal(false)} className="rounded-xl border border-[#d9e2ef] px-4 py-2 text-xs">Cancel</button>
-                <button type="submit" className="rounded-xl bg-[#6678c1] px-4 py-2 text-xs font-semibold text-white">Save Employee</button>
+                <button type="submit" className="rounded-xl bg-[#6678c1] px-5 py-2 text-xs font-semibold text-white shadow-md hover:bg-[#404d85]">Save Employee</button>
               </div>
             </form>
           </div>
@@ -2112,16 +2468,30 @@ function AkauntingContent() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[#5b6472]">Account Code *</label>
-                  <input type="text" value={ledgerCode} onChange={(e) => setLedgerCode(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" required />
+                  <input type="text" placeholder="e.g. 1050" value={ledgerCode} onChange={(e) => setLedgerCode(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#5b6472]">Account Name *</label>
-                  <input type="text" value={ledgerName} onChange={(e) => setLedgerName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs" required />
+                  <input type="text" placeholder="e.g. Petty Cash" value={ledgerName} onChange={(e) => setLedgerName(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Classification Type</label>
+                  <select value={ledgerType} onChange={(e) => setLedgerType(e.target.value as any)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs bg-white">
+                    <option value="Asset">Asset</option>
+                    <option value="Liability">Liability</option>
+                    <option value="Equity">Equity</option>
+                    <option value="Revenue">Revenue</option>
+                    <option value="Expense">Expense</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#5b6472]">Opening Balance ($)</label>
+                  <input type="number" value={ledgerDebit} onChange={(e) => setLedgerDebit(parseFloat(e.target.value) || 0)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#d9e2ef]">
                 <button type="button" onClick={() => setShowLedgerModal(false)} className="rounded-xl border border-[#d9e2ef] px-4 py-2 text-xs">Cancel</button>
-                <button type="submit" className="rounded-xl bg-[#6678c1] px-4 py-2 text-xs font-semibold text-white">Save Account</button>
+                <button type="submit" className="rounded-xl bg-[#6678c1] px-5 py-2 text-xs font-semibold text-white shadow-md hover:bg-[#404d85]">Save Account</button>
               </div>
             </form>
           </div>
