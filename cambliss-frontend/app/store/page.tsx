@@ -109,7 +109,7 @@ type MercurCartItem = {
 
 export default function StorePage() {
 	return (
-		<Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading Tools Marketplace...</div>}>
+		<Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading Tools Suite...</div>}>
 			<StoreContent />
 		</Suspense>
 	);
@@ -118,7 +118,7 @@ export default function StorePage() {
 function StoreContent() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
-	const view = searchParams.get("view") || "mercur"; // Default to Mercur Marketplace
+	const view = searchParams.get("view") || "free"; // Default to Free Tools
 	
 	const [authUser, setAuthUser] = useState<AuthUser | null>(null);
 
@@ -309,7 +309,7 @@ function StoreContent() {
 			description: pDesc || "MercurJS multi-vendor catalog item.",
 		};
 
-		setProducts((prev) => [newP, ...prev]);
+		setProducts((prev) => [...prev, newP]);
 		setShowProductModal(false);
 		setPTitle("");
 	};
@@ -478,47 +478,139 @@ function StoreContent() {
 	const totalGmv = orders.reduce((sum, o) => sum + o.grossAmount, 0);
 	const totalCommissionEarned = orders.reduce((sum, o) => sum + o.platformCommission, 0);
 
+	// Free Tools Suite Cards list with redirect routes
+	const freeToolSuiteCards = [
+		{
+			id: "accounting",
+			title: "Accounting & Finance Suite",
+			tagline: "Free Open-Source Accountech ERP",
+			description: "Complete corporate accounting, invoices, recurring billing, vendor bills, customer balances, and ledger.",
+			icon: "💰",
+			badge: "INTEGRATED",
+			badgeColor: "bg-emerald-100 text-emerald-800",
+			route: "/akaunting",
+			cta: "Open Accountech ERP →",
+		},
+		{
+			id: "marketplace",
+			title: "MercurJS Open Source Marketplace",
+			tagline: "Multi-Vendor B2B & B2C Engine",
+			description: "Headless multi-vendor marketplace framework powered by MedusaJS, vendor onboarding, order splitting, and seller payouts.",
+			icon: "🛍️",
+			badge: "NEW INTEGRATION",
+			badgeColor: "bg-purple-100 text-purple-800",
+			route: "/store?view=mercur",
+			cta: "Launch Mercur Marketplace →",
+		},
+		{
+			id: "crm",
+			title: "CRM & Sales Pipeline",
+			tagline: "Customer Relationship Suite",
+			description: "Lead management, sales deals pipeline, customer directory, contact details, and conversion tracking.",
+			icon: "📊",
+			badge: "WORKSPACE TOOL",
+			badgeColor: "bg-blue-100 text-blue-800",
+			route: "/crm",
+			cta: "Open CRM Portal →",
+		},
+		{
+			id: "hrm",
+			title: "HRM & Workforce Portal",
+			tagline: "Human Resources Management",
+			description: "Employee records, attendance, payroll calculations, leave requests, and department directory.",
+			icon: "👥",
+			badge: "HR SUITE",
+			badgeColor: "bg-indigo-100 text-indigo-800",
+			route: "/hrm",
+			cta: "Open HRM Suite →",
+		},
+		{
+			id: "inventory",
+			title: "Inventory & Warehouse Engine",
+			tagline: "Stock & Catalog Controller",
+			description: "Manage product catalogs, SKU tracking, reorder thresholds, warehouse stock quantities, and cost prices.",
+			icon: "📦",
+			badge: "STOCK CONTROL",
+			badgeColor: "bg-[#6678c1]/20 text-[#6678c1]",
+			route: "/inventory",
+			cta: "Open Inventory Manager →",
+		},
+		{
+			id: "files",
+			title: "Cloud File Sharing & Storage",
+			tagline: "Secure Document Repository",
+			description: "Organization file sharing, folder hierarchy, team document sharing, and cloud file management.",
+			icon: "📁",
+			badge: "STORAGE",
+			badgeColor: "bg-teal-100 text-teal-800",
+			route: "/file-sharing",
+			cta: "Open File Sharing →",
+		},
+		{
+			id: "video",
+			title: "Video Connect & Meetings",
+			tagline: "WebRTC Conference Rooms",
+			description: "Instant video calling, virtual meeting rooms, screen sharing, and team video conferencing.",
+			icon: "📹",
+			badge: "MEETINGS",
+			badgeColor: "bg-rose-100 text-rose-800",
+			route: "/video-connect",
+			cta: "Start Video Meeting →",
+		},
+		{
+			id: "users",
+			title: "User & Access Management",
+			tagline: "RBAC & Role Permissions",
+			description: "Manage organization team members, user roles, permission access keys, and admin controls.",
+			icon: "⚙️",
+			badge: "ADMIN",
+			badgeColor: "bg-amber-100 text-amber-800",
+			route: "/user-management",
+			cta: "Open User Management →",
+		},
+	];
+
 	return (
 		<WorkspaceShell>
 			<div className="mt-5 mx-auto max-w-7xl space-y-6">
 				{/* Top 3-Way Tools Navigation */}
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
 					<button
-						onClick={() => router.push("/store?view=mercur")}
-						className={`rounded-2xl border p-5 text-left transition-all relative overflow-hidden ${
-							view === "mercur"
+						onClick={() => router.push("/store?view=free")}
+						className={`rounded-2xl border p-5 text-left transition-all ${
+							view === "free"
 								? "bg-[#6678c1] border-[#6678c1] text-white shadow-xl shadow-[#6678c1]/20 ring-2 ring-[#6678c1]"
 								: "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50 shadow-sm"
 						}`}
 					>
 						<div className="flex items-center justify-between">
 							<span className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase ${
-								view === "mercur" ? "bg-white/20 text-white" : "bg-[#6678c1]/10 text-[#6678c1]"
+								view === "free" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-800"
 							}`}>
-								🔥 MERCURJS INTEGRATED
+								FREE TOOLS & SUITE
 							</span>
-							<span className="text-xs font-bold">Open-Source</span>
+							<span className="text-xs font-bold">100% Free</span>
 						</div>
-						<h2 className="mt-3 text-lg font-extrabold">Mercur Marketplace</h2>
-						<p className={`mt-1 text-xs ${view === "mercur" ? "text-white/80" : "text-zinc-500"}`}>
-							Headless B2B & B2C multi-vendor engine (MedusaJS core)
+						<h2 className="mt-3 text-lg font-extrabold">Free Open-Source Tools</h2>
+						<p className={`mt-1 text-xs ${view === "free" ? "text-white/80" : "text-zinc-500"}`}>
+							Accounting, Mercur Marketplace, CRM, HRM, OCR, PDF & Image Utilities
 						</p>
 					</button>
 
 					<button
-						onClick={() => router.push("/store?view=free")}
+						onClick={() => router.push("/store?view=mercur")}
 						className={`rounded-2xl border p-5 text-left transition-all ${
-							view === "free"
+							view === "mercur"
 								? "bg-[#404d85] border-[#404d85] text-white shadow-xl shadow-[#404d85]/20"
 								: "bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50 shadow-sm"
 						}`}
 					>
-						<span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 uppercase">
-							FREE UTILITIES
+						<span className="rounded-full bg-[#6678c1]/20 px-2.5 py-0.5 text-[10px] font-bold text-[#6678c1] uppercase">
+							MERCURJS MARKETPLACE
 						</span>
-						<h2 className="mt-3 text-lg font-bold">Free Tools Workbench</h2>
-						<p className={`mt-1 text-xs ${view === "free" ? "text-white/80" : "text-zinc-500"}`}>
-							OCR, PDF split/merge/compress, BG Remover, Image Upscaler
+						<h2 className="mt-3 text-lg font-bold">Mercur Multi-Vendor Engine</h2>
+						<p className={`mt-1 text-xs ${view === "mercur" ? "text-white/80" : "text-zinc-500"}`}>
+							Headless B2B & B2C multi-vendor marketplace framework
 						</p>
 					</button>
 
@@ -539,6 +631,298 @@ function StoreContent() {
 						</p>
 					</button>
 				</div>
+
+				{/* FREE TOOLS TAB */}
+				{view === "free" && (
+					<div className="space-y-8">
+						{/* Header Banner */}
+						<div className="rounded-3xl border border-[#d9e2ef] bg-gradient-to-r from-white via-[#f8faff] to-[#eef2fa] p-8 shadow-sm">
+							<div className="flex flex-wrap items-center justify-between gap-4">
+								<div>
+									<div className="flex items-center gap-2">
+										<span className="rounded-full bg-[#6678c1] px-3 py-0.5 text-[11px] font-extrabold text-white uppercase">
+											OPEN SOURCE WORKSPACE UTILITIES
+										</span>
+									</div>
+									<h1 className="mt-2 text-2xl font-black text-[#1f2430]">
+										Free Tools & Integrated Applications
+									</h1>
+									<p className="mt-1 text-xs text-[#5b6472]">
+										Click any card below to launch the corresponding platform, open-source ERP, marketplace engine, or online utility.
+									</p>
+								</div>
+							</div>
+						</div>
+
+						{/* SECTION 1: REDIRECT SUITE CARDS */}
+						<div className="space-y-4">
+							<div className="flex items-center justify-between">
+								<h2 className="text-lg font-bold text-[#1f2430]">
+									🚀 Free Platform Applications & Open-Source Tools
+								</h2>
+								<span className="text-xs font-semibold text-[#5b6472]">
+									{freeToolSuiteCards.length} Clickable Integrations
+								</span>
+							</div>
+
+							<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+								{freeToolSuiteCards.map((tool) => (
+									<div
+										key={tool.id}
+										onClick={() => router.push(tool.route)}
+										className="group cursor-pointer rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-sm flex flex-col justify-between space-y-4 hover:border-[#6678c1] hover:shadow-md transition-all duration-200"
+									>
+										<div className="space-y-3">
+											<div className="flex items-center justify-between">
+												<span className="text-3xl">{tool.icon}</span>
+												<span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${tool.badgeColor}`}>
+													{tool.badge}
+												</span>
+											</div>
+
+											<div>
+												<h3 className="text-base font-bold text-[#1f2430] group-hover:text-[#6678c1] transition">
+													{tool.title}
+												</h3>
+												<div className="text-[11px] font-semibold text-[#6678c1] mt-0.5">{tool.tagline}</div>
+											</div>
+
+											<p className="text-xs text-[#5b6472] leading-relaxed">
+												{tool.description}
+											</p>
+										</div>
+
+										<div className="pt-3 border-t border-[#d9e2ef] flex items-center justify-between text-xs font-bold text-[#6678c1] group-hover:translate-x-1 transition-transform">
+											<span>{tool.cta}</span>
+										</div>
+									</div>
+								))}
+							</div>
+						</div>
+
+						{/* SECTION 2: INTERACTIVE UTILITIES (CONVERTER, OCR, PDF, IMAGE) */}
+						<div className="space-y-4 border-t border-[#d9e2ef] pt-8">
+							<div className="flex items-center justify-between">
+								<h2 className="text-lg font-bold text-[#1f2430]">
+									🛠️ Interactive File & Media Utilities
+								</h2>
+								<span className="text-xs font-semibold text-[#5b6472]">
+									Server-Side Open-Source Engines
+								</span>
+							</div>
+
+							<div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+								{/* Document Converter */}
+								<div className="rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-sm xl:col-span-2 space-y-3">
+									<div className="flex items-center justify-between gap-3 border-b border-[#d9e2ef] pb-3">
+										<div>
+											<h3 className="text-sm font-bold text-[#1f2430]">📄 Document Format Converter</h3>
+											<p className="text-xs text-[#5b6472]">Convert between PDF, Word (.docx), Excel (.xlsx), CSV, PowerPoint (.pptx), and Text</p>
+										</div>
+										<span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold text-blue-800 uppercase">
+											OPEN SOURCE ENGINE
+										</span>
+									</div>
+
+									<div className="grid gap-3 md:grid-cols-[1.5fr_1fr_auto] items-center pt-2">
+										<select
+											value={docConversion}
+											onChange={(e) => setDocConversion(e.target.value as any)}
+											className="rounded-xl border border-[#d9e2ef] px-3 py-2 text-xs font-semibold text-[#1f2430] bg-white"
+										>
+											<option value="pdf-to-docx">PDF to Word (.docx)</option>
+											<option value="docx-to-pdf">Word to PDF (.pdf)</option>
+											<option value="xlsx-to-csv">Excel to CSV (.csv)</option>
+											<option value="csv-to-xlsx">CSV to Excel (.xlsx)</option>
+											<option value="pdf-to-txt">PDF to Plain Text (.txt)</option>
+											<option value="txt-to-docx">Text to Word (.docx)</option>
+											<option value="pptx-to-txt">PowerPoint to Text (.txt)</option>
+											<option value="txt-to-pptx">Text to PowerPoint (.pptx)</option>
+										</select>
+
+										<label className="cursor-pointer truncate rounded-xl border border-[#d9e2ef] bg-[#f8faff] px-4 py-2 text-xs font-semibold text-[#1f2430] hover:bg-[#eef2fa]">
+											{docFile ? docFile.name : "📁 Select Document"}
+											<input type="file" onChange={(e) => setDocFile(e.target.files?.[0] ?? null)} className="hidden" />
+										</label>
+
+										<button
+											type="button"
+											onClick={() => void runDocumentConversion()}
+											className="rounded-xl bg-[#6678c1] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#404d85]"
+										>
+											{docBusy ? "Converting..." : "Convert Now"}
+										</button>
+									</div>
+
+									{docDownloadUrl && (
+										<div className="mt-3 flex items-center gap-3 rounded-xl bg-emerald-50 p-3 border border-emerald-200">
+											<span className="text-xs font-bold text-emerald-800">✅ Conversion Done:</span>
+											<a href={docDownloadUrl} download={docDownloadName || "converted-file"} className="text-xs font-bold text-[#6678c1] hover:underline">
+												Download {docDownloadName} ↗
+											</a>
+										</div>
+									)}
+								</div>
+
+								{/* Image Upscaler */}
+								<div className="rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-sm space-y-3">
+									<div className="flex items-center justify-between border-b border-[#d9e2ef] pb-3">
+										<div>
+											<h3 className="text-sm font-bold text-[#1f2430]">🖼️ AI Image Upscaler</h3>
+											<p className="text-xs text-[#5b6472]">Enhance low-resolution images 2x to 4x for product catalog assets</p>
+										</div>
+										<span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-[10px] font-bold text-purple-800 uppercase">
+											IMAGE AI
+										</span>
+									</div>
+
+									<div className="flex flex-wrap items-center gap-2 pt-2">
+										<label className="cursor-pointer truncate rounded-xl border border-[#d9e2ef] bg-[#f8faff] px-4 py-2 text-xs font-semibold text-[#1f2430]">
+											{upscaleFile ? upscaleFile.name : "🖼️ Choose Image"}
+											<input type="file" accept="image/*" onChange={(e) => setUpscaleFile(e.target.files?.[0] ?? null)} className="hidden" />
+										</label>
+
+										<select
+											value={upscaleScale}
+											onChange={(e) => setUpscaleScale(e.target.value)}
+											className="rounded-xl border border-[#d9e2ef] px-3 py-2 text-xs bg-white font-semibold"
+										>
+											<option value="2">2x Upscale</option>
+											<option value="3">3x Upscale</option>
+											<option value="4">4x Upscale</option>
+										</select>
+
+										<button
+											type="button"
+											onClick={() => void runImageUpscale()}
+											className="rounded-xl bg-[#6678c1] px-4 py-2 text-xs font-bold text-white hover:bg-[#404d85]"
+										>
+											{upscaleBusy ? "Upscaling..." : "Upscale Image"}
+										</button>
+									</div>
+
+									{upscaledPreview && (
+										<div className="mt-3 flex items-center gap-3 pt-2">
+											<img src={upscaledPreview} alt="Upscaled output" className="h-20 w-20 rounded-xl object-cover border border-[#d9e2ef]" />
+											<a href={upscaledPreview} download="upscaled-image.png" className="text-xs font-bold text-[#6678c1] hover:underline">
+												Download Upscaled Image ↗
+											</a>
+										</div>
+									)}
+								</div>
+
+								{/* Background Remover */}
+								<div className="rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-sm space-y-3">
+									<div className="flex items-center justify-between border-b border-[#d9e2ef] pb-3">
+										<div>
+											<h3 className="text-sm font-bold text-[#1f2430]">✂️ Background Remover</h3>
+											<p className="text-xs text-[#5b6472]">Generate transparent PNGs for product photos & logos</p>
+										</div>
+										<span className="rounded-full bg-teal-100 px-2.5 py-0.5 text-[10px] font-bold text-teal-800 uppercase">
+											TRANSPARENT PNG
+										</span>
+									</div>
+
+									<div className="flex flex-wrap items-center gap-2 pt-2">
+										<label className="cursor-pointer truncate rounded-xl border border-[#d9e2ef] bg-[#f8faff] px-4 py-2 text-xs font-semibold text-[#1f2430]">
+											{bgRemovalFile ? bgRemovalFile.name : "📷 Choose Photo"}
+											<input type="file" accept="image/*" onChange={(e) => setBgRemovalFile(e.target.files?.[0] ?? null)} className="hidden" />
+										</label>
+
+										<button
+											type="button"
+											onClick={() => void runBackgroundRemoval()}
+											className="rounded-xl bg-[#6678c1] px-4 py-2 text-xs font-bold text-white hover:bg-[#404d85]"
+										>
+											{bgBusy ? "Removing..." : "Remove BG"}
+										</button>
+									</div>
+
+									{bgPreview && (
+										<div className="mt-3 flex items-center gap-3 pt-2">
+											<img src={bgPreview} alt="Output" className="h-20 w-20 rounded-xl object-cover border border-[#d9e2ef] bg-zinc-100" />
+											<a href={bgPreview} download="transparent-bg.png" className="text-xs font-bold text-[#6678c1] hover:underline">
+												Download Transparent PNG ↗
+											</a>
+										</div>
+									)}
+								</div>
+
+								{/* PDF Workbench */}
+								<div className="rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-sm xl:col-span-2 space-y-3">
+									<div className="flex items-center justify-between border-b border-[#d9e2ef] pb-3">
+										<div>
+											<h3 className="text-sm font-bold text-[#1f2430]">📑 PDF Workbench</h3>
+											<p className="text-xs text-[#5b6472]">Merge multiple PDF documents, split page ranges, or compress file size</p>
+										</div>
+										<span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 uppercase">
+											PDF UTILITIES
+										</span>
+									</div>
+
+									<div className="grid grid-cols-1 gap-4 md:grid-cols-3 pt-2 text-xs">
+										<div className="rounded-xl border border-[#d9e2ef] p-3 bg-[#f8faff] space-y-2">
+											<div className="font-bold text-[#1f2430]">Merge PDFs</div>
+											<label className="block cursor-pointer rounded-lg border border-[#d9e2ef] bg-white p-2 text-center text-[11px] font-semibold text-[#5b6472]">
+												Select PDF Files
+												<input type="file" accept="application/pdf" multiple onChange={(e) => setPdfMergeFiles(Array.from(e.target.files || []))} className="hidden" />
+											</label>
+											{pdfMergeFiles.length > 0 && <div className="text-[11px] font-bold text-emerald-600">{pdfMergeFiles.length} files selected</div>}
+											<button type="button" onClick={() => void runPdfMerge()} className="w-full rounded-lg bg-[#6678c1] py-1.5 font-bold text-white">Merge & Download</button>
+										</div>
+
+										<div className="rounded-xl border border-[#d9e2ef] p-3 bg-[#f8faff] space-y-2">
+											<div className="font-bold text-[#1f2430]">Split PDF Pages</div>
+											<label className="block cursor-pointer rounded-lg border border-[#d9e2ef] bg-white p-2 text-center text-[11px] font-semibold text-[#5b6472]">
+												{pdfSplitFile ? pdfSplitFile.name : "Select PDF File"}
+												<input type="file" accept="application/pdf" onChange={(e) => setPdfSplitFile(e.target.files?.[0] ?? null)} className="hidden" />
+											</label>
+											<input type="text" placeholder="Page range (e.g. 1-3)" value={pdfSplitPages} onChange={(e) => setPdfSplitPages(e.target.value)} className="w-full rounded-lg border border-[#d9e2ef] p-1.5 text-xs" />
+											<button type="button" onClick={() => void runPdfSplit()} className="w-full rounded-lg bg-[#6678c1] py-1.5 font-bold text-white">Split & Download</button>
+										</div>
+
+										<div className="rounded-xl border border-[#d9e2ef] p-3 bg-[#f8faff] space-y-2">
+											<div className="font-bold text-[#1f2430]">Compress PDF Size</div>
+											<label className="block cursor-pointer rounded-lg border border-[#d9e2ef] bg-white p-2 text-center text-[11px] font-semibold text-[#5b6472]">
+												{pdfCompressFile ? pdfCompressFile.name : "Select PDF File"}
+												<input type="file" accept="application/pdf" onChange={(e) => setPdfCompressFile(e.target.files?.[0] ?? null)} className="hidden" />
+											</label>
+											<button type="button" onClick={() => void runPdfCompress()} className="w-full rounded-lg bg-[#6678c1] py-1.5 font-bold text-white">Compress PDF</button>
+										</div>
+									</div>
+								</div>
+
+								{/* OCR Text Extractor */}
+								<div className="rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-sm xl:col-span-2 space-y-3">
+									<div className="flex items-center justify-between border-b border-[#d9e2ef] pb-3">
+										<div>
+											<h3 className="text-sm font-bold text-[#1f2430]">🔍 OCR Text Extractor</h3>
+											<p className="text-xs text-[#5b6472]">Extract editable text from scanned PDF documents, invoices, or images</p>
+										</div>
+										<span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 uppercase">
+											TESSERACT OCR
+										</span>
+									</div>
+
+									<div className="flex items-center gap-3 pt-2">
+										<label className="cursor-pointer rounded-xl border border-[#d9e2ef] bg-[#f8faff] px-4 py-2 text-xs font-semibold text-[#1f2430]">
+											{ocrFile ? ocrFile.name : "🔍 Select Scanned File or Image"}
+											<input type="file" accept="application/pdf,image/*" onChange={(e) => setOcrFile(e.target.files?.[0] ?? null)} className="hidden" />
+										</label>
+
+										<button type="button" onClick={() => void runOcr()} className="rounded-xl bg-[#6678c1] px-5 py-2 text-xs font-bold text-white hover:bg-[#404d85]">
+											{ocrLoading ? "Extracting..." : "Extract Text"}
+										</button>
+									</div>
+
+									{ocrResult && (
+										<textarea readOnly value={ocrResult} className="mt-3 h-40 w-full rounded-xl border border-[#d9e2ef] bg-[#f8faff] p-3 text-xs leading-5 font-mono text-[#1f2430]" />
+									)}
+								</div>
+							</div>
+						</div>
+					</div>
+				)}
 
 				{/* MERCUR MARKETPLACE TAB */}
 				{view === "mercur" && (
@@ -886,98 +1270,6 @@ function StoreContent() {
 								</div>
 							</div>
 						)}
-					</div>
-				)}
-
-				{/* FREE TOOLS TAB */}
-				{view === "free" && (
-					<div className="space-y-4 rounded-2xl border border-zinc-200 bg-gradient-to-br from-white via-zinc-50 to-zinc-100 p-6 shadow-sm">
-						<h1 className="text-2xl font-semibold tracking-tight text-zinc-900 mb-6">Free Open-Source Tools</h1>
-						<div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-							{/* Document Converter */}
-							<div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm xl:col-span-2">
-								<div className="flex items-center justify-between gap-3">
-									<p className="text-sm font-semibold text-zinc-900">Document Converter</p>
-									<span className="text-xs text-zinc-500">PDF, Word, Excel, CSV</span>
-								</div>
-								<p className="mt-2 text-xs text-zinc-600">Convert common office formats using open-source server-side tools.</p>
-								<div className="mt-3 grid gap-2 md:grid-cols-[1.2fr_1fr_auto]">
-									<select value={docConversion} onChange={(e) => setDocConversion(e.target.value as any)} className="rounded-xl border border-zinc-200 px-3 py-2 text-xs text-zinc-700">
-										<option value="pdf-to-docx">PDF to Word (.docx)</option>
-										<option value="docx-to-pdf">Word to PDF</option>
-										<option value="xlsx-to-csv">Excel to CSV</option>
-										<option value="csv-to-xlsx">CSV to Excel</option>
-										<option value="pdf-to-txt">PDF to Text</option>
-										<option value="txt-to-docx">Text to Word</option>
-										<option value="pptx-to-txt">PowerPoint to Text</option>
-										<option value="txt-to-pptx">Text to PowerPoint</option>
-									</select>
-									<label className="max-w-xs cursor-pointer truncate rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">
-										{docFile ? docFile.name : "Choose File"}
-										<input type="file" onChange={(e) => setDocFile(e.target.files?.[0] ?? null)} className="hidden" />
-									</label>
-									<button type="button" onClick={() => void runDocumentConversion()} className="rounded-xl bg-zinc-900 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-700">
-										{docBusy ? "Converting..." : "Convert"}
-									</button>
-								</div>
-								{docDownloadUrl && (
-									<div className="mt-3 flex items-center gap-3">
-										<a href={docDownloadUrl} download={docDownloadName || "converted-file"} className="text-xs font-semibold text-[#6678c1] hover:underline">Download converted file</a>
-									</div>
-								)}
-							</div>
-
-							{/* Image Upscaler */}
-							<div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-								<div className="flex items-center justify-between gap-3">
-									<p className="text-sm font-semibold text-zinc-900">Image Upscaler</p>
-									<span className="text-xs text-zinc-500">2x to 4x</span>
-								</div>
-								<div className="mt-3 flex flex-wrap items-center gap-2">
-									<label className="max-w-[200px] cursor-pointer truncate rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700">
-										{upscaleFile ? upscaleFile.name : "Choose Image"}
-										<input type="file" accept="image/*" onChange={(e) => setUpscaleFile(e.target.files?.[0] ?? null)} className="hidden" />
-									</label>
-									<select value={upscaleScale} onChange={(e) => setUpscaleScale(e.target.value)} className="rounded-xl border border-zinc-200 px-3 py-2 text-xs">
-										<option value="2">2x</option>
-										<option value="3">3x</option>
-										<option value="4">4x</option>
-									</select>
-									<button type="button" onClick={() => void runImageUpscale()} className="rounded-xl bg-zinc-900 px-4 py-2 text-xs font-semibold text-white">
-										{upscaleBusy ? "Upscaling..." : "Upscale"}
-									</button>
-								</div>
-								{upscaledPreview && (
-									<div className="mt-3 flex items-center gap-3">
-										<img src={upscaledPreview} alt="Upscaled output" className="h-20 w-20 rounded-lg object-cover" />
-										<a href={upscaledPreview} download="upscaled.png" className="text-xs font-semibold text-[#6678c1] hover:underline">Download Image</a>
-									</div>
-								)}
-							</div>
-
-							{/* Background Remover */}
-							<div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-								<div className="flex items-center justify-between gap-3">
-									<p className="text-sm font-semibold text-zinc-900">Background Remover</p>
-									<span className="text-xs text-zinc-500">Transparent PNG</span>
-								</div>
-								<div className="mt-3 flex flex-wrap items-center gap-2">
-									<label className="max-w-[200px] cursor-pointer truncate rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700">
-										{bgRemovalFile ? bgRemovalFile.name : "Choose Image"}
-										<input type="file" accept="image/*" onChange={(e) => setBgRemovalFile(e.target.files?.[0] ?? null)} className="hidden" />
-									</label>
-									<button type="button" onClick={() => void runBackgroundRemoval()} className="rounded-xl bg-zinc-900 px-4 py-2 text-xs font-semibold text-white">
-										{bgBusy ? "Removing..." : "Remove BG"}
-									</button>
-								</div>
-								{bgPreview && (
-									<div className="mt-3 flex items-center gap-3">
-										<img src={bgPreview} alt="Output" className="h-20 w-20 rounded object-cover" />
-										<a href={bgPreview} download="transparent.png" className="text-xs font-semibold text-[#6678c1] hover:underline">Download PNG</a>
-									</div>
-								)}
-							</div>
-						</div>
 					</div>
 				)}
 
