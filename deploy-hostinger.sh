@@ -51,7 +51,7 @@ npm run build
 # Setup Frontend Environment
 echo "🌐 Setting up Frontend (cambliss-frontend)..."
 cd "$PROJECT_DIR/cambliss-frontend"
-rm -rf .next/lock
+rm -rf .next
 
 cat <<EOT > .env.local
 BACKEND_ORIGIN="http://127.0.0.1:5000"
