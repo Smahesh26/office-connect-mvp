@@ -7,10 +7,6 @@ echo "🚀 Starting Hostinger VPS Deployment & 502 Fix..."
 
 PROJECT_DIR="/var/www/office-connect-mvp"
 
-# Stop existing PM2 processes
-echo "🧹 Stopping existing PM2 processes..."
-pm2 delete all || true
-
 # Clean up legacy directories
 rm -rf /var/www/officeconnect-cambliss
 
@@ -28,6 +24,10 @@ else
     git clone https://github.com/Smahesh26/office-connect-mvp.git "$PROJECT_DIR"
     cd "$PROJECT_DIR"
 fi
+
+# Stop existing PM2 processes to release build locks
+echo "🧹 Stopping existing PM2 processes..."
+pm2 delete all || true
 
 # Setup Backend Environment
 echo "⚙️ Setting up Backend (cambliss-backend)..."
@@ -61,7 +61,7 @@ EOT
 npm install
 npm run build
 
-# Start ALL applications via PM2 ecosystem.config.js
+# Start ALL applications via PM2 ecosystem.config.js ONLY AFTER BUILD FINISHES
 cd "$PROJECT_DIR"
 echo "🚀 Starting PM2 Ecosystem..."
 pm2 start ecosystem.config.js
@@ -79,7 +79,7 @@ grep -rn "proxy_pass" /etc/nginx/ || true
 
 # Verify HTTP Connectivity
 echo "🧪 HTTP Health Verification:"
-curl -Is http://127.0.0.1:3000 | head -n 2 || echo "⚠️ Port 3000 unreachable"
+curl -Is http://127.0.0.1:3000/store | head -n 2 || echo "⚠️ Port 3000 unreachable"
 curl -Is http://127.0.0.1:5000/api/auth/login | head -n 2 || echo "⚠️ Port 5000 unreachable"
 curl -Is http://127.0.0.1:4000/api/auth/login | head -n 2 || echo "⚠️ Port 4000 unreachable"
 
