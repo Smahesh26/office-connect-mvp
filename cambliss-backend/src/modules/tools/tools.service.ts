@@ -941,9 +941,9 @@ export const convertTxtToPptx = async (file: Express.Multer.File) => {
 
 
 // ==========================================
-// MercurJS Open Source Marketplace Integration
+// MedusaJS v2 Engine Open Source Marketplace Integration
 // ==========================================
-export type MercurVendor = {
+export type MedusaVendor = {
   id: string;
   name: string;
   email: string;
@@ -955,7 +955,7 @@ export type MercurVendor = {
   joinedDate: string;
 };
 
-export type MercurProduct = {
+export type MedusaProduct = {
   id: string;
   sku: string;
   title: string;
@@ -970,7 +970,7 @@ export type MercurProduct = {
   imageUrl?: string;
 };
 
-export type MercurOrder = {
+export type MedusaOrder = {
   id: string;
   orderNumber: string;
   customerEmail: string;
@@ -984,17 +984,17 @@ export type MercurOrder = {
   createdAt: string;
 };
 
-let mercurConfig = {
-  serverUrl: process.env.MERCUR_SERVER_URL || "http://localhost:9000",
-  apiKey: process.env.MERCUR_API_KEY || "mercur_medusa_secret_key_prod",
-  webhookUrl: process.env.MERCUR_WEBHOOK_URL || "https://theofficeconnect.com/api/tools/mercur/webhook",
+let medusaConfig = {
+  serverUrl: process.env.MEDUSA_SERVER_URL || "http://localhost:9000",
+  apiKey: process.env.MEDUSA_API_KEY || "medusa_medusa_secret_key_prod",
+  webhookUrl: process.env.MEDUSA_WEBHOOK_URL || "https://theofficeconnect.com/api/tools/medusa/webhook",
   commissionDefaultRate: 8.5,
   b2bCommissionRate: 5.0,
 };
 
-let mercurVendors: MercurVendor[] = [
+let medusaVendors: MedusaVendor[] = [
   {
-    id: "v-mercur-101",
+    id: "v-medusa-101",
     name: "Acme Cloud Infrastructure Solutions",
     email: "vendors@acmecloud.io",
     category: "Cloud Services & Hosting",
@@ -1005,7 +1005,7 @@ let mercurVendors: MercurVendor[] = [
     joinedDate: "2026-01-10",
   },
   {
-    id: "v-mercur-102",
+    id: "v-medusa-102",
     name: "CyberShield Security Systems",
     email: "partners@cybershield.tech",
     category: "Software & Enterprise Licenses",
@@ -1016,7 +1016,7 @@ let mercurVendors: MercurVendor[] = [
     joinedDate: "2026-02-01",
   },
   {
-    id: "v-mercur-103",
+    id: "v-medusa-103",
     name: "NextGen IoT Hardware Corp",
     email: "sales@nextgeniot.com",
     category: "Hardware & IoT Devices",
@@ -1028,12 +1028,12 @@ let mercurVendors: MercurVendor[] = [
   },
 ];
 
-let mercurProducts: MercurProduct[] = [
+let medusaProducts: MedusaProduct[] = [
   {
     id: "prod-m-1",
     sku: "SKU-MER-CLOUD-01",
     title: "Dedicated Kubernetes High-Availability Cluster",
-    vendorId: "v-mercur-101",
+    vendorId: "v-medusa-101",
     vendorName: "Acme Cloud Infrastructure Solutions",
     category: "Cloud Services & Hosting",
     price: 1499.00,
@@ -1046,7 +1046,7 @@ let mercurProducts: MercurProduct[] = [
     id: "prod-m-2",
     sku: "SKU-MER-SEC-02",
     title: "Zero-Trust Enterprise IAM & SSO Platform License",
-    vendorId: "v-mercur-102",
+    vendorId: "v-medusa-102",
     vendorName: "CyberShield Security Systems",
     category: "Software & Enterprise Licenses",
     price: 899.00,
@@ -1059,7 +1059,7 @@ let mercurProducts: MercurProduct[] = [
     id: "prod-m-3",
     sku: "SKU-MER-HW-03",
     title: "Industrial IoT Edge Controller Gateway Device",
-    vendorId: "v-mercur-103",
+    vendorId: "v-medusa-103",
     vendorName: "NextGen IoT Hardware Corp",
     category: "Hardware & IoT Devices",
     price: 450.00,
@@ -1070,12 +1070,12 @@ let mercurProducts: MercurProduct[] = [
   },
 ];
 
-let mercurOrders: MercurOrder[] = [
+let medusaOrders: MedusaOrder[] = [
   {
     id: "ord-mer-901",
-    orderNumber: "ORD-MERCUR-2026-001",
+    orderNumber: "ORD-MEDUSA-2026-001",
     customerEmail: "enterprise@acme.com",
-    vendorId: "v-mercur-101",
+    vendorId: "v-medusa-101",
     vendorName: "Acme Cloud Infrastructure Solutions",
     grossAmount: 1499.00,
     platformCommission: 127.42,
@@ -1086,9 +1086,9 @@ let mercurOrders: MercurOrder[] = [
   },
   {
     id: "ord-mer-902",
-    orderNumber: "ORD-MERCUR-2026-002",
+    orderNumber: "ORD-MEDUSA-2026-002",
     customerEmail: "cto@globaltech.org",
-    vendorId: "v-mercur-102",
+    vendorId: "v-medusa-102",
     vendorName: "CyberShield Security Systems",
     grossAmount: 899.00,
     platformCommission: 76.42,
@@ -1099,31 +1099,31 @@ let mercurOrders: MercurOrder[] = [
   },
 ];
 
-export const getMercurMarketplaceOverview = async () => {
-  const totalGmv = mercurOrders.reduce((sum, o) => sum + o.grossAmount, 0);
-  const totalCommissionEarned = mercurOrders.reduce((sum, o) => sum + o.platformCommission, 0);
+export const getMedusaMarketplaceOverview = async () => {
+  const totalGmv = medusaOrders.reduce((sum, o) => sum + o.grossAmount, 0);
+  const totalCommissionEarned = medusaOrders.reduce((sum, o) => sum + o.platformCommission, 0);
 
   return {
-    engine: "MercurJS Open-Source B2B & B2C Marketplace",
+    engine: "MedusaJS v2 Engine Open-Source B2B & B2C Marketplace",
     version: "v1.4.0",
     medusaVersion: "Medusa v2.5.1 Core",
-    githubRepo: "https://github.com/mercurjs/mercur",
-    config: mercurConfig,
+    githubRepo: "https://github.com/medusajs/medusa",
+    config: medusaConfig,
     stats: {
-      totalVendors: mercurVendors.length,
-      totalProducts: mercurProducts.length,
-      totalOrders: mercurOrders.length,
+      totalVendors: medusaVendors.length,
+      totalProducts: medusaProducts.length,
+      totalOrders: medusaOrders.length,
       grossMarketplaceVolume: totalGmv,
       totalPlatformCommission: totalCommissionEarned,
-      defaultCommissionRate: mercurConfig.commissionDefaultRate,
+      defaultCommissionRate: medusaConfig.commissionDefaultRate,
     },
-    vendors: mercurVendors,
-    products: mercurProducts,
-    recentOrders: mercurOrders,
+    vendors: medusaVendors,
+    products: medusaProducts,
+    recentOrders: medusaOrders,
   };
 };
 
-export const registerMercurVendor = async (data: {
+export const registerMedusaVendor = async (data: {
   name: string;
   email: string;
   category: string;
@@ -1133,23 +1133,23 @@ export const registerMercurVendor = async (data: {
     throw new ToolsError(400, "Vendor Name and Email are required");
   }
 
-  const newV: MercurVendor = {
-    id: `v-mercur-${Date.now()}`,
+  const newV: MedusaVendor = {
+    id: `v-medusa-${Date.now()}`,
     name: data.name,
     email: data.email,
     category: data.category || "General Marketplace Supplier",
     rating: 5.0,
     totalProducts: 0,
-    commissionRate: data.commissionRate || mercurConfig.commissionDefaultRate,
+    commissionRate: data.commissionRate || medusaConfig.commissionDefaultRate,
     payoutStatus: "verified",
     joinedDate: new Date().toISOString().split("T")[0],
   };
 
-  mercurVendors.unshift(newV);
+  medusaVendors.unshift(newV);
   return newV;
 };
 
-export const createMercurProduct = async (data: {
+export const createMedusaProduct = async (data: {
   title: string;
   sku?: string;
   vendorId: string;
@@ -1163,9 +1163,9 @@ export const createMercurProduct = async (data: {
     throw new ToolsError(400, "Product title and price are required");
   }
 
-  const vendor = mercurVendors.find((v) => v.id === data.vendorId) || mercurVendors[0];
+  const vendor = medusaVendors.find((v) => v.id === data.vendorId) || medusaVendors[0];
 
-  const newP: MercurProduct = {
+  const newP: MedusaProduct = {
     id: `prod-m-${Date.now()}`,
     sku: data.sku || `SKU-MER-${Date.now().toString().slice(-5)}`,
     title: data.title,
@@ -1179,12 +1179,12 @@ export const createMercurProduct = async (data: {
     description: data.description || "Multi-vendor catalog item",
   };
 
-  mercurProducts.unshift(newP);
+  medusaProducts.unshift(newP);
   vendor.totalProducts += 1;
   return newP;
 };
 
-export const checkoutMercurMultiVendorCart = async (cartItems: Array<{
+export const checkoutMedusaMultiVendorCart = async (cartItems: Array<{
   productId: string;
   quantity: number;
   customerEmail: string;
@@ -1193,19 +1193,19 @@ export const checkoutMercurMultiVendorCart = async (cartItems: Array<{
     throw new ToolsError(400, "Cart is empty");
   }
 
-  const createdOrders: MercurOrder[] = [];
+  const createdOrders: MedusaOrder[] = [];
 
   for (const item of cartItems) {
-    const prod = mercurProducts.find((p) => p.id === item.productId);
+    const prod = medusaProducts.find((p) => p.id === item.productId);
     if (!prod) continue;
 
     const itemTotal = prod.price * item.quantity;
     const commission = itemTotal * (prod.commissionRate / 100);
     const vendorPayout = itemTotal - commission;
 
-    const newOrd: MercurOrder = {
+    const newOrd: MedusaOrder = {
       id: `ord-mer-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      orderNumber: `ORD-MERCUR-2026-${mercurOrders.length + 101}`,
+      orderNumber: `ORD-MEDUSA-2026-${medusaOrders.length + 101}`,
       customerEmail: item.customerEmail || "customer@camblissstudio.com",
       vendorId: prod.vendorId,
       vendorName: prod.vendorName,
@@ -1217,18 +1217,18 @@ export const checkoutMercurMultiVendorCart = async (cartItems: Array<{
       createdAt: new Date().toISOString(),
     };
 
-    mercurOrders.unshift(newOrd);
+    medusaOrders.unshift(newOrd);
     createdOrders.push(newOrd);
   }
 
   return {
-    message: "Multi-vendor cart order split and executed successfully via MercurJS Medusa Engine",
+    message: "Multi-vendor cart order split and executed successfully via MedusaJS v2 Engine Medusa Engine",
     ordersCreated: createdOrders.length,
     orders: createdOrders,
   };
 };
 
-export const updateMercurConfig = async (newCfg: Partial<typeof mercurConfig>) => {
-  mercurConfig = { ...mercurConfig, ...newCfg };
-  return mercurConfig;
+export const updateMedusaConfig = async (newCfg: Partial<typeof medusaConfig>) => {
+  medusaConfig = { ...medusaConfig, ...newCfg };
+  return medusaConfig;
 };

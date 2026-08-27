@@ -5,7 +5,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import WorkspaceShell from "../../components/WorkspaceShell";
 
-type MercurVendor = {
+type MedusaVendor = {
 	id: string;
 	name: string;
 	logo: string;
@@ -24,7 +24,7 @@ type MercurVendor = {
 	description: string;
 };
 
-type MercurProduct = {
+type MedusaProduct = {
 	id: string;
 	sku: string;
 	title: string;
@@ -43,14 +43,14 @@ type MercurProduct = {
 	description: string;
 };
 
-type MercurCartItem = {
-	product: MercurProduct;
+type MedusaCartItem = {
+	product: MedusaProduct;
 	quantity: number;
 };
 
 export default function StorefrontPage() {
 	return (
-		<Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading Mercur Storefront...</div>}>
+		<Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading MedusaJS Storefront...</div>}>
 			<StorefrontContent />
 		</Suspense>
 	);
@@ -68,9 +68,9 @@ function StorefrontContent() {
 	const [priceRange, setPriceRange] = useState<number>(2000);
 	const [onlyInStock, setOnlyInStock] = useState(false);
 
-	const [cart, setCart] = useState<MercurCartItem[]>([]);
+	const [cart, setCart] = useState<MedusaCartItem[]>([]);
 	const [showCartDrawer, setShowCartDrawer] = useState(false);
-	const [activeVendorModal, setActiveVendorModal] = useState<MercurVendor | null>(null);
+	const [activeVendorModal, setActiveVendorModal] = useState<MedusaVendor | null>(null);
 
 	// Vendor Auth & Portal State
 	const [showVendorAuthModal, setShowVendorAuthModal] = useState(false);
@@ -79,11 +79,11 @@ function StorefrontContent() {
 	const [vendorPassword, setVendorPassword] = useState("");
 	const [vendorName, setVendorName] = useState("");
 	const [vendorCategory, setVendorCategory] = useState("Cloud Infrastructure & Hosting");
-	const [loggedInVendor, setLoggedInVendor] = useState<MercurVendor | null>(null);
+	const [loggedInVendor, setLoggedInVendor] = useState<MedusaVendor | null>(null);
 	const [authMsg, setAuthMsg] = useState<string | null>(null);
 
-	// Initial Official Mercur Multi-Vendor Dataset
-	const [vendors, setVendors] = useState<MercurVendor[]>([
+	// Initial Official MedusaJS Multi-Vendor Dataset
+	const [vendors, setVendors] = useState<MedusaVendor[]>([
 		{
 			id: "v-glow-beauty",
 			name: "Glow Beauty Organics 🌸",
@@ -158,7 +158,7 @@ function StorefrontContent() {
 		},
 	]);
 
-	const [products, setProducts] = useState<MercurProduct[]>([
+	const [products, setProducts] = useState<MedusaProduct[]>([
 		{
 			id: "prod-beauty-1",
 			sku: "SKU-BEAUTY-ROSE-01",
@@ -269,7 +269,7 @@ function StorefrontContent() {
 		},
 	]);
 
-	const addToCart = (product: MercurProduct) => {
+	const addToCart = (product: MedusaProduct) => {
 		setCart((prev) => {
 			const existing = prev.find((i) => i.product.id === product.id);
 			if (existing) {
@@ -295,8 +295,8 @@ function StorefrontContent() {
 				setAuthMsg(`✅ Signed in as Vendor: ${existing.name}`);
 				setTimeout(() => setShowVendorAuthModal(false), 1000);
 			} else {
-				const newV: MercurVendor = {
-					id: `v-mercur-${Date.now()}`,
+				const newV: MedusaVendor = {
+					id: `v-medusa-${Date.now()}`,
 					name: vendorName || vendorEmail.split("@")[0] + " Store",
 					logo: "🏪",
 					ownerEmail: vendorEmail,
@@ -311,7 +311,7 @@ function StorefrontContent() {
 					kycVerified: true,
 					location: "Berlin, Germany 🇩🇪",
 					joinedDate: new Date().toISOString().split("T")[0],
-					description: "New verified seller store on MercurJS platform.",
+					description: "New verified seller store on MedusaJSJS platform.",
 				};
 				setVendors((prev) => [newV, ...prev]);
 				setLoggedInVendor(newV);
@@ -320,8 +320,8 @@ function StorefrontContent() {
 			}
 		} else {
 			if (!vendorName || !vendorEmail) return;
-			const newV: MercurVendor = {
-				id: `v-mercur-${Date.now()}`,
+			const newV: MedusaVendor = {
+				id: `v-medusa-${Date.now()}`,
 				name: vendorName,
 				logo: "🏪",
 				ownerEmail: vendorEmail,
@@ -363,10 +363,10 @@ function StorefrontContent() {
 	return (
 		<WorkspaceShell>
 			<div className="mt-4 mx-auto max-w-7xl space-y-6">
-				{/* 1. TOP NOTICE ANNOUNCEMENT BAR (Official Mercur Style) */}
+				{/* 1. TOP NOTICE ANNOUNCEMENT BAR (Official MedusaJS Style) */}
 				<div className="rounded-2xl bg-gradient-to-r from-zinc-900 via-[#1f2430] to-zinc-900 p-3 text-center text-xs font-bold text-white shadow-md flex items-center justify-between px-6">
 					<div className="flex items-center gap-2">
-						<span className="rounded-full bg-[#6678c1] px-2 py-0.5 text-[10px] text-white">MERCUR DEMO</span>
+						<span className="rounded-full bg-[#6678c1] px-2 py-0.5 text-[10px] text-white">MEDUSAJS V2 ENGINE</span>
 						<span>Official B2C & B2B Open-Source Multi-Vendor Storefront</span>
 					</div>
 					<div className="hidden md:flex items-center gap-4 text-zinc-300 text-[11px]">
@@ -376,7 +376,7 @@ function StorefrontContent() {
 					</div>
 				</div>
 
-				{/* 2. MAIN STOREFRONT HEADER (Official Mercur Navigation) */}
+				{/* 2. MAIN STOREFRONT HEADER (Official MedusaJS Navigation) */}
 				<header className="rounded-3xl border border-[#d9e2ef] bg-white p-6 shadow-sm space-y-4">
 					<div className="flex flex-wrap items-center justify-between gap-4">
 						{/* Logo & Brand */}
@@ -386,7 +386,7 @@ function StorefrontContent() {
 							</div>
 							<div>
 								<div className="flex items-center gap-2">
-									<h1 className="text-2xl font-black tracking-tight text-[#1f2430]">MERCUR</h1>
+									<h1 className="text-2xl font-black tracking-tight text-[#1f2430]">MEDUSA</h1>
 									<span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-800 uppercase">
 										MARKETPLACE
 									</span>
@@ -451,16 +451,16 @@ function StorefrontContent() {
 							</button>
 
 							<button
-								onClick={() => router.push("/store?view=mercur")}
+								onClick={() => router.push("/store?view=medusa")}
 								className="rounded-2xl border border-[#6678c1] bg-white px-4 py-2.5 text-xs font-bold text-[#6678c1] hover:bg-[#6678c1] hover:text-white transition"
 							>
-								⚡ Mercur Admin Suite →
+								⚡ MedusaJS Admin Suite →
 							</button>
 						</div>
 					</div>
 				</header>
 
-				{/* 3. HERO SLIDER BANNER (Official Mercur Demo Style) */}
+				{/* 3. HERO SLIDER BANNER (Official MedusaJS Demo Style) */}
 				<div className="relative overflow-hidden rounded-3xl border border-[#d9e2ef] bg-gradient-to-r from-[#1f2430] via-[#2a3142] to-[#1f2430] p-8 text-white shadow-lg">
 					<div className="flex flex-wrap items-center justify-between gap-6">
 						<div className="max-w-2xl space-y-3">
@@ -517,7 +517,7 @@ function StorefrontContent() {
 
 				{/* 4. MAIN STOREFRONT BODY: LEFT SIDEBAR FILTERS + RIGHT PRODUCT GRID */}
 				<div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-					{/* LEFT SIDEBAR FILTERS (Official Mercur Filter Layout) */}
+					{/* LEFT SIDEBAR FILTERS (Official MedusaJS Filter Layout) */}
 					<aside className="rounded-3xl border border-[#d9e2ef] bg-white p-6 shadow-sm space-y-6 h-fit">
 						<div>
 							<h3 className="text-sm font-extrabold text-[#1f2430] border-b border-[#d9e2ef] pb-3">
@@ -602,7 +602,7 @@ function StorefrontContent() {
 						</div>
 					</aside>
 
-					{/* RIGHT PRODUCT GRID (Official Mercur Cards) */}
+					{/* RIGHT PRODUCT GRID (Official MedusaJS Cards) */}
 					<main className="lg:col-span-3 space-y-4">
 						<div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#d9e2ef] bg-white p-4 shadow-sm">
 							<div className="text-xs font-bold text-[#1f2430]">
@@ -708,7 +708,7 @@ function StorefrontContent() {
 					<div className="w-full max-w-md bg-white p-6 shadow-2xl space-y-4 flex flex-col justify-between h-full">
 						<div className="space-y-4 overflow-y-auto">
 							<div className="flex items-center justify-between border-b border-[#d9e2ef] pb-3">
-								<h3 className="text-base font-black text-[#1f2430]">🛒 Mercur Multi-Vendor Cart</h3>
+								<h3 className="text-base font-black text-[#1f2430]">🛒 MedusaJS Multi-Vendor Cart</h3>
 								<button onClick={() => setShowCartDrawer(false)} className="text-sm font-bold text-[#5b6472]">✕</button>
 							</div>
 

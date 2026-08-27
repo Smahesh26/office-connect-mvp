@@ -68,7 +68,7 @@ const clientMenuItems: SidebarItem[] = [
 	{ label: "CRM", href: "/crm", accessKey: "CRM" },
 	{ label: "HRM", href: "/hrm", accessKey: "HRM" },
 	{ label: "Inventory", href: "/inventory", accessKey: "INVENTORY" },
-	{ label: "Mercur Marketplace", href: "/storefront" },
+	{ label: "Marketplace & Storefronts", href: "/storefront" },
 	{ label: "Accountech ERP", href: "/akaunting" },
 	{ label: "Store", href: "/store" },
 	{ label: "File Sharing", href: "/file-sharing", accessKey: "FILE_SHARING" },
