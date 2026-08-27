@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import WorkspaceShell from "../../components/WorkspaceShell";
 
 type MedusaVendor = {
 	id: string;
@@ -50,7 +49,7 @@ type MedusaCartItem = {
 
 export default function StorefrontPage() {
 	return (
-		<Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading MedusaJS Storefront...</div>}>
+		<Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans">Loading E-Commerce Marketplace...</div>}>
 			<StorefrontContent />
 		</Suspense>
 	);
@@ -65,845 +64,679 @@ function StorefrontContent() {
 	const [categoryFilter, setCategoryFilter] = useState("All");
 	const [selectedVendorFilter, setSelectedVendorFilter] = useState(initialVendorFilter);
 	const [selectedRegion, setSelectedRegion] = useState("🇩🇪 Germany / EUR (€)");
-	const [priceRange, setPriceRange] = useState<number>(2000);
+	const [priceRange, setPriceRange] = useState<number>(5000);
 	const [onlyInStock, setOnlyInStock] = useState(false);
 
 	const [cart, setCart] = useState<MedusaCartItem[]>([]);
 	const [showCartDrawer, setShowCartDrawer] = useState(false);
-	const [activeVendorModal, setActiveVendorModal] = useState<MedusaVendor | null>(null);
 
-	// Vendor Auth & Portal State
+	// Vendor Auth & Upload State
 	const [showVendorAuthModal, setShowVendorAuthModal] = useState(false);
+	const [showProductUploadModal, setShowProductUploadModal] = useState(false);
 	const [authMode, setAuthMode] = useState<"login" | "register">("login");
 	const [vendorEmail, setVendorEmail] = useState("");
 	const [vendorPassword, setVendorPassword] = useState("");
 	const [vendorName, setVendorName] = useState("");
-	const [vendorCategory, setVendorCategory] = useState("Cloud Infrastructure & Hosting");
+	const [vendorCategory, setVendorCategory] = useState("General Products");
 	const [loggedInVendor, setLoggedInVendor] = useState<MedusaVendor | null>(null);
 	const [authMsg, setAuthMsg] = useState<string | null>(null);
 
-	// Initial Official MedusaJS Multi-Vendor Dataset
-	const [vendors, setVendors] = useState<MedusaVendor[]>([
-		{
-			id: "v-glow-beauty",
-			name: "Glow Beauty Organics 🌸",
-			logo: "🌸",
-			ownerEmail: "care@glowbeautyorganics.com",
-			category: "Beauty, Cosmetics & Skincare",
-			rating: 5.0,
-			reviewsCount: 89,
-			totalProducts: 18,
-			totalSalesVolume: 34200.00,
-			commissionRate: 7.5,
-			stripeConnectId: "acct_1GLOW90X8812Y",
-			payoutStatus: "Connected (Active)",
-			kycVerified: true,
-			location: "Paris, France 🇫🇷",
-			joinedDate: "2026-02-14",
-			description: "100% Organic botanical skincare, vegan hyaluronic serums, and dermatologist-tested cruelty-free beauty products."
-		},
-		{
-			id: "v-acme",
-			name: "Acme Cloud Infrastructure Solutions",
-			logo: "☁️",
-			ownerEmail: "vendors@acmecloud.io",
-			category: "Cloud Infrastructure & Hosting",
-			rating: 4.9,
-			reviewsCount: 38,
-			totalProducts: 14,
-			totalSalesVolume: 48500.00,
-			commissionRate: 8.5,
-			stripeConnectId: "acct_1M29X04J0189X",
-			payoutStatus: "Connected (Active)",
-			kycVerified: true,
-			location: "Munich, Germany 🇩🇪",
-			joinedDate: "2026-01-10",
-			description: "Enterprise Kubernetes hosting, high-availability dedicated servers, and global CDN infrastructure."
-		},
-		{
-			id: "v-[#6678c1]",
-			name: "CyberShield Security Systems",
-			logo: "🛡️",
-			ownerEmail: "partners@cybershield.tech",
-			category: "Software & Enterprise Licenses",
-			rating: 4.8,
-			reviewsCount: 24,
-			totalProducts: 8,
-			totalSalesVolume: 29400.00,
-			commissionRate: 8.5,
-			stripeConnectId: "acct_1N49Y09K0912Z",
-			payoutStatus: "Connected (Active)",
-			kycVerified: true,
-			location: "Frankfurt, Germany 🇩🇪",
-			joinedDate: "2026-02-01",
-			description: "Zero-trust identity management, SAML2/OAuth2 authentication engines, and SOC2 compliance tools."
-		},
-		{
-			id: "v-nextgen",
-			name: "NextGen IoT Hardware Corp",
-			logo: "⚡",
-			ownerEmail: "sales@nextgeniot.com",
-			category: "Hardware & IoT Devices",
-			rating: 4.7,
-			reviewsCount: 52,
-			totalProducts: 22,
-			totalSalesVolume: 61200.00,
-			commissionRate: 5.0,
-			stripeConnectId: "acct_1P89Z01L9901M",
-			payoutStatus: "Connected (Active)",
-			kycVerified: true,
-			location: "Berlin, Germany 🇩🇪",
-			joinedDate: "2026-03-15",
-			description: "Industrial ARM Cortex edge gateway controllers, Modbus/RS485 sensor arrays, and IoT hardware."
-		},
-	]);
+	// Upload Product Form State
+	const [newProductForm, setNewProductForm] = useState({
+		title: "",
+		sku: "",
+		category: "General",
+		price: "",
+		originalPrice: "",
+		image: "",
+		stockQty: "100",
+		description: "",
+		sellerOfferBadge: "Featured Product",
+	});
+	const [isSubmittingProduct, setIsSubmittingProduct] = useState(false);
 
-	const [products, setProducts] = useState<MedusaProduct[]>([
-		{
-			id: "prod-beauty-1",
-			sku: "SKU-BEAUTY-ROSE-01",
-			title: "Hydrating Organic Rose & Hyaluronic Acid Serum",
-			image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80",
-			vendorId: "v-glow-beauty",
-			vendorName: "Glow Beauty Organics 🌸",
-			vendorLogo: "🌸",
-			category: "Beauty, Cosmetics & Skincare",
-			price: 48.00,
-			originalPrice: 65.00,
-			wholesaleB2bPrice: 28.00,
-			sellerOfferBadge: "🌸 Best Seller",
-			stockQty: 140,
-			rating: 5.0,
-			reviewsCount: 64,
-			description: "Infused with pure Damask rose water and triple-molecular hyaluronic acid for 24-hour intense hydration and glowing skin."
-		},
-		{
-			id: "prod-beauty-2",
-			sku: "SKU-BEAUTY-CREAM-02",
-			title: "Botanical Restorative Night Cream",
-			image: "https://images.unsplash.com/photo-1608248597261-e4d09165811a?auto=format&fit=crop&w=600&q=80",
-			vendorId: "v-glow-beauty",
-			vendorName: "Glow Beauty Organics 🌸",
-			vendorLogo: "🌸",
-			category: "Beauty, Cosmetics & Skincare",
-			price: 54.00,
-			originalPrice: 72.00,
-			wholesaleB2bPrice: 32.00,
-			sellerOfferBadge: "🌿 100% Vegan",
-			stockQty: 95,
-			rating: 4.9,
-			reviewsCount: 42,
-			description: "Overnight peptide moisturizer enriched with cold-pressed rosehip oil, niacinamide, and organic shea butter."
-		},
-		{
-			id: "prod-m-1",
-			sku: "SKU-MER-CLOUD-01",
-			title: "Dedicated Kubernetes High-Availability Cluster",
-			image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80",
-			vendorId: "v-acme",
-			vendorName: "Acme Cloud Infrastructure Solutions",
-			vendorLogo: "☁️",
-			category: "Cloud Infrastructure & Hosting",
-			price: 1499.00,
-			originalPrice: 1699.00,
-			wholesaleB2bPrice: 1299.00,
-			sellerOfferBadge: "Save €200 on Annual Contract",
-			stockQty: 50,
-			rating: 4.9,
-			reviewsCount: 38,
-			description: "Fully managed, multi-region Kubernetes control plane with 99.99% uptime SLA and 24/7 DevOps support."
-		},
-		{
-			id: "prod-m-2",
-			sku: "SKU-MER-SEC-02",
-			title: "Zero-Trust Enterprise IAM & SSO Platform License",
-			image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=600&q=80",
-			vendorId: "v-[#6678c1]",
-			vendorName: "CyberShield Security Systems",
-			vendorLogo: "🛡️",
-			category: "Software & Enterprise Licenses",
-			price: 899.00,
-			originalPrice: 999.00,
-			wholesaleB2bPrice: 750.00,
-			sellerOfferBadge: "15% Off for 50+ Seat Licenses",
-			stockQty: 200,
-			rating: 4.8,
-			reviewsCount: 24,
-			description: "Unlimited OAuth2, SAML2, and FIDO2 multi-factor authentication security suite for enterprise organizations."
-		},
-		{
-			id: "prod-m-3",
-			sku: "SKU-MER-HW-03",
-			title: "Industrial IoT Edge Controller Gateway Device",
-			image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80",
-			vendorId: "v-nextgen",
-			vendorName: "NextGen IoT Hardware Corp",
-			vendorLogo: "⚡",
-			category: "Hardware & IoT Devices",
-			price: 450.00,
-			originalPrice: 499.00,
-			wholesaleB2bPrice: 380.00,
-			sellerOfferBadge: "Wholesale Tier: €380 for 10+ Units",
-			stockQty: 120,
-			rating: 4.7,
-			reviewsCount: 52,
-			description: "Ruggedized ARM Cortex industrial IoT gateway with dual Ethernet, Modbus & MQTT protocol translation."
-		},
-		{
-			id: "prod-m-4",
-			sku: "SKU-MER-CLOUD-04",
-			title: "Global Edge Content Delivery Network (CDN) Hub",
-			image: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80",
-			vendorId: "v-acme",
-			vendorName: "Acme Cloud Infrastructure Solutions",
-			vendorLogo: "☁️",
-			category: "Cloud Infrastructure & Hosting",
-			price: 650.00,
-			originalPrice: 750.00,
-			wholesaleB2bPrice: 550.00,
-			sellerOfferBadge: "10TB Monthly Bandwidth Included",
-			stockQty: 85,
-			rating: 4.9,
-			reviewsCount: 19,
-			description: "Sub-10ms global edge caching with automatic DDoS mitigation and Web Application Firewall (WAF)."
-		},
-	]);
+	// Zero Dummy Data - Clean Initial Vendors & Products
+	const [vendors, setVendors] = useState<MedusaVendor[]>([]);
+	const [products, setProducts] = useState<MedusaProduct[]>([]);
+
+	// Categories dynamically computed from active products
+	const categories = ["All", ...Array.from(new Set(products.map((p) => p.category)))];
+
+	const handleVendorAuthSubmit = (e: FormEvent) => {
+		e.preventDefault();
+		if (!vendorEmail || !vendorPassword) return;
+
+		if (authMode === "register") {
+			if (!vendorName) return;
+			const newV: MedusaVendor = {
+				id: `v-${Date.now()}`,
+				name: vendorName,
+				logo: "🏬",
+				ownerEmail: vendorEmail,
+				category: vendorCategory,
+				rating: 5.0,
+				reviewsCount: 1,
+				totalProducts: 0,
+				totalSalesVolume: 0,
+				commissionRate: 8.0,
+				stripeConnectId: `acct_${Date.now()}`,
+				payoutStatus: "Connected (Active)",
+				kycVerified: true,
+				location: "Verified Seller 🌐",
+				joinedDate: new Date().toISOString().split("T")[0],
+				description: `Official storefront for ${vendorName}.`,
+			};
+			setVendors((prev) => [newV, ...prev]);
+			setLoggedInVendor(newV);
+			setAuthMsg(`✅ Welcome ${vendorName}! Your seller account is active.`);
+			setTimeout(() => {
+				setShowVendorAuthModal(false);
+				setAuthMsg(null);
+			}, 1000);
+		} else {
+			// Login mode
+			const found = vendors.find((v) => v.ownerEmail.toLowerCase() === vendorEmail.toLowerCase());
+			if (found) {
+				setLoggedInVendor(found);
+				setAuthMsg(`✅ Logged in as ${found.name}`);
+				setTimeout(() => {
+					setShowVendorAuthModal(false);
+					setAuthMsg(null);
+				}, 1000);
+			} else {
+				// Default seller session
+				const defaultV: MedusaVendor = {
+					id: "v-default-seller",
+					name: vendorEmail.split("@")[0].toUpperCase() + " Store",
+					logo: "🏬",
+					ownerEmail: vendorEmail,
+					category: "General Products",
+					rating: 5.0,
+					reviewsCount: 1,
+					totalProducts: 0,
+					totalSalesVolume: 0,
+					commissionRate: 8.0,
+					stripeConnectId: "acct_demo",
+					payoutStatus: "Connected (Active)",
+					kycVerified: true,
+					location: "Verified Seller",
+					joinedDate: new Date().toISOString().split("T")[0],
+					description: "Official seller account.",
+				};
+				setVendors((prev) => [defaultV, ...prev]);
+				setLoggedInVendor(defaultV);
+				setAuthMsg(`✅ Logged in successfully!`);
+				setTimeout(() => {
+					setShowVendorAuthModal(false);
+					setAuthMsg(null);
+				}, 1000);
+			}
+		}
+	};
+
+	const handleUploadProductSubmit = (e: FormEvent) => {
+		e.preventDefault();
+		if (!newProductForm.title || !newProductForm.price) return;
+		setIsSubmittingProduct(true);
+
+		setTimeout(() => {
+			const currentVendor = loggedInVendor || {
+				id: "v-[#6678c1]",
+				name: "Cambliss Platform Store",
+				logo: "🏬",
+				ownerEmail: "admin@camblissstudio.com",
+				category: "General",
+				rating: 5.0,
+				reviewsCount: 1,
+				totalProducts: 1,
+				totalSalesVolume: 0,
+				commissionRate: 8.0,
+				stripeConnectId: "acct_admin",
+				payoutStatus: "Connected (Active)",
+				kycVerified: true,
+				location: "Global Platform",
+				joinedDate: "2026-08-27",
+				description: "Official Platform Storefront.",
+			};
+
+			const newProd: MedusaProduct = {
+				id: `prod-${Date.now()}`,
+				sku: newProductForm.sku || `SKU-${Date.now()}`,
+				title: newProductForm.title,
+				image: newProductForm.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80",
+				vendorId: currentVendor.id,
+				vendorName: currentVendor.name,
+				vendorLogo: currentVendor.logo,
+				category: newProductForm.category || "General",
+				price: parseFloat(newProductForm.price) || 0,
+				originalPrice: newProductForm.originalPrice ? parseFloat(newProductForm.originalPrice) : undefined,
+				sellerOfferBadge: newProductForm.sellerOfferBadge || "New Arrival",
+				stockQty: parseInt(newProductForm.stockQty) || 100,
+				rating: 5.0,
+				reviewsCount: 0,
+				description: newProductForm.description || "High quality product.",
+			};
+
+			setProducts((prev) => [newProd, ...prev]);
+			setIsSubmittingProduct(false);
+			setShowProductUploadModal(false);
+			setNewProductForm({
+				title: "",
+				sku: "",
+				category: "General",
+				price: "",
+				originalPrice: "",
+				image: "",
+				stockQty: "100",
+				description: "",
+				sellerOfferBadge: "Featured Product",
+			});
+			alert("🎉 Product uploaded successfully to live Storefront!");
+		}, 800);
+	};
 
 	const addToCart = (product: MedusaProduct) => {
 		setCart((prev) => {
-			const existing = prev.find((i) => i.product.id === product.id);
+			const existing = prev.find((item) => item.product.id === product.id);
 			if (existing) {
-				return prev.map((i) => (i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i));
+				return prev.map((item) =>
+					item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+				);
 			}
 			return [...prev, { product, quantity: 1 }];
 		});
 		setShowCartDrawer(true);
 	};
 
-	const removeFromCart = (id: string) => {
-		setCart((prev) => prev.filter((i) => i.product.id !== id));
-	};
-
-	const handleVendorAuthSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		setAuthMsg(null);
-
-		if (authMode === "login") {
-			const existing = vendors.find((v) => v.ownerEmail.toLowerCase() === vendorEmail.toLowerCase());
-			if (existing) {
-				setLoggedInVendor(existing);
-				setAuthMsg(`✅ Signed in as Vendor: ${existing.name}`);
-				setTimeout(() => setShowVendorAuthModal(false), 1000);
-			} else {
-				const newV: MedusaVendor = {
-					id: `v-medusa-${Date.now()}`,
-					name: vendorName || vendorEmail.split("@")[0] + " Store",
-					logo: "🏪",
-					ownerEmail: vendorEmail,
-					category: vendorCategory,
-					rating: 5.0,
-					reviewsCount: 0,
-					totalProducts: 0,
-					totalSalesVolume: 0,
-					commissionRate: 8.5,
-					stripeConnectId: `acct_${Date.now().toString().slice(-8)}`,
-					payoutStatus: "Connected (Active)",
-					kycVerified: true,
-					location: "Berlin, Germany 🇩🇪",
-					joinedDate: new Date().toISOString().split("T")[0],
-					description: "New verified seller store on MedusaJSJS platform.",
-				};
-				setVendors((prev) => [newV, ...prev]);
-				setLoggedInVendor(newV);
-				setAuthMsg(`✅ Signed in as Vendor: ${newV.name}`);
-				setTimeout(() => setShowVendorAuthModal(false), 1000);
-			}
-		} else {
-			if (!vendorName || !vendorEmail) return;
-			const newV: MedusaVendor = {
-				id: `v-medusa-${Date.now()}`,
-				name: vendorName,
-				logo: "🏪",
-				ownerEmail: vendorEmail,
-				category: vendorCategory,
-				rating: 5.0,
-				reviewsCount: 0,
-				totalProducts: 0,
-				totalSalesVolume: 0,
-				commissionRate: 8.5,
-				stripeConnectId: `acct_${Date.now().toString().slice(-8)}`,
-				payoutStatus: "Connected (Active)",
-				kycVerified: true,
-				location: "Munich, Germany 🇩🇪",
-				joinedDate: new Date().toISOString().split("T")[0],
-				description: "Registered multi-vendor seller store.",
-			};
-			setVendors((prev) => [newV, ...prev]);
-			setLoggedInVendor(newV);
-			setAuthMsg(`✅ Vendor Registered & Logged In: ${vendorName}`);
-			setTimeout(() => setShowVendorAuthModal(false), 1000);
-		}
-	};
-
 	const filteredProducts = products.filter((p) => {
-		const matchesCat = categoryFilter === "All" || p.category === categoryFilter;
-		const matchesVendor = selectedVendorFilter === "All" || p.vendorName === selectedVendorFilter;
-		const matchesSearch =
-			!searchQuery ||
-			p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			p.vendorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			p.sku.toLowerCase().includes(searchQuery.toLowerCase());
+		const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || p.category.toLowerCase().includes(searchQuery.toLowerCase());
+		const matchesCategory = categoryFilter === "All" || p.category === categoryFilter;
+		const matchesVendor = selectedVendorFilter === "All" || p.vendorId === selectedVendorFilter;
 		const matchesPrice = p.price <= priceRange;
 		const matchesStock = !onlyInStock || p.stockQty > 0;
-		return matchesCat && matchesVendor && matchesSearch && matchesPrice && matchesStock;
+
+		return matchesSearch && matchesCategory && matchesVendor && matchesPrice && matchesStock;
 	});
 
-	const cartTotal = cart.reduce((s, i) => s + i.product.price * i.quantity, 0);
+	const activeVendorObj = vendors.find((v) => v.id === selectedVendorFilter);
 
 	return (
-		<WorkspaceShell>
-			<div className="mt-4 mx-auto max-w-7xl space-y-6">
-				{/* 1. TOP NOTICE ANNOUNCEMENT BAR (Official MedusaJS Style) */}
-				<div className="rounded-2xl bg-gradient-to-r from-zinc-900 via-[#1f2430] to-zinc-900 p-3 text-center text-xs font-bold text-white shadow-md flex items-center justify-between px-6">
-					<div className="flex items-center gap-2">
-						<span className="rounded-full bg-[#6678c1] px-2 py-0.5 text-[10px] text-white">MEDUSAJS V2 ENGINE</span>
-						<span>Official B2C & B2B Open-Source Multi-Vendor Storefront</span>
-					</div>
-					<div className="hidden md:flex items-center gap-4 text-zinc-300 text-[11px]">
-						<span>⚡ Powered by MedusaJS Core</span>
-						<span>📦 Free Shipping on B2B Orders &gt; €500</span>
-						<span>🔒 Stripe Connect Payouts</span>
-					</div>
+		<div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 flex flex-col">
+			{/* STANDALONE E-COMMERCE TOP NOTICE BAR */}
+			<div className="bg-[#404d85] text-white px-4 py-2 text-center text-xs font-semibold tracking-wide flex justify-between items-center max-w-full">
+				<div className="hidden sm:block text-[11px] opacity-80">🚚 Fast Worldwide Express Delivery & Multi-Vendor Fulfillment</div>
+				<div className="mx-auto sm:mx-0">
+					🎉 Welcome to Cambliss E-Commerce Marketplace — Direct Vendor Storefronts
 				</div>
-
-				{/* 2. MAIN STOREFRONT HEADER (Official MedusaJS Navigation) */}
-				<header className="rounded-3xl border border-[#d9e2ef] bg-white p-6 shadow-sm space-y-4">
-					<div className="flex flex-wrap items-center justify-between gap-4">
-						{/* Logo & Brand */}
-						<div className="flex items-center gap-3">
-							<div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#6678c1] text-white text-2xl font-black shadow-md">
-								M
-							</div>
-							<div>
-								<div className="flex items-center gap-2">
-									<h1 className="text-2xl font-black tracking-tight text-[#1f2430]">MEDUSA</h1>
-									<span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-800 uppercase">
-										MARKETPLACE
-									</span>
-								</div>
-								<p className="text-xs text-[#5b6472]">Multi-Vendor Commerce Engine • B2B & B2C Catalog</p>
-							</div>
-						</div>
-
-						{/* Search Bar */}
-						<div className="flex-1 max-w-lg">
-							<div className="relative">
-								<input
-									type="text"
-									placeholder="Search multi-vendor catalog, products, SKUs or sellers..."
-									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
-									className="w-full rounded-2xl border border-[#d9e2ef] bg-[#f8faff] px-4 py-2.5 pl-10 text-xs font-semibold text-[#1f2430] placeholder-[#5b6472] focus:border-[#6678c1] focus:bg-white focus:outline-none shadow-inner"
-								/>
-								<span className="absolute left-3.5 top-2.5 text-sm text-[#5b6472]">🔍</span>
-							</div>
-						</div>
-
-						{/* Region / Currency Selector + Vendor Sign In + Cart Drawer */}
-						<div className="flex items-center gap-3">
-							<select
-								value={selectedRegion}
-								onChange={(e) => setSelectedRegion(e.target.value)}
-								className="rounded-2xl border border-[#d9e2ef] bg-[#f8faff] px-3 py-2 text-xs font-bold text-[#1f2430]"
-							>
-								<option value="🇩🇪 Germany / EUR (€)">🇩🇪 Germany / EUR (€)</option>
-								<option value="🇺🇸 USA / USD ($)">🇺🇸 USA / USD ($)</option>
-								<option value="🇬🇧 UK / GBP (£)">🇬🇧 UK / GBP (£)</option>
-							</select>
-
-							{loggedInVendor ? (
-								<div className="flex items-center gap-2 rounded-2xl bg-emerald-50 border border-emerald-200 px-3.5 py-2 text-xs font-bold text-emerald-800">
-									<span>🏬 Seller: {loggedInVendor.name}</span>
-									<button onClick={() => setLoggedInVendor(null)} className="ml-1 text-rose-600 hover:underline">Logout</button>
-								</div>
-							) : (
-								<button
-									onClick={() => {
-										setAuthMode("login");
-										setShowVendorAuthModal(true);
-									}}
-									className="rounded-2xl bg-[#6678c1] px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#404d85] transition"
-								>
-									🔑 Vendor Login / Sign Up
-								</button>
-							)}
-
-							<button
-								onClick={() => setShowCartDrawer(true)}
-								className="relative rounded-2xl bg-[#1f2430] px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-zinc-800 transition"
-							>
-								🛒 Cart ({cart.reduce((s, i) => s + i.quantity, 0)})
-								{cart.length > 0 && (
-									<span className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-rose-500 text-[10px] font-bold text-white flex items-center justify-center">
-										{cart.length}
-									</span>
-								)}
-							</button>
-
-							<button
-								onClick={() => router.push("/store?view=medusa")}
-								className="rounded-2xl border border-[#6678c1] bg-white px-4 py-2.5 text-xs font-bold text-[#6678c1] hover:bg-[#6678c1] hover:text-white transition"
-							>
-								⚡ MedusaJS Admin Suite →
-							</button>
-						</div>
-					</div>
-				</header>
-
-				{/* 3. HERO SLIDER BANNER (Official MedusaJS Demo Style) */}
-				<div className="relative overflow-hidden rounded-3xl border border-[#d9e2ef] bg-gradient-to-r from-[#1f2430] via-[#2a3142] to-[#1f2430] p-8 text-white shadow-lg">
-					<div className="flex flex-wrap items-center justify-between gap-6">
-						<div className="max-w-2xl space-y-3">
-							<span className="rounded-full bg-[#6678c1] px-3 py-1 text-[11px] font-extrabold text-white uppercase tracking-wider">
-								EXTENSIBLE MEDUSA COMMERCE ENGINE
-							</span>
-							<h2 className="text-3xl font-black tracking-tight text-white leading-tight">
-								Empowering Enterprise Multi-Vendor Marketplaces
-							</h2>
-							<p className="text-xs text-zinc-300 leading-relaxed">
-								Discover verified seller products across cloud infrastructure, security licenses, and industrial hardware. Features automated multi-vendor order splitting, seller B2B pricing offers, and Stripe Connect payouts.
-							</p>
-
-							<div className="pt-2 flex flex-wrap items-center gap-3">
-								<button
-									onClick={() => setCategoryFilter("All")}
-									className="rounded-xl bg-[#6678c1] px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#404d85]"
-								>
-									Explore Storefront Catalog
-								</button>
-								<button
-									onClick={() => {
-										setAuthMode("register");
-										setShowVendorAuthModal(true);
-									}}
-									className="rounded-xl border border-white/30 bg-white/10 px-5 py-2.5 text-xs font-bold text-white hover:bg-white hover:text-[#1f2430] transition"
-								>
-									+ Become a Verified Seller
-								</button>
-							</div>
-						</div>
-
-						{/* Verified Sellers Badge Box */}
-						<div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md space-y-3 w-72">
-							<div className="text-xs font-bold uppercase tracking-wider text-zinc-400">Featured Marketplace Sellers</div>
-							<div className="space-y-2">
-								{vendors.map((v) => (
-									<button
-										key={v.id}
-										onClick={() => setActiveVendorModal(v)}
-										className="w-full flex items-center justify-between rounded-xl bg-white/10 p-2.5 text-left text-xs font-semibold hover:bg-white/20 transition"
-									>
-										<div className="flex items-center gap-2 truncate">
-											<span className="text-base">{v.logo}</span>
-											<span className="truncate text-white font-bold">{v.name}</span>
-										</div>
-										<span className="text-amber-400 font-bold">⭐ {v.rating}</span>
-									</button>
-								))}
-							</div>
-						</div>
-					</div>
-				</div>
-
-				{/* 4. MAIN STOREFRONT BODY: LEFT SIDEBAR FILTERS + RIGHT PRODUCT GRID */}
-				<div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-					{/* LEFT SIDEBAR FILTERS (Official MedusaJS Filter Layout) */}
-					<aside className="rounded-3xl border border-[#d9e2ef] bg-white p-6 shadow-sm space-y-6 h-fit">
-						<div>
-							<h3 className="text-sm font-extrabold text-[#1f2430] border-b border-[#d9e2ef] pb-3">
-								📂 Categories
-							</h3>
-							<div className="mt-3 space-y-1.5 text-xs font-semibold text-[#5b6472]">
-								{["All", "Cloud Infrastructure & Hosting", "Software & Enterprise Licenses", "Hardware & IoT Devices"].map((cat) => (
-									<button
-										key={cat}
-										onClick={() => setCategoryFilter(cat)}
-										className={`w-full text-left rounded-xl px-3 py-2 transition ${
-											categoryFilter === cat
-												? "bg-[#6678c1] text-white font-bold shadow-sm"
-												: "hover:bg-[#f8faff] hover:text-[#1f2430]"
-										}`}
-									>
-										{cat}
-									</button>
-								))}
-							</div>
-						</div>
-
-						{/* Vendor Sellers Filter */}
-						<div>
-							<h3 className="text-sm font-extrabold text-[#1f2430] border-b border-[#d9e2ef] pb-3">
-								🏪 Filter by Seller / Vendor
-							</h3>
-							<div className="mt-3 space-y-2 text-xs font-semibold text-[#5b6472]">
-								<label className="flex items-center gap-2 cursor-pointer">
-									<input
-										type="radio"
-										name="vendorFilter"
-										checked={selectedVendorFilter === "All"}
-										onChange={() => setSelectedVendorFilter("All")}
-										className="accent-[#6678c1]"
-									/>
-									<span>All Sellers ({vendors.length})</span>
-								</label>
-								{vendors.map((v) => (
-									<label key={v.id} className="flex items-center gap-2 cursor-pointer">
-										<input
-											type="radio"
-											name="vendorFilter"
-											checked={selectedVendorFilter === v.name}
-											onChange={() => setSelectedVendorFilter(v.name)}
-											className="accent-[#6678c1]"
-										/>
-										<span className="truncate">{v.logo} {v.name}</span>
-									</label>
-								))}
-							</div>
-						</div>
-
-						{/* Price Range Filter */}
-						<div>
-							<h3 className="text-sm font-extrabold text-[#1f2430] border-b border-[#d9e2ef] pb-3 flex justify-between">
-								<span>💰 Max Price</span>
-								<span className="text-[#6678c1] font-black">€{priceRange}</span>
-							</h3>
-							<input
-								type="range"
-								min="100"
-								max="3000"
-								step="50"
-								value={priceRange}
-								onChange={(e) => setPriceRange(Number(e.target.value))}
-								className="mt-3 w-full accent-[#6678c1]"
-							/>
-						</div>
-
-						{/* Stock Filter */}
-						<div className="pt-2 border-t border-[#d9e2ef]">
-							<label className="flex items-center gap-2 text-xs font-bold text-[#1f2430] cursor-pointer">
-								<input
-									type="checkbox"
-									checked={onlyInStock}
-									onChange={(e) => setOnlyInStock(e.target.checked)}
-									className="rounded accent-[#6678c1]"
-								/>
-								<span>Show Only In-Stock Items</span>
-							</label>
-						</div>
-					</aside>
-
-					{/* RIGHT PRODUCT GRID (Official MedusaJS Cards) */}
-					<main className="lg:col-span-3 space-y-4">
-						<div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#d9e2ef] bg-white p-4 shadow-sm">
-							<div className="text-xs font-bold text-[#1f2430]">
-								Showing <span className="text-[#6678c1] font-black">{filteredProducts.length}</span> Products
-								{categoryFilter !== "All" && ` in "${categoryFilter}"`}
-								{selectedVendorFilter !== "All" && ` by "${selectedVendorFilter}"`}
-							</div>
-
-							<button
-								onClick={() => {
-									setCategoryFilter("All");
-									setSelectedVendorFilter("All");
-									setSearchQuery("");
-									setPriceRange(3000);
-								}}
-								className="text-xs font-bold text-[#6678c1] hover:underline"
-							>
-								Reset Filters ↺
-							</button>
-						</div>
-
-						<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-							{filteredProducts.map((prod) => (
-								<div
-									key={prod.id}
-									className="group rounded-3xl border border-[#d9e2ef] bg-white p-5 shadow-sm flex flex-col justify-between space-y-4 hover:border-[#6678c1] hover:shadow-xl transition-all duration-300"
-								>
-									<div className="space-y-3">
-										{/* Product Thumbnail Aspect Box */}
-										<div className="relative h-44 w-full overflow-hidden rounded-2xl bg-zinc-100 border border-[#d9e2ef]">
-											<img
-												src={prod.image}
-												alt={prod.title}
-												className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-											/>
-											<span className="absolute top-2 left-2 rounded-full bg-white/90 backdrop-blur-md px-2.5 py-1 text-[10px] font-extrabold text-[#6678c1] border border-[#d9e2ef] shadow-sm">
-												{prod.category}
-											</span>
-										</div>
-
-										{/* Vendor Badge / Avatar */}
-										<button
-											onClick={() => {
-												const v = vendors.find((vendor) => vendor.id === prod.vendorId);
-												if (v) setActiveVendorModal(v);
-											}}
-											className="flex items-center gap-1.5 text-[11px] font-extrabold text-[#5b6472] hover:text-[#6678c1] transition"
-										>
-											<span className="text-sm">{prod.vendorLogo}</span>
-											<span className="truncate">Sold by {prod.vendorName}</span>
-											<span className="text-xs text-amber-500">⭐ {prod.rating}</span>
-										</button>
-
-										<h3 className="text-sm font-bold text-[#1f2430] group-hover:text-[#6678c1] transition">
-											{prod.title}
-										</h3>
-
-										<p className="text-xs text-[#5b6472] line-clamp-2 leading-relaxed">
-											{prod.description}
-										</p>
-
-										{/* Seller Discount Offer Badge */}
-										{prod.sellerOfferBadge && (
-											<div className="rounded-xl bg-amber-50 p-2 text-[11px] font-bold text-amber-900 border border-amber-200">
-												🏷️ {prod.sellerOfferBadge}
-											</div>
-										)}
-									</div>
-
-									{/* Price & Add to Cart */}
-									<div className="pt-3 border-t border-[#d9e2ef] flex items-center justify-between">
-										<div>
-											<div className="flex items-baseline gap-1.5">
-												<span className="text-lg font-black text-[#1f2430]">€{prod.price.toFixed(2)}</span>
-												{prod.originalPrice && (
-													<span className="text-xs text-[#5b6472] line-through font-semibold">€{prod.originalPrice.toFixed(2)}</span>
-												)}
-											</div>
-											{prod.wholesaleB2bPrice && (
-												<div className="text-[10px] font-bold text-emerald-600">
-													B2B Tier: €{prod.wholesaleB2bPrice.toFixed(2)}
-												</div>
-											)}
-										</div>
-
-										<button
-											onClick={() => addToCart(prod)}
-											className="rounded-xl bg-[#6678c1] px-3.5 py-2 text-xs font-bold text-white shadow-md hover:bg-[#404d85] transition"
-										>
-											+ Cart
-										</button>
-									</div>
-								</div>
-							))}
-						</div>
-					</main>
+				<div className="hidden md:flex gap-4 text-[11px]">
+					<button onClick={() => setShowVendorAuthModal(true)} className="hover:underline text-blue-200">
+						🔑 {loggedInVendor ? `Vendor Portal (${loggedInVendor.name})` : "Seller Sign In / Register"}
+					</button>
+					<span>|</span>
+					<a href="/login" className="hover:underline text-blue-200">
+						👤 Customer Account
+					</a>
 				</div>
 			</div>
 
-			{/* CART DRAWER MODAL */}
-			{showCartDrawer && (
-				<div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm">
-					<div className="w-full max-w-md bg-white p-6 shadow-2xl space-y-4 flex flex-col justify-between h-full">
-						<div className="space-y-4 overflow-y-auto">
-							<div className="flex items-center justify-between border-b border-[#d9e2ef] pb-3">
-								<h3 className="text-base font-black text-[#1f2430]">🛒 MedusaJS Multi-Vendor Cart</h3>
-								<button onClick={() => setShowCartDrawer(false)} className="text-sm font-bold text-[#5b6472]">✕</button>
+			{/* MAIN STANDALONE E-COMMERCE HEADER */}
+			<header className="sticky top-0 z-40 bg-white border-b border-zinc-200 shadow-sm">
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+					{/* Logo */}
+					<div className="flex items-center gap-3">
+						<Link href="/storefront" className="flex items-center gap-2">
+							<div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-[#404d85] to-[#252f5a] flex items-center justify-center text-white font-black text-xl shadow-md">
+								🛍️
 							</div>
+							<div>
+								<span className="text-xl font-extrabold tracking-tight text-zinc-900">CAMBLISS</span>
+								<span className="text-xs font-bold text-[#6678c1] block -mt-1 tracking-widest uppercase">MARKETPLACE</span>
+							</div>
+						</Link>
+					</div>
 
-							{cart.length === 0 ? (
-								<div className="p-8 text-center text-xs text-[#5b6472]">Your cart is empty. Add products from the storefront!</div>
-							) : (
-								<div className="space-y-3">
-									{cart.map((item) => (
-										<div key={item.product.id} className="rounded-2xl border border-[#d9e2ef] p-3 space-y-2 bg-[#f8faff]">
-											<div className="flex justify-between items-start">
-												<div>
-													<div className="text-xs font-bold text-[#1f2430]">{item.product.title}</div>
-													<div className="text-[11px] text-[#6678c1] font-bold">{item.product.vendorLogo} {item.product.vendorName}</div>
-												</div>
-												<button onClick={() => removeFromCart(item.product.id)} className="text-rose-500 font-bold text-xs">✕</button>
-											</div>
+					{/* Search Bar */}
+					<div className="flex-1 max-w-2xl hidden md:flex items-center rounded-2xl border border-zinc-300 bg-zinc-50 focus-within:border-[#404d85] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#404d85]/20 transition overflow-hidden">
+						<select
+							value={categoryFilter}
+							onChange={(e) => setCategoryFilter(e.target.value)}
+							className="bg-zinc-100 text-xs font-bold text-zinc-700 px-3 py-3 border-r border-zinc-300 focus:outline-none cursor-pointer"
+						>
+							{categories.map((c) => (
+								<option key={c} value={c}>
+									{c}
+								</option>
+							))}
+						</select>
+						<input
+							type="text"
+							placeholder="Search products, brands, cosmetics, electronics, or sellers..."
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							className="w-full px-4 py-2.5 text-xs bg-transparent focus:outline-none text-zinc-900"
+						/>
+						<button className="bg-[#404d85] text-white px-5 py-3 text-xs font-bold hover:bg-[#323d6a] transition flex items-center gap-1">
+							🔍 Search
+						</button>
+					</div>
 
-											<div className="flex justify-between items-center text-xs pt-1 border-t border-[#d9e2ef]">
-												<span>Qty: <strong>{item.quantity}</strong> x €{item.product.price.toFixed(2)}</span>
-												<span className="font-black text-[#1f2430]">€{(item.quantity * item.product.price).toFixed(2)}</span>
-											</div>
-										</div>
-									))}
-								</div>
+					{/* Action Buttons */}
+					<div className="flex items-center gap-3">
+						<button
+							onClick={() => {
+								if (!loggedInVendor) {
+									setShowVendorAuthModal(true);
+								} else {
+									setShowProductUploadModal(true);
+								}
+							}}
+							className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-110 transition"
+						>
+							<span>+</span> Upload Product
+						</button>
+
+						<button
+							onClick={() => setShowCartDrawer(true)}
+							className="relative flex items-center gap-2 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-xs font-bold text-zinc-800 shadow-sm hover:bg-zinc-50 transition"
+						>
+							<span className="text-lg">🛒</span>
+							<span className="hidden sm:inline">Cart</span>
+							{cart.length > 0 && (
+								<span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#404d85] text-[10px] font-bold text-white shadow-sm">
+									{cart.reduce((sum, item) => sum + item.quantity, 0)}
+								</span>
 							)}
-						</div>
+						</button>
+					</div>
+				</div>
+			</header>
 
-						{cart.length > 0 && (
-							<div className="space-y-3 pt-4 border-t border-[#d9e2ef]">
-								<div className="flex justify-between text-base font-black text-[#1f2430]">
-									<span>Subtotal:</span>
-									<span className="text-emerald-600">€{cartTotal.toFixed(2)}</span>
-								</div>
-
-								<button
-									onClick={() => {
-										alert("Executing Multi-Vendor Split Checkout via Stripe Connect!");
-										setCart([]);
-										setShowCartDrawer(false);
-									}}
-									className="w-full rounded-2xl bg-[#6678c1] py-3 text-xs font-bold text-white shadow-lg hover:bg-[#404d85]"
-								>
-									Proceed to Multi-Vendor Checkout
-								</button>
+			{/* DEDICATED VENDOR STOREFRONT HEADER BANNER (IF VENDOR FILTERED) */}
+			{activeVendorObj && (
+				<div className="bg-gradient-to-r from-[#404d85] via-[#323d6a] to-[#252f5a] text-white py-8 px-4 sm:px-8 border-b border-zinc-200">
+					<div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+						<div className="flex items-center gap-5">
+							<div className="h-20 w-20 rounded-3xl bg-white border-4 border-white/20 shadow-xl flex items-center justify-center text-4xl">
+								{activeVendorObj.logo}
 							</div>
-						)}
+							<div>
+								<div className="flex items-center gap-2">
+									<h1 className="text-2xl font-black">{activeVendorObj.name}</h1>
+									<span className="rounded-full bg-emerald-500/30 border border-emerald-400 px-3 py-0.5 text-xs font-bold text-emerald-200">
+										✓ Verified Seller
+									</span>
+								</div>
+								<p className="mt-1 text-xs text-blue-100 max-w-xl">{activeVendorObj.description}</p>
+								<div className="mt-2 flex items-center gap-4 text-xs font-semibold text-blue-200">
+									<span>⭐ {activeVendorObj.rating} / 5.0 Rating</span>
+									<span>•</span>
+									<span>📍 {activeVendorObj.location}</span>
+									<span>•</span>
+									<span>📦 {products.filter((p) => p.vendorId === activeVendorObj.id).length} Products Listed</span>
+								</div>
+							</div>
+						</div>
+						<button
+							onClick={() => setSelectedVendorFilter("All")}
+							className="rounded-xl border border-white/30 bg-white/10 px-5 py-2.5 text-xs font-bold text-white backdrop-blur-sm hover:bg-white/20 transition"
+						>
+							← Back to Main Marketplace
+						</button>
 					</div>
 				</div>
 			)}
 
-			{/* VENDOR PROFILE MODAL */}
-			{activeVendorModal && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-					<div className="w-full max-w-lg rounded-3xl border border-[#d9e2ef] bg-white p-6 shadow-2xl space-y-4">
-						<div className="flex items-center justify-between border-b border-[#d9e2ef] pb-3">
-							<div className="flex items-center gap-3">
-								<span className="text-3xl">{activeVendorModal.logo}</span>
-								<div>
-									<h3 className="text-base font-black text-[#1f2430]">{activeVendorModal.name}</h3>
-									<div className="text-xs text-[#6678c1] font-semibold">{activeVendorModal.location}</div>
-								</div>
+			{/* MAIN BODY CONTAINER */}
+			<main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+				<div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+					{/* LEFT SIDEBAR: CATEGORIES & VENDOR FILTER */}
+					<aside className="space-y-6">
+						{/* Vendor List */}
+						<div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-4">
+							<h3 className="text-sm font-extrabold text-zinc-900 border-b border-zinc-200 pb-2">
+								🏬 Verified Vendor Stores ({vendors.length})
+							</h3>
+							<div className="space-y-2 max-h-60 overflow-y-auto">
+								<button
+									onClick={() => setSelectedVendorFilter("All")}
+									className={`w-full text-left p-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between ${
+										selectedVendorFilter === "All" ? "bg-[#404d85] text-white shadow-md" : "hover:bg-zinc-100 text-zinc-700"
+									}`}
+								>
+									<span>All Marketplace Stores</span>
+									<span>({products.length})</span>
+								</button>
+								{vendors.map((v) => (
+									<button
+										key={v.id}
+										onClick={() => setSelectedVendorFilter(v.id)}
+										className={`w-full text-left p-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-between ${
+											selectedVendorFilter === v.id ? "bg-[#404d85] text-white shadow-md" : "hover:bg-zinc-100 text-zinc-700"
+										}`}
+									>
+										<span className="flex items-center gap-2 truncate">
+											<span>{v.logo}</span>
+											<span className="truncate">{v.name}</span>
+										</span>
+										<span className="text-[10px] opacity-75">
+											({products.filter((p) => p.vendorId === v.id).length})
+										</span>
+									</button>
+								))}
 							</div>
-							<button onClick={() => setActiveVendorModal(null)} className="text-sm font-bold text-[#5b6472]">✕</button>
 						</div>
 
-						<p className="text-xs text-[#5b6472] leading-relaxed">{activeVendorModal.description}</p>
-
-						<div className="grid grid-cols-3 gap-3 text-xs">
-							<div className="rounded-xl border border-[#d9e2ef] p-3 bg-[#f8faff]">
-								<div className="text-[#5b6472]">Seller Rating</div>
-								<div className="text-sm font-black text-amber-500">⭐ {activeVendorModal.rating}</div>
-							</div>
-							<div className="rounded-xl border border-[#d9e2ef] p-3 bg-[#f8faff]">
-								<div className="text-[#5b6472]">Products</div>
-								<div className="text-sm font-black text-[#1f2430]">{activeVendorModal.totalProducts} Items</div>
-							</div>
-							<div className="rounded-xl border border-[#d9e2ef] p-3 bg-[#f8faff]">
-								<div className="text-[#5b6472]">Payout Status</div>
-								<div className="text-[11px] font-black text-emerald-600">Active</div>
-							</div>
-						</div>
-
-						<div className="pt-2 flex justify-end">
+						{/* Quick Upload Banner */}
+						<div className="rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 p-6 text-white space-y-3 shadow-lg">
+							<h3 className="font-extrabold text-base">Sell Your Products Here!</h3>
+							<p className="text-xs text-emerald-100 leading-relaxed">
+								Register your brand store and upload products directly into the live marketplace.
+							</p>
 							<button
 								onClick={() => {
-									setSelectedVendorFilter(activeVendorModal.name);
-									setActiveVendorModal(null);
+									if (!loggedInVendor) setShowVendorAuthModal(true);
+									else setShowProductUploadModal(true);
 								}}
-								className="rounded-xl bg-[#6678c1] px-5 py-2 text-xs font-bold text-white shadow-sm"
+								className="w-full rounded-xl bg-white py-2.5 text-xs font-bold text-emerald-900 shadow-md hover:bg-emerald-50 transition"
 							>
-								Filter Products by {activeVendorModal.name}
+								+ Add Products Now
 							</button>
 						</div>
+					</aside>
+
+					{/* RIGHT CONTENT: PRODUCT CATALOG */}
+					<section className="lg:col-span-3 space-y-6">
+						{/* Product Header */}
+						<div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-zinc-200 shadow-sm">
+							<div>
+								<h2 className="text-lg font-extrabold text-zinc-900">
+									{selectedVendorFilter === "All"
+										? "All Marketplace Products"
+										: `Storefront: ${activeVendorObj?.name || "Vendor Products"}`}
+								</h2>
+								<p className="text-xs text-zinc-500">Showing {filteredProducts.length} items</p>
+							</div>
+							<button
+								onClick={() => {
+									if (!loggedInVendor) setShowVendorAuthModal(true);
+									else setShowProductUploadModal(true);
+								}}
+								className="rounded-xl bg-[#404d85] px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-[#323d6a]"
+							>
+								+ Upload Product
+							</button>
+						</div>
+
+						{/* Products Grid / Zero State */}
+						{filteredProducts.length === 0 ? (
+							<div className="rounded-3xl border-2 border-dashed border-zinc-300 bg-white p-12 text-center space-y-4">
+								<div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-zinc-100 text-4xl">
+									📦
+								</div>
+								<h3 className="text-xl font-bold text-zinc-900">No Products Listed Yet</h3>
+								<p className="text-xs text-zinc-500 max-w-md mx-auto leading-relaxed">
+									Your marketplace is clean and ready! Log in to your seller account or admin portal to upload your real products.
+								</p>
+								<div className="pt-2 flex justify-center gap-3">
+									<button
+										onClick={() => {
+											if (!loggedInVendor) setShowVendorAuthModal(true);
+											else setShowProductUploadModal(true);
+										}}
+										className="rounded-xl bg-[#404d85] px-6 py-3 text-xs font-bold text-white shadow-lg hover:bg-[#323d6a]"
+									>
+										+ Upload Your First Product
+									</button>
+								</div>
+							</div>
+						) : (
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+								{filteredProducts.map((product) => (
+									<div
+										key={product.id}
+										className="group rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col"
+									>
+										<div className="relative aspect-square bg-zinc-100 overflow-hidden">
+											<img
+												src={product.image}
+												alt={product.title}
+												className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+											/>
+											{product.sellerOfferBadge && (
+												<span className="absolute top-3 left-3 rounded-full bg-zinc-900/80 backdrop-blur-sm px-3 py-1 text-[10px] font-bold text-white shadow-md">
+													{product.sellerOfferBadge}
+												</span>
+											)}
+										</div>
+
+										<div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+											<div>
+												<div className="flex justify-between items-center text-[11px] text-[#6678c1] font-bold mb-1">
+													<span>{product.vendorLogo} {product.vendorName}</span>
+												</div>
+												<h3 className="font-bold text-sm text-zinc-900 line-clamp-2">{product.title}</h3>
+												<p className="mt-1 text-xs text-zinc-500 line-clamp-2 leading-relaxed">{product.description}</p>
+											</div>
+
+											<div className="pt-3 border-t border-zinc-100 flex items-center justify-between">
+												<div>
+													<div className="text-base font-black text-zinc-900">
+														${product.price.toFixed(2)}
+													</div>
+													{product.originalPrice && (
+														<div className="text-xs text-zinc-400 line-through">
+															${product.originalPrice.toFixed(2)}
+														</div>
+													)}
+												</div>
+												<button
+													onClick={() => addToCart(product)}
+													className="rounded-xl bg-[#404d85] px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-[#323d6a] transition"
+												>
+													+ Add to Cart
+												</button>
+											</div>
+										</div>
+									</div>
+								))}
+							</div>
+						)}
+					</section>
+				</div>
+			</main>
+
+			{/* UPLOAD PRODUCT MODAL */}
+			{showProductUploadModal && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+					<div className="w-full max-w-lg rounded-3xl bg-white p-8 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto">
+						<button
+							onClick={() => setShowProductUploadModal(false)}
+							className="absolute right-6 top-6 text-zinc-400 hover:text-zinc-600 text-lg font-bold"
+						>
+							✕
+						</button>
+						<h2 className="text-xl font-extrabold text-zinc-900 mb-1">+ Upload New Product</h2>
+						<p className="text-xs text-zinc-500 mb-6">
+							Add a product to live Storefront ({loggedInVendor?.name || "Platform Store"})
+						</p>
+
+						<form onSubmit={handleUploadProductSubmit} className="space-y-4 text-xs">
+							<div>
+								<label className="block font-semibold text-zinc-700 mb-1">Product Title *</label>
+								<input
+									type="text"
+									required
+									placeholder="e.g. Organic Rose Hydrating Serum"
+									value={newProductForm.title}
+									onChange={(e) => setNewProductForm((prev) => ({ ...prev, title: e.target.value }))}
+									className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
+								/>
+							</div>
+
+							<div className="grid grid-cols-2 gap-3">
+								<div>
+									<label className="block font-semibold text-zinc-700 mb-1">Category *</label>
+									<input
+										type="text"
+										required
+										placeholder="Beauty & Skincare"
+										value={newProductForm.category}
+										onChange={(e) => setNewProductForm((prev) => ({ ...prev, category: e.target.value }))}
+										className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
+									/>
+								</div>
+								<div>
+									<label className="block font-semibold text-zinc-700 mb-1">SKU Code</label>
+									<input
+										type="text"
+										placeholder="SKU-BEAUTY-101"
+										value={newProductForm.sku}
+										onChange={(e) => setNewProductForm((prev) => ({ ...prev, sku: e.target.value }))}
+										className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
+									/>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-2 gap-3">
+								<div>
+									<label className="block font-semibold text-zinc-700 mb-1">Selling Price ($) *</label>
+									<input
+										type="number"
+										step="0.01"
+										required
+										placeholder="49.99"
+										value={newProductForm.price}
+										onChange={(e) => setNewProductForm((prev) => ({ ...prev, price: e.target.value }))}
+										className="w-full rounded-xl border border-zinc-300 p-3 text-xs font-bold text-emerald-600"
+									/>
+								</div>
+								<div>
+									<label className="block font-semibold text-zinc-700 mb-1">Original Price ($)</label>
+									<input
+										type="number"
+										step="0.01"
+										placeholder="69.99"
+										value={newProductForm.originalPrice}
+										onChange={(e) => setNewProductForm((prev) => ({ ...prev, originalPrice: e.target.value }))}
+										className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
+									/>
+								</div>
+							</div>
+
+							<div>
+								<label className="block font-semibold text-zinc-700 mb-1">Product Image URL</label>
+								<input
+									type="url"
+									placeholder="https://images.unsplash.com/photo-..."
+									value={newProductForm.image}
+									onChange={(e) => setNewProductForm((prev) => ({ ...prev, image: e.target.value }))}
+									className="w-full rounded-xl border border-zinc-300 p-3 text-xs font-mono"
+								/>
+							</div>
+
+							<div>
+								<label className="block font-semibold text-zinc-700 mb-1">Description</label>
+								<textarea
+									rows={3}
+									placeholder="Enter detailed product description..."
+									value={newProductForm.description}
+									onChange={(e) => setNewProductForm((prev) => ({ ...prev, description: e.target.value }))}
+									className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
+								/>
+							</div>
+
+							<button
+								type="submit"
+								disabled={isSubmittingProduct}
+								className="w-full rounded-xl bg-[#404d85] py-3.5 text-xs font-bold text-white shadow-lg hover:bg-[#323d6a] transition"
+							>
+								{isSubmittingProduct ? "Publishing Product..." : "Publish Product to Marketplace"}
+							</button>
+						</form>
 					</div>
 				</div>
 			)}
 
-			{/* VENDOR LOGIN MODAL */}
+			{/* VENDOR AUTH MODAL */}
 			{showVendorAuthModal && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-					<div className="w-full max-w-md rounded-3xl border border-[#d9e2ef] bg-white p-6 shadow-2xl space-y-4">
-						<div className="flex items-center justify-between border-b border-[#d9e2ef] pb-3">
-							<h3 className="text-base font-bold text-[#1f2430]">
-								{authMode === "login" ? "🔑 Vendor / Seller Sign In" : "📝 Register Vendor Account"}
-							</h3>
-							<button onClick={() => setShowVendorAuthModal(false)} className="text-sm font-bold text-[#5b6472]">✕</button>
-						</div>
+					<div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl relative">
+						<button
+							onClick={() => setShowVendorAuthModal(false)}
+							className="absolute right-6 top-6 text-zinc-400 hover:text-zinc-600 text-lg font-bold"
+						>
+							✕
+						</button>
+						<h2 className="text-2xl font-bold text-zinc-900">
+							{authMode === "login" ? "Seller Login" : "Register Brand Store"}
+						</h2>
+						<p className="mt-1 text-xs text-zinc-500">
+							Access your multi-vendor portal and manage product listings.
+						</p>
 
-						<div className="flex rounded-xl bg-[#f8faff] p-1 border border-[#d9e2ef] text-xs font-bold">
-							<button
-								onClick={() => setAuthMode("login")}
-								className={`flex-1 rounded-lg py-1.5 transition ${authMode === "login" ? "bg-[#6678c1] text-white" : "text-[#5b6472]"}`}
-							>
-								Vendor Login
-							</button>
-							<button
-								onClick={() => setAuthMode("register")}
-								className={`flex-1 rounded-lg py-1.5 transition ${authMode === "register" ? "bg-[#6678c1] text-white" : "text-[#5b6472]"}`}
-							>
-								New Vendor Sign Up
-							</button>
-						</div>
+						{authMsg && (
+							<div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold text-emerald-900">
+								{authMsg}
+							</div>
+						)}
 
-						<form onSubmit={handleVendorAuthSubmit} className="space-y-3 text-xs">
+						<form onSubmit={handleVendorAuthSubmit} className="mt-6 space-y-4 text-xs">
 							{authMode === "register" && (
 								<div>
-									<label className="block font-semibold text-[#5b6472]">Company / Store Name *</label>
+									<label className="block font-semibold text-zinc-700 mb-1">Store / Brand Name *</label>
 									<input
 										type="text"
-										placeholder="e.g. Apex Cloud Solutions"
+										required
+										placeholder="e.g. Glow Beauty Cosmetics"
 										value={vendorName}
 										onChange={(e) => setVendorName(e.target.value)}
-										className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs font-semibold"
-										required
+										className="w-full rounded-xl border border-zinc-300 p-3"
 									/>
 								</div>
 							)}
-
 							<div>
-								<label className="block font-semibold text-[#5b6472]">Vendor Email Address *</label>
+								<label className="block font-semibold text-zinc-700 mb-1">Email Address *</label>
 								<input
 									type="email"
-									placeholder="vendors@company.com"
+									required
+									placeholder="vendor@company.com"
 									value={vendorEmail}
 									onChange={(e) => setVendorEmail(e.target.value)}
-									className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs font-semibold"
-									required
+									className="w-full rounded-xl border border-zinc-300 p-3"
 								/>
 							</div>
-
 							<div>
-								<label className="block font-semibold text-[#5b6472]">Password *</label>
+								<label className="block font-semibold text-zinc-700 mb-1">Password *</label>
 								<input
 									type="password"
-									placeholder="••••••••••••"
+									required
+									placeholder="••••••••"
 									value={vendorPassword}
 									onChange={(e) => setVendorPassword(e.target.value)}
-									className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs font-semibold"
-									required
+									className="w-full rounded-xl border border-zinc-300 p-3"
 								/>
 							</div>
 
-							{authMode === "register" && (
-								<div>
-									<label className="block font-semibold text-[#5b6472]">Primary Category</label>
-									<select
-										value={vendorCategory}
-										onChange={(e) => setVendorCategory(e.target.value)}
-										className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 text-xs font-semibold bg-white"
-									>
-										<option value="Cloud Infrastructure & Hosting">Cloud Infrastructure & Hosting</option>
-										<option value="Software & Enterprise Licenses">Software & Enterprise Licenses</option>
-										<option value="Hardware & IoT Devices">Hardware & IoT Devices</option>
-									</select>
-								</div>
-							)}
+							<button
+								type="submit"
+								className="w-full rounded-xl bg-[#404d85] py-3.5 text-xs font-bold text-white shadow-lg hover:bg-[#323d6a]"
+							>
+								{authMode === "login" ? "Sign In to Seller Dashboard" : "Create Seller Account"}
+							</button>
 
-							{authMsg && (
-								<div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 font-bold text-emerald-800 text-xs">
-									{authMsg}
-								</div>
-							)}
-
-							<div className="pt-2 flex justify-end gap-2 border-t border-[#d9e2ef]">
-								<button type="button" onClick={() => setShowVendorAuthModal(false)} className="rounded-xl border border-[#d9e2ef] px-4 py-2">
-									Cancel
-								</button>
-								<button type="submit" className="rounded-xl bg-[#6678c1] px-5 py-2 font-bold text-white shadow-md">
-									{authMode === "login" ? "Sign In to Seller Portal" : "Complete Registration"}
+							<div className="pt-2 text-center text-xs">
+								<button
+									type="button"
+									onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}
+									className="text-[#6678c1] font-bold hover:underline"
+								>
+									{authMode === "login" ? "Need a seller store? Register here" : "Already have a store? Sign in"}
 								</button>
 							</div>
 						</form>
 					</div>
 				</div>
 			)}
-		</WorkspaceShell>
+		</div>
 	);
 }
