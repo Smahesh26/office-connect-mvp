@@ -10,7 +10,7 @@ type CrmLead = {
 	contactName: string;
 	email: string;
 	phone?: string;
-	value: number;
+	value?: number;
 	stage: "NEW" | "CONTACTED" | "QUALIFIED" | "PROPOSAL" | "WON" | "LOST";
 	source?: string;
 	notes?: string;
@@ -35,6 +35,12 @@ type CrmConnector = {
 };
 
 type CrmTab = "overview" | "pipeline" | "leads" | "stages" | "activity" | "analytics" | "settings";
+
+// Helper for safe number formatting
+const safeFormatNumber = (val: number | undefined | null): string => {
+	const num = Number(val ?? 0);
+	return Number.isNaN(num) ? "0.00" : num.toLocaleString("en-US", { minimumFractionDigits: 2 });
+};
 
 // 20 Enterprise 3rd-Party CRM Connectors (including Twenty CRM & Bitrix24)
 const TOP_CRMS: CrmConnector[] = [
@@ -117,7 +123,8 @@ function CrmContent() {
 			]);
 
 			if (leadsRes.ok) {
-				setLeads((await leadsRes.json()) as CrmLead[]);
+				const fetchedLeads = (await leadsRes.json()) as CrmLead[];
+				setLeads(fetchedLeads.map((l) => ({ ...l, value: Number(l.value ?? 0) })));
 			} else {
 				// Seed initial mock leads if backend DB empty
 				setLeads([
@@ -343,13 +350,13 @@ function CrmContent() {
 							<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
 								<div className="text-xs font-bold text-zinc-500 uppercase">Pipeline Value ($)</div>
 								<div className="mt-1 text-2xl font-black text-[#6678c1]">
-									${leads.reduce((s, l) => s + l.value, 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+									${safeFormatNumber(leads.reduce((s, l) => s + (l.value ?? 0), 0))}
 								</div>
 							</div>
 							<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
 								<div className="text-xs font-bold text-zinc-500 uppercase">Closed Won Revenue</div>
 								<div className="mt-1 text-2xl font-black text-emerald-600">
-									${leads.filter((l) => l.stage === "WON").reduce((s, l) => s + l.value, 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+									${safeFormatNumber(leads.filter((l) => l.stage === "WON").reduce((s, l) => s + (l.value ?? 0), 0))}
 								</div>
 							</div>
 							<div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
@@ -383,7 +390,7 @@ function CrmContent() {
 											<td className="p-3 font-bold text-zinc-900">{l.title}</td>
 											<td className="p-3 font-semibold text-[#6678c1]">{l.companyName}</td>
 											<td className="p-3 text-zinc-600">{l.contactName} ({l.email})</td>
-											<td className="p-3 font-bold text-emerald-600">${l.value.toLocaleString()}</td>
+											<td className="p-3 font-bold text-emerald-600">${safeFormatNumber(l.value)}</td>
 											<td className="p-3">
 												<span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-bold text-blue-800 uppercase">
 													{l.stage}
@@ -416,7 +423,7 @@ function CrmContent() {
 					<div className="grid grid-cols-1 gap-4 md:grid-cols-6">
 						{(["NEW", "CONTACTED", "QUALIFIED", "PROPOSAL", "WON", "LOST"] as const).map((stage) => {
 							const stageLeads = leads.filter((l) => l.stage === stage);
-							const stageTotal = stageLeads.reduce((s, l) => s + l.value, 0);
+							const stageTotal = stageLeads.reduce((s, l) => s + (l.value ?? 0), 0);
 
 							return (
 								<div key={stage} className="rounded-2xl border border-zinc-200 bg-white p-3 space-y-3 shadow-sm min-h-[300px]">
@@ -425,7 +432,7 @@ function CrmContent() {
 											<span>{stage}</span>
 											<span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-600">{stageLeads.length}</span>
 										</div>
-										<div className="text-[11px] font-bold text-emerald-600 mt-1">${stageTotal.toLocaleString()}</div>
+										<div className="text-[11px] font-bold text-emerald-600 mt-1">${safeFormatNumber(stageTotal)}</div>
 									</div>
 
 									<div className="space-y-2">
@@ -433,7 +440,7 @@ function CrmContent() {
 											<div key={lead.id} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 space-y-2 text-xs shadow-sm">
 												<div className="font-bold text-zinc-900">{lead.title}</div>
 												<div className="text-[11px] text-[#6678c1] font-bold">{lead.companyName}</div>
-												<div className="text-xs font-black text-emerald-600">${lead.value.toLocaleString()}</div>
+												<div className="text-xs font-black text-emerald-600">${safeFormatNumber(lead.value)}</div>
 												<select
 													value={lead.stage}
 													onChange={(e) => handleUpdateStage(lead.id, e.target.value as any)}
@@ -500,7 +507,7 @@ function CrmContent() {
 											<div className="text-zinc-500">{lead.email} | {lead.phone || "No phone"}</div>
 										</div>
 										<div className="text-right space-y-1">
-											<div className="text-base font-black text-emerald-600">${lead.value.toLocaleString()}</div>
+											<div className="text-base font-black text-emerald-600">${safeFormatNumber(lead.value)}</div>
 											<span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold text-blue-800">{lead.stage}</span>
 										</div>
 									</div>
