@@ -85,6 +85,24 @@ function StorefrontContent() {
 	// Initial Official Mercur Multi-Vendor Dataset
 	const [vendors, setVendors] = useState<MercurVendor[]>([
 		{
+			id: "v-glow-beauty",
+			name: "Glow Beauty Organics 🌸",
+			logo: "🌸",
+			ownerEmail: "care@glowbeautyorganics.com",
+			category: "Beauty, Cosmetics & Skincare",
+			rating: 5.0,
+			reviewsCount: 89,
+			totalProducts: 18,
+			totalSalesVolume: 34200.00,
+			commissionRate: 7.5,
+			stripeConnectId: "acct_1GLOW90X8812Y",
+			payoutStatus: "Connected (Active)",
+			kycVerified: true,
+			location: "Paris, France 🇫🇷",
+			joinedDate: "2026-02-14",
+			description: "100% Organic botanical skincare, vegan hyaluronic serums, and dermatologist-tested cruelty-free beauty products."
+		},
+		{
 			id: "v-acme",
 			name: "Acme Cloud Infrastructure Solutions",
 			logo: "☁️",
@@ -141,6 +159,42 @@ function StorefrontContent() {
 	]);
 
 	const [products, setProducts] = useState<MercurProduct[]>([
+		{
+			id: "prod-beauty-1",
+			sku: "SKU-BEAUTY-ROSE-01",
+			title: "Hydrating Organic Rose & Hyaluronic Acid Serum",
+			image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80",
+			vendorId: "v-glow-beauty",
+			vendorName: "Glow Beauty Organics 🌸",
+			vendorLogo: "🌸",
+			category: "Beauty, Cosmetics & Skincare",
+			price: 48.00,
+			originalPrice: 65.00,
+			wholesaleB2bPrice: 28.00,
+			sellerOfferBadge: "🌸 Best Seller",
+			stockQty: 140,
+			rating: 5.0,
+			reviewsCount: 64,
+			description: "Infused with pure Damask rose water and triple-molecular hyaluronic acid for 24-hour intense hydration and glowing skin."
+		},
+		{
+			id: "prod-beauty-2",
+			sku: "SKU-BEAUTY-CREAM-02",
+			title: "Botanical Restorative Night Cream",
+			image: "https://images.unsplash.com/photo-1608248597261-e4d09165811a?auto=format&fit=crop&w=600&q=80",
+			vendorId: "v-glow-beauty",
+			vendorName: "Glow Beauty Organics 🌸",
+			vendorLogo: "🌸",
+			category: "Beauty, Cosmetics & Skincare",
+			price: 54.00,
+			originalPrice: 72.00,
+			wholesaleB2bPrice: 32.00,
+			sellerOfferBadge: "🌿 100% Vegan",
+			stockQty: 95,
+			rating: 4.9,
+			reviewsCount: 42,
+			description: "Overnight peptide moisturizer enriched with cold-pressed rosehip oil, niacinamide, and organic shea butter."
+		},
 		{
 			id: "prod-m-1",
 			sku: "SKU-MER-CLOUD-01",
