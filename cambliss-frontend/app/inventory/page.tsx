@@ -250,6 +250,9 @@ const IMPORT_MODULE_FIELDS = {
 };
 
 const TOP_INVENTORY = [
+	{ id: "erpnext", name: "ERPNext", color: "bg-blue-50 text-blue-600 border-blue-200", logo: "🔵" },
+	{ id: "dolibarr", name: "Dolibarr ERP", color: "bg-[#0070a8]/10 text-[#0070a8] border-[#0070a8]/20", logo: "🐬" },
+	{ id: "inventree", name: "InvenTree", color: "bg-emerald-50 text-emerald-600 border-emerald-200", logo: "🌳" },
 	{ id: "netsuite", name: "Oracle NetSuite", color: "bg-[#00558c]/10 text-[#00558c] border-[#00558c]/20", logo: "☁️" },
 	{ id: "sapb1", name: "SAP Business One", color: "bg-[#f0ab00]/10 text-[#f0ab00] border-[#f0ab00]/20", logo: "🏆" },
 	{ id: "odoo", name: "Odoo", color: "bg-[#8f5ca8]/10 text-[#8f5ca8] border-[#8f5ca8]/20", logo: "⚙️" },
@@ -1550,7 +1553,7 @@ export default function InventoryPage() {
 					{/* Top 10 Inventory Grid */}
 					<div className="mt-10 w-full max-w-5xl">
 						<p className="text-sm font-semibold uppercase tracking-widest text-[#8f9ecf] mb-6">Supported Enterprise Integrations</p>
-						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3.5">
 							{TOP_INVENTORY.map(inv => {
 								const isConnected = connectedInventories.includes(inv.id);
 								return (
