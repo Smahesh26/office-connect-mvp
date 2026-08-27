@@ -101,7 +101,7 @@ const initialForm: PlanForm = {
 
 export default function AdminDashboardPage() {
 	const router = useRouter();
-	const [activeTab, setActiveTab] = useState<"ANALYTICS" | "PLANS" | "CLIENTS" | "ORDER_HISTORY">("ANALYTICS");
+	const [activeTab, setActiveTab] = useState<"ANALYTICS" | "PLANS" | "CLIENTS" | "ORDER_HISTORY" | "GLOBAL_CATALOG">("ANALYTICS");
 	const [plans, setPlans] = useState<Plan[]>([]);
 	const [organizations, setOrganizations] = useState<Organization[]>([]);
 	const [analytics, setAnalytics] = useState<GlobalAnalytics | null>(null);
@@ -115,6 +115,30 @@ export default function AdminDashboardPage() {
 	const [message, setMessage] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
+
+	// Global Catalog & Category State
+	type GlobalCategory = { id: string; name: string; slug: string; icon: string; description: string; totalProducts: number };
+	type GlobalCatalogProduct = { id: string; title: string; category: string; vendorName: string; price: number; stock: number; sku: string; image: string };
+
+	const [categoriesState, setCategoriesState] = useState<GlobalCategory[]>([
+		{ id: "cat-1", name: "Beauty & Cosmetics", slug: "beauty-cosmetics", icon: "🌸", description: "Skincare, makeup, and organic cosmetics.", totalProducts: 12 },
+		{ id: "cat-2", name: "Enterprise Cloud & SaaS", slug: "cloud-saas", icon: "☁️", description: "Hosting, servers, and software licenses.", totalProducts: 8 },
+		{ id: "cat-3", name: "Hardware & IoT Devices", slug: "hardware-iot", icon: "⚡", description: "Controllers, sensors, and hardware.", totalProducts: 15 },
+		{ id: "cat-4", name: "Electronics & Gadgets", slug: "electronics", icon: "📱", description: "Smartphones, laptops, and accessories.", totalProducts: 24 },
+	]);
+
+	const [catalogProductsState, setCatalogProductsState] = useState<GlobalCatalogProduct[]>([
+		{ id: "p-101", title: "Organic Damask Rose Serum", category: "Beauty & Cosmetics", vendorName: "Glow Beauty Organics 🌸", price: 48.00, stock: 140, sku: "SKU-BEAUTY-01", image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80" },
+		{ id: "p-102", title: "Kubernetes Cloud Server Cluster", category: "Enterprise Cloud & SaaS", vendorName: "Acme Cloud Corp ☁️", price: 299.00, stock: 50, sku: "SKU-CLOUD-01", image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80" },
+	]);
+
+	const [newCatForm, setNewCatForm] = useState({ name: "", icon: "📦", description: "" });
+	const [newProdForm, setNewProdForm] = useState({ title: "", category: "Beauty & Cosmetics", vendorName: "Platform Store", price: "", stock: "100", sku: "", image: "", description: "" });
+	const [showAddCatModal, setShowAddCatModal] = useState(false);
+	const [showAddProdModal, setShowAddProdModal] = useState(false);
+	const [editingCategory, setEditingCategory] = useState<GlobalCategory | null>(null);
+	const [editingProduct, setEditingProduct] = useState<GlobalCatalogProduct | null>(null);
+
 	const [form, setForm] = useState<PlanForm>(initialForm);
 
 	const authContext = useMemo(() => {
