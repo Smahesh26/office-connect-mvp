@@ -84,6 +84,20 @@ function SidebarIcon({ label }: { label: string }) {
 	const common = "h-[18px] w-[18px] text-current";
 
 	switch (label) {
+		case "Marketplace Hub":
+		case "Marketplace Control Hub":
+		case "Marketplace & Storefronts":
+			return (
+				<svg viewBox="0 0 24 24" fill="none" className={common}>
+					<path d="M3 9l2-5h14l2 5M3 9v10a2 2 0 002 2h14a2 2 0 002-2V9M3 9h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+				</svg>
+			);
+		case "Category & Product Catalog":
+			return (
+				<svg viewBox="0 0 24 24" fill="none" className={common}>
+					<path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+				</svg>
+			);
 		case "Dashboard":
 		case "Client Dashboard":
 		case "Admin Dashboard":

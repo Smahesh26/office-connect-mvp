@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import WorkspaceShell from "../../components/WorkspaceShell";
 
@@ -100,8 +101,24 @@ const initialForm: PlanForm = {
 };
 
 export default function AdminDashboardPage() {
+	return (
+		<Suspense fallback={<div className="p-8 text-center text-xs font-bold text-zinc-500">Loading Admin Control Center...</div>}>
+			<AdminDashboardContent />
+		</Suspense>
+	);
+}
+
+function AdminDashboardContent() {
 	const router = useRouter();
-	const [activeTab, setActiveTab] = useState<"MARKETPLACE" | "GLOBAL_CATALOG" | "ANALYTICS" | "PLANS" | "CLIENTS" | "ORDER_HISTORY">("MARKETPLACE");
+	const searchParams = useSearchParams();
+	const initialTabParam = searchParams.get("tab") as "MARKETPLACE" | "GLOBAL_CATALOG" | "ANALYTICS" | "PLANS" | "CLIENTS" | "ORDER_HISTORY" | null;
+	const [activeTab, setActiveTab] = useState<"MARKETPLACE" | "GLOBAL_CATALOG" | "ANALYTICS" | "PLANS" | "CLIENTS" | "ORDER_HISTORY">(initialTabParam || "MARKETPLACE");
+
+	useEffect(() => {
+		if (initialTabParam) {
+			setActiveTab(initialTabParam);
+		}
+	}, [initialTabParam]);
 	const [plans, setPlans] = useState<Plan[]>([]);
 	const [organizations, setOrganizations] = useState<Organization[]>([]);
 	const [analytics, setAnalytics] = useState<GlobalAnalytics | null>(null);
