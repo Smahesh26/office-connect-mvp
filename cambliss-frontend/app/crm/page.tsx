@@ -3,53 +3,59 @@
 import { FormEvent, useEffect, useState, Suspense } from "react";
 import WorkspaceShell from "../../components/WorkspaceShell";
 
-type Bitrix24Lead = {
-	id: string;
-	title: string;
-	contactName: string;
-	companyName: string;
-	email: string;
-	phone: string;
-	source: "Web Chat" | "WhatsApp" | "Telegram" | "Email Campaign" | "Inbound Call";
-	score: number;
-	status: "NEW" | "CONTACTED" | "QUALIFIED" | "CONVERTED" | "UNQUALIFIED";
-	assignedTo: string;
-	createdDate: string;
+type CrmDashboard = {
+	totalLeads: number;
+	totalActiveDeals: number;
+	totalOpenDeals: number;
+	totalWonDeals: number;
+	openDealsValue: number;
+	wonDealsValue: number;
+	expectedRevenue: number;
+	conversionRate: number;
+	winRate: number;
 };
 
-type Bitrix24Deal = {
+type Lead = {
 	id: string;
-	title: string;
-	companyName: string;
-	contactName: string;
-	stage: "New Lead" | "Contacted" | "Proposal Sent" | "Negotiation" | "Closed Won" | "Closed Lost";
-	stageProbability: number;
+	contactId?: string;
+	firstName?: string;
+	lastName?: string;
+	companyName?: string;
+	email?: string;
+	phone?: string;
+	status?: string;
+	source?: string;
+	score?: number;
+};
+
+type Deal = {
+	id: string;
+	contactId: string;
+	pipelineId: string;
+	stageId: string;
+	status: string;
+	probability: number;
 	value: number;
-	assignedRep: string;
-	expectedCloseDate: string;
-	productsCount: number;
+	contact?: {
+		firstName?: string | null;
+		lastName?: string | null;
+		companyName?: string | null;
+		email?: string | null;
+	} | null;
 };
 
-type Bitrix24Quote = {
-	id: string;
-	quoteNumber: string;
-	clientName: string;
-	companyName: string;
-	amount: number;
-	status: "DRAFT" | "SENT" | "APPROVED" | "DECLINED";
-	createdDate: string;
-	expiryDate: string;
-};
-
-type ServiceTicket = {
+type ServiceCase = {
 	id: string;
 	subject: string;
-	clientName: string;
-	category: string;
 	priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 	status: "OPEN" | "IN_PROGRESS" | "RESOLVED";
-	assignedAgent: string;
-	slaRemainingHours: number;
+};
+
+type Campaign = {
+	id: string;
+	name: string;
+	segment: string;
+	status: "DRAFT" | "RUNNING" | "PAUSED" | "COMPLETED";
 };
 
 type CrmCardItem = {
@@ -63,21 +69,28 @@ type CrmCardItem = {
 	isConnected: boolean;
 };
 
+type SuiteTab =
+	| "overview"
+	| "customer360"
+	| "sales"
+	| "service"
+	| "marketing"
+	| "revenue"
+	| "analytics"
+	| "automation"
+	| "governance";
+
 export default function CrmPage() {
 	return (
-		<Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading 20 CRM Connectors & Bitrix24...</div>}>
+		<Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading Workspace CRM...</div>}>
 			<CrmContent />
 		</Suspense>
 	);
 }
 
 function CrmContent() {
-	const [activeTab, setActiveTab] = useState<"connectors" | "dashboard" | "pipeline" | "leads" | "quotes" | "tickets" | "api">("connectors");
-
-	// Bitrix24 Config State
-	const [bitrixServerUrl, setBitrixServerUrl] = useState("https://b24-open.theofficeconnect.com/rest/");
-	const [bitrixApiKey, setBitrixApiKey] = useState("b24_secret_webhook_key_2026");
-	const [bitrixStatus, setBitrixStatus] = useState<string | null>(null);
+	const [suiteTab, setSuiteTab] = useState<SuiteTab>("overview");
+	const [show3rdPartyGrid, setShow3rdPartyGrid] = useState(true);
 
 	// 20 Small Business CRM Integration Cards List
 	const [crmCards, setCrmCards] = useState<CrmCardItem[]>([
@@ -88,7 +101,7 @@ function CrmContent() {
 		{ id: "salesforce", name: "Salesforce Cloud", logo: "☁️", category: "Enterprise & SMB", badge: "ENTERPRISE", color: "bg-[#00a1e0]/10 text-[#00a1e0] border-[#00a1e0]/30", description: "Global lead routing, account management, and custom reporting dashboard.", isConnected: false },
 		{ id: "dynamics", name: "Microsoft Dynamics 365", logo: "💼", category: "Microsoft Ecosystem", badge: "MICROSOFT SYNC", color: "bg-[#002050]/10 text-[#002050] border-[#002050]/30", description: "Seamless integration with Outlook, Teams, and Office 365 workspace.", isConnected: false },
 		{ id: "monday", name: "Monday.com CRM", logo: "🗓️", category: "Visual Workflow", badge: "EASY SETUP", color: "bg-[#ff3d57]/10 text-[#ff3d57] border-[#ff3d57]/30", description: "Visual board pipeline management for team collaboration and project tracking.", isConnected: false },
-		{ id: "zendesk", name: "Zendesk Sell", logo: "🎧", category: "Support & Sales", badge: "SERVICE SYNC", color: "bg-[#03363d]/10 text-[#03363d] border-[#03363d]/30", description: "Connect sales conversations directly with customer support tickets.", isConnected: false },
+		{ id: "zendesk", name: "Zendesk Sell", logo: "🎧", category: "Support & Sales", badge: "SERVICE SYNC", color: "bg-[#03363d]/10 text-[#03363d] border-[#03363d]/20", description: "Connect sales conversations directly with customer support tickets.", isConnected: false },
 		{ id: "freshsales", name: "Freshsales CRM", logo: "🍃", category: "AI Powered Sales", badge: "AI CONTACTS", color: "bg-[#002b49]/10 text-[#002b49] border-[#002b49]/30", description: "AI-based lead scoring, built-in phone, and email activity tracking.", isConnected: false },
 		{ id: "activecampaign", name: "ActiveCampaign", logo: "✉️", category: "Email & Automation", badge: "CAMPAIGNS", color: "bg-[#356ae6]/10 text-[#356ae6] border-[#356ae6]/30", description: "Automated customer email journeys and CRM sales triggers.", isConnected: false },
 		{ id: "keap", name: "Keap (Infusionsoft)", logo: "🌱", category: "Small Business Suite", badge: "SME AUTOMATION", color: "bg-[#00b274]/10 text-[#00b274] border-[#00b274]/30", description: "All-in-one CRM, email marketing, and invoicing for entrepreneurs.", isConnected: false },
@@ -109,20 +122,47 @@ function CrmContent() {
 	const [modalWebhookUrl, setModalWebhookUrl] = useState("");
 	const [connectionMsg, setConnectionMsg] = useState<string | null>(null);
 
-	// Leads & Deals Mock Data
-	const [leads, setLeads] = useState<Bitrix24Lead[]>([
-		{ id: "lead-101", title: "Enterprise Cloud Hosting Deal", contactName: "Marcus Vance", companyName: "Apex Logistics GmbH", email: "mvance@apexlogistics.de", phone: "+49 89 1234567", source: "WhatsApp", score: 85, status: "QUALIFIED", assignedTo: "Sarah Jenkins", createdDate: "2026-08-20" },
-		{ id: "lead-102", title: "Security SSO & IAM Licensing", contactName: "Elena Rostova", companyName: "FinTech Global AG", email: "elena@fintechglobal.com", phone: "+41 44 9876543", source: "Web Chat", score: 92, status: "NEW", assignedTo: "David Miller", createdDate: "2026-08-22" },
+	// Built-in CRM Datasets
+	const [dashboard, setDashboard] = useState<CrmDashboard>({
+		totalLeads: 14,
+		totalActiveDeals: 6,
+		totalOpenDeals: 4,
+		totalWonDeals: 2,
+		openDealsValue: 28300.00,
+		wonDealsValue: 14900.00,
+		expectedRevenue: 32000.00,
+		conversionRate: 42.5,
+		winRate: 33.3,
+	});
+
+	const [leads, setLeads] = useState<Lead[]>([
+		{ id: "lead-1", firstName: "Marcus", lastName: "Vance", companyName: "Apex Logistics GmbH", email: "mvance@apexlogistics.de", phone: "+49 89 1234567", status: "QUALIFIED", source: "WhatsApp", score: 85 },
+		{ id: "lead-2", firstName: "Elena", lastName: "Rostova", companyName: "FinTech Global AG", email: "elena@fintechglobal.com", phone: "+41 44 9876543", status: "NEW", source: "Web Chat", score: 92 },
+		{ id: "lead-3", firstName: "Kenji", lastName: "Sato", companyName: "Sato Manufacturing Corp", email: "sato@satomanufacturing.jp", phone: "+81 3 5555 0192", status: "CONTACTED", source: "Inbound Call", score: 78 },
 	]);
 
-	const [deals, setDeals] = useState<Bitrix24Deal[]>([
-		{ id: "deal-201", title: "Kubernetes Cluster Annual SLA", companyName: "Apex Logistics GmbH", contactName: "Marcus Vance", stage: "Proposal Sent", stageProbability: 75, value: 14900.00, assignedRep: "Sarah Jenkins", expectedCloseDate: "2026-09-15", productsCount: 2 },
-		{ id: "deal-202", title: "Zero-Trust IAM Platform 200 Seats", companyName: "FinTech Global AG", contactName: "Elena Rostova", stage: "Negotiation", stageProbability: 90, value: 8900.00, assignedRep: "David Miller", expectedCloseDate: "2026-09-01", productsCount: 1 },
+	const [deals, setDeals] = useState<Deal[]>([
+		{ id: "deal-1", contactId: "c-1", pipelineId: "p-1", stageId: "stg-3", status: "OPEN", probability: 75, value: 14900.00, contact: { firstName: "Marcus", lastName: "Vance", companyName: "Apex Logistics GmbH", email: "mvance@apexlogistics.de" } },
+		{ id: "deal-2", contactId: "c-2", pipelineId: "p-1", stageId: "stg-4", status: "OPEN", probability: 90, value: 8900.00, contact: { firstName: "Elena", lastName: "Rostova", companyName: "FinTech Global AG", email: "elena@fintechglobal.com" } },
 	]);
 
-	const [quotes, setQuotes] = useState<Bitrix24Quote[]>([
-		{ id: "q-301", quoteNumber: "QUO-2026-0891", clientName: "Marcus Vance", companyName: "Apex Logistics GmbH", amount: 14900.00, status: "SENT", createdDate: "2026-08-21", expiryDate: "2026-09-20" },
+	const [serviceCases, setServiceCases] = useState<ServiceCase[]>([
+		{ id: "sc-1", subject: "SAML SSO Authentication Issue", priority: "HIGH", status: "IN_PROGRESS" },
+		{ id: "sc-2", subject: "Kubernetes Cluster Capacity Expansion", priority: "MEDIUM", status: "OPEN" },
 	]);
+
+	const [campaigns, setCampaigns] = useState<Campaign[]>([
+		{ id: "cmp-1", name: "Q3 Enterprise Security Blast", segment: "Email Broadcast", status: "COMPLETED" },
+		{ id: "cmp-2", name: "WhatsApp B2B Wholesale Deal", segment: "WhatsApp Broadcast", status: "RUNNING" },
+	]);
+
+	// Lead Form Modal State
+	const [showLeadModal, setShowLeadModal] = useState(false);
+	const [lFirst, setLFirst] = useState("");
+	const [lLast, setLLast] = useState("");
+	const [lEmail, setLEmail] = useState("");
+	const [lPhone, setLPhone] = useState("");
+	const [lCompany, setLCompany] = useState("");
 
 	const handleSaveCrmConnection = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -132,7 +172,7 @@ function CrmContent() {
 			prev.map((card) => (card.id === activeCrmModal.id ? { ...card, isConnected: true } : card))
 		);
 
-		setConnectionMsg(`✅ Successfully Connected ${activeCrmModal.name}! Webhook & API sync enabled.`);
+		setConnectionMsg(`✅ Connected ${activeCrmModal.name}! Webhook & Lead Sync Enabled.`);
 		setTimeout(() => {
 			setActiveCrmModal(null);
 			setConnectionMsg(null);
@@ -145,86 +185,94 @@ function CrmContent() {
 		);
 	};
 
-	const totalPipelineValue = deals.reduce((sum, d) => sum + d.value, 0);
+	const handleAddLead = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!lFirst || !lEmail) return;
+
+		const newL: Lead = {
+			id: `lead-${Date.now()}`,
+			firstName: lFirst,
+			lastName: lLast,
+			email: lEmail,
+			phone: lPhone,
+			companyName: lCompany || "Independent",
+			status: "NEW",
+			source: "Manual Entry",
+			score: 80,
+		};
+
+		setLeads((prev) => [newL, ...prev]);
+		setShowLeadModal(false);
+		setLFirst("");
+		setLLast("");
+		setLEmail("");
+	};
 
 	return (
 		<WorkspaceShell>
-			<div className="mt-5 mx-auto max-w-7xl space-y-6">
+			<div className="mt-5 mx-auto max-w-7xl space-y-8">
 				{/* Top Hero Banner */}
 				<div className="rounded-3xl border border-[#d9e2ef] bg-gradient-to-r from-white via-[#f8faff] to-[#eef2fa] p-8 shadow-sm">
 					<div className="flex flex-wrap items-center justify-between gap-6">
 						<div className="max-w-3xl space-y-3">
 							<div className="flex items-center gap-3 flex-wrap">
 								<span className="rounded-full bg-[#6678c1] px-3 py-1 text-xs font-bold text-white shadow-sm">
-									⚡ 20 CRM Suite & Bitrix24 Integration Hub
+									⚡ 3rd Party CRM Integrations & Bitrix24
 								</span>
 								<span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 border border-emerald-200">
-									Designed for Small Businesses & SMEs
+									Built for Small Businesses & Enterprises
 								</span>
 							</div>
 							<h1 className="text-2xl font-black tracking-tight text-[#1f2430]">
-								20 CRM Connectors Hub & Bitrix24 Platform
+								CRM Suite & 20 Third-Party CRM Connectors
 							</h1>
 							<p className="text-xs text-[#5b6472] leading-relaxed">
-								Easily connect your small business CRM tools with 1-click integrations. Sync Bitrix24, HubSpot, Zoho, Pipedrive, Salesforce, Monday.com, and 14 open-source CRMs directly into your workspace.
+								Connect third-party CRMs (Bitrix24, HubSpot, Zoho, Salesforce, Monday, Pipedrive) or manage your leads, sales deals, customer support cases, quotes, and campaigns natively in your workspace.
 							</p>
 						</div>
 
 						<div className="flex items-center gap-3">
 							<button
-								onClick={() => setActiveTab("connectors")}
+								onClick={() => setShowLeadModal(true)}
 								className="rounded-2xl bg-[#6678c1] px-5 py-3 text-xs font-bold text-white shadow-lg hover:bg-[#404d85] transition"
 							>
-								🔗 Browse 20 CRM Connectors
+								+ New Lead Entry
 							</button>
 						</div>
 					</div>
 				</div>
 
-				{/* Top Sub-Tab Navigation */}
-				<div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#d9e2ef] bg-white p-2 shadow-sm">
-					{[
-						{ id: "connectors", label: `🔗 20 CRM Integrations (${crmCards.filter(c => c.isConnected).length} Connected)` },
-						{ id: "dashboard", label: "📊 Bitrix24 CRM Dashboard" },
-						{ id: "pipeline", label: "💼 Deal Pipeline" },
-						{ id: "leads", label: `👤 Leads Directory (${leads.length})` },
-						{ id: "quotes", label: `📝 Quotes (${quotes.length})` },
-						{ id: "api", label: "⚡ Bitrix24 REST API & Webhooks" },
-					].map((tab) => (
-						<button
-							key={tab.id}
-							onClick={() => setActiveTab(tab.id as any)}
-							className={`rounded-xl px-4 py-2.5 text-xs font-bold transition ${
-								activeTab === tab.id
-									? "bg-[#6678c1] text-white shadow-sm"
-									: "text-[#5b6472] hover:bg-[#f8faff] hover:text-[#1f2430]"
-							}`}
-						>
-							{tab.label}
-						</button>
-					))}
-				</div>
-
-				{/* TAB 1: 20 CRM INTEGRATIONS GRID FOR SMALL BUSINESSES */}
-				{activeTab === "connectors" && (
-					<div className="space-y-6">
-						<div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-sm">
-							<div>
-								<h2 className="text-lg font-bold text-[#1f2430]">🔌 20 Top CRM Connectors for Small Businesses</h2>
-								<p className="text-xs text-[#5b6472]">Click any CRM card to configure 1-click API key connection & automated lead synchronization</p>
+				{/* SECTION 1: 3RD PARTY CRM CONNECTORS GRID (FIRST) */}
+				<div className="space-y-4 rounded-3xl border border-[#d9e2ef] bg-white p-6 shadow-sm">
+					<div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#d9e2ef] pb-4">
+						<div>
+							<div className="flex items-center gap-2">
+								<h2 className="text-lg font-black text-[#1f2430]">
+									🔌 Third-Party CRM Connectors & Bitrix24 ({crmCards.length} Tools)
+								</h2>
+								<span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-extrabold text-blue-800 uppercase">
+									1-CLICK CONNECT FOR SMALL BUSINESS
+								</span>
 							</div>
-
-							<div className="flex items-center gap-2 text-xs font-bold text-[#6678c1]">
-								<span>Connected CRMs: {crmCards.filter((c) => c.isConnected).length} of 20</span>
-							</div>
+							<p className="text-xs text-[#5b6472] mt-0.5">
+								Connect external CRMs to sync contacts, leads, deals, and automated webhooks directly into your workspace.
+							</p>
 						</div>
 
-						{/* 20 CRM Cards Grid */}
-						<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+						<button
+							onClick={() => setShow3rdPartyGrid(!show3rdPartyGrid)}
+							className="text-xs font-bold text-[#6678c1] hover:underline"
+						>
+							{show3rdPartyGrid ? "Hide Connector Cards ▲" : "Show 20 CRM Connector Cards ▼"}
+						</button>
+					</div>
+
+					{show3rdPartyGrid && (
+						<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 pt-2">
 							{crmCards.map((crm) => (
 								<div
 									key={crm.id}
-									className="group rounded-3xl border border-[#d9e2ef] bg-white p-6 shadow-sm flex flex-col justify-between space-y-4 hover:border-[#6678c1] hover:shadow-md transition duration-200"
+									className="group rounded-2xl border border-[#d9e2ef] bg-[#f8faff] p-5 shadow-sm flex flex-col justify-between space-y-4 hover:border-[#6678c1] hover:bg-white hover:shadow-md transition duration-200"
 								>
 									<div className="space-y-3">
 										<div className="flex items-center justify-between">
@@ -235,7 +283,7 @@ function CrmContent() {
 										</div>
 
 										<div>
-											<h3 className="text-base font-bold text-[#1f2430] group-hover:text-[#6678c1] transition">
+											<h3 className="text-sm font-bold text-[#1f2430] group-hover:text-[#6678c1] transition">
 												{crm.name}
 											</h3>
 											<div className="text-[11px] font-semibold text-[#6678c1]">{crm.category}</div>
@@ -246,8 +294,8 @@ function CrmContent() {
 										</p>
 									</div>
 
-									<div className="pt-3 border-t border-[#d9e2ef] flex items-center justify-between">
-										<span className={`text-[11px] font-bold ${crm.isConnected ? "text-emerald-600" : "text-[#5b6472]"}`}>
+									<div className="pt-3 border-t border-[#d9e2ef] flex items-center justify-between text-xs">
+										<span className={`font-bold ${crm.isConnected ? "text-emerald-600" : "text-[#5b6472]"}`}>
 											{crm.isConnected ? "✅ Connected" : "Not Connected"}
 										</span>
 
@@ -261,145 +309,212 @@ function CrmContent() {
 													setModalWebhookUrl("");
 												}
 											}}
-											className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+											className={`rounded-xl px-3 py-1.5 font-bold transition ${
 												crm.isConnected
 													? "bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100"
 													: "bg-[#6678c1] text-white hover:bg-[#404d85] shadow-sm"
 											}`}
 										>
-											{crm.isConnected ? "Disconnect" : "Connect CRM →"}
+											{crm.isConnected ? "Disconnect" : "Connect →"}
 										</button>
 									</div>
 								</div>
 							))}
 						</div>
-					</div>
-				)}
+					)}
+				</div>
 
-				{/* TAB 2: DASHBOARD */}
-				{activeTab === "dashboard" && (
-					<div className="space-y-6">
-						<div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-							<div className="rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-sm space-y-2">
-								<div className="text-xs font-bold text-[#5b6472]">Total Pipeline Value</div>
-								<div className="text-2xl font-black text-[#1f2430]">${totalPipelineValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
-								<div className="text-[11px] text-emerald-600 font-semibold">{deals.length} Active Deals</div>
-							</div>
-
-							<div className="rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-sm space-y-2">
-								<div className="text-xs font-bold text-[#5b6472]">Total Leads Recorded</div>
-								<div className="text-2xl font-black text-[#6678c1]">{leads.length} Leads</div>
-								<div className="text-[11px] text-[#5b6472] font-semibold">Captured via Connected CRMs</div>
-							</div>
-
-							<div className="rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-sm space-y-2">
-								<div className="text-xs font-bold text-[#5b6472]">Bitrix24 REST Status</div>
-								<div className="text-2xl font-black text-emerald-600">Active 200 OK</div>
-								<div className="text-[11px] text-[#5b6472] font-semibold">Webhooks Ready</div>
-							</div>
+				{/* SECTION 2: OUR BUILT-IN WORKSPACE CRM SUITE (NEXT) */}
+				<div className="space-y-6 rounded-3xl border border-[#d9e2ef] bg-white p-6 shadow-sm">
+					<div className="flex items-center justify-between border-b border-[#d9e2ef] pb-4">
+						<div>
+							<h2 className="text-lg font-black text-[#1f2430]">📊 Our Native Workspace CRM Suite</h2>
+							<p className="text-xs text-[#5b6472]">Full customer lifecycle management: Leads, Deals Pipeline, Service Cases, Marketing & Revenue Ops</p>
 						</div>
 					</div>
-				)}
 
-				{/* TAB 3: PIPELINE */}
-				{activeTab === "pipeline" && (
-					<div className="space-y-6">
-						<div className="rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-sm">
-							<h2 className="text-lg font-bold text-[#1f2430]">💼 Deal Stage Pipeline</h2>
-							<div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-								{deals.map((d) => (
-									<div key={d.id} className="rounded-2xl border border-[#d9e2ef] p-4 bg-[#f8faff] space-y-2">
-										<div className="font-bold text-[#1f2430]">{d.title}</div>
-										<div className="text-xs text-[#5b6472]">{d.companyName}</div>
-										<div className="text-xs font-bold text-[#6678c1]">Stage: {d.stage} ({d.stageProbability}%)</div>
-										<div className="text-sm font-black text-emerald-600">${d.value.toLocaleString()}</div>
+					{/* 9 Suite Navigation Tabs */}
+					<div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-[#d9e2ef] bg-[#f8faff] p-2 shadow-inner">
+						{[
+							{ id: "overview", label: "📊 Overview" },
+							{ id: "customer360", label: "👥 Customer 360" },
+							{ id: "sales", label: `💼 Sales Execution (${deals.length} Deals)` },
+							{ id: "service", label: `🎧 Service & Support (${serviceCases.length})` },
+							{ id: "marketing", label: `📢 Marketing CRM (${campaigns.length})` },
+							{ id: "revenue", label: "💰 Revenue Ops & Billing" },
+							{ id: "analytics", label: "📈 Analytics & Win/Loss" },
+							{ id: "automation", label: "⚡ Workflow Automation" },
+							{ id: "governance", label: "⚙️ Admin & Governance" },
+						].map((tab) => (
+							<button
+								key={tab.id}
+								onClick={() => setSuiteTab(tab.id as SuiteTab)}
+								className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${
+									suiteTab === tab.id
+										? "bg-[#6678c1] text-white shadow-sm"
+										: "text-[#5b6472] hover:bg-white hover:text-[#1f2430]"
+								}`}
+							>
+								{tab.label}
+							</button>
+						))}
+					</div>
+
+					{/* TAB: OVERVIEW */}
+					{suiteTab === "overview" && (
+						<div className="space-y-6">
+							<div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+								<div className="rounded-2xl border border-[#d9e2ef] p-6 bg-[#f8faff] space-y-2">
+									<div className="text-xs font-bold text-[#5b6472]">Open Pipeline Value</div>
+									<div className="text-2xl font-black text-[#1f2430]">${dashboard.openDealsValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
+									<div className="text-[11px] text-emerald-600 font-bold">{dashboard.totalOpenDeals} Active Open Deals</div>
+								</div>
+
+								<div className="rounded-2xl border border-[#d9e2ef] p-6 bg-[#f8faff] space-y-2">
+									<div className="text-xs font-bold text-[#5b6472]">Closed Won Revenue</div>
+									<div className="text-2xl font-black text-emerald-600">${dashboard.wonDealsValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</div>
+									<div className="text-[11px] text-[#5b6472] font-semibold">{dashboard.totalWonDeals} Deals Closed Won</div>
+								</div>
+
+								<div className="rounded-2xl border border-[#d9e2ef] p-6 bg-[#f8faff] space-y-2">
+									<div className="text-xs font-bold text-[#5b6472]">Lead Win Conversion Rate</div>
+									<div className="text-2xl font-black text-[#6678c1]">{dashboard.conversionRate}%</div>
+									<div className="text-[11px] text-[#5b6472] font-semibold">Lead to Customer Ratio</div>
+								</div>
+							</div>
+
+							{/* Recent Leads */}
+							<div className="overflow-hidden rounded-2xl border border-[#d9e2ef]">
+								<div className="p-4 bg-[#f8faff] border-b border-[#d9e2ef] flex justify-between items-center">
+									<h3 className="text-sm font-bold text-[#1f2430]">Recorded Leads & Prospects ({leads.length})</h3>
+									<button onClick={() => setShowLeadModal(true)} className="text-xs font-bold text-[#6678c1] hover:underline">+ Add Lead</button>
+								</div>
+								<table className="w-full text-left text-xs">
+									<thead className="border-b border-[#d9e2ef] bg-[#f8faff] text-[#5b6472]">
+										<tr>
+											<th className="p-3 font-semibold">Name</th>
+											<th className="p-3 font-semibold">Company</th>
+											<th className="p-3 font-semibold">Email / Phone</th>
+											<th className="p-3 font-semibold">Source</th>
+											<th className="p-3 font-semibold">Status</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-[#d9e2ef]">
+										{leads.map((l) => (
+											<tr key={l.id} className="hover:bg-[#f8faff]">
+												<td className="p-3 font-bold text-[#1f2430]">{l.firstName} {l.lastName}</td>
+												<td className="p-3 text-[#5b6472]">{l.companyName}</td>
+												<td className="p-3 text-[#5b6472]">{l.email} | {l.phone}</td>
+												<td className="p-3 font-semibold text-[#6678c1]">{l.source}</td>
+												<td className="p-3">
+													<span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 uppercase">
+														{l.status}
+													</span>
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						</div>
+					)}
+
+					{/* TAB: CUSTOMER 360 */}
+					{suiteTab === "customer360" && (
+						<div className="space-y-4">
+							<h3 className="text-sm font-bold text-[#1f2430]">👥 Customer 360 Directory</h3>
+							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+								{leads.map((l) => (
+									<div key={l.id} className="rounded-2xl border border-[#d9e2ef] p-4 bg-[#f8faff] space-y-1">
+										<div className="font-bold text-[#1f2430]">{l.firstName} {l.lastName}</div>
+										<div className="text-xs text-[#5b6472]">{l.companyName} ({l.email})</div>
+										<div className="text-xs font-bold text-[#6678c1]">Lead Source: {l.source} • Score: {l.score}/100</div>
 									</div>
 								))}
 							</div>
 						</div>
-					</div>
-				)}
+					)}
 
-				{/* TAB 4: LEADS */}
-				{activeTab === "leads" && (
-					<div className="space-y-6">
-						<div className="overflow-hidden rounded-2xl border border-[#d9e2ef] bg-white shadow-sm">
-							<table className="w-full text-left text-xs">
-								<thead className="border-b border-[#d9e2ef] bg-[#f8faff] text-[#5b6472]">
-									<tr>
-										<th className="p-3 font-semibold">Lead Title</th>
-										<th className="p-3 font-semibold">Contact</th>
-										<th className="p-3 font-semibold">Source</th>
-										<th className="p-3 font-semibold">Score</th>
-										<th className="p-3 font-semibold">Assigned Rep</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-[#d9e2ef]">
-									{leads.map((l) => (
-										<tr key={l.id}>
-											<td className="p-3 font-bold text-[#1f2430]">{l.title}</td>
-											<td className="p-3 text-[#5b6472]">{l.contactName} ({l.companyName})</td>
-											<td className="p-3 font-semibold text-[#6678c1]">{l.source}</td>
-											<td className="p-3 font-black text-amber-500">{l.score}</td>
-											<td className="p-3 text-[#5b6472]">{l.assignedTo}</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				)}
-
-				{/* TAB 5: QUOTES */}
-				{activeTab === "quotes" && (
-					<div className="space-y-6">
-						<div className="overflow-hidden rounded-2xl border border-[#d9e2ef] bg-white shadow-sm">
-							<table className="w-full text-left text-xs">
-								<thead className="border-b border-[#d9e2ef] bg-[#f8faff] text-[#5b6472]">
-									<tr>
-										<th className="p-3 font-semibold">Quote #</th>
-										<th className="p-3 font-semibold">Client</th>
-										<th className="p-3 font-semibold">Amount ($)</th>
-										<th className="p-3 font-semibold">Status</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-[#d9e2ef]">
-									{quotes.map((q) => (
-										<tr key={q.id}>
-											<td className="p-3 font-bold text-[#6678c1]">{q.quoteNumber}</td>
-											<td className="p-3 text-[#5b6472]">{q.clientName}</td>
-											<td className="p-3 font-bold text-[#1f2430]">${q.amount.toLocaleString()}</td>
-											<td className="p-3 font-bold text-emerald-600">{q.status}</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				)}
-
-				{/* TAB 6: BITRIX24 API */}
-				{activeTab === "api" && (
-					<div className="space-y-6">
-						<div className="rounded-2xl border border-[#d9e2ef] bg-white p-6 shadow-sm space-y-4">
-							<h2 className="text-lg font-bold text-[#1f2430]">⚡ Bitrix24 REST API & Webhook Configuration</h2>
-							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-xs">
-								<div>
-									<label className="block font-semibold text-[#5b6472]">Bitrix24 REST Endpoint URL</label>
-									<input type="text" value={bitrixServerUrl} onChange={(e) => setBitrixServerUrl(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 font-mono text-xs" />
-								</div>
-								<div>
-									<label className="block font-semibold text-[#5b6472]">Bitrix24 Secret Token</label>
-									<input type="password" value={bitrixApiKey} onChange={(e) => setBitrixApiKey(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2.5 font-mono text-xs" />
-								</div>
+					{/* TAB: SALES EXECUTION */}
+					{suiteTab === "sales" && (
+						<div className="space-y-4">
+							<h3 className="text-sm font-bold text-[#1f2430]">💼 Active Deals Pipeline</h3>
+							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+								{deals.map((d) => (
+									<div key={d.id} className="rounded-2xl border border-[#d9e2ef] p-4 bg-[#f8faff] space-y-2">
+										<div className="font-bold text-[#1f2430]">{d.contact?.companyName || "Corporate Deal"}</div>
+										<div className="text-xs text-[#5b6472]">Contact: {d.contact?.email}</div>
+										<div className="flex justify-between items-center text-xs">
+											<span className="font-black text-emerald-600">${d.value.toLocaleString()}</span>
+											<span className="font-bold text-[#6678c1]">{d.probability}% Probability</span>
+										</div>
+									</div>
+								))}
 							</div>
-							<button onClick={() => setBitrixStatus("✅ Bitrix24 REST API Gateway Connected!")} className="rounded-xl bg-[#6678c1] px-4 py-2 text-xs font-bold text-white">
-								Test Gateway Ping
-							</button>
-							{bitrixStatus && <div className="text-xs font-bold text-emerald-600">{bitrixStatus}</div>}
 						</div>
-					</div>
-				)}
+					)}
+
+					{/* TAB: SERVICE & SUPPORT */}
+					{suiteTab === "service" && (
+						<div className="space-y-4">
+							<h3 className="text-sm font-bold text-[#1f2430]">🎧 Customer Service Support Cases</h3>
+							<div className="space-y-2">
+								{serviceCases.map((c) => (
+									<div key={c.id} className="flex justify-between items-center rounded-xl border border-[#d9e2ef] p-3 bg-[#f8faff] text-xs">
+										<span className="font-bold text-[#1f2430]">{c.subject}</span>
+										<span className="font-bold text-amber-600">Priority: {c.priority} • Status: {c.status}</span>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
+
+					{/* TAB: MARKETING CRM */}
+					{suiteTab === "marketing" && (
+						<div className="space-y-4">
+							<h3 className="text-sm font-bold text-[#1f2430]">📢 Marketing Broadcast Campaigns</h3>
+							<div className="space-y-2">
+								{campaigns.map((cmp) => (
+									<div key={cmp.id} className="flex justify-between items-center rounded-xl border border-[#d9e2ef] p-3 bg-[#f8faff] text-xs">
+										<span className="font-bold text-[#1f2430]">{cmp.name}</span>
+										<span className="font-bold text-[#6678c1]">{cmp.segment} • {cmp.status}</span>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
+
+					{/* TAB: REVENUE OPS */}
+					{suiteTab === "revenue" && (
+						<div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-900">
+							💰 Accountech ERP Ledger Sync Enabled — CRM quotes and won deals synchronize automatically with /akaunting.
+						</div>
+					)}
+
+					{/* TAB: ANALYTICS & AI */}
+					{suiteTab === "analytics" && (
+						<div className="p-4 rounded-xl bg-[#f8faff] border border-[#d9e2ef] text-xs space-y-2">
+							<div className="font-bold text-[#1f2430]">📈 Pipeline Velocity & AI Win/Loss Analytics</div>
+							<div className="text-[#5b6472]">Average deal cycle time: 18 days • Projected Q3 Revenue: ${dashboard.expectedRevenue.toLocaleString()}</div>
+						</div>
+					)}
+
+					{/* TAB: WORKFLOW AUTOMATION */}
+					{suiteTab === "automation" && (
+						<div className="p-4 rounded-xl bg-[#f8faff] border border-[#d9e2ef] text-xs space-y-2">
+							<div className="font-bold text-[#1f2430]">⚡ Automated Robotic Workflows (RPA)</div>
+							<div className="text-emerald-600 font-semibold">Active Rules: Auto-email follow-up on proposal stage • Slack notification on deal closure.</div>
+						</div>
+					)}
+
+					{/* TAB: ADMIN & GOVERNANCE */}
+					{suiteTab === "governance" && (
+						<div className="p-4 rounded-xl bg-[#f8faff] border border-[#d9e2ef] text-xs space-y-2">
+							<div className="font-bold text-[#1f2430]">⚙️ RBAC Permissions & Sales Team Governance</div>
+							<div className="text-[#5b6472]">Role-based access control, audit log retention, and data backup settings.</div>
+						</div>
+					)}
+				</div>
 			</div>
 
 			{/* CONNECT CRM MODAL */}
@@ -423,7 +538,7 @@ function CrmContent() {
 
 						<form onSubmit={handleSaveCrmConnection} className="space-y-3 text-xs">
 							<div>
-								<label className="block font-semibold text-[#5b6472]">{activeCrmModal.name} API Key / Access Token *</label>
+								<label className="block font-semibold text-[#5b6472]">{activeCrmModal.name} API Key / Secret Token *</label>
 								<input
 									type="password"
 									placeholder="e.g. crm_live_secret_key_88921"
@@ -458,6 +573,37 @@ function CrmContent() {
 								<button type="submit" className="rounded-xl bg-[#6678c1] px-5 py-2 font-bold text-white shadow-md">
 									Save & Connect {activeCrmModal.name}
 								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			)}
+
+			{/* CREATE LEAD MODAL */}
+			{showLeadModal && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+					<div className="w-full max-w-md rounded-3xl border border-[#d9e2ef] bg-white p-6 shadow-2xl space-y-4">
+						<h3 className="text-base font-bold text-[#1f2430]">Add New Prospect Lead</h3>
+						<form onSubmit={handleAddLead} className="space-y-3 text-xs">
+							<div>
+								<label className="block font-semibold text-[#5b6472]">First Name *</label>
+								<input type="text" placeholder="Marcus" value={lFirst} onChange={(e) => setLFirst(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
+							</div>
+							<div>
+								<label className="block font-semibold text-[#5b6472]">Last Name</label>
+								<input type="text" placeholder="Vance" value={lLast} onChange={(e) => setLLast(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+							</div>
+							<div>
+								<label className="block font-semibold text-[#5b6472]">Email Address *</label>
+								<input type="email" placeholder="mvance@apex.de" value={lEmail} onChange={(e) => setLEmail(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" required />
+							</div>
+							<div>
+								<label className="block font-semibold text-[#5b6472]">Company Name</label>
+								<input type="text" placeholder="Apex Logistics GmbH" value={lCompany} onChange={(e) => setLCompany(e.target.value)} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-2 text-xs" />
+							</div>
+							<div className="flex justify-end gap-2 pt-2 border-t border-[#d9e2ef]">
+								<button type="button" onClick={() => setShowLeadModal(false)} className="rounded-xl border border-[#d9e2ef] px-4 py-2">Cancel</button>
+								<button type="submit" className="rounded-xl bg-[#6678c1] px-5 py-2 font-bold text-white shadow-md">Save Lead</button>
 							</div>
 						</form>
 					</div>
