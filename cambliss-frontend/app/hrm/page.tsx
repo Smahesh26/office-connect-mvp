@@ -311,6 +311,9 @@ const IMPORT_MODULE_FIELDS = {
 };
 
 const TOP_HRMS = [
+	{ id: "orangehrm", name: "OrangeHRM", color: "bg-orange-50 text-orange-600 border-orange-200", logo: "🟧" },
+	{ id: "icehrm", name: "IceHRM", color: "bg-sky-50 text-sky-600 border-sky-200", logo: "🧊" },
+	{ id: "frappehrm", name: "Frappe HR", color: "bg-blue-50 text-blue-600 border-blue-200", logo: "☕" },
 	{ id: "workday", name: "Workday", color: "bg-[#005cb9]/10 text-[#005cb9] border-[#005cb9]/20", logo: "🌤️" },
 	{ id: "bamboohr", name: "BambooHR", color: "bg-[#91c11e]/10 text-[#91c11e] border-[#91c11e]/20", logo: "🐼" },
 	{ id: "gusto", name: "Gusto", color: "bg-[#f45d48]/10 text-[#f45d48] border-[#f45d48]/20", logo: "🍃" },
@@ -1674,7 +1677,7 @@ export default function HrmPage() {
 					{/* Top 10 HRM Grid */}
 					<div className="mt-10 w-full max-w-5xl">
 						<p className="text-sm font-semibold uppercase tracking-widest text-[#8f9ecf] mb-6">Supported Enterprise Integrations</p>
-						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3.5">
 							{TOP_HRMS.map(hrm => {
 								const isConnected = connectedHrms.includes(hrm.id);
 								return (
