@@ -101,7 +101,7 @@ const initialForm: PlanForm = {
 
 export default function AdminDashboardPage() {
 	const router = useRouter();
-	const [activeTab, setActiveTab] = useState<"ANALYTICS" | "PLANS" | "CLIENTS" | "ORDER_HISTORY" | "GLOBAL_CATALOG">("ANALYTICS");
+	const [activeTab, setActiveTab] = useState<"MARKETPLACE" | "GLOBAL_CATALOG" | "ANALYTICS" | "PLANS" | "CLIENTS" | "ORDER_HISTORY">("MARKETPLACE");
 	const [plans, setPlans] = useState<Plan[]>([]);
 	const [organizations, setOrganizations] = useState<Organization[]>([]);
 	const [analytics, setAnalytics] = useState<GlobalAnalytics | null>(null);
@@ -415,30 +415,42 @@ export default function AdminDashboardPage() {
 					<h1 className="text-2xl font-semibold">Platform Management</h1>
 					<p className="mt-1 text-sm text-zinc-600">Super Admin control center for managing clients and subscription plans.</p>
 					
-					<div className="mt-5 flex gap-4 border-b border-zinc-200 pb-2 overflow-x-auto">
+					<div className="mt-5 flex gap-2 border-b border-zinc-200 pb-2 overflow-x-auto">
+						<button
+							onClick={() => setActiveTab("MARKETPLACE")}
+							className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === "MARKETPLACE" ? "bg-[#404d85] text-white shadow-md" : "text-zinc-600 hover:bg-zinc-100"}`}
+						>
+							🛍️ Multi-Vendor Marketplace Hub
+						</button>
+						<button
+							onClick={() => setActiveTab("GLOBAL_CATALOG")}
+							className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === "GLOBAL_CATALOG" ? "bg-[#404d85] text-white shadow-md" : "text-zinc-600 hover:bg-zinc-100"}`}
+						>
+							📦 Categories & Products
+						</button>
 						<button
 							onClick={() => setActiveTab("ANALYTICS")}
-							className={`text-sm font-semibold pb-2 border-b-2 whitespace-nowrap transition ${activeTab === "ANALYTICS" ? "border-brand-strong text-brand-strong" : "border-transparent text-zinc-500 hover:text-zinc-800"}`}
+							className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === "ANALYTICS" ? "bg-[#404d85] text-white shadow-md" : "text-zinc-600 hover:bg-zinc-100"}`}
 						>
-							Global Analytics
+							📊 Platform Analytics
 						</button>
 						<button
 							onClick={() => setActiveTab("PLANS")}
-							className={`text-sm font-semibold pb-2 border-b-2 whitespace-nowrap transition ${activeTab === "PLANS" ? "border-brand-strong text-brand-strong" : "border-transparent text-zinc-500 hover:text-zinc-800"}`}
+							className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === "PLANS" ? "bg-[#404d85] text-white shadow-md" : "text-zinc-600 hover:bg-zinc-100"}`}
 						>
-							Pricing Plans
+							💳 Pricing Plans
 						</button>
 						<button
 							onClick={() => setActiveTab("CLIENTS")}
-							className={`text-sm font-semibold pb-2 border-b-2 whitespace-nowrap transition ${activeTab === "CLIENTS" ? "border-brand-strong text-brand-strong" : "border-transparent text-zinc-500 hover:text-zinc-800"}`}
+							className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === "CLIENTS" ? "bg-[#404d85] text-white shadow-md" : "text-zinc-600 hover:bg-zinc-100"}`}
 						>
-							Clients (Tenants)
+							🏢 Clients (Tenants)
 						</button>
 						<button
 							onClick={() => setActiveTab("ORDER_HISTORY")}
-							className={`text-sm font-semibold pb-2 border-b-2 whitespace-nowrap transition ${activeTab === "ORDER_HISTORY" ? "border-brand-strong text-brand-strong" : "border-transparent text-zinc-500 hover:text-zinc-800"}`}
+							className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === "ORDER_HISTORY" ? "bg-[#404d85] text-white shadow-md" : "text-zinc-600 hover:bg-zinc-100"}`}
 						>
-							Order History
+							🧾 Billing History
 						</button>
 					</div>
 				</div>
