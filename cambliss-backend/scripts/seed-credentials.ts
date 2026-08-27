@@ -20,12 +20,12 @@ async function seedCredentials() {
   // 1. Ensure Roles Exist
   const rolesMap: Record<string, string> = {};
   for (const role of Object.values(RoleName)) {
-    const r = await prisma.role.upsert({
+    const r = await (prisma as any).role.upsert({
       where: { name: role },
       update: {},
       create: { name: role },
     });
-    rolesMap[role] = r.id;
+    rolesMap[String(role)] = r.id;
   }
 
   // 2. Ensure Default Organization for User Context
