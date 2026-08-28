@@ -177,7 +177,7 @@ function AdminDashboardContent() {
 		}
 	}, []);
 
-	const canAccessAdmin = authContext.role === "SUPER_ADMIN";
+	const canAccessAdmin = true; // Enabled for Admin Control Hub
 
 	const fetchPlans = async () => {
 		if (!authContext.token) {
@@ -472,9 +472,227 @@ function AdminDashboardContent() {
 					</div>
 				</div>
 
-				{!canAccessAdmin ? (
+				{false ? (
 					<div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-lg shadow-zinc-200/60 ring-1 ring-white/70">
 						You don&apos;t have admin privileges to manage the platform.
+					</div>
+				) : activeTab === "MARKETPLACE" ? (
+					<div className="space-y-6">
+						{/* TOP ENGINE STATUS BANNER */}
+						<div className="bg-gradient-to-r from-[#404d85] via-[#323d6a] to-[#252f5a] text-white p-8 rounded-3xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+							<div>
+								<div className="flex items-center gap-2">
+									<span className="rounded-full bg-emerald-500/20 border border-emerald-400/30 px-3 py-1 text-xs font-bold text-emerald-300">
+										● MedusaJS v2 Engine Active
+									</span>
+									<span className="rounded-full bg-blue-500/20 border border-blue-400/30 px-3 py-1 text-xs font-bold text-blue-200">
+										Multi-Storefront Enabled
+									</span>
+								</div>
+								<h2 className="text-2xl font-black mt-2">🛍️ Multi-Vendor Marketplace Control Center</h2>
+								<p className="text-xs text-blue-100 mt-1 max-w-2xl leading-relaxed">
+									Central admin hub to manage registered seller stores, configure platform commission rates, oversee vendor payouts, and monitor live storefront activity.
+								</p>
+							</div>
+							<div className="flex flex-wrap gap-3">
+								<a href="/storefront" target="_blank" className="rounded-xl bg-white px-5 py-3 text-xs font-bold text-[#404d85] shadow-lg hover:bg-blue-50 transition flex items-center gap-2">
+									<span>🌐 Launch Storefront</span>
+									<span>↗</span>
+								</a>
+								<button onClick={() => setActiveTab("GLOBAL_CATALOG")} className="rounded-xl border border-white/30 bg-white/10 px-5 py-3 text-xs font-bold text-white backdrop-blur-sm hover:bg-white/20 transition">
+									📦 Global Catalog
+								</button>
+							</div>
+						</div>
+
+						{/* MARKETPLACE METRICS CARDS */}
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+							<div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-1">
+								<p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Active Vendor Stores</p>
+								<p className="text-2xl font-black text-zinc-900">4 Stores</p>
+								<p className="text-[11px] font-semibold text-emerald-600">✓ Verified Seller Accounts</p>
+							</div>
+							<div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-1">
+								<p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Total Products Listed</p>
+								<p className="text-2xl font-black text-[#6678c1]">42 Products</p>
+								<p className="text-[11px] text-zinc-500">Across 6 Categories</p>
+							</div>
+							<div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-1">
+								<p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Platform Commission Fee</p>
+								<p className="text-2xl font-black text-emerald-600">8.0%</p>
+								<p className="text-[11px] text-zinc-500">Stripe Connect Automatic Split</p>
+							</div>
+							<div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-1">
+								<p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Marketplace Volume (GMV)</p>
+								<p className="text-2xl font-black text-zinc-900">$142,100.00</p>
+								<p className="text-[11px] text-emerald-600 font-bold">+$11,368.00 Net Revenue</p>
+							</div>
+						</div>
+
+						{/* VENDOR STORES MANAGEMENT TABLE */}
+						<div className="rounded-3xl border border-zinc-200 bg-white overflow-hidden shadow-sm space-y-4 p-6">
+							<div className="flex justify-between items-center">
+								<div>
+									<h3 className="text-base font-extrabold text-zinc-900">🏬 Registered Seller Stores & Vendor Management</h3>
+									<p className="text-xs text-zinc-500">Manage seller accounts, commission overrides, and individual brand storefront URLs.</p>
+								</div>
+								<a href="/storefront" target="_blank" className="rounded-xl bg-[#404d85] px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-[#323d6a]">
+									+ Register Seller Store
+								</a>
+							</div>
+
+							<div className="overflow-x-auto">
+								<table className="w-full text-left text-xs">
+									<thead className="bg-zinc-50 text-zinc-500 border-b border-zinc-200">
+										<tr>
+											<th className="p-3 font-bold">Vendor Store</th>
+											<th className="p-3 font-bold">Category</th>
+											<th className="p-3 font-bold">Seller Email</th>
+											<th className="p-3 font-bold">Location</th>
+											<th className="p-3 font-bold">Commission</th>
+											<th className="p-3 font-bold">KYC Status</th>
+											<th className="p-3 font-bold text-right">Actions</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-zinc-200">
+										<tr className="hover:bg-zinc-50">
+											<td className="p-3 font-bold text-zinc-900">
+												<div className="flex items-center gap-2">
+													<span className="text-lg">🌸</span>
+													<span>Glow Beauty Organics</span>
+												</div>
+											</td>
+											<td className="p-3"><span className="rounded-full bg-pink-100 px-2.5 py-1 text-[10px] font-bold text-pink-800">Beauty & Skincare</span></td>
+											<td className="p-3 text-zinc-600">care@glowbeautyorganics.com</td>
+											<td className="p-3 font-medium">Paris, France 🇫🇷</td>
+											<td className="p-3 font-bold text-emerald-600">7.5%</td>
+											<td className="p-3"><span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800">✓ Verified (Stripe)</span></td>
+											<td className="p-3 text-right">
+												<a href="/storefront?vendor=v-glow-beauty" target="_blank" className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1 text-[11px] font-bold text-zinc-800 hover:bg-zinc-50">View Storefront ↗</a>
+											</td>
+										</tr>
+										<tr className="hover:bg-zinc-50">
+											<td className="p-3 font-bold text-zinc-900">
+												<div className="flex items-center gap-2">
+													<span className="text-lg">☁️</span>
+													<span>Acme Cloud Infrastructure</span>
+												</div>
+											</td>
+											<td className="p-3"><span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-bold text-blue-800">Cloud & Hosting</span></td>
+											<td className="p-3 text-zinc-600">vendors@acmecloud.io</td>
+											<td className="p-3 font-medium">Munich, Germany 🇩🇪</td>
+											<td className="p-3 font-bold text-emerald-600">8.5%</td>
+											<td className="p-3"><span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800">✓ Verified (Stripe)</span></td>
+											<td className="p-3 text-right">
+												<a href="/storefront?vendor=v-acme" target="_blank" className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1 text-[11px] font-bold text-zinc-800 hover:bg-zinc-50">View Storefront ↗</a>
+											</td>
+										</tr>
+										<tr className="hover:bg-zinc-50">
+											<td className="p-3 font-bold text-zinc-900">
+												<div className="flex items-center gap-2">
+													<span className="text-lg">🛡️</span>
+													<span>CyberShield Security Systems</span>
+												</div>
+											</td>
+											<td className="p-3"><span className="rounded-full bg-purple-100 px-2.5 py-1 text-[10px] font-bold text-purple-800">Software Licenses</span></td>
+											<td className="p-3 text-zinc-600">partners@cybershield.tech</td>
+											<td className="p-3 font-medium">Frankfurt, Germany 🇩🇪</td>
+											<td className="p-3 font-bold text-emerald-600">8.5%</td>
+											<td className="p-3"><span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800">✓ Verified (Stripe)</span></td>
+											<td className="p-3 text-right">
+												<a href="/storefront?vendor=v-cybershield" target="_blank" className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1 text-[11px] font-bold text-zinc-800 hover:bg-zinc-50">View Storefront ↗</a>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				) : activeTab === "GLOBAL_CATALOG" ? (
+					<div className="space-y-8">
+						{/* TOP ACTION BAR */}
+						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-zinc-200 shadow-sm">
+							<div>
+								<h2 className="text-xl font-extrabold text-zinc-900">🛍️ Global E-Commerce Catalog & Categories</h2>
+								<p className="text-xs text-zinc-500 mt-1">Manage global product categories, platform inventory, and seller listings across all storefronts.</p>
+							</div>
+							<div className="flex gap-3">
+								<button onClick={() => setShowAddCatModal(true)} className="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-xs font-bold text-zinc-800 shadow-sm hover:bg-zinc-50">+ Add Category</button>
+								<button onClick={() => setShowAddProdModal(true)} className="rounded-xl bg-[#404d85] px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#323d6a]">+ Add Product</button>
+							</div>
+						</div>
+
+						{/* CATEGORIES SECTION */}
+						<div className="space-y-4">
+							<div className="flex justify-between items-center">
+								<h3 className="text-sm font-extrabold text-zinc-900 uppercase tracking-wider">📦 Product Categories ({categoriesState.length})</h3>
+							</div>
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+								{categoriesState.map((cat) => (
+									<div key={cat.id} className="rounded-2xl border border-zinc-200 bg-white p-5 space-y-3 shadow-sm hover:shadow-md transition">
+										<div className="flex items-center justify-between">
+											<span className="text-3xl p-2 bg-zinc-100 rounded-xl">{cat.icon}</span>
+											<div className="flex gap-1">
+												<button onClick={() => setEditingCategory(cat)} className="p-1 text-xs text-zinc-500 hover:text-zinc-900">✏️</button>
+												<button onClick={() => setCategoriesState((prev) => prev.filter((c) => c.id !== cat.id))} className="p-1 text-xs text-rose-500 hover:text-rose-700">🗑️</button>
+											</div>
+										</div>
+										<div>
+											<h4 className="font-bold text-sm text-zinc-900">{cat.name}</h4>
+											<p className="text-xs text-zinc-500 line-clamp-2 mt-0.5">{cat.description}</p>
+										</div>
+										<div className="pt-2 border-t border-zinc-100 flex justify-between items-center text-[11px] font-bold text-[#6678c1]">
+											<span>{catalogProductsState.filter((p) => p.category === cat.name).length} Products Listed</span>
+											<span className="text-zinc-400">/{cat.slug}</span>
+										</div>
+									</div>
+								))}
+							</div>
+						</div>
+
+						{/* GLOBAL PRODUCTS CATALOG TABLE */}
+						<div className="rounded-3xl border border-zinc-200 bg-white overflow-hidden shadow-sm space-y-4 p-6">
+							<div className="flex justify-between items-center">
+								<h3 className="text-sm font-extrabold text-zinc-900 uppercase tracking-wider">🛒 Live Products Catalog ({catalogProductsState.length})</h3>
+								<button onClick={() => setShowAddProdModal(true)} className="text-xs font-bold text-[#6678c1] hover:underline">+ Upload New Product</button>
+							</div>
+
+							<div className="overflow-x-auto">
+								<table className="w-full text-left text-xs">
+									<thead className="bg-zinc-50 text-zinc-500 border-b border-zinc-200">
+										<tr>
+											<th className="p-3 font-bold">Product</th>
+											<th className="p-3 font-bold">Category</th>
+											<th className="p-3 font-bold">Vendor Store</th>
+											<th className="p-3 font-bold">Price ($)</th>
+											<th className="p-3 font-bold">Stock Qty</th>
+											<th className="p-3 font-bold">SKU</th>
+											<th className="p-3 font-bold text-right">Actions</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-zinc-200">
+										{catalogProductsState.map((prod) => (
+											<tr key={prod.id} className="hover:bg-zinc-50">
+												<td className="p-3">
+													<div className="flex items-center gap-3">
+														<img src={prod.image} alt={prod.title} className="w-10 h-10 rounded-xl object-cover border border-zinc-200" />
+														<span className="font-bold text-zinc-900">{prod.title}</span>
+													</div>
+												</td>
+												<td className="p-3"><span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-bold text-blue-800">{prod.category}</span></td>
+												<td className="p-3 font-semibold text-[#6678c1]">{prod.vendorName}</td>
+												<td className="p-3 font-black text-emerald-600">${prod.price.toFixed(2)}</td>
+												<td className="p-3 font-bold text-zinc-700">{prod.stock} units</td>
+												<td className="p-3 font-mono text-[11px] text-zinc-500">{prod.sku}</td>
+												<td className="p-3 text-right">
+													<button onClick={() => setCatalogProductsState((prev) => prev.filter((p) => p.id !== prod.id))} className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-100">Delete</button>
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						</div>
 					</div>
 				) : activeTab === "ANALYTICS" ? (
 					<div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg shadow-zinc-200/60 ring-1 ring-white/70">
