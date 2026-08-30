@@ -253,7 +253,22 @@ const [dummyCategoriesStateOld, setDummyOld] = useState([
 	const [selectedParentCatId, setSelectedParentCatId] = useState<string>("cat-electronics");
 	const [newSubcatForm, setNewSubcatForm] = useState({ name: "", icon: "🏷️", description: "" });
 
-	const [newProdForm, setNewProdForm] = useState({ title: "", category: "Beauty & Cosmetics", vendorName: "Platform Store", price: "", stock: "100", sku: "", image: "", description: "" });
+	const [newProdForm, setNewProdForm] = useState({
+		title: "",
+		parentCategoryId: "cat-electronics",
+		subcategoryId: "",
+		vendorName: "Office Connect Direct 👑",
+		price: "",
+		originalPrice: "",
+		wholesaleB2bPrice: "",
+		stock: "100",
+		sku: "",
+		barcode: "",
+		image: "",
+		description: "",
+		warehouseLocation: "Warehouse A - Shelf 1",
+		sellerOfferBadge: "Amazon Choice 🏆"
+	});
 	const [showAddCatModal, setShowAddCatModal] = useState(false);
 	const [showAddProdModal, setShowAddProdModal] = useState(false);
 	const [editingCategory, setEditingCategory] = useState<GlobalCategory | null>(null);
@@ -1173,6 +1188,369 @@ const [dummyCategoriesStateOld, setDummyOld] = useState([
 					</div>
 				) : null}
 			</div>
+		
+			{/* 1. ADD CATEGORY MODAL */}
+			{showAddCatModal && (
+				<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
+					<div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl relative space-y-4 border border-[#d9e2ef]">
+						<button onClick={() => setShowAddCatModal(false)} className="absolute right-6 top-6 text-zinc-400 font-bold text-lg hover:text-zinc-600">✕</button>
+						<h3 className="text-xl font-black text-[#404d85]">+ Add Broad Parent Category</h3>
+						<form onSubmit={(e) => {
+							e.preventDefault();
+							if (!newCatForm.name) return;
+							const newCat: GlobalCategory = {
+								id: `cat-${Date.now()}`,
+								name: newCatForm.name,
+								slug: newCatForm.name.toLowerCase().replace(/\s+/g, '-'),
+								icon: newCatForm.icon || "📦",
+								description: newCatForm.description || "Category description.",
+								subcategories: []
+							};
+							setCategoriesState((prev) => [...prev, newCat]);
+							setShowAddCatModal(false);
+							setNewCatForm({ name: "", icon: "📦", description: "" });
+							alert("🎉 Parent Category created successfully!");
+						}} className="space-y-3 text-xs">
+							<div>
+								<label className="block font-bold text-zinc-700">Category Name *</label>
+								<input type="text" required placeholder="e.g. Toys & Games" value={newCatForm.name} onChange={(e) => setNewCatForm({ ...newCatForm, name: e.target.value })} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-3 text-xs" />
+							</div>
+							<div>
+								<label className="block font-bold text-zinc-700">Emoji Icon</label>
+								<input type="text" placeholder="🧸" value={newCatForm.icon} onChange={(e) => setNewCatForm({ ...newCatForm, icon: e.target.value })} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-3 text-xs" />
+							</div>
+							<div>
+								<label className="block font-bold text-zinc-700">Description</label>
+								<textarea rows={2} placeholder="Brief category description..." value={newCatForm.description} onChange={(e) => setNewCatForm({ ...newCatForm, description: e.target.value })} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-3 text-xs" />
+							</div>
+							<button type="submit" className="w-full rounded-xl bg-[#404d85] py-3 text-xs font-bold text-white shadow-md hover:bg-[#323d6a]">Create Category</button>
+						</form>
+					</div>
+				</div>
+			)}
+
+			{/* 2. ADD SUBCATEGORY MODAL */}
+			{showAddSubcatModal && (
+				<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
+					<div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl relative space-y-4 border border-[#d9e2ef]">
+						<button onClick={() => setShowAddSubcatModal(false)} className="absolute right-6 top-6 text-zinc-400 font-bold text-lg hover:text-zinc-600">✕</button>
+						<h3 className="text-xl font-black text-[#404d85]">+ Add Nested Subcategory</h3>
+						<form onSubmit={(e) => {
+							e.preventDefault();
+							if (!newSubcatForm.name) return;
+							const newSub: GlobalSubcategory = {
+								id: `sub-${Date.now()}`,
+								parentCategoryId: selectedParentCatId,
+								name: newSubcatForm.name,
+								slug: newSubcatForm.name.toLowerCase().replace(/\s+/g, '-'),
+								icon: newSubcatForm.icon || "🏷️",
+								description: newSubcatForm.description || "Subcategory description."
+							};
+							setCategoriesState((prev) =>
+								prev.map((c) =>
+									c.id === selectedParentCatId
+										? { ...c, subcategories: [...(c.subcategories || []), newSub] }
+										: c
+								)
+							);
+							setShowAddSubcatModal(false);
+							setNewSubcatForm({ name: "", icon: "🏷️", description: "" });
+							alert("🎉 Subcategory added successfully!");
+						}} className="space-y-3 text-xs">
+							<div>
+								<label className="block font-bold text-zinc-700">Parent Broad Category *</label>
+								<select
+									value={selectedParentCatId}
+									onChange={(e) => setSelectedParentCatId(e.target.value)}
+									className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-3 bg-[#f8faff] font-bold text-[#404d85]"
+								>
+									{categoriesState.map((c) => (
+										<option key={c.id} value={c.id}>
+											{c.icon} {c.name}
+										</option>
+									))}
+								</select>
+							</div>
+							<div>
+								<label className="block font-bold text-zinc-700">Subcategory Name *</label>
+								<input type="text" required placeholder="e.g. Smartphones & Mobile" value={newSubcatForm.name} onChange={(e) => setNewSubcatForm({ ...newSubcatForm, name: e.target.value })} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-3 text-xs" />
+							</div>
+							<div>
+								<label className="block font-bold text-zinc-700">Icon / Emoji</label>
+								<input type="text" placeholder="📲" value={newSubcatForm.icon} onChange={(e) => setNewSubcatForm({ ...newSubcatForm, icon: e.target.value })} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-3 text-xs" />
+							</div>
+							<div>
+								<label className="block font-bold text-zinc-700">Description</label>
+								<textarea rows={2} placeholder="Brief summary of subcategory..." value={newSubcatForm.description} onChange={(e) => setNewSubcatForm({ ...newSubcatForm, description: e.target.value })} className="mt-1 w-full rounded-xl border border-[#d9e2ef] p-3 text-xs" />
+							</div>
+							<button type="submit" className="w-full rounded-xl bg-[#404d85] py-3 text-xs font-bold text-white shadow-md hover:bg-[#323d6a]">Create Subcategory</button>
+						</form>
+					</div>
+				</div>
+			)}
+
+			{/* 3. AMAZON-GRADE 1P / 3P PRODUCT UPLOADER MODAL */}
+			{showAddProdModal && (
+				<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
+					<div className="w-full max-w-2xl rounded-3xl bg-white p-8 shadow-2xl relative border border-[#d9e2ef] max-h-[90vh] overflow-y-auto space-y-6">
+						<button onClick={() => setShowAddProdModal(false)} className="absolute right-6 top-6 text-zinc-400 font-bold text-xl hover:text-zinc-600">✕</button>
+						<div>
+							<div className="flex items-center gap-2">
+								<span className="rounded-full bg-[#404d85]/10 px-3 py-1 text-xs font-extrabold text-[#404d85]">
+									👑 Amazon 1P / Multi-Vendor Admin Uploader
+								</span>
+							</div>
+							<h2 className="text-2xl font-black text-[#404d85] mt-1">Publish New Product Listing</h2>
+							<p className="text-xs text-zinc-500">Configure multi-variants, B2B wholesale pricing, barcode SKUs, and inventory tags.</p>
+						</div>
+
+						<form onSubmit={(e) => {
+							e.preventDefault();
+							if (!newProdForm.title || !newProdForm.price) return;
+
+							const parentCat = categoriesState.find((c) => c.id === newProdForm.parentCategoryId) || categoriesState[0];
+							const subCat = parentCat?.subcategories?.find((s) => s.id === newProdForm.subcategoryId);
+
+							const newProd: GlobalCatalogProduct = {
+								id: `prod-${Date.now()}`,
+								title: newProdForm.title,
+								categoryId: parentCat?.id || "cat-electronics",
+								categoryName: parentCat?.name || "General",
+								subcategoryId: subCat?.id,
+								subcategoryName: subCat?.name,
+								vendorName: newProdForm.vendorName || "Office Connect Direct 👑",
+								price: parseFloat(newProdForm.price) || 0,
+								stock: parseInt(newProdForm.stock) || 100,
+								sku: newProdForm.sku || `UPC-${Date.now()}`,
+								image: newProdForm.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80",
+								description: newProdForm.description || "High quality product."
+							};
+
+							setCatalogProductsState((prev) => [newProd, ...prev]);
+							setShowAddProdModal(false);
+							setNewProdForm({
+								title: "",
+								parentCategoryId: "cat-electronics",
+								subcategoryId: "",
+								vendorName: "Office Connect Direct 👑",
+								price: "",
+								originalPrice: "",
+								wholesaleB2bPrice: "",
+								stock: "100",
+								sku: "",
+								barcode: "",
+								image: "",
+								description: "",
+								warehouseLocation: "Warehouse A - Shelf 1",
+								sellerOfferBadge: "Amazon Choice 🏆"
+							});
+							alert("🎉 Product successfully published to live Marketplace catalog!");
+						}} className="space-y-4 text-xs">
+
+							{/* SECTION 1: SELLER STORE & BRAND OWNER */}
+							<div className="bg-[#f8faff] p-4 rounded-2xl border border-[#d9e2ef] space-y-3">
+								<h4 className="font-extrabold text-[#404d85] uppercase tracking-wider text-[11px]">🏢 Seller Store & Fulfillment Ownership</h4>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+									<div>
+										<label className="block font-bold text-zinc-700 mb-1">Select Store Owner / Seller *</label>
+										<select
+											value={newProdForm.vendorName}
+											onChange={(e) => setNewProdForm((prev) => ({ ...prev, vendorName: e.target.value }))}
+											className="w-full rounded-xl border border-[#d9e2ef] p-2.5 font-bold text-[#404d85] bg-white"
+										>
+											<option value="Office Connect Direct 👑">Office Connect Direct (1P First-Party Store) 👑</option>
+											<option value="Glow Beauty Organics 🌸">Glow Beauty Organics 🌸</option>
+											<option value="Acme Cloud Corp ☁️">Acme Cloud Corp ☁️</option>
+											<option value="CyberShield Tech 🛡️">CyberShield Tech 🛡️</option>
+										</select>
+									</div>
+									<div>
+										<label className="block font-bold text-zinc-700 mb-1">Promotional Badge</label>
+										<select
+											value={newProdForm.sellerOfferBadge}
+											onChange={(e) => setNewProdForm((prev) => ({ ...prev, sellerOfferBadge: e.target.value }))}
+											className="w-full rounded-xl border border-[#d9e2ef] p-2.5 bg-white font-semibold"
+										>
+											<option value="Amazon Choice 🏆">Amazon Choice 🏆</option>
+											<option value="Best Seller 🔥">Best Seller 🔥</option>
+											<option value="Featured Brand ✨">Featured Brand ✨</option>
+											<option value="Limited Stock ⚡">Limited Stock ⚡</option>
+										</select>
+									</div>
+								</div>
+							</div>
+
+							{/* SECTION 2: BASIC PRODUCT INFO */}
+							<div className="space-y-3">
+								<div>
+									<label className="block font-bold text-zinc-700 mb-1">Product Title *</label>
+									<input
+										type="text"
+										required
+										placeholder="e.g. Ultra-Slim Wireless Noise-Cancelling Headphones"
+										value={newProdForm.title}
+										onChange={(e) => setNewProdForm((prev) => ({ ...prev, title: e.target.value }))}
+										className="w-full rounded-xl border border-[#d9e2ef] p-3 font-medium focus:border-[#404d85] focus:outline-none"
+									/>
+								</div>
+
+								{/* CASCADING CATEGORY & SUBCATEGORY SELECTION */}
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+									<div>
+										<label className="block font-bold text-zinc-700 mb-1">Broad Parent Category *</label>
+										<select
+											value={newProdForm.parentCategoryId}
+											onChange={(e) => {
+												const selectedId = e.target.value;
+												const cat = categoriesState.find((c) => c.id === selectedId);
+												setNewProdForm((prev) => ({
+													...prev,
+													parentCategoryId: selectedId,
+													subcategoryId: cat?.subcategories?.[0]?.id || ""
+												}));
+											}}
+											className="w-full rounded-xl border border-[#d9e2ef] p-2.5 font-bold text-[#404d85] bg-white"
+										>
+											{categoriesState.map((c) => (
+												<option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+											))}
+										</select>
+									</div>
+
+									<div>
+										<label className="block font-bold text-zinc-700 mb-1">Nested Subcategory</label>
+										<select
+											value={newProdForm.subcategoryId}
+											onChange={(e) => setNewProdForm((prev) => ({ ...prev, subcategoryId: e.target.value }))}
+											className="w-full rounded-xl border border-[#d9e2ef] p-2.5 font-semibold bg-white"
+										>
+											{(categoriesState.find((c) => c.id === newProdForm.parentCategoryId)?.subcategories || []).map((sub) => (
+												<option key={sub.id} value={sub.id}>{sub.icon} {sub.name}</option>
+											))}
+										</select>
+									</div>
+								</div>
+							</div>
+
+							{/* SECTION 3: PRICING & B2B WHOLESALE DISCOUNT */}
+							<div className="bg-[#f8faff] p-4 rounded-2xl border border-[#d9e2ef] space-y-3">
+								<h4 className="font-extrabold text-[#404d85] uppercase tracking-wider text-[11px]">💳 Pricing & B2B Wholesale Tier Matrix</h4>
+								<div className="grid grid-cols-3 gap-3">
+									<div>
+										<label className="block font-bold text-zinc-700 mb-1">Retail Selling Price ($) *</label>
+										<input
+											type="number"
+											step="0.01"
+											required
+											placeholder="199.99"
+											value={newProdForm.price}
+											onChange={(e) => setNewProdForm((prev) => ({ ...prev, price: e.target.value }))}
+											className="w-full rounded-xl border border-[#d9e2ef] p-2.5 font-black text-emerald-600 bg-white"
+										/>
+									</div>
+									<div>
+										<label className="block font-bold text-zinc-700 mb-1">MSRP Original Price ($)</label>
+										<input
+											type="number"
+											step="0.01"
+											placeholder="249.99"
+											value={newProdForm.originalPrice}
+											onChange={(e) => setNewProdForm((prev) => ({ ...prev, originalPrice: e.target.value }))}
+											className="w-full rounded-xl border border-[#d9e2ef] p-2.5 font-medium bg-white"
+										/>
+									</div>
+									<div>
+										<label className="block font-bold text-zinc-700 mb-1">B2B Wholesale Price ($)</label>
+										<input
+											type="number"
+											step="0.01"
+											placeholder="150.00"
+											value={newProdForm.wholesaleB2bPrice}
+											onChange={(e) => setNewProdForm((prev) => ({ ...prev, wholesaleB2bPrice: e.target.value }))}
+											className="w-full rounded-xl border border-[#d9e2ef] p-2.5 font-bold text-[#6678c1] bg-white"
+										/>
+									</div>
+								</div>
+							</div>
+
+							{/* SECTION 4: INVENTORY & BARCODE SKU */}
+							<div className="grid grid-cols-3 gap-3">
+								<div>
+									<label className="block font-bold text-zinc-700 mb-1">Initial Stock Qty *</label>
+									<input
+										type="number"
+										required
+										placeholder="100"
+										value={newProdForm.stock}
+										onChange={(e) => setNewProdForm((prev) => ({ ...prev, stock: e.target.value }))}
+										className="w-full rounded-xl border border-[#d9e2ef] p-2.5 font-bold text-zinc-800"
+									/>
+								</div>
+								<div>
+									<label className="block font-bold text-zinc-700 mb-1">SKU Code</label>
+									<input
+										type="text"
+										placeholder="SKU-ELEC-881"
+										value={newProdForm.sku}
+										onChange={(e) => setNewProdForm((prev) => ({ ...prev, sku: e.target.value }))}
+										className="w-full rounded-xl border border-[#d9e2ef] p-2.5 font-mono text-[11px]"
+									/>
+								</div>
+								<div>
+									<label className="block font-bold text-zinc-700 mb-1">Barcode (UPC/EAN)</label>
+									<input
+										type="text"
+										placeholder="880912345678"
+										value={newProdForm.barcode}
+										onChange={(e) => setNewProdForm((prev) => ({ ...prev, barcode: e.target.value }))}
+										className="w-full rounded-xl border border-[#d9e2ef] p-2.5 font-mono text-[11px]"
+									/>
+								</div>
+							</div>
+
+							{/* SECTION 5: IMAGE & DESCRIPTION */}
+							<div>
+								<label className="block font-bold text-zinc-700 mb-1">Main Product Image URL</label>
+								<input
+									type="url"
+									placeholder="https://images.unsplash.com/photo-..."
+									value={newProdForm.image}
+									onChange={(e) => setNewProdForm((prev) => ({ ...prev, image: e.target.value }))}
+									className="w-full rounded-xl border border-[#d9e2ef] p-2.5 font-mono text-[11px]"
+								/>
+							</div>
+
+							<div>
+								<label className="block font-bold text-zinc-700 mb-1">Product Description</label>
+								<textarea
+									rows={3}
+									placeholder="Detailed product features, specifications, and warranty details..."
+									value={newProdForm.description}
+									onChange={(e) => setNewProdForm((prev) => ({ ...prev, description: e.target.value }))}
+									className="w-full rounded-xl border border-[#d9e2ef] p-2.5"
+								/>
+							</div>
+
+							<div className="pt-3 border-t border-[#d9e2ef] flex gap-3">
+								<button
+									type="button"
+									onClick={() => setShowAddProdModal(false)}
+									className="w-1/3 rounded-xl border border-zinc-300 py-3 text-xs font-bold text-zinc-700 hover:bg-zinc-50"
+								>
+									Cancel
+								</button>
+								<button
+									type="submit"
+									className="w-2/3 rounded-xl bg-[#404d85] py-3 text-xs font-bold text-white shadow-lg hover:bg-[#323d6a] transition"
+								>
+									🚀 Publish Product to Catalog
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			)}
+
 		</WorkspaceShell>
 	);
 }
