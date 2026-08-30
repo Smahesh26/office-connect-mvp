@@ -330,13 +330,7 @@ function StorefrontContent() {
 					{/* Action Buttons */}
 					<div className="flex items-center gap-3">
 						<button
-							onClick={() => {
-								if (!loggedInVendor) {
-									setShowVendorAuthModal(true);
-								} else {
-									setShowProductUploadModal(true);
-								}
-							}}
+							onClick={() => setShowProductUploadModal(true)}
 							className="flex items-center gap-1.5 rounded-xl bg-[#404d85] px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#323d6a] transition"
 						>
 							<span>+</span> Upload Product
@@ -375,10 +369,7 @@ function StorefrontContent() {
 						</div>
 						<div className="flex gap-3">
 							<button
-								onClick={() => {
-									if (!loggedInVendor) setShowVendorAuthModal(true);
-									else setShowProductUploadModal(true);
-								}}
+								onClick={() => setShowProductUploadModal(true)}
 								className="rounded-xl bg-white px-6 py-3 text-xs font-bold text-[#404d85] shadow-xl hover:bg-blue-50 transition"
 							>
 								+ Register Seller Store
@@ -584,7 +575,7 @@ function StorefrontContent() {
 
 			{/* UPLOAD PRODUCT MODAL */}
 			{showProductUploadModal && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+				<div className="fixed inset-0 z-[9999] fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-md backdrop-blur-sm p-4">
 					<div className="w-full max-w-lg rounded-3xl bg-white p-8 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto border border-[#d9e2ef]">
 						<button
 							onClick={() => setShowProductUploadModal(false)}
@@ -696,7 +687,7 @@ function StorefrontContent() {
 
 			{/* VENDOR AUTH MODAL */}
 			{showVendorAuthModal && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+				<div className="fixed inset-0 z-[9999] fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-md backdrop-blur-sm p-4">
 					<div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl relative border border-[#d9e2ef]">
 						<button
 							onClick={() => setShowVendorAuthModal(false)}
