@@ -133,11 +133,109 @@ function AdminDashboardContent() {
 	const [error, setError] = useState<string | null>(null);
 	const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
 
-	// Global Catalog & Category State
-	type GlobalCategory = { id: string; name: string; slug: string; icon: string; description: string; totalProducts: number };
-	type GlobalCatalogProduct = { id: string; title: string; category: string; vendorName: string; price: number; stock: number; sku: string; image: string };
+	
+	// Amazon-Style Category & Subcategory Taxonomy Types
+	type GlobalSubcategory = {
+		id: string;
+		parentCategoryId: string;
+		name: string;
+		slug: string;
+		icon: string;
+		description: string;
+	};
 
-	const [categoriesState, setCategoriesState] = useState<GlobalCategory[]>([
+	type GlobalCategory = {
+		id: string;
+		name: string;
+		slug: string;
+		icon: string;
+		description: string;
+		subcategories: GlobalSubcategory[];
+	};
+
+	type GlobalCatalogProduct = {
+		id: string;
+		title: string;
+		categoryId: string;
+		categoryName: string;
+		subcategoryId?: string;
+		subcategoryName?: string;
+		vendorName: string;
+		price: number;
+		stock: number;
+		sku: string;
+		image: string;
+		description?: string;
+	};
+
+	const initialCategoriesState: GlobalCategory[] = [
+		{
+			id: "cat-electronics",
+			name: "Electronics & Gadgets",
+			slug: "electronics-gadgets",
+			icon: "📱",
+			description: "Smartphones, laptops, audio, smart home, and photography.",
+			subcategories: [
+				{ id: "sub-[#6678c1]", parentCategoryId: "cat-electronics", name: "Smartphones & Mobile", slug: "smartphones", icon: "📲", description: "5G Flagship phones and mobile accessories." },
+				{ id: "sub-[#6678c1]", parentCategoryId: "cat-electronics", name: "Laptops & Computers", slug: "laptops", icon: "💻", description: "Ultra-books, gaming laptops, and desktop workstations." },
+				{ id: "sub-[#6678c1]", parentCategoryId: "cat-electronics", name: "Audio & Headphones", slug: "audio-headphones", icon: "🎧", description: "Noise-cancelling wireless earbuds and studio headphones." },
+				{ id: "sub-104", parentCategoryId: "cat-electronics", name: "Smartwatches & Wearables", slug: "wearables", icon: "⌚", description: "Health monitoring smartwatches and fitness trackers." },
+			],
+		},
+		{
+			id: "cat-beauty",
+			name: "Beauty & Personal Care",
+			slug: "beauty-personal-care",
+			icon: "💄",
+			description: "Organic skincare, botanical cosmetics, fragrances, and haircare.",
+			subcategories: [
+				{ id: "sub-201", parentCategoryId: "cat-beauty", name: "Skincare & Serums", slug: "skincare-serums", icon: "🌸", description: "Hyaluronic acid serums, anti-aging creams, and moisturizers." },
+				{ id: "sub-202", parentCategoryId: "cat-beauty", name: "Haircare & Treatments", slug: "haircare", icon: "🌿", description: "Organic shampoos, cold-pressed oils, and scalp elixirs." },
+				{ id: "sub-203", parentCategoryId: "cat-beauty", name: "Makeup & Cosmetics", slug: "makeup", icon: "💋", description: "Cruelty-free foundations, lipsticks, and eye cosmetics." },
+				{ id: "sub-204", parentCategoryId: "cat-beauty", name: "Luxury Fragrances & Perfumes", slug: "fragrances", icon: "✨", description: "Eau de parfum, niche fragrances, and body sprays." },
+			],
+		},
+		{
+			id: "cat-fashion",
+			name: "Fashion & Apparel",
+			slug: "fashion-apparel",
+			icon: "👔",
+			description: "Men's & Women's clothing, designer footwear, and watches.",
+			subcategories: [
+				{ id: "sub-301", parentCategoryId: "cat-fashion", name: "Men's Clothing", slug: "mens-clothing", icon: "👕", description: "Formal shirts, casual tees, jackets, and trousers." },
+				{ id: "sub-302", parentCategoryId: "cat-fashion", name: "Women's Fashion", slug: "womens-fashion", icon: "👗", description: "Dresses, tops, ethnic wear, and luxury handbags." },
+				{ id: "sub-303", parentCategoryId: "cat-fashion", name: "Footwear & Sneakers", slug: "footwear", icon: "👟", description: "Running shoes, leather boots, and formal footwear." },
+			],
+		},
+		{
+			id: "cat-home",
+			name: "Home & Kitchen",
+			slug: "home-kitchen",
+			icon: "🏠",
+			description: "Furniture, smart kitchen appliances, and home automation.",
+			subcategories: [
+				{ id: "sub-401", parentCategoryId: "cat-home", name: "Smart Home Automation", slug: "smart-home", icon: "💡", description: "IoT smart lights, security cameras, and sensors." },
+				{ id: "sub-402", parentCategoryId: "cat-home", name: "Kitchen Appliances", slug: "kitchen-appliances", icon: "☕", description: "Espresso machines, air fryers, and blenders." },
+			],
+		},
+		{
+			id: "cat-cloud",
+			name: "Enterprise Software & Cloud",
+			slug: "enterprise-cloud",
+			icon: "☁️",
+			description: "High-availability cloud hosting, software licenses, and developer APIs.",
+			subcategories: [
+				{ id: "sub-[#6678c1]", parentCategoryId: "cat-cloud", name: "Server Hosting & Kubernetes", slug: "cloud-hosting", icon: "🖥️", description: "Dedicated cloud clusters and VPS instances." },
+				{ id: "sub-[#6678c1]", parentCategoryId: "cat-cloud", name: "Security & OAuth2 Licenses", slug: "security-licenses", icon: "🛡️", description: "Zero-trust auth engines and SOC2 compliance suites." },
+			],
+		},
+	];
+
+	// Global Catalog & Category State
+
+
+	const [categoriesState, setCategoriesState] = useState<GlobalCategory[]>(initialCategoriesState);
+const [dummyCategoriesStateOld, setDummyOld] = useState([
 		{ id: "cat-1", name: "Beauty & Cosmetics", slug: "beauty-cosmetics", icon: "🌸", description: "Skincare, makeup, and organic cosmetics.", totalProducts: 12 },
 		{ id: "cat-2", name: "Enterprise Cloud & SaaS", slug: "cloud-saas", icon: "☁️", description: "Hosting, servers, and software licenses.", totalProducts: 8 },
 		{ id: "cat-3", name: "Hardware & IoT Devices", slug: "hardware-iot", icon: "⚡", description: "Controllers, sensors, and hardware.", totalProducts: 15 },
@@ -145,11 +243,16 @@ function AdminDashboardContent() {
 	]);
 
 	const [catalogProductsState, setCatalogProductsState] = useState<GlobalCatalogProduct[]>([
-		{ id: "p-101", title: "Organic Damask Rose Serum", category: "Beauty & Cosmetics", vendorName: "Glow Beauty Organics 🌸", price: 48.00, stock: 140, sku: "SKU-BEAUTY-01", image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80" },
-		{ id: "p-102", title: "Kubernetes Cloud Server Cluster", category: "Enterprise Cloud & SaaS", vendorName: "Acme Cloud Corp ☁️", price: 299.00, stock: 50, sku: "SKU-CLOUD-01", image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80" },
+		{ id: "p-101", title: "Organic Damask Rose Serum", categoryId: "cat-beauty", categoryName: "Beauty & Personal Care", subcategoryId: "sub-201", subcategoryName: "Skincare & Serums", vendorName: "Glow Beauty Organics 🌸", price: 48.00, stock: 140, sku: "SKU-BEAUTY-01", image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80" },
+		{ id: "p-102", title: "Kubernetes Cloud Server Cluster", categoryId: "cat-cloud", categoryName: "Enterprise Software & Cloud", subcategoryId: "sub-[#6678c1]", subcategoryName: "Server Hosting & Kubernetes", vendorName: "Acme Cloud Corp ☁️", price: 299.00, stock: 50, sku: "SKU-CLOUD-01", image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80" },
 	]);
 
 	const [newCatForm, setNewCatForm] = useState({ name: "", icon: "📦", description: "" });
+
+	const [showAddSubcatModal, setShowAddSubcatModal] = useState(false);
+	const [selectedParentCatId, setSelectedParentCatId] = useState<string>("cat-electronics");
+	const [newSubcatForm, setNewSubcatForm] = useState({ name: "", icon: "🏷️", description: "" });
+
 	const [newProdForm, setNewProdForm] = useState({ title: "", category: "Beauty & Cosmetics", vendorName: "Platform Store", price: "", stock: "100", sku: "", image: "", description: "" });
 	const [showAddCatModal, setShowAddCatModal] = useState(false);
 	const [showAddProdModal, setShowAddProdModal] = useState(false);
@@ -627,23 +730,66 @@ function AdminDashboardContent() {
 							<div className="flex justify-between items-center">
 								<h3 className="text-sm font-extrabold text-zinc-900 uppercase tracking-wider">📦 Product Categories ({categoriesState.length})</h3>
 							</div>
-							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 								{categoriesState.map((cat) => (
-									<div key={cat.id} className="rounded-2xl border border-zinc-200 bg-white p-5 space-y-3 shadow-sm hover:shadow-md transition">
-										<div className="flex items-center justify-between">
-											<span className="text-3xl p-2 bg-zinc-100 rounded-xl">{cat.icon}</span>
-											<div className="flex gap-1">
-												<button onClick={() => setEditingCategory(cat)} className="p-1 text-xs text-zinc-500 hover:text-zinc-900">✏️</button>
-												<button onClick={() => setCategoriesState((prev) => prev.filter((c) => c.id !== cat.id))} className="p-1 text-xs text-rose-500 hover:text-rose-700">🗑️</button>
+									<div key={cat.id} className="rounded-3xl border border-zinc-200 bg-white p-6 space-y-4 shadow-sm hover:shadow-xl hover:border-[#6678c1]/40 transition-all duration-300 flex flex-col justify-between">
+										<div className="space-y-3">
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-3">
+													<span className="text-3xl p-2.5 bg-[#f8faff] rounded-2xl border border-[#d9e2ef]">{cat.icon}</span>
+													<div>
+														<h4 className="font-extrabold text-base text-[#404d85]">{cat.name}</h4>
+														<span className="text-[11px] font-mono text-zinc-400">/{cat.slug}</span>
+													</div>
+												</div>
+												<div className="flex gap-1">
+													<button onClick={() => setCategoriesState((prev) => prev.filter((c) => c.id !== cat.id))} className="p-1 text-xs text-rose-500 hover:text-rose-700">🗑️</button>
+												</div>
+											</div>
+											<p className="text-xs text-zinc-600 leading-relaxed">{cat.description}</p>
+
+											{/* SUB-CATEGORIES NESTED LIST */}
+											<div className="pt-3 border-t border-zinc-100 space-y-2">
+												<div className="flex justify-between items-center text-[11px] font-extrabold text-zinc-700 uppercase tracking-wider">
+													<span>🏷️ Subcategories ({cat.subcategories?.length || 0})</span>
+													<button
+														onClick={() => {
+															setSelectedParentCatId(cat.id);
+															setShowAddSubcatModal(true);
+														}}
+														className="text-[#6678c1] hover:underline font-bold"
+													>
+														+ Add Subcategory
+													</button>
+												</div>
+												<div className="flex flex-wrap gap-1.5 pt-1">
+													{cat.subcategories && cat.subcategories.length > 0 ? (
+														cat.subcategories.map((sub) => (
+															<span key={sub.id} className="inline-flex items-center gap-1 rounded-xl bg-[#f8faff] border border-[#d9e2ef] px-2.5 py-1 text-[11px] font-semibold text-[#404d85]">
+																<span>{sub.icon}</span>
+																<span>{sub.name}</span>
+															</span>
+														))
+													) : (
+														<span className="text-[11px] text-zinc-400 italic">No subcategories created yet.</span>
+													)}
+												</div>
 											</div>
 										</div>
-										<div>
-											<h4 className="font-bold text-sm text-zinc-900">{cat.name}</h4>
-											<p className="text-xs text-zinc-500 line-clamp-2 mt-0.5">{cat.description}</p>
-										</div>
-										<div className="pt-2 border-t border-zinc-100 flex justify-between items-center text-[11px] font-bold text-[#6678c1]">
-											<span>{catalogProductsState.filter((p) => p.category === cat.name).length} Products Listed</span>
-											<span className="text-zinc-400">/{cat.slug}</span>
+
+										<div className="pt-3 border-t border-zinc-100 flex justify-between items-center text-xs font-bold">
+											<span className="text-emerald-600">
+												📦 {catalogProductsState.filter((p) => p.categoryName === cat.name || p.categoryId === cat.id).length} Products Listed
+											</span>
+											<button
+												onClick={() => {
+													setSelectedParentCatId(cat.id);
+													setShowAddSubcatModal(true);
+												}}
+												className="rounded-xl border border-zinc-300 bg-white px-3 py-1.5 text-[11px] font-bold text-zinc-700 hover:bg-zinc-50"
+											>
+												+ Subcategory
+											</button>
 										</div>
 									</div>
 								))}
@@ -679,7 +825,7 @@ function AdminDashboardContent() {
 														<span className="font-bold text-zinc-900">{prod.title}</span>
 													</div>
 												</td>
-												<td className="p-3"><span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-bold text-blue-800">{prod.category}</span></td>
+												<td className="p-3"><span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-bold text-blue-800">{prod.categoryName}</span></td>
 												<td className="p-3 font-semibold text-[#6678c1]">{prod.vendorName}</td>
 												<td className="p-3 font-black text-emerald-600">${prod.price.toFixed(2)}</td>
 												<td className="p-3 font-bold text-zinc-700">{prod.stock} units</td>
