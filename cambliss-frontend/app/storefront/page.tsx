@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState, Suspense, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -49,7 +50,7 @@ type MedusaCartItem = {
 
 export default function StorefrontPage() {
 	return (
-		<Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans">Loading E-Commerce Marketplace...</div>}>
+		<Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#eef2fa] font-sans text-[#1f2430]">Loading Office Connect Marketplace...</div>}>
 			<StorefrontContent />
 		</Suspense>
 	);
@@ -63,7 +64,6 @@ function StorefrontContent() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [categoryFilter, setCategoryFilter] = useState("All");
 	const [selectedVendorFilter, setSelectedVendorFilter] = useState(initialVendorFilter);
-	const [selectedRegion, setSelectedRegion] = useState("🇩🇪 Germany / EUR (€)");
 	const [priceRange, setPriceRange] = useState<number>(5000);
 	const [onlyInStock, setOnlyInStock] = useState(false);
 
@@ -182,8 +182,8 @@ function StorefrontContent() {
 		setTimeout(() => {
 			const currentVendor = loggedInVendor || {
 				id: "v-[#6678c1]",
-				name: "Cambliss Platform Store",
-				logo: "🏬",
+				name: "Office Connect Store",
+				logo: "🏢",
 				ownerEmail: "admin@camblissstudio.com",
 				category: "General",
 				rating: 5.0,
@@ -195,8 +195,8 @@ function StorefrontContent() {
 				payoutStatus: "Connected (Active)",
 				kycVerified: true,
 				location: "Global Platform",
-				joinedDate: "2026-08-27",
-				description: "Official Platform Storefront.",
+				joinedDate: "2026-08-30",
+				description: "Official Office Connect Storefront.",
 			};
 
 			const newProd: MedusaProduct = {
@@ -261,46 +261,53 @@ function StorefrontContent() {
 	const activeVendorObj = vendors.find((v) => v.id === selectedVendorFilter);
 
 	return (
-		<div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 flex flex-col">
-			{/* STANDALONE E-COMMERCE TOP NOTICE BAR */}
-			<div className="bg-[#404d85] text-white px-4 py-2 text-center text-xs font-semibold tracking-wide flex justify-between items-center max-w-full">
-				<div className="hidden sm:block text-[11px] opacity-80">🚚 Fast Worldwide Express Delivery & Multi-Vendor Fulfillment</div>
-				<div className="mx-auto sm:mx-0">
-					🎉 Welcome to Cambliss E-Commerce Marketplace — Direct Vendor Storefronts
+		<div className="min-h-screen bg-[#eef2fa] font-sans text-[#1f2430] flex flex-col">
+			{/* TOP ANNOUNCEMENT BAR IN BRAND PALETTE */}
+			<div className="bg-[#252f5a] text-white px-4 py-2 text-center text-xs font-semibold tracking-wide flex justify-between items-center border-b border-[#323d6a]">
+				<div className="hidden sm:block text-[11px] text-blue-200">
+					🚚 Fast Worldwide Express Delivery & Multi-Vendor Fulfillment
+				</div>
+				<div className="mx-auto sm:mx-0 font-medium">
+					🎉 Welcome to <span className="font-extrabold text-[#6678c1]">Office Connect</span> Multi-Vendor Marketplace
 				</div>
 				<div className="hidden md:flex gap-4 text-[11px]">
 					<button onClick={() => setShowVendorAuthModal(true)} className="hover:underline text-blue-200">
 						🔑 {loggedInVendor ? `Vendor Portal (${loggedInVendor.name})` : "Seller Sign In / Register"}
 					</button>
-					<span>|</span>
+					<span className="opacity-40">|</span>
 					<a href="/login" className="hover:underline text-blue-200">
 						👤 Customer Account
 					</a>
 				</div>
 			</div>
 
-			{/* MAIN STANDALONE E-COMMERCE HEADER */}
-			<header className="sticky top-0 z-40 bg-white border-b border-zinc-200 shadow-sm">
+			{/* MAIN E-COMMERCE HEADER WITH EXACT OFFICE CONNECT LOGO & PALETTE */}
+			<header className="sticky top-0 z-40 bg-[#f8faff] border-b border-[#d9e2ef] shadow-sm backdrop-blur-md bg-opacity-95">
 				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
-					{/* Logo */}
+					{/* Logo & Brand Identity */}
 					<div className="flex items-center gap-3">
-						<Link href="/storefront" className="flex items-center gap-2">
-							<div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-[#404d85] to-[#252f5a] flex items-center justify-center text-white font-black text-xl shadow-md">
-								🛍️
-							</div>
-							<div>
-								<span className="text-xl font-extrabold tracking-tight text-zinc-900">CAMBLISS</span>
-								<span className="text-xs font-bold text-[#6678c1] block -mt-1 tracking-widest uppercase">MARKETPLACE</span>
+						<Link href="/storefront" className="flex items-center gap-3">
+							<Image
+								src="/officeconnectlogo.png"
+								alt="Office Connect"
+								width={180}
+								height={48}
+								priority
+								className="h-12 w-auto object-contain"
+							/>
+							<div className="border-l border-[#d9e2ef] pl-3 hidden sm:block">
+								<span className="text-xs font-black text-[#404d85] uppercase tracking-widest block">MARKETPLACE</span>
+								<span className="text-[10px] font-semibold text-[#6678c1] block -mt-0.5">MEDUSAJS V2 ENGINE</span>
 							</div>
 						</Link>
 					</div>
 
 					{/* Search Bar */}
-					<div className="flex-1 max-w-2xl hidden md:flex items-center rounded-2xl border border-zinc-300 bg-zinc-50 focus-within:border-[#404d85] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#404d85]/20 transition overflow-hidden">
+					<div className="flex-1 max-w-2xl hidden md:flex items-center rounded-2xl border border-[#d9e2ef] bg-white focus-within:border-[#404d85] focus-within:ring-2 focus-within:ring-[#404d85]/20 transition overflow-hidden shadow-sm">
 						<select
 							value={categoryFilter}
 							onChange={(e) => setCategoryFilter(e.target.value)}
-							className="bg-zinc-100 text-xs font-bold text-zinc-700 px-3 py-3 border-r border-zinc-300 focus:outline-none cursor-pointer"
+							className="bg-[#f8faff] text-xs font-bold text-[#404d85] px-3.5 py-3 border-r border-[#d9e2ef] focus:outline-none cursor-pointer"
 						>
 							{categories.map((c) => (
 								<option key={c} value={c}>
@@ -313,9 +320,9 @@ function StorefrontContent() {
 							placeholder="Search products, brands, cosmetics, electronics, or sellers..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="w-full px-4 py-2.5 text-xs bg-transparent focus:outline-none text-zinc-900"
+							className="w-full px-4 py-2.5 text-xs bg-transparent focus:outline-none text-[#1f2430] placeholder-zinc-400"
 						/>
-						<button className="bg-[#404d85] text-white px-5 py-3 text-xs font-bold hover:bg-[#323d6a] transition flex items-center gap-1">
+						<button className="bg-[#404d85] text-white px-5 py-3 text-xs font-bold hover:bg-[#323d6a] transition flex items-center gap-1.5 shadow-md">
 							🔍 Search
 						</button>
 					</div>
@@ -330,14 +337,14 @@ function StorefrontContent() {
 									setShowProductUploadModal(true);
 								}
 							}}
-							className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-110 transition"
+							className="flex items-center gap-1.5 rounded-xl bg-[#404d85] px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#323d6a] transition"
 						>
 							<span>+</span> Upload Product
 						</button>
 
 						<button
 							onClick={() => setShowCartDrawer(true)}
-							className="relative flex items-center gap-2 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-xs font-bold text-zinc-800 shadow-sm hover:bg-zinc-50 transition"
+							className="relative flex items-center gap-2 rounded-xl border border-[#d9e2ef] bg-white px-4 py-2 text-xs font-bold text-[#404d85] shadow-sm hover:bg-[#f8faff] transition"
 						>
 							<span className="text-lg">🛒</span>
 							<span className="hidden sm:inline">Cart</span>
@@ -351,9 +358,39 @@ function StorefrontContent() {
 				</div>
 			</header>
 
+			{/* HERO BRAND BANNER IN OFFICE CONNECT PALETTE */}
+			{selectedVendorFilter === "All" && (
+				<div className="bg-gradient-to-r from-[#404d85] via-[#323d6a] to-[#252f5a] text-white py-10 px-4 sm:px-8 border-b border-[#323d6a]">
+					<div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+						<div className="space-y-3 text-center md:text-left">
+							<span className="rounded-full bg-[#6678c1]/30 border border-[#6678c1]/50 px-3.5 py-1 text-xs font-bold text-blue-200">
+								🏬 Office Connect Multi-Vendor E-Commerce Suite
+							</span>
+							<h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+								Explore Verified Brand Storefronts & Products
+							</h1>
+							<p className="text-xs sm:text-sm text-blue-100 max-w-2xl leading-relaxed">
+								Discover organic cosmetics, enterprise software licenses, cloud servers, and hardware products directly from verified seller stores.
+							</p>
+						</div>
+						<div className="flex gap-3">
+							<button
+								onClick={() => {
+									if (!loggedInVendor) setShowVendorAuthModal(true);
+									else setShowProductUploadModal(true);
+								}}
+								className="rounded-xl bg-white px-6 py-3 text-xs font-bold text-[#404d85] shadow-xl hover:bg-blue-50 transition"
+							>
+								+ Register Seller Store
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
 			{/* DEDICATED VENDOR STOREFRONT HEADER BANNER (IF VENDOR FILTERED) */}
 			{activeVendorObj && (
-				<div className="bg-gradient-to-r from-[#404d85] via-[#323d6a] to-[#252f5a] text-white py-8 px-4 sm:px-8 border-b border-zinc-200">
+				<div className="bg-gradient-to-r from-[#404d85] via-[#323d6a] to-[#252f5a] text-white py-8 px-4 sm:px-8 border-b border-[#323d6a]">
 					<div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
 						<div className="flex items-center gap-5">
 							<div className="h-20 w-20 rounded-3xl bg-white border-4 border-white/20 shadow-xl flex items-center justify-center text-4xl">
@@ -392,15 +429,15 @@ function StorefrontContent() {
 					{/* LEFT SIDEBAR: CATEGORIES & VENDOR FILTER */}
 					<aside className="space-y-6">
 						{/* Vendor List */}
-						<div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-4">
-							<h3 className="text-sm font-extrabold text-zinc-900 border-b border-zinc-200 pb-2">
+						<div className="rounded-2xl border border-[#d9e2ef] bg-white p-5 shadow-sm space-y-4">
+							<h3 className="text-sm font-extrabold text-[#404d85] border-b border-[#d9e2ef] pb-2">
 								🏬 Verified Vendor Stores ({vendors.length})
 							</h3>
 							<div className="space-y-2 max-h-60 overflow-y-auto">
 								<button
 									onClick={() => setSelectedVendorFilter("All")}
 									className={`w-full text-left p-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between ${
-										selectedVendorFilter === "All" ? "bg-[#404d85] text-white shadow-md" : "hover:bg-zinc-100 text-zinc-700"
+										selectedVendorFilter === "All" ? "bg-[#404d85] text-white shadow-md" : "hover:bg-[#f8faff] text-[#1f2430]"
 									}`}
 								>
 									<span>All Marketplace Stores</span>
@@ -411,7 +448,7 @@ function StorefrontContent() {
 										key={v.id}
 										onClick={() => setSelectedVendorFilter(v.id)}
 										className={`w-full text-left p-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-between ${
-											selectedVendorFilter === v.id ? "bg-[#404d85] text-white shadow-md" : "hover:bg-zinc-100 text-zinc-700"
+											selectedVendorFilter === v.id ? "bg-[#404d85] text-white shadow-md" : "hover:bg-[#f8faff] text-[#1f2430]"
 										}`}
 									>
 										<span className="flex items-center gap-2 truncate">
@@ -427,9 +464,9 @@ function StorefrontContent() {
 						</div>
 
 						{/* Quick Upload Banner */}
-						<div className="rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 p-6 text-white space-y-3 shadow-lg">
+						<div className="rounded-2xl bg-gradient-to-br from-[#404d85] to-[#252f5a] p-6 text-white space-y-3 shadow-lg">
 							<h3 className="font-extrabold text-base">Sell Your Products Here!</h3>
-							<p className="text-xs text-emerald-100 leading-relaxed">
+							<p className="text-xs text-blue-100 leading-relaxed">
 								Register your brand store and upload products directly into the live marketplace.
 							</p>
 							<button
@@ -437,7 +474,7 @@ function StorefrontContent() {
 									if (!loggedInVendor) setShowVendorAuthModal(true);
 									else setShowProductUploadModal(true);
 								}}
-								className="w-full rounded-xl bg-white py-2.5 text-xs font-bold text-emerald-900 shadow-md hover:bg-emerald-50 transition"
+								className="w-full rounded-xl bg-white py-2.5 text-xs font-bold text-[#404d85] shadow-md hover:bg-blue-50 transition"
 							>
 								+ Add Products Now
 							</button>
@@ -447,9 +484,9 @@ function StorefrontContent() {
 					{/* RIGHT CONTENT: PRODUCT CATALOG */}
 					<section className="lg:col-span-3 space-y-6">
 						{/* Product Header */}
-						<div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-zinc-200 shadow-sm">
+						<div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-[#d9e2ef] shadow-sm">
 							<div>
-								<h2 className="text-lg font-extrabold text-zinc-900">
+								<h2 className="text-lg font-extrabold text-[#404d85]">
 									{selectedVendorFilter === "All"
 										? "All Marketplace Products"
 										: `Storefront: ${activeVendorObj?.name || "Vendor Products"}`}
@@ -469,13 +506,13 @@ function StorefrontContent() {
 
 						{/* Products Grid / Zero State */}
 						{filteredProducts.length === 0 ? (
-							<div className="rounded-3xl border-2 border-dashed border-zinc-300 bg-white p-12 text-center space-y-4">
-								<div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-zinc-100 text-4xl">
+							<div className="rounded-3xl border-2 border-dashed border-[#d9e2ef] bg-white p-12 text-center space-y-4 shadow-sm">
+								<div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-[#f8faff] text-4xl border border-[#d9e2ef]">
 									📦
 								</div>
-								<h3 className="text-xl font-bold text-zinc-900">No Products Listed Yet</h3>
+								<h3 className="text-xl font-bold text-[#404d85]">No Products Listed Yet</h3>
 								<p className="text-xs text-zinc-500 max-w-md mx-auto leading-relaxed">
-									Your marketplace is clean and ready! Log in to your seller account or admin portal to upload your real products.
+									Your Office Connect marketplace is clean and ready! Log in to your seller account or admin portal to upload your real products.
 								</p>
 								<div className="pt-2 flex justify-center gap-3">
 									<button
@@ -494,16 +531,16 @@ function StorefrontContent() {
 								{filteredProducts.map((product) => (
 									<div
 										key={product.id}
-										className="group rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col"
+										className="group rounded-2xl border border-[#d9e2ef] bg-white overflow-hidden shadow-sm hover:shadow-xl hover:border-[#6678c1]/40 transition-all duration-300 flex flex-col"
 									>
-										<div className="relative aspect-square bg-zinc-100 overflow-hidden">
+										<div className="relative aspect-square bg-[#f8faff] overflow-hidden">
 											<img
 												src={product.image}
 												alt={product.title}
 												className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
 											/>
 											{product.sellerOfferBadge && (
-												<span className="absolute top-3 left-3 rounded-full bg-zinc-900/80 backdrop-blur-sm px-3 py-1 text-[10px] font-bold text-white shadow-md">
+												<span className="absolute top-3 left-3 rounded-full bg-[#252f5a]/90 backdrop-blur-sm px-3 py-1 text-[10px] font-bold text-white shadow-md">
 													{product.sellerOfferBadge}
 												</span>
 											)}
@@ -514,13 +551,13 @@ function StorefrontContent() {
 												<div className="flex justify-between items-center text-[11px] text-[#6678c1] font-bold mb-1">
 													<span>{product.vendorLogo} {product.vendorName}</span>
 												</div>
-												<h3 className="font-bold text-sm text-zinc-900 line-clamp-2">{product.title}</h3>
+												<h3 className="font-bold text-sm text-[#1f2430] line-clamp-2">{product.title}</h3>
 												<p className="mt-1 text-xs text-zinc-500 line-clamp-2 leading-relaxed">{product.description}</p>
 											</div>
 
-											<div className="pt-3 border-t border-zinc-100 flex items-center justify-between">
+											<div className="pt-3 border-t border-[#d9e2ef] flex items-center justify-between">
 												<div>
-													<div className="text-base font-black text-zinc-900">
+													<div className="text-base font-black text-emerald-600">
 														${product.price.toFixed(2)}
 													</div>
 													{product.originalPrice && (
@@ -548,58 +585,58 @@ function StorefrontContent() {
 			{/* UPLOAD PRODUCT MODAL */}
 			{showProductUploadModal && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-					<div className="w-full max-w-lg rounded-3xl bg-white p-8 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto">
+					<div className="w-full max-w-lg rounded-3xl bg-white p-8 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto border border-[#d9e2ef]">
 						<button
 							onClick={() => setShowProductUploadModal(false)}
 							className="absolute right-6 top-6 text-zinc-400 hover:text-zinc-600 text-lg font-bold"
 						>
 							✕
 						</button>
-						<h2 className="text-xl font-extrabold text-zinc-900 mb-1">+ Upload New Product</h2>
+						<h2 className="text-xl font-extrabold text-[#404d85] mb-1">+ Upload New Product</h2>
 						<p className="text-xs text-zinc-500 mb-6">
-							Add a product to live Storefront ({loggedInVendor?.name || "Platform Store"})
+							Add a product to live Storefront ({loggedInVendor?.name || "Office Connect Store"})
 						</p>
 
 						<form onSubmit={handleUploadProductSubmit} className="space-y-4 text-xs">
 							<div>
-								<label className="block font-semibold text-zinc-700 mb-1">Product Title *</label>
+								<label className="block font-semibold text-[#1f2430] mb-1">Product Title *</label>
 								<input
 									type="text"
 									required
 									placeholder="e.g. Organic Rose Hydrating Serum"
 									value={newProductForm.title}
 									onChange={(e) => setNewProductForm((prev) => ({ ...prev, title: e.target.value }))}
-									className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
+									className="w-full rounded-xl border border-[#d9e2ef] p-3 text-xs focus:border-[#404d85] focus:outline-none"
 								/>
 							</div>
 
 							<div className="grid grid-cols-2 gap-3">
 								<div>
-									<label className="block font-semibold text-zinc-700 mb-1">Category *</label>
+									<label className="block font-semibold text-[#1f2430] mb-1">Category *</label>
 									<input
 										type="text"
 										required
 										placeholder="Beauty & Skincare"
 										value={newProductForm.category}
 										onChange={(e) => setNewProductForm((prev) => ({ ...prev, category: e.target.value }))}
-										className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
+										className="w-full rounded-xl border border-[#d9e2ef] p-3 text-xs"
 									/>
 								</div>
 								<div>
-									<label className="block font-semibold text-zinc-700 mb-1">SKU Code</label>
+									<label className="block font-semibold text-[#1f2430] mb-1">SKU Code</label>
 									<input
 										type="text"
 										placeholder="SKU-BEAUTY-101"
 										value={newProductForm.sku}
 										onChange={(e) => setNewProductForm((prev) => ({ ...prev, sku: e.target.value }))}
-										className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
+										className="w-full rounded-xl border border-[#d9e2ef] p-3 text-xs"
 									/>
 								</div>
 							</div>
 
 							<div className="grid grid-cols-2 gap-3">
 								<div>
-									<label className="block font-semibold text-zinc-700 mb-1">Selling Price ($) *</label>
+									<label className="block font-semibold text-[#1f2430] mb-1">Selling Price ($) *</label>
 									<input
 										type="number"
 										step="0.01"
@@ -607,41 +644,41 @@ function StorefrontContent() {
 										placeholder="49.99"
 										value={newProductForm.price}
 										onChange={(e) => setNewProductForm((prev) => ({ ...prev, price: e.target.value }))}
-										className="w-full rounded-xl border border-zinc-300 p-3 text-xs font-bold text-emerald-600"
+										className="w-full rounded-xl border border-[#d9e2ef] p-3 text-xs font-bold text-emerald-600"
 									/>
 								</div>
 								<div>
-									<label className="block font-semibold text-zinc-700 mb-1">Original Price ($)</label>
+									<label className="block font-semibold text-[#1f2430] mb-1">Original Price ($)</label>
 									<input
 										type="number"
 										step="0.01"
 										placeholder="69.99"
 										value={newProductForm.originalPrice}
 										onChange={(e) => setNewProductForm((prev) => ({ ...prev, originalPrice: e.target.value }))}
-										className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
+										className="w-full rounded-xl border border-[#d9e2ef] p-3 text-xs"
 									/>
 								</div>
 							</div>
 
 							<div>
-								<label className="block font-semibold text-zinc-700 mb-1">Product Image URL</label>
+								<label className="block font-semibold text-[#1f2430] mb-1">Product Image URL</label>
 								<input
 									type="url"
 									placeholder="https://images.unsplash.com/photo-..."
 									value={newProductForm.image}
 									onChange={(e) => setNewProductForm((prev) => ({ ...prev, image: e.target.value }))}
-									className="w-full rounded-xl border border-zinc-300 p-3 text-xs font-mono"
+									className="w-full rounded-xl border border-[#d9e2ef] p-3 text-xs font-mono"
 								/>
 							</div>
 
 							<div>
-								<label className="block font-semibold text-zinc-700 mb-1">Description</label>
+								<label className="block font-semibold text-[#1f2430] mb-1">Description</label>
 								<textarea
 									rows={3}
 									placeholder="Enter detailed product description..."
 									value={newProductForm.description}
 									onChange={(e) => setNewProductForm((prev) => ({ ...prev, description: e.target.value }))}
-									className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
+									className="w-full rounded-xl border border-[#d9e2ef] p-3 text-xs"
 								/>
 							</div>
 
@@ -650,7 +687,7 @@ function StorefrontContent() {
 								disabled={isSubmittingProduct}
 								className="w-full rounded-xl bg-[#404d85] py-3.5 text-xs font-bold text-white shadow-lg hover:bg-[#323d6a] transition"
 							>
-								{isSubmittingProduct ? "Publishing Product..." : "Publish Product to Marketplace"}
+								{isSubmittingProduct ? "Publishing Product..." : "Publish Product to Storefront"}
 							</button>
 						</form>
 					</div>
@@ -660,14 +697,14 @@ function StorefrontContent() {
 			{/* VENDOR AUTH MODAL */}
 			{showVendorAuthModal && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-					<div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl relative">
+					<div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl relative border border-[#d9e2ef]">
 						<button
 							onClick={() => setShowVendorAuthModal(false)}
 							className="absolute right-6 top-6 text-zinc-400 hover:text-zinc-600 text-lg font-bold"
 						>
 							✕
 						</button>
-						<h2 className="text-2xl font-bold text-zinc-900">
+						<h2 className="text-2xl font-bold text-[#404d85]">
 							{authMode === "login" ? "Seller Login" : "Register Brand Store"}
 						</h2>
 						<p className="mt-1 text-xs text-zinc-500">
@@ -683,37 +720,37 @@ function StorefrontContent() {
 						<form onSubmit={handleVendorAuthSubmit} className="mt-6 space-y-4 text-xs">
 							{authMode === "register" && (
 								<div>
-									<label className="block font-semibold text-zinc-700 mb-1">Store / Brand Name *</label>
+									<label className="block font-semibold text-[#1f2430] mb-1">Store / Brand Name *</label>
 									<input
 										type="text"
 										required
 										placeholder="e.g. Glow Beauty Cosmetics"
 										value={vendorName}
 										onChange={(e) => setVendorName(e.target.value)}
-										className="w-full rounded-xl border border-zinc-300 p-3"
+										className="w-full rounded-xl border border-[#d9e2ef] p-3"
 									/>
 								</div>
 							)}
 							<div>
-								<label className="block font-semibold text-zinc-700 mb-1">Email Address *</label>
+								<label className="block font-semibold text-[#1f2430] mb-1">Email Address *</label>
 								<input
 									type="email"
 									required
 									placeholder="vendor@company.com"
 									value={vendorEmail}
 									onChange={(e) => setVendorEmail(e.target.value)}
-									className="w-full rounded-xl border border-zinc-300 p-3"
+									className="w-full rounded-xl border border-[#d9e2ef] p-3"
 								/>
 							</div>
 							<div>
-								<label className="block font-semibold text-zinc-700 mb-1">Password *</label>
+								<label className="block font-semibold text-[#1f2430] mb-1">Password *</label>
 								<input
 									type="password"
 									required
 									placeholder="••••••••"
 									value={vendorPassword}
 									onChange={(e) => setVendorPassword(e.target.value)}
-									className="w-full rounded-xl border border-zinc-300 p-3"
+									className="w-full rounded-xl border border-[#d9e2ef] p-3"
 								/>
 							</div>
 
