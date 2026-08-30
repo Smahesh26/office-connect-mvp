@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 type MedusaVendor = {
@@ -14,8 +14,6 @@ type MedusaVendor = {
 	rating: number;
 	reviewsCount: number;
 	totalProducts: number;
-	payoutStatus: "Connected (Active)" | "Pending Onboarding";
-	kycVerified: boolean;
 	location: string;
 	description: string;
 };
@@ -33,13 +31,11 @@ type MedusaProduct = {
 	subcategory?: string;
 	price: number;
 	originalPrice?: number;
-	wholesaleB2bPrice?: number;
 	sellerOfferBadge?: string;
 	stockQty: number;
 	rating: number;
 	reviewsCount: number;
 	description: string;
-	features?: string[];
 };
 
 type MedusaCartItem = {
@@ -49,7 +45,7 @@ type MedusaCartItem = {
 
 export default function StorefrontPage() {
 	return (
-		<Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#f8fafc] font-sans text-[#1f2430]">Loading Storefront...</div>}>
+		<Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#f8fafc] font-sans text-[#1f2430]">Loading Office Connect Marketplace...</div>}>
 			<StorefrontContent />
 		</Suspense>
 	);
@@ -60,18 +56,21 @@ function StorefrontContent() {
 	const searchParams = useSearchParams();
 	const initialVendorFilter = searchParams.get("vendor") || "All";
 
+	const [searchTab, setSearchTab] = useState<"products" | "services">("products");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [categoryFilter, setCategoryFilter] = useState("All");
+	const [selectedBrand, setSelectedBrand] = useState("All Brands");
+	const [selectedLocation, setSelectedLocation] = useState("Global Marketplace");
 	const [selectedVendorFilter, setSelectedVendorFilter] = useState(initialVendorFilter);
-	const [selectedProductQuickView, setSelectedProductQuickView] = useState<MedusaProduct | null>(null);
 
 	const [cart, setCart] = useState<MedusaCartItem[]>([]);
 	const [showCartDrawer, setShowCartDrawer] = useState(false);
 	const [showProductUploadModal, setShowProductUploadModal] = useState(false);
+	const [selectedProductQuickView, setSelectedProductQuickView] = useState<MedusaProduct | null>(null);
 
 	const [products, setProducts] = useState<MedusaProduct[]>([
 		{
-			id: "p-flagship-1",
+			id: "p-ref-1",
 			sku: "SKU-BEAUTY-ROSE-01",
 			title: "Damask Rose Botanical Hydrating Serum",
 			subtitle: "Organic French Grasse Rose Extract",
@@ -80,23 +79,17 @@ function StorefrontContent() {
 			vendorName: "Glow Beauty Organics 🌸",
 			vendorLogo: "🌸",
 			category: "Beauty & Personal Care",
-			subcategory: "Skincare & Serums",
+			subcategory: "Skincare",
 			price: 68.00,
 			originalPrice: 85.00,
-			wholesaleB2bPrice: 48.00,
-			sellerOfferBadge: "Featured Choice ✨",
+			sellerOfferBadge: "SPECIAL OFFER 20% OFF",
 			stockQty: 240,
 			rating: 5.0,
 			reviewsCount: 310,
-			description: "Formulated with 100% organic Damask rose petals, cold-pressed hyaluronic acid, and botanical anti-oxidants for skin hydration.",
-			features: [
-				"100% Certified Organic & Vegan",
-				"Deep 24-Hour Hydration Barrier",
-				"Dermatologically Tested in France"
-			]
+			description: "Formulated with 100% organic Damask rose petals, cold-pressed hyaluronic acid, and botanical anti-oxidants."
 		},
 		{
-			id: "p-flagship-2",
+			id: "p-ref-2",
 			sku: "SKU-AUDIO-ANC-02",
 			title: "Wireless ANC Noise-Cancelling Headphones",
 			subtitle: "Hi-Res Audio with 40-Hour Battery",
@@ -105,23 +98,17 @@ function StorefrontContent() {
 			vendorName: "Office Connect Direct 👑",
 			vendorLogo: "👑",
 			category: "Electronics & Gadgets",
-			subcategory: "Audio & Headphones",
+			subcategory: "Audio",
 			price: 249.00,
 			originalPrice: 299.00,
-			wholesaleB2bPrice: 190.00,
-			sellerOfferBadge: "Best Seller 🔥",
+			sellerOfferBadge: "SPECIAL OFFER 15% OFF",
 			stockQty: 120,
 			rating: 4.9,
 			reviewsCount: 420,
-			description: "Active noise-cancellation with spatial audio drivers, memory foam ear cushions, and USB-C fast charging.",
-			features: [
-				"Hybrid Active Noise Cancellation (-38dB)",
-				"40 Hours Continuous Battery Life",
-				"Dual Device Bluetooth 5.3 Multipoint"
-			]
+			description: "Active noise-cancellation with spatial audio drivers, memory foam ear cushions, and USB-C fast charging."
 		},
 		{
-			id: "p-flagship-3",
+			id: "p-ref-3",
 			sku: "SKU-CLOUD-CLUSTER-03",
 			title: "Kubernetes Enterprise Cloud Cluster Node",
 			subtitle: "Dedicated Multi-Region NVMe VPS",
@@ -130,23 +117,17 @@ function StorefrontContent() {
 			vendorName: "Acme Cloud Corp ☁️",
 			vendorLogo: "☁️",
 			category: "Enterprise Software & Cloud",
-			subcategory: "Server Hosting",
+			subcategory: "Hosting",
 			price: 499.00,
 			originalPrice: 599.00,
-			wholesaleB2bPrice: 399.00,
-			sellerOfferBadge: "Enterprise Deal ⚡",
+			sellerOfferBadge: "SPECIAL OFFER 20% OFF",
 			stockQty: 50,
 			rating: 4.8,
 			reviewsCount: 94,
-			description: "Dedicated 64-Core AMD EPYC server nodes pre-configured with Kubernetes automated load balancing.",
-			features: [
-				"256 GB ECC DDR5 High-Speed RAM",
-				"Automated DDoS Protection & Daily Backups",
-				"ISO-27001 & SOC2 Compliant Data Centers"
-			]
+			description: "Dedicated 64-Core AMD EPYC server nodes pre-configured with Kubernetes automated load balancing."
 		},
 		{
-			id: "p-flagship-4",
+			id: "p-ref-4",
 			sku: "SKU-SMARTWATCH-04",
 			title: "Titanium Fitness & Health Smartwatch",
 			subtitle: "GPS Navigation & Cardiac Monitor",
@@ -155,20 +136,14 @@ function StorefrontContent() {
 			vendorName: "Office Connect Direct 👑",
 			vendorLogo: "👑",
 			category: "Electronics & Gadgets",
-			subcategory: "Smartwatches",
+			subcategory: "Wearables",
 			price: 349.00,
 			originalPrice: 399.00,
-			wholesaleB2bPrice: 280.00,
-			sellerOfferBadge: "New Arrival 🌟",
+			sellerOfferBadge: "SPECIAL OFFER 12% OFF",
 			stockQty: 90,
 			rating: 4.9,
 			reviewsCount: 156,
-			description: "Aerospace-grade titanium casing with Sapphire display, multi-sport tracking, and 100m water resistance rating.",
-			features: [
-				"Dual-Frequency Precision GPS",
-				"ECG & SpO2 Continuous Health Sensors",
-				"14-Day Extended Battery Life"
-			]
+			description: "Aerospace-grade titanium casing with Sapphire display, multi-sport tracking, and 100m water resistance rating."
 		}
 	]);
 
@@ -182,8 +157,6 @@ function StorefrontContent() {
 			rating: 5.0,
 			reviewsCount: 500,
 			totalProducts: 2,
-			payoutStatus: "Connected (Active)",
-			kycVerified: true,
 			location: "Global Platform HQ 🌐",
 			description: "Official first-party storefront for verified hardware & enterprise cloud software."
 		},
@@ -196,8 +169,6 @@ function StorefrontContent() {
 			rating: 5.0,
 			reviewsCount: 310,
 			totalProducts: 1,
-			payoutStatus: "Connected (Active)",
-			kycVerified: true,
 			location: "Paris, France 🇫🇷",
 			description: "Luxury organic French skincare and botanical cosmetic formulations."
 		},
@@ -210,14 +181,12 @@ function StorefrontContent() {
 			rating: 4.8,
 			reviewsCount: 94,
 			totalProducts: 1,
-			payoutStatus: "Connected (Active)",
-			kycVerified: true,
 			location: "Munich, Germany 🇩🇪",
 			description: "High-performance enterprise cloud servers and Kubernetes infrastructure."
 		}
 	];
 
-	const categories = ["All", "Electronics & Gadgets", "Beauty & Personal Care", "Enterprise Software & Cloud"];
+	const categories = ["All Categories", "Electronics & Gadgets", "Beauty & Personal Care", "Enterprise Software & Cloud"];
 
 	const addToCart = (product: MedusaProduct) => {
 		setCart((prev) => {
@@ -234,40 +203,45 @@ function StorefrontContent() {
 
 	const filteredProducts = products.filter((p) => {
 		const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || p.category.toLowerCase().includes(searchQuery.toLowerCase());
-		const matchesCategory = categoryFilter === "All" || p.category === categoryFilter;
+		const matchesCategory = categoryFilter === "All Categories" || categoryFilter === "All" || p.category === categoryFilter;
 		const matchesVendor = selectedVendorFilter === "All" || p.vendorId === selectedVendorFilter;
 		return matchesSearch && matchesCategory && matchesVendor;
 	});
 
-	const activeVendorObj = vendors.find((v) => v.id === selectedVendorFilter);
-
 	return (
 		<div className="min-h-screen bg-[#f8fafc] font-sans text-[#1f2430] flex flex-col antialiased">
 			
-			{/* TOP UTILITY ANNOUNCEMENT BAR */}
-			<div className="bg-[#1f2430] text-white px-4 sm:px-6 py-2 text-center text-xs font-medium tracking-wide flex justify-between items-center border-b border-[#252f5a]">
-				<div className="hidden md:block text-[11px] text-zinc-300">
-					🚚 Free Express Delivery & Verified Merchant Protection
-				</div>
-				<div className="mx-auto md:mx-0 text-xs">
-					Welcome to <span className="font-bold text-[#6678c1]">Office Connect</span> Multi-Vendor Marketplace
-				</div>
-				<div className="hidden md:flex gap-4 text-[11px]">
-					<button onClick={() => setShowProductUploadModal(true)} className="hover:underline text-blue-200 font-semibold">
-						+ Seller Upload
-					</button>
-					<span className="opacity-40">|</span>
-					<a href="/login" className="hover:underline text-blue-200 font-semibold">
-						Sign In
-					</a>
+			{/* TOP UTILITY HEADER BAR (LIKE REFERENCE) */}
+			<div className="bg-[#f1f5f9] text-[#1f2430] px-4 sm:px-8 py-2 text-xs font-semibold border-b border-zinc-200">
+				<div className="max-w-7xl mx-auto flex items-center justify-between">
+					{/* Left Links */}
+					<div className="flex items-center gap-6 text-zinc-600">
+						<Link href="/about" className="hover:text-[#404d85]">About Us</Link>
+						<Link href="/blog" className="hover:text-[#404d85]">Blog & News</Link>
+						<button onClick={() => setShowProductUploadModal(true)} className="text-[#404d85] font-extrabold hover:underline">
+							Become A Seller
+						</button>
+					</div>
+
+					{/* Right Currency & Apps */}
+					<div className="hidden sm:flex items-center gap-4 text-xs">
+						<div className="flex items-center gap-1 text-zinc-600 cursor-pointer">
+							<span>🌐 English</span>
+							<span className="text-[10px]">▼</span>
+						</div>
+						<div className="flex gap-2">
+							<span className="cursor-pointer hover:opacity-80">📱 App Store</span>
+							<span className="cursor-pointer hover:opacity-80">🤖 Google Play</span>
+						</div>
+					</div>
 				</div>
 			</div>
 
-			{/* PROPORTIONAL MAIN HEADER & EXACT SAAS LOGO SIZING */}
-			<header className="sticky top-0 z-40 bg-white border-b border-zinc-200 shadow-sm">
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4 sm:gap-6">
+			{/* MAIN LOGO & SEARCH HEADER BAR (LIKE REFERENCE) */}
+			<header className="bg-white border-b border-zinc-200 py-3.5 px-4 sm:px-8 sticky top-0 z-40 shadow-sm">
+				<div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
 					
-					{/* Office Connect Brand Logo - Matches SaaS Workspace Shell Proportions */}
+					{/* Brand Logo */}
 					<Link href="/storefront" className="flex items-center gap-3 shrink-0">
 						<Image
 							src="/officeconnectlogo.png"
@@ -277,305 +251,331 @@ function StorefrontContent() {
 							priority
 							className="h-10 sm:h-12 w-auto object-contain"
 						/>
-						<div className="border-l border-zinc-200 pl-3 hidden lg:block">
-							<span className="text-[10px] font-bold text-[#404d85] uppercase tracking-wider block">MARKETPLACE</span>
-							<span className="text-[9px] text-zinc-400 font-medium block -mt-0.5">OFFICIAL HUB</span>
-						</div>
 					</Link>
 
-					{/* Search Engine Input */}
-					<div className="flex-1 max-w-xl hidden md:flex items-center rounded-xl border border-zinc-300 bg-[#f8fafc] focus-within:border-[#404d85] focus-within:ring-2 focus-within:ring-[#404d85]/10 transition overflow-hidden shadow-inner">
-						<select
-							value={categoryFilter}
-							onChange={(e) => setCategoryFilter(e.target.value)}
-							className="bg-zinc-100 text-xs font-semibold text-[#404d85] px-3 py-2.5 border-r border-zinc-300 focus:outline-none cursor-pointer"
-						>
-							{categories.map((c) => (
-								<option key={c} value={c}>{c}</option>
-							))}
-						</select>
+					{/* Ultra Wide Center Search Bar (Like Reference) */}
+					<div className="flex-1 max-w-2xl hidden md:flex items-center rounded-xl bg-zinc-100 border border-zinc-200 px-4 py-2 text-xs focus-within:border-[#404d85] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#404d85]/10 transition">
+						<span className="text-zinc-400 mr-2 text-sm">🔍</span>
 						<input
 							type="text"
-							placeholder="Search products, cosmetics, electronics, or sellers..."
+							placeholder="Search Anything across marketplace..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="w-full px-3.5 py-2 text-xs bg-transparent focus:outline-none text-[#1f2430] placeholder-zinc-400 font-medium"
+							className="w-full bg-transparent focus:outline-none text-[#1f2430] placeholder-zinc-400 font-medium"
 						/>
-						<button className="bg-[#404d85] text-white px-4 py-2 text-xs font-bold hover:bg-[#323d6a] transition flex items-center gap-1">
-							Search
-						</button>
 					</div>
 
-					{/* Right Action Controls */}
-					<div className="flex items-center gap-2.5 shrink-0">
-						<button
-							onClick={() => setShowProductUploadModal(true)}
-							className="rounded-xl bg-[#404d85] px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#323d6a] transition"
-						>
-							+ Upload Product
-						</button>
+					{/* Location, Cart & Auth Buttons (Like Reference) */}
+					<div className="flex items-center gap-3 shrink-0">
+						<div className="hidden lg:flex items-center gap-1 text-xs font-bold text-zinc-700 bg-zinc-100 px-3 py-2 rounded-xl border border-zinc-200 cursor-pointer">
+							<span>📍</span>
+							<select
+								value={selectedLocation}
+								onChange={(e) => setSelectedLocation(e.target.value)}
+								className="bg-transparent focus:outline-none cursor-pointer"
+							>
+								<option value="Global Marketplace">Global Marketplace</option>
+								<option value="United States 🇺🇸">United States 🇺🇸</option>
+								<option value="Europe 🇪🇺">Europe 🇪🇺</option>
+								<option value="Asia 🌏">Asia 🌏</option>
+							</select>
+						</div>
 
 						<button
 							onClick={() => setShowCartDrawer(true)}
-							className="relative rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs font-semibold text-[#404d85] shadow-sm hover:bg-zinc-50 transition flex items-center gap-1.5"
+							className="relative flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-2 text-xs font-bold text-[#404d85] hover:bg-zinc-100 transition shadow-sm"
 						>
-							<span className="text-sm">🛒</span>
-							<span className="hidden sm:inline font-bold">Cart</span>
+							<span className="text-base">🛒</span>
 							{cart.length > 0 && (
-								<span className="ml-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-[#404d85] text-[10px] font-bold text-white shadow-sm">
+								<span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#404d85] text-[10px] font-bold text-white">
 									{cart.reduce((sum, item) => sum + item.quantity, 0)}
 								</span>
 							)}
 						</button>
+
+						<a
+							href="/login"
+							className="rounded-xl border border-[#404d85] px-4 py-2 text-xs font-bold text-[#404d85] hover:bg-blue-50 transition"
+						>
+							👤 Login
+						</a>
+
+						<button
+							onClick={() => setShowProductUploadModal(true)}
+							className="rounded-xl bg-[#404d85] px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-[#323d6a] transition"
+						>
+							+ Upload Product
+						</button>
 					</div>
+
 				</div>
 			</header>
 
-			{/* CATEGORY BAR */}
-			<div className="bg-white border-b border-zinc-200 px-4 sm:px-6 py-2 overflow-x-auto shadow-sm">
-				<div className="max-w-7xl mx-auto flex items-center gap-2 text-xs font-semibold">
-					<span className="text-zinc-400 text-[11px] font-bold uppercase tracking-wider mr-2 shrink-0">Browse Categories:</span>
-					{categories.map((cat) => (
+			{/* HERO SECTION 1: SEARCH FOR PRODUCTS & SERVICES CARD (EXACT REFERENCE LAYOUT) */}
+			<section className="max-w-7xl w-full mx-auto px-4 sm:px-8 pt-8">
+				<div className="rounded-3xl bg-gradient-to-r from-[#252f5a] via-[#323d6a] to-[#404d85] text-white p-6 sm:p-8 shadow-xl relative overflow-hidden space-y-6">
+					
+					<div className="space-y-2">
+						<h1 className="text-2xl sm:text-3xl font-extrabold text-white">
+							Find Your Marketplace Products and Services
+						</h1>
+						<p className="text-xs sm:text-sm text-blue-100 max-w-3xl leading-relaxed">
+							Explore a vast selection of multi-vendor products and services tailored to your needs. Whether you are seeking specific items or enterprise cloud solutions.
+						</p>
+					</div>
+
+					{/* Tab Toggles: Search for Products | Search for Services */}
+					<div className="flex items-center gap-3">
 						<button
-							key={cat}
-							onClick={() => setCategoryFilter(cat)}
-							className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
-								categoryFilter === cat ? "bg-[#404d85] text-white shadow-sm" : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
+							onClick={() => setSearchTab("products")}
+							className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition ${
+								searchTab === "products" ? "bg-white text-[#404d85] shadow-lg" : "bg-white/10 text-white hover:bg-white/20"
 							}`}
 						>
-							{cat}
+							<span>🛍️ Search for Products...</span>
 						</button>
-					))}
-				</div>
-			</div>
-
-			{/* ELEGANT HERO BANNER WITH PROPORTIONAL TYPOGRAPHY */}
-			{selectedVendorFilter === "All" && (
-				<div className="bg-gradient-to-r from-[#1f2430] via-[#252f5a] to-[#404d85] text-white py-8 sm:py-10 px-4 sm:px-8 border-b border-[#252f5a]">
-					<div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-						
-						<div className="space-y-3 text-center md:text-left max-w-xl">
-							<span className="inline-block rounded-full bg-[#6678c1]/20 border border-[#6678c1]/40 px-3 py-0.5 text-xs font-bold text-blue-200">
-								🏬 Office Connect Verified Marketplace
-							</span>
-							<h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
-								Explore Verified Sellers & Direct Storefronts
-							</h1>
-							<p className="text-xs sm:text-sm text-zinc-300 font-normal leading-relaxed">
-								Browse organic skincare, cloud servers, audio devices, and multi-vendor products directly from certified merchants.
-							</p>
-							<div className="pt-1 flex justify-center md:justify-start gap-3">
-								<button
-									onClick={() => setShowProductUploadModal(true)}
-									className="rounded-xl bg-white px-5 py-2.5 text-xs font-bold text-[#404d85] shadow-md hover:bg-blue-50 transition"
-								>
-									+ Upload Product Listing
-								</button>
-							</div>
-						</div>
-
-						{/* Featured Highlight Card */}
-						<div className="w-full max-w-sm rounded-2xl bg-white/10 border border-white/20 p-4 shadow-xl text-white space-y-3">
-							<div className="flex justify-between items-center text-xs">
-								<span className="rounded-full bg-emerald-500/30 border border-emerald-400 px-2.5 py-0.5 text-[10px] font-bold text-emerald-200">
-									Featured Product
-								</span>
-								<span className="font-bold text-blue-200">⭐ 5.0</span>
-							</div>
-							<img
-								src={products[0].image}
-								alt={products[0].title}
-								className="w-full h-36 object-cover rounded-xl border border-white/20 shadow-sm"
-							/>
-							<div>
-								<h3 className="font-bold text-sm text-white">{products[0].title}</h3>
-								<p className="text-xs text-blue-200 line-clamp-1">{products[0].subtitle}</p>
-							</div>
-							<div className="flex justify-between items-center pt-2 border-t border-white/10 text-xs">
-								<span className="font-extrabold text-emerald-300 text-base">${products[0].price.toFixed(2)}</span>
-								<button
-									onClick={() => setSelectedProductQuickView(products[0])}
-									className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-[#404d85] hover:bg-blue-50"
-								>
-									Details ↗
-								</button>
-							</div>
-						</div>
-
+						<button
+							onClick={() => setSearchTab("services")}
+							className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition ${
+								searchTab === "services" ? "bg-white text-[#404d85] shadow-lg" : "bg-white/10 text-white hover:bg-white/20"
+							}`}
+						>
+							<span>🛠️ Search for Services...</span>
+						</button>
 					</div>
+
+					{/* Multi-Field Search Filter Bar (Exact Reference Row) */}
+					<div className="bg-white rounded-2xl p-3 shadow-lg grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 text-xs font-semibold text-[#1f2430]">
+						<select
+							value={categoryFilter}
+							onChange={(e) => setCategoryFilter(e.target.value)}
+							className="rounded-xl border border-zinc-200 p-2.5 bg-zinc-50 font-bold text-[#404d85] focus:outline-none cursor-pointer"
+						>
+							<option value="All Categories">Product Category</option>
+							<option value="Electronics & Gadgets">Electronics & Gadgets</option>
+							<option value="Beauty & Personal Care">Beauty & Personal Care</option>
+							<option value="Enterprise Software & Cloud">Enterprise Software & Cloud</option>
+						</select>
+
+						<select
+							value={selectedBrand}
+							onChange={(e) => setSelectedBrand(e.target.value)}
+							className="rounded-xl border border-zinc-200 p-2.5 bg-zinc-50 font-semibold focus:outline-none cursor-pointer"
+						>
+							<option value="All Brands">Select Brand</option>
+							<option value="Office Connect Direct">Office Connect Direct 👑</option>
+							<option value="Glow Beauty Organics">Glow Beauty Organics 🌸</option>
+							<option value="Acme Cloud Corp">Acme Cloud Corp ☁️</option>
+						</select>
+
+						<select className="rounded-xl border border-zinc-200 p-2.5 bg-zinc-50 font-semibold focus:outline-none cursor-pointer">
+							<option value="">Select Model</option>
+							<option value="2026 Pro">2026 Pro Edition</option>
+							<option value="Enterprise">Enterprise Cloud</option>
+						</select>
+
+						<select className="rounded-xl border border-zinc-200 p-2.5 bg-zinc-50 font-semibold focus:outline-none cursor-pointer">
+							<option value="">Model Year</option>
+							<option value="2026">2026 Edition</option>
+							<option value="2025">2025 Edition</option>
+						</select>
+
+						<input
+							type="text"
+							placeholder="Keyword..."
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							className="rounded-xl border border-zinc-200 p-2.5 bg-zinc-50 font-medium focus:outline-none"
+						/>
+
+						<button className="rounded-xl bg-[#404d85] text-white font-bold py-2.5 px-4 hover:bg-[#323d6a] transition flex items-center justify-center gap-1.5 shadow-md">
+							<span>🔍 Search</span>
+						</button>
+					</div>
+
 				</div>
-			)}
+			</section>
 
-			{/* MAIN BODY CATALOG */}
-			<main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-				<div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+			{/* HERO SECTION 2: SPLIT PROMOTIONAL CARDS GRID (EXACT REFERENCE 65% / 35% LAYOUT) */}
+			<section className="max-w-7xl w-full mx-auto px-4 sm:px-8 py-8">
+				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 					
-					{/* LEFT VENDOR STORES SIDEBAR */}
-					<aside className="space-y-6">
-						<div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm space-y-3">
-							<h3 className="text-xs font-bold text-[#404d85] uppercase tracking-wider border-b border-zinc-200 pb-2">
-								🏬 Registered Seller Stores ({vendors.length})
-							</h3>
-							<div className="space-y-1.5 max-h-64 overflow-y-auto">
-								<button
-									onClick={() => setSelectedVendorFilter("All")}
-									className={`w-full text-left p-2 rounded-xl text-xs font-bold transition flex items-center justify-between ${
-										selectedVendorFilter === "All" ? "bg-[#404d85] text-white shadow-sm" : "hover:bg-zinc-100 text-zinc-800"
-									}`}
-								>
-									<span>All Marketplace Stores</span>
-									<span>({products.length})</span>
-								</button>
-								{vendors.map((v) => (
-									<button
-										key={v.id}
-										onClick={() => setSelectedVendorFilter(v.id)}
-										className={`w-full text-left p-2 rounded-xl text-xs font-semibold transition flex items-center justify-between ${
-											selectedVendorFilter === v.id ? "bg-[#404d85] text-white shadow-sm" : "hover:bg-zinc-100 text-zinc-800"
-										}`}
-									>
-										<span className="flex items-center gap-2 truncate">
-											<span>{v.logo}</span>
-											<span className="truncate">{v.name}</span>
-										</span>
-										<span className="text-[10px] opacity-75">
-											({products.filter((p) => p.vendorId === v.id).length})
-										</span>
-									</button>
-								))}
-							</div>
+					{/* Left Promo Card (65% Width / 2 Cols) */}
+					<div className="lg:col-span-2 rounded-3xl bg-gradient-to-br from-[#eef2fa] via-white to-zinc-100 border border-zinc-200/80 p-8 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[320px]">
+						{/* Special Offer Badge Circle (Like Reference) */}
+						<div className="absolute top-6 right-8 w-24 h-24 rounded-full bg-[#404d85] text-white flex flex-col items-center justify-center text-center shadow-lg border-4 border-white transform rotate-12">
+							<span className="text-[10px] font-black uppercase tracking-wider">SPECIAL OFFER</span>
+							<span className="text-lg font-black leading-none">50%</span>
+							<span className="text-[9px] font-bold">OFF</span>
 						</div>
-					</aside>
 
-					{/* RIGHT PRODUCTS GRID */}
-					<section className="lg:col-span-3 space-y-6">
-						<div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-zinc-200 shadow-sm">
-							<div>
-								<h2 className="text-base font-extrabold text-[#404d85]">
-									{selectedVendorFilter === "All"
-										? "Live Product Catalog"
-										: `Storefront: ${activeVendorObj?.name || "Vendor Products"}`}
-								</h2>
-								<p className="text-xs text-zinc-500">Showing {filteredProducts.length} verified items</p>
-							</div>
+						<div className="space-y-3 max-w-md">
+							<span className="text-xs font-bold text-emerald-600 uppercase tracking-widest block">
+								100% Genuine Certified
+							</span>
+							<h2 className="text-3xl sm:text-4xl font-black text-[#1f2430] leading-tight">
+								PREMIER BRAND PRODUCTS
+							</h2>
+							<p className="text-xs text-zinc-600 font-medium">
+								Directly fulfilled by verified seller stores with nationwide express warranty protection.
+							</p>
+						</div>
+
+						<div className="flex items-center justify-between pt-6">
 							<button
 								onClick={() => setShowProductUploadModal(true)}
-								className="rounded-xl bg-[#404d85] px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#323d6a]"
+								className="rounded-xl bg-[#404d85] px-6 py-3 text-xs font-bold text-white shadow-md hover:bg-[#323d6a]"
 							>
-								+ Upload Product
+								Explore Featured Catalog ↗
 							</button>
-						</div>
 
-						{/* Product Cards Grid */}
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-							{filteredProducts.map((product) => (
-								<div
-									key={product.id}
-									className="group rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-sm hover:shadow-md hover:border-[#6678c1]/40 transition flex flex-col justify-between"
-								>
-									<div className="relative aspect-[4/3] bg-zinc-50 overflow-hidden border-b border-zinc-100">
-										<img
-											src={product.image}
-											alt={product.title}
-											className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-										/>
-										{product.sellerOfferBadge && (
-											<span className="absolute top-2.5 left-2.5 rounded-full bg-[#1f2430]/90 backdrop-blur-sm px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-												{product.sellerOfferBadge}
-											</span>
-										)}
-									</div>
-
-									<div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-										<div className="space-y-1">
-											<div className="flex justify-between items-center text-[11px] text-[#6678c1] font-bold">
-												<span>{product.vendorLogo} {product.vendorName}</span>
-												<span>⭐ {product.rating}</span>
-											</div>
-											<h3 className="font-bold text-sm text-[#1f2430] group-hover:text-[#404d85] transition line-clamp-1">{product.title}</h3>
-											<p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">{product.description}</p>
-										</div>
-
-										<div className="pt-3 border-t border-zinc-100 flex items-center justify-between text-xs">
-											<div>
-												<div className="font-extrabold text-emerald-600 text-base">${product.price.toFixed(2)}</div>
-												{product.originalPrice && (
-													<div className="text-[11px] text-zinc-400 line-through">${product.originalPrice.toFixed(2)}</div>
-												)}
-											</div>
-											<div className="flex gap-1.5">
-												<button
-													onClick={() => setSelectedProductQuickView(product)}
-													className="rounded-lg border border-zinc-300 bg-zinc-50 px-2.5 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-100"
-												>
-													Details
-												</button>
-												<button
-													onClick={() => addToCart(product)}
-													className="rounded-lg bg-[#404d85] px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-[#323d6a]"
-												>
-													+ Add
-												</button>
-											</div>
-										</div>
-									</div>
-								</div>
-							))}
-						</div>
-					</section>
-				</div>
-			</main>
-
-			{/* PRODUCT DETAILS MODAL */}
-			{selectedProductQuickView && (
-				<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-					<div className="w-full max-w-xl rounded-3xl bg-white p-6 shadow-2xl relative border border-zinc-200 max-h-[90vh] overflow-y-auto space-y-4">
-						<button
-							onClick={() => setSelectedProductQuickView(null)}
-							className="absolute right-5 top-5 text-zinc-400 hover:text-zinc-600 text-lg font-bold"
-						>
-							✕
-						</button>
-
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-center">
-							<img
-								src={selectedProductQuickView.image}
-								alt={selectedProductQuickView.title}
-								className="w-full aspect-square object-cover rounded-xl border border-zinc-200 shadow-sm"
-							/>
-
-							<div className="space-y-2.5">
-								<span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[11px] font-bold text-blue-800">
-									{selectedProductQuickView.category}
-								</span>
-								<h2 className="text-lg font-bold text-[#404d85]">{selectedProductQuickView.title}</h2>
-								<p className="text-xs text-zinc-600 leading-relaxed">{selectedProductQuickView.description}</p>
-
-								{selectedProductQuickView.features && (
-									<ul className="space-y-1 text-xs text-zinc-700 list-disc pl-4 font-medium">
-										{selectedProductQuickView.features.map((feat, i) => (
-											<li key={i}>{feat}</li>
-										))}
-									</ul>
-								)}
-
-								<div className="pt-2 border-t border-zinc-200 flex items-center justify-between">
-									<span className="text-xl font-extrabold text-emerald-600">${selectedProductQuickView.price.toFixed(2)}</span>
-									<button
-										onClick={() => {
-											addToCart(selectedProductQuickView);
-											setSelectedProductQuickView(null);
-										}}
-										className="rounded-xl bg-[#404d85] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#323d6a]"
-									>
-										+ Add to Cart
-									</button>
-								</div>
+							{/* Carousel Pagination Dots */}
+							<div className="flex items-center gap-1.5">
+								<span className="w-3 h-3 rounded-full bg-[#404d85]" />
+								<span className="w-2.5 h-2.5 rounded-full bg-zinc-300" />
+								<span className="w-2.5 h-2.5 rounded-full bg-zinc-300" />
 							</div>
 						</div>
 					</div>
+
+					{/* Right Promo Card (35% Width / 1 Col) */}
+					<div className="rounded-3xl bg-gradient-to-br from-[#252f5a] to-[#404d85] text-white p-8 shadow-md flex flex-col justify-between relative overflow-hidden min-h-[320px]">
+						<div className="space-y-3">
+							<span className="rounded-full bg-white/20 border border-white/30 px-3 py-1 text-[10px] font-bold text-blue-200">
+								Vendor Services Hub
+							</span>
+							<h3 className="text-2xl font-black text-white leading-snug">
+								Register Store & Book Services Online
+							</h3>
+							<p className="text-xs text-blue-100 font-normal leading-relaxed">
+								Connect with nearest verified garages, cloud experts, and beauty consultants.
+							</p>
+						</div>
+
+						<div className="pt-6 space-y-3">
+							<button
+								onClick={() => setShowProductUploadModal(true)}
+								className="w-full rounded-xl bg-white py-3 text-xs font-bold text-[#404d85] shadow-lg hover:bg-blue-50 transition"
+							>
+								+ Register As Seller Store
+							</button>
+							<div className="text-[11px] text-center text-emerald-300 font-bold">
+								📍 Find nearest seller location
+							</div>
+						</div>
+					</div>
+
 				</div>
-			)}
+			</section>
+
+			{/* TRUST & GUARANTEE BADGES STRIP (EXACT REFERENCE BOTTOM BAR) */}
+			<section className="bg-white border-y border-zinc-200 py-6 px-4 sm:px-8 shadow-sm">
+				<div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-xs font-bold text-[#1f2430]">
+					<div className="flex items-center gap-3">
+						<span className="text-2xl p-2 bg-emerald-50 rounded-xl text-emerald-600 border border-emerald-200">🛡️</span>
+						<div>
+							<h4 className="font-extrabold text-sm">Original Brand Products</h4>
+							<p className="text-[11px] text-zinc-500 font-normal">100% Certified Direct Goods</p>
+						</div>
+					</div>
+
+					<div className="flex items-center gap-3">
+						<span className="text-2xl p-2 bg-blue-50 rounded-xl text-[#404d85] border border-blue-200">🚚</span>
+						<div>
+							<h4 className="font-extrabold text-sm">Nationwide Delivery</h4>
+							<p className="text-[11px] text-zinc-500 font-normal">Express Shipping Available</p>
+						</div>
+					</div>
+
+					<div className="flex items-center gap-3">
+						<span className="text-2xl p-2 bg-purple-50 rounded-xl text-purple-600 border border-purple-200">🔒</span>
+						<div>
+							<h4 className="font-extrabold text-sm">Verified Seller Guarantee</h4>
+							<p className="text-[11px] text-zinc-500 font-normal">Stripe Escrow Protection</p>
+						</div>
+					</div>
+
+					<div className="flex items-center gap-3">
+						<span className="text-2xl p-2 bg-amber-50 rounded-xl text-amber-600 border border-amber-200">💎</span>
+						<div>
+							<h4 className="font-extrabold text-sm">Best Price Guarantee</h4>
+							<p className="text-[11px] text-zinc-500 font-normal">Wholesale B2B Pricing</p>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			{/* MAIN LIVE PRODUCTS CATALOG GRID */}
+			<main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-10 space-y-6">
+				<div className="flex items-center justify-between bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm">
+					<div>
+						<h2 className="text-lg font-extrabold text-[#404d85]">Live Multi-Vendor Product Catalog</h2>
+						<p className="text-xs text-zinc-500">Showing {filteredProducts.length} verified listings</p>
+					</div>
+					<button
+						onClick={() => setShowProductUploadModal(true)}
+						className="rounded-xl bg-[#404d85] px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#323d6a]"
+					>
+						+ Upload Product
+					</button>
+				</div>
+
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+					{filteredProducts.map((product) => (
+						<div
+							key={product.id}
+							className="group rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-sm hover:shadow-xl hover:border-[#6678c1]/40 transition flex flex-col justify-between"
+						>
+							<div className="relative aspect-[4/3] bg-zinc-50 overflow-hidden border-b border-zinc-100">
+								<img
+									src={product.image}
+									alt={product.title}
+									className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+								/>
+								{product.sellerOfferBadge && (
+									<span className="absolute top-2.5 left-2.5 rounded-full bg-[#1f2430]/90 backdrop-blur-sm px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+										{product.sellerOfferBadge}
+									</span>
+								)}
+							</div>
+
+							<div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+								<div className="space-y-1">
+									<div className="flex justify-between items-center text-[11px] text-[#6678c1] font-bold">
+										<span>{product.vendorLogo} {product.vendorName}</span>
+										<span>⭐ {product.rating}</span>
+									</div>
+									<h3 className="font-bold text-sm text-[#1f2430] group-hover:text-[#404d85] transition line-clamp-1">{product.title}</h3>
+									<p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">{product.description}</p>
+								</div>
+
+								<div className="pt-3 border-t border-zinc-100 flex items-center justify-between text-xs">
+									<div>
+										<div className="font-extrabold text-emerald-600 text-base">${product.price.toFixed(2)}</div>
+										{product.originalPrice && (
+											<div className="text-[11px] text-zinc-400 line-through">${product.originalPrice.toFixed(2)}</div>
+										)}
+									</div>
+									<div className="flex gap-1.5">
+										<button
+											onClick={() => setSelectedProductQuickView(product)}
+											className="rounded-lg border border-zinc-300 bg-zinc-50 px-2.5 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-100"
+										>
+											Details
+										</button>
+										<button
+											onClick={() => addToCart(product)}
+											className="rounded-lg bg-[#404d85] px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-[#323d6a]"
+										>
+											+ Add
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					))}
+				</div>
+			</main>
 
 			{/* UPLOAD PRODUCT MODAL */}
 			{showProductUploadModal && (
