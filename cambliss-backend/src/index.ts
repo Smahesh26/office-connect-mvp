@@ -22,6 +22,7 @@ import chatRoutes from "./modules/chat/chat.routes";
 import userManagementRoutes from "./modules/user-management/user-management.routes";
 import toolsRoutes from "./modules/tools/tools.routes";
 import videoConnectRoutes from "./modules/video-connect/video-connect.routes";
+import ecommerceRoutes from "./modules/ecommerce/ecommerce.routes";
 
 const app = express();
 
@@ -68,6 +69,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Public Video Connect signaling routes (No auth token required for guest access)
 app.use("/api/video-connect", videoConnectRoutes);
+app.use("/api/storefront", ecommerceRoutes);
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/accounting", accountingRoutes);

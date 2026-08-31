@@ -1,30 +1,59 @@
 @import "tailwindcss";
 
-:root {
-  --indigo: #5c74c4;
-  --indigo-dark: #475a9e;
-  --sky: #8eb0d8;
-  --navy: #364477;
-  --navy-deep: #2b365c;
-  --ink: #1a1e28;
-  --slate: #545c6a;
-  --pale: #eff3f9;
-  --pale-2: #f8fafc;
-  --white: #ffffff;
-  --line: #e2e6ef;
+/* ============================================
+   DESIGN SYSTEM TOKENS
+   ============================================ */
 
-  /* Tailwind theme mappings */
-  --background: var(--pale);
-  --foreground: var(--ink);
-  --foreground-strong: var(--navy-deep);
-  --foreground-muted: var(--slate);
-  --brand: var(--indigo);
-  --brand-strong: var(--navy);
-  --brand-soft: var(--pale-2);
-  --brand-accent: var(--sky);
-  
-  --font-app-sans: Arial, Helvetica, "Segoe UI", sans-serif;
-  --font-app-mono: "Courier New", Courier, monospace;
+:root {
+  /* Neutrals */
+  --ink: #0f1114;
+  --body: #3b3f4a;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --surface: #f9fafb;
+  --white: #ffffff;
+
+  /* Brand */
+  --brand-900: #1a1a2e;
+  --brand-700: #2b365c;
+  --brand-600: #404d85;
+  --brand-400: #6678c1;
+  --brand-100: #eef0f7;
+  --brand-50: #f5f6fa;
+
+  /* Commerce */
+  --price: #059669;
+  --sale: #dc2626;
+  --rating: #f59e0b;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08);
+
+  /* Legacy mappings for existing components */
+  --indigo: var(--brand-600);
+  --indigo-dark: var(--brand-700);
+  --sky: var(--brand-400);
+  --navy: var(--brand-700);
+  --navy-deep: var(--brand-900);
+  --slate: var(--muted);
+  --pale: var(--surface);
+  --pale-2: var(--white);
+  --line: var(--border);
+
+  --background: var(--white);
+  --foreground: var(--body);
+  --foreground-strong: var(--ink);
+  --foreground-muted: var(--muted);
+  --brand: var(--brand-600);
+  --brand-strong: var(--brand-700);
+  --brand-soft: var(--brand-50);
+  --brand-accent: var(--brand-400);
+
+  --font-app-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-app-mono: "JetBrains Mono", "Fira Code", "Courier New", monospace;
 }
 
 @theme inline {
@@ -38,33 +67,67 @@
   --color-foreground-muted: var(--foreground-muted);
   --color-line: var(--line);
   --color-navy-deep: var(--navy-deep);
-  
+  --color-ink: var(--ink);
+  --color-body: var(--body);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-surface: var(--surface);
+  --color-price: var(--price);
+  --color-sale: var(--sale);
+  --color-rating: var(--rating);
+  --color-brand-900: var(--brand-900);
+  --color-brand-700: var(--brand-700);
+  --color-brand-600: var(--brand-600);
+  --color-brand-400: var(--brand-400);
+  --color-brand-100: var(--brand-100);
+  --color-brand-50: var(--brand-50);
+
   --font-sans: var(--font-app-sans);
   --font-mono: var(--font-app-mono);
 }
 
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
 body {
-  background:
-    radial-gradient(circle at top, rgba(142, 176, 216, 0.15), transparent 36%),
-    linear-gradient(180deg, #f9fbff 0%, var(--background) 48%, #eef3f9 100%);
-  color: var(--foreground);
+  background: var(--white);
+  color: var(--body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--brand) 22%, white);
-  color: var(--foreground);
+  background: color-mix(in srgb, var(--brand-600) 18%, white);
+  color: var(--ink);
 }
 
 @layer base {
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    color: var(--foreground-strong);
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--ink);
+    font-weight: 600;
   }
 }
+
+/* ============================================
+   SKELETON ANIMATION
+   ============================================ */
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 25%, #f0f1f3 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+/* ============================================
+   LEGACY OVERRIDES (for existing SaaS pages)
+   ============================================ */
 
 @layer utilities {
   .text-black,

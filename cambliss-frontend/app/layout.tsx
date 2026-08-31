@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
-import { Open_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const openSans = Open_Sans({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "Office Connect",
-  description: "Office Connect workspace",
+  description: "Office Connect — Multi-Vendor Marketplace & Business Suite",
 };
 
 export default function RootLayout({
@@ -15,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${openSans.className} antialiased`}>
+    <html lang="en" className={inter.variable}>
+      <body className={`${inter.className} antialiased`}>
         {children}
       </body>
     </html>
