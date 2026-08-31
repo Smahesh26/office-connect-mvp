@@ -1,83 +1,117 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { StorefrontShell } from "@/components/storefront/StorefrontShell";
-import { CheckoutStepAddress, DeliveryAddress } from "@/components/checkout/CheckoutStepAddress";
-import { CheckoutStepPayment, PaymentMethod } from "@/components/checkout/CheckoutStepPayment";
-import { CartOrderSummary } from "@/components/cart/CartOrderSummary";
-import { formatINR, SellerBadge } from "@/components/commerce/CommercePrimitives";
+import {
+  CheckoutStep1Address,
+  DeliveryAddress,
+} from "@/components/checkout/CheckoutStep1Address";
+import { CheckoutStep2Delivery } from "@/components/checkout/CheckoutStep2Delivery";
+import {
+  CheckoutStep3Payment,
+  PaymentMethodType,
+} from "@/components/checkout/CheckoutStep3Payment";
+import { CheckoutStep4Review } from "@/components/checkout/CheckoutStep4Review";
+import { CheckoutStickySummary } from "@/components/checkout/CheckoutStickySummary";
+import { SellerPackage } from "@/components/cart/MultiVendorPackageGroup";
+import { formatINR } from "@/components/commerce/CommercePrimitives";
 
-export default function MultiVendorCheckoutPage() {
-  const [currentStep, setCurrentStep] = useState<"address" | "payment" | "review">("address");
-
-  const [addresses, setAddresses] = useState<DeliveryAddress[]>([
-    {
-      id: "addr-1",
-      fullName: "Cambliss Studio & Tech HQ",
-      phone: "+91 98450 12345",
-      addressLine1: "#402, 4th Floor, Prestige Tech Park",
-      addressLine2: "Outer Ring Road, Kadubeesanahalli",
-      city: "Bengaluru",
-      state: "Karnataka",
-      pincode: "560103",
-      isDefault: true,
-      gstin: "29AABCU9603R1ZM",
-    },
-    {
-      id: "addr-2",
-      fullName: "Bhasker Advani",
-      phone: "+91 98450 67890",
-      addressLine1: "Flat 12B, Ocean View Apartments",
-      addressLine2: "Worli Sea Face",
-      city: "Mumbai",
-      state: "Maharashtra",
-      pincode: "400018",
-    },
-  ]);
-
-  const [selectedAddressId, setSelectedAddressId] = useState("addr-1");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("upi");
+export default function CheckoutPage() {
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-  // Cart Data for Checkout
-  const checkoutPackages = [
+  // Address State
+  const [selectedAddress, setSelectedAddress] = useState<DeliveryAddress>({
+    id: "addr-1",
+    name: "Cambliss Studio & Tech HQ (Bhasker A.)",
+    phone: "+91 98450 12345",
+    line1: "Suite 402, Prestige Tech Park, Marathahalli-Sarjapur Outer Ring Rd",
+    line2: "Kadubeesanahalli",
+    city: "Bengaluru",
+    state: "Karnataka",
+    pincode: "560103",
+    isDefault: true,
+    type: "Work / Office",
+  });
+
+  // B2B GSTIN State
+  const [gstin, setGstin] = useState("29AABCU9603R1ZM");
+  const [companyName, setCompanyName] = useState("Cambliss Studio Private Limited");
+
+  // Payment Method State
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethodType>("upi");
+
+  // Multi-Vendor Packages
+  const packages: SellerPackage[] = [
     {
-      sellerName: "Office Connect Direct",
-      sellerTier: "premium" as const,
-      deliveryEstimate: "Tomorrow by 2:00 PM",
-      itemTitle: "Sony WH-1000XM5 Wireless Noise Canceling Headphones",
-      price: 29990,
-      quantity: 1,
+      sellerId: "seller-sony",
+      sellerName: "Sony India Direct",
+      sellerTier: "premium",
+      carrier: "Bluedart Air Express",
+      deliveryEstimate: "FREE Delivery by Tomorrow, 1 PM",
+      items: [
+        {
+          id: "item-1",
+          productId: "prod-1",
+          title: "Sony WH-1000XM5 Wireless Noise Canceling Headphones",
+          brand: "Sony",
+          price: 29990,
+          originalPrice: 34990,
+          quantity: 1,
+          image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80",
+          variantName: "Midnight Black",
+          inStock: true,
+        },
+        {
+          id: "item-2",
+          productId: "prod-2",
+          title: "Sony WF-1000XM5 Truly Wireless Noise Canceling Earbuds",
+          brand: "Sony",
+          price: 23990,
+          originalPrice: 26990,
+          quantity: 1,
+          image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=400&q=80",
+          variantName: "Platinum Silver",
+          inStock: true,
+        },
+      ],
     },
     {
-      sellerName: "Glow Beauty Organics",
-      sellerTier: "premium" as const,
-      deliveryEstimate: "2 Days (Wednesday)",
-      itemTitle: "Glow Beauty Damask Rose Organic Botanical Hydrating Facial Serum (50ml)",
-      price: 2499,
-      quantity: 2,
+      sellerId: "seller-keychron",
+      sellerName: "Keychron Official India",
+      sellerTier: "premium",
+      carrier: "Delhivery Surface",
+      deliveryEstimate: "FREE Delivery in 2 Days",
+      items: [
+        {
+          id: "item-3",
+          productId: "prod-4",
+          title: "Keychron Q1 Pro Custom Wireless Mechanical Keyboard QMK/VIA",
+          brand: "Keychron",
+          price: 18499,
+          originalPrice: 21999,
+          quantity: 1,
+          image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=400&q=80",
+          variantName: "Barebone ISO / Carbon Black",
+          inStock: true,
+        },
+      ],
     },
   ];
 
-  const itemsSubtotal = 29990 + 2499 * 2;
-  const shippingTotal = 0;
-  const taxTotal = Math.round(itemsSubtotal * 0.18);
-  const grandTotal = itemsSubtotal + shippingTotal;
-
-  const handleAddNewAddress = (newAddr: Omit<DeliveryAddress, "id">) => {
-    const created: DeliveryAddress = {
-      ...newAddr,
-      id: `addr-${Date.now()}`,
-    };
-    setAddresses((prev) => [created, ...prev]);
-    setSelectedAddressId(created.id);
-  };
+  const subtotal = 72479;
+  const originalTotal = 83979;
+  const discountAmount = 2000; // Promo coupon
+  const deliveryFee = 0;
+  const grandTotal = subtotal - discountAmount + deliveryFee;
 
   const handlePlaceOrder = () => {
     setIsPlacingOrder(true);
     setTimeout(() => {
-      window.location.href = "/order-confirmation/OC-89412";
+      router.push("/order-confirmation/OC-89412");
     }, 1200);
   };
 
@@ -85,151 +119,159 @@ export default function MultiVendorCheckoutPage() {
     <StorefrontShell>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8 pb-32 select-none">
         
-        {/* Checkout Header & Steps Indicator */}
-        <div className="pb-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Header */}
+        <div className="pb-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Secure Multi-Vendor Escrow Checkout
+              Multi-Package Escrow Checkout
             </h1>
             <p className="text-xs text-slate-500">
-              100% Escrow Protection • Funds held until verified package arrival
+              Complete your 4-step verified purchase with 100% Escrow Protection guarantee.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 text-xs font-bold">
-            <span className={`px-3 py-1 rounded-[4px] ${currentStep === "address" ? "bg-[#404d85] text-white" : "bg-slate-100 text-slate-700"}`}>
-              1. Address
-            </span>
-            <span className="text-slate-300">→</span>
-            <span className={`px-3 py-1 rounded-[4px] ${currentStep === "payment" ? "bg-[#404d85] text-white" : "bg-slate-100 text-slate-700"}`}>
-              2. Payment
-            </span>
-            <span className="text-slate-300">→</span>
-            <span className={`px-3 py-1 rounded-[4px] ${currentStep === "review" ? "bg-[#404d85] text-white" : "bg-slate-100 text-slate-700"}`}>
-              3. Review
-            </span>
-          </div>
+          <Link
+            href="/cart"
+            className="text-xs font-bold text-[#404d85] hover:underline self-start sm:self-auto"
+          >
+            ← Return to Shopping Bag
+          </Link>
         </div>
 
+        {/* Step Progress Bar */}
+        <div className="flex items-center justify-between max-w-2xl bg-white p-3 rounded-[8px] border border-slate-200 text-xs font-extrabold shadow-2xs">
+          {[
+            { num: 1, label: "1. Address" },
+            { num: 2, label: "2. Delivery" },
+            { num: 3, label: "3. Payment" },
+            { num: 4, label: "4. Review" },
+          ].map((s) => (
+            <div
+              key={s.num}
+              onClick={() => {
+                if (currentStep > s.num) setCurrentStep(s.num as any);
+              }}
+              className={`flex items-center gap-1.5 cursor-pointer ${
+                currentStep === s.num
+                  ? "text-[#404d85]"
+                  : currentStep > s.num
+                  ? "text-emerald-700 font-bold"
+                  : "text-slate-400 cursor-not-allowed"
+              }`}
+            >
+              <span
+                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                  currentStep === s.num
+                    ? "bg-[#404d85] text-white"
+                    : currentStep > s.num
+                    ? "bg-emerald-600 text-white"
+                    : "bg-slate-200 text-slate-600"
+                }`}
+              >
+                {currentStep > s.num ? "✓" : s.num}
+              </span>
+              <span className="hidden sm:inline">{s.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* 2-Column Desktop Grid / 1-Column Mobile Stack */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Main Checkout Interaction (8 Cols) */}
-          <div className="lg:col-span-8 space-y-8">
+          {/* Left Column: 4-Step Form Formations */}
+          <div className="lg:col-span-8 space-y-5">
             
             {/* Step 1: Address */}
-            {currentStep === "address" && (
-              <div className="space-y-6">
-                <CheckoutStepAddress
-                  addresses={addresses}
-                  selectedAddressId={selectedAddressId}
-                  onSelectAddress={setSelectedAddressId}
-                  onAddNewAddress={handleAddNewAddress}
-                />
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep("payment")}
-                  className="w-full py-3.5 rounded-[6px] bg-[#404d85] text-white font-black text-xs hover:bg-[#323d6a] transition shadow-xs"
-                >
-                  Deliver to Selected Address & Continue to Payment →
-                </button>
-              </div>
-            )}
+            <CheckoutStep1Address
+              isActive={currentStep === 1}
+              isCompleted={currentStep > 1}
+              selectedAddress={selectedAddress}
+              onSelectAddress={setSelectedAddress}
+              onContinue={() => setCurrentStep(2)}
+              onEditStep={() => setCurrentStep(1)}
+              gstin={gstin}
+              onGstinChange={setGstin}
+              companyName={companyName}
+              onCompanyNameChange={setCompanyName}
+            />
 
-            {/* Step 2: Payment */}
-            {currentStep === "payment" && (
-              <div className="space-y-6">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep("address")}
-                  className="text-xs font-bold text-[#404d85] hover:underline"
-                >
-                  ← Back to Address Selection
-                </button>
+            {/* Step 2: Delivery */}
+            <CheckoutStep2Delivery
+              isActive={currentStep === 2}
+              isCompleted={currentStep > 2}
+              packages={packages}
+              onContinue={() => setCurrentStep(3)}
+              onEditStep={() => setCurrentStep(2)}
+            />
 
-                <CheckoutStepPayment
-                  selectedMethod={paymentMethod}
-                  onSelectMethod={setPaymentMethod}
-                  totalAmount={grandTotal}
-                />
+            {/* Step 3: Payment */}
+            <CheckoutStep3Payment
+              isActive={currentStep === 3}
+              isCompleted={currentStep > 3}
+              selectedMethod={selectedPaymentMethod}
+              onSelectMethod={setSelectedPaymentMethod}
+              onContinue={() => setCurrentStep(4)}
+              onEditStep={() => setCurrentStep(3)}
+            />
 
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep("review")}
-                  className="w-full py-3.5 rounded-[6px] bg-[#404d85] text-white font-black text-xs hover:bg-[#323d6a] transition shadow-xs"
-                >
-                  Confirm Payment Method & Review Packages →
-                </button>
-              </div>
-            )}
-
-            {/* Step 3: Multi-Package Final Review */}
-            {currentStep === "review" && (
-              <div className="space-y-6">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep("payment")}
-                  className="text-xs font-bold text-[#404d85] hover:underline"
-                >
-                  ← Change Payment Method
-                </button>
-
-                <h2 className="text-base font-extrabold text-slate-900">
-                  3. Review Multi-Vendor Packages Before Payment
-                </h2>
-
-                <div className="space-y-4">
-                  {checkoutPackages.map((pkg, i) => (
-                    <div key={i} className="p-4 rounded-[8px] border border-slate-200 bg-white space-y-2 text-xs">
-                      <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                        <div className="flex items-center gap-2">
-                          <span className="bg-slate-900 text-white text-[10px] font-black px-2 py-0.5 rounded">
-                            PACKAGE {i + 1}
-                          </span>
-                          <SellerBadge sellerName={pkg.sellerName} sellerTier={pkg.sellerTier} />
-                        </div>
-                        <span className="text-emerald-600 font-bold">🚚 {pkg.deliveryEstimate}</span>
-                      </div>
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="font-semibold text-slate-800">{pkg.quantity}x {pkg.itemTitle}</span>
-                        <span className="font-black text-slate-900">{formatINR(pkg.price * pkg.quantity)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="p-4 rounded-[8px] bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1">
-                  <p className="font-bold text-slate-900">Escrow Release Agreement:</p>
-                  <p>
-                    By clicking &quot;Authorize Escrow Payment&quot;, you authorize Office Connect to collect {formatINR(grandTotal)} and hold the funds in a designated platform escrow vault. Funds will only be settled to individual merchants after delivery verification.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  disabled={isPlacingOrder}
-                  onClick={handlePlaceOrder}
-                  className="w-full py-4 rounded-[6px] bg-slate-900 hover:bg-black text-white font-black text-sm transition shadow-md disabled:opacity-50"
-                >
-                  {isPlacingOrder ? "Processing Escrow Authorization..." : `🔒 Authorize Escrow Payment (${formatINR(grandTotal)})`}
-                </button>
-              </div>
-            )}
+            {/* Step 4: Final Review */}
+            <CheckoutStep4Review
+              isActive={currentStep === 4}
+              packages={packages}
+              address={selectedAddress}
+              paymentMethod={selectedPaymentMethod}
+              grandTotal={grandTotal}
+              onPlaceOrder={handlePlaceOrder}
+              isPlacingOrder={isPlacingOrder}
+            />
 
           </div>
 
-          {/* Right Order Summary Sticky (4 Cols) */}
+          {/* Right Column: Sticky Order Summary */}
           <div className="lg:col-span-4">
-            <CartOrderSummary
-              itemsSubtotal={itemsSubtotal}
-              shippingTotal={shippingTotal}
-              taxTotal={taxTotal}
-              total={grandTotal}
-              packageCount={checkoutPackages.length}
-              checkoutHref="#"
-              ctaLabel={currentStep === "review" ? "Authorize Escrow Payment" : "Continue Checkout"}
+            <CheckoutStickySummary
+              packages={packages}
+              subtotal={subtotal}
+              originalTotal={originalTotal}
+              discountAmount={discountAmount}
+              deliveryFee={deliveryFee}
+              grandTotal={grandTotal}
             />
           </div>
 
+        </div>
+
+        {/* Mobile Fixed Bottom Checkout Bar */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 p-4 shadow-xl flex items-center justify-between gap-4">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+              Final Amount:
+            </span>
+            <span className="text-xl font-black text-[#404d85]">
+              {formatINR(grandTotal)}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            disabled={isPlacingOrder}
+            onClick={() => {
+              if (currentStep < 4) {
+                setCurrentStep((currentStep + 1) as any);
+              } else {
+                handlePlaceOrder();
+              }
+            }}
+            className="flex-1 py-3 px-4 rounded-[6px] bg-[#404d85] hover:bg-[#323d6a] text-white font-black text-xs text-center transition shadow-sm"
+          >
+            {isPlacingOrder ? (
+              "Securing Escrow..."
+            ) : currentStep < 4 ? (
+              `Proceed to Step ${currentStep + 1} →`
+            ) : (
+              `Place Order (${formatINR(grandTotal)})`
+            )}
+          </button>
         </div>
 
       </div>
