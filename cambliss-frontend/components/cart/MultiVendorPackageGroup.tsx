@@ -132,7 +132,7 @@ export const MultiVendorPackageGroup = ({
                     <div className="text-base font-black text-slate-900">
                       {formatINR(item.price * item.quantity)}
                     </div>
-                    {item.originalPrice > item.price && (
+                    {item.originalPrice && item.originalPrice > item.price && (
                       <div className="text-xs text-slate-400 line-through">
                         {formatINR(item.originalPrice * item.quantity)}
                       </div>

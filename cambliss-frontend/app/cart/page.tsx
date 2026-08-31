@@ -107,7 +107,7 @@ export default function CartPage() {
   }, [activeItems]);
 
   const originalTotal = useMemo(() => {
-    return activeItems.reduce((acc, i) => acc + i.originalPrice * i.quantity, 0);
+    return activeItems.reduce((acc, i) => acc + (i.originalPrice || i.price) * i.quantity, 0);
   }, [activeItems]);
 
   const handleUpdateQuantity = (itemId: string, newQty: number) => {
