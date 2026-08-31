@@ -70,38 +70,38 @@ export const StorefrontTopDeals = () => {
   ];
 
   return (
-    <section className="space-y-4 rounded-[12px] bg-red-50/50 border border-red-200/60 p-6 select-none">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-red-200/60 pb-4">
-        <div className="flex items-center gap-3">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white text-base">
-            🔥
-          </span>
-          <div>
-            <h2 className="text-base font-black text-slate-900">Today's Flash Deals & Offers</h2>
-            <p className="text-xs text-slate-500">Limited inventory at verified direct-from-brand discounts</p>
+    <section className="space-y-6 select-none">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-3 border-b border-slate-200">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-red-600 animate-ping" />
+            <h2 className="text-xl font-black text-slate-900">Today's Flash Deals & Limited Offers</h2>
           </div>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Direct-from-brand discounts refreshed daily with verified stock allocation
+          </p>
         </div>
 
-        {/* Countdown Timer */}
+        {/* Minimalist Countdown Timer */}
         <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-          <span className="text-slate-500">Ends in:</span>
-          <div className="flex items-center gap-1 font-mono">
-            <span className="bg-slate-900 text-white px-2 py-1 rounded-[4px] font-black">
+          <span className="text-slate-500">Sale Ends In:</span>
+          <div className="flex items-center gap-1 font-mono text-xs">
+            <span className="bg-slate-900 text-white px-2 py-1 rounded-[4px]">
               {String(timeLeft.hours).padStart(2, "0")}h
             </span>
             <span>:</span>
-            <span className="bg-slate-900 text-white px-2 py-1 rounded-[4px] font-black">
+            <span className="bg-slate-900 text-white px-2 py-1 rounded-[4px]">
               {String(timeLeft.minutes).padStart(2, "0")}m
             </span>
             <span>:</span>
-            <span className="bg-red-600 text-white px-2 py-1 rounded-[4px] font-black">
+            <span className="bg-red-600 text-white px-2 py-1 rounded-[4px]">
               {String(timeLeft.seconds).padStart(2, "0")}s
             </span>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {dealProducts.map((p) => (
           <ProductCard
             key={p.id}

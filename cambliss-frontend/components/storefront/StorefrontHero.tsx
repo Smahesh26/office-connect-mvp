@@ -8,93 +8,106 @@ export const StorefrontHero = () => {
 
   const slides = [
     {
-      badge: "✨ MEGA MARKETPLACE SALE",
+      badge: "OFFICIAL CATALOG",
       title: "Enterprise Computing & Cloud Hardware",
-      description: "Direct manufacturer pricing from verified IT distributors. Get up to 25% off on enterprise servers, high-performance NVMe nodes, and computing gear.",
-      ctaPrimary: { label: "Shop Computing Deals", href: "/category/computing" },
-      ctaSecondary: { label: "Explore Verified IT Sellers", href: "/storefront?vendor=All" },
-      tag: "48-Hour Dispatch SLA",
-      gradient: "from-[#1f2430] via-[#252f5a] to-[#404d85]",
+      subtitle: "Direct manufacturer pricing from verified IT distributors across India & global markets.",
+      bullets: ["Same-Day Warehouse Dispatch", "100% Escrow Payment Protection", "Official GST Tax Invoice"],
+      ctaPrimary: { label: "Shop Computing Offers", href: "/category/computing" },
+      ctaSecondary: { label: "Browse Verified IT Sellers", href: "/storefront?vendor=All" },
+      image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1000&q=80",
     },
     {
-      badge: "🌸 LUXURY FRENCH BOTANICALS",
-      title: "Glow Beauty Organics Flagship Boutique",
-      description: "Direct from Grasse, France. Cold-pressed Damask Rose elixirs, certified organic serums, and clinical skincare with 100% authenticity guarantee.",
-      ctaPrimary: { label: "Visit Glow Beauty Store", href: "/storefront?vendor=v-glow-beauty" },
-      ctaSecondary: { label: "View Beauty Catalog", href: "/category/beauty" },
-      tag: "Certified Organic & Vegan",
-      gradient: "from-[#2e1065] via-[#4c1d95] to-[#7c3aed]",
-    },
-    {
-      badge: "🚘 MOTORSPORT & INDUSTRIAL SPARES",
-      title: "AutoCare Certified Performance Hub",
-      description: "High-grade 5W-40 synthetic motor oils, ceramic brake systems, and workshop equipment backed by manufacturer warranty and express freight.",
-      ctaPrimary: { label: "Shop AutoCare Store", href: "/storefront?vendor=v-autocare" },
-      ctaSecondary: { label: "Browse Auto Catalog", href: "/category/automotive" },
-      tag: "OEM Specification Certified",
-      gradient: "from-[#0f172a] via-[#1e293b] to-[#334155]",
+      badge: "FRENCH LUXURY ORGANICS",
+      title: "Botanical Skincare Direct from Grasse",
+      subtitle: "Cold-pressed Damask Rose elixirs, certified organic serums, and clinical botanicals.",
+      bullets: ["Direct from French Laboratories", "100% Authenticity Verified", "Cruelty-Free & Vegan"],
+      ctaPrimary: { label: "Explore Glow Beauty Store", href: "/storefront?vendor=v-glow-beauty" },
+      ctaSecondary: { label: "View All Skincare", href: "/category/beauty" },
+      image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1000&q=80",
     },
   ];
 
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % slides.length);
-    }, 6000);
+    }, 7000);
     return () => clearInterval(timer);
   }, [slides.length]);
 
   const slide = slides[activeSlide];
 
   return (
-    <section className="relative rounded-[16px] overflow-hidden shadow-lg border border-slate-700 select-none">
-      <div className={`bg-gradient-to-r ${slide.gradient} text-white p-8 sm:p-12 transition-all duration-700 min-h-[320px] flex flex-col justify-between`}>
+    <section className="border-b border-slate-200 pb-10 select-none">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         
-        <div className="max-w-2xl space-y-4 relative z-10">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-xs border border-white/20 px-3.5 py-1 text-[11px] font-bold text-blue-200">
+        {/* Left Editorial Copy */}
+        <div className="lg:col-span-7 space-y-5">
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] font-black tracking-widest text-[#404d85] uppercase border-b-2 border-[#404d85] pb-0.5">
               {slide.badge}
             </span>
-            <span className="rounded-full bg-emerald-500/20 border border-emerald-400/30 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-300">
-              ✓ {slide.tag}
-            </span>
+            <span className="text-slate-300">•</span>
+            <span className="text-xs text-slate-500 font-semibold">Verified Multi-Vendor Commerce</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight text-white">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-[1.15]">
             {slide.title}
           </h1>
 
-          <p className="text-xs sm:text-sm text-slate-200 max-w-xl leading-relaxed">
-            {slide.description}
+          <p className="text-sm text-slate-600 max-w-xl leading-relaxed">
+            {slide.subtitle}
           </p>
 
-          <div className="flex flex-wrap gap-3 pt-2">
+          {/* Bulleted trust points */}
+          <div className="flex flex-wrap gap-4 pt-1 text-xs font-semibold text-slate-700">
+            {slide.bullets.map((b, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <span className="text-emerald-600 font-bold">✓</span>
+                <span>{b}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-3 pt-3">
             <Link
               href={slide.ctaPrimary.href}
-              className="px-5 py-2.5 rounded-[8px] bg-white text-[#404d85] font-black text-xs hover:bg-slate-100 transition shadow-md"
+              className="px-6 py-3 rounded-[6px] bg-[#404d85] text-white font-bold text-xs hover:bg-[#323d6a] transition shadow-xs"
             >
               {slide.ctaPrimary.label} →
             </Link>
             <Link
               href={slide.ctaSecondary.href}
-              className="px-5 py-2.5 rounded-[8px] border border-white/30 bg-white/10 text-white font-bold text-xs hover:bg-white/20 transition"
+              className="px-5 py-3 rounded-[6px] border border-slate-300 bg-white text-slate-800 font-bold text-xs hover:bg-slate-50 transition"
             >
               {slide.ctaSecondary.label} ↗
             </Link>
           </div>
+
+          {/* Slide Indicator Line */}
+          <div className="flex items-center gap-2 pt-4">
+            {slides.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveSlide(idx)}
+                aria-label={`Go to slide ${idx + 1}`}
+                className={`h-1 transition-all duration-300 rounded-full ${
+                  activeSlide === idx ? "w-10 bg-[#404d85]" : "w-3 bg-slate-200 hover:bg-slate-400"
+                }`}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Carousel Indicators */}
-        <div className="flex items-center gap-2 pt-6 z-10">
-          {slides.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setActiveSlide(idx)}
-              aria-label={`Slide ${idx + 1}`}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                activeSlide === idx ? "w-8 bg-white" : "w-2 bg-white/40 hover:bg-white/70"
-              }`}
-            />
-          ))}
+        {/* Right Composition Media */}
+        <div className="lg:col-span-5 relative aspect-4/3 rounded-[8px] overflow-hidden bg-slate-100 border border-slate-200">
+          <img
+            src={slide.image}
+            alt={slide.title}
+            className="w-full h-full object-cover transition-opacity duration-500"
+          />
+          <div className="absolute bottom-3 right-3 bg-slate-900/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-[4px] backdrop-blur-xs">
+            Direct Merchant Fulfillment
+          </div>
         </div>
 
       </div>

@@ -82,35 +82,37 @@ function StorefrontHomeContent() {
     : recommendedProducts.filter((p) => p.category === recommendedCategoryTab);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-12 pb-24 lg:pb-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-12 pb-24 lg:pb-16">
       
-      {/* 1. HERO / CAMPAIGN AREA */}
+      {/* 1. HERO / CAMPAIGN AREA (Editorial composition, no nested card) */}
       <StorefrontHero />
 
-      {/* 2. CATEGORY SHORTCUTS */}
+      {/* 2. CATEGORY SHORTCUTS (Minimalist horizontal ribbon) */}
       <StorefrontCategoryShortcuts />
 
-      {/* 3. TOP DEALS WITH COUNTDOWN */}
+      {/* 3. TOP DEALS (Open layout with live countdown & header divider) */}
       <StorefrontTopDeals />
 
-      {/* 4. RECOMMENDED PRODUCTS WITH CATEGORY TABS */}
-      <section className="space-y-4 select-none">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* 4. RECOMMENDED PRODUCTS (Open grid with minimal underline category filters) */}
+      <section className="space-y-6 pt-4 border-t border-slate-200 select-none">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-3 border-b border-slate-100">
           <div>
-            <h2 className="text-base font-black text-slate-900">Recommended For You</h2>
-            <p className="text-xs text-slate-500">Handpicked selections based on buyer trends & verified seller ratings</p>
+            <h2 className="text-xl font-black text-slate-900">Recommended For You</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Handpicked selections based on buyer activity and multi-seller inventory availability
+            </p>
           </div>
 
-          {/* Department Filter Chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {/* Clean Underline Category Tabs */}
+          <div className="flex items-center gap-4 text-xs font-bold">
             {["All", "Electronics", "Beauty", "Automotive"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setRecommendedCategoryTab(tab)}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold transition select-none ${
+                className={`pb-1 transition select-none ${
                   recommendedCategoryTab === tab
-                    ? "bg-[#404d85] text-white shadow-xs"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    ? "text-[#404d85] border-b-2 border-[#404d85]"
+                    : "text-slate-500 hover:text-slate-800"
                 }`}
               >
                 {tab}
