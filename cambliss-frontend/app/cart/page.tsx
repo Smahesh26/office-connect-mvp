@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { StorefrontShell } from "@/components/storefront/StorefrontShell";
 import {
@@ -10,13 +10,13 @@ import {
 } from "@/components/cart/MultiVendorPackageGroup";
 import { SavedForLaterShelf } from "@/components/cart/SavedForLaterShelf";
 import { CartSummaryCard } from "@/components/cart/CartSummaryCard";
+import { getStoredCart } from "@/lib/cart-wishlist";
 
 export default function CartPage() {
-  // Mock Initial Multi-Vendor Packages
   const [packages, setPackages] = useState<SellerPackage[]>([
     {
-      sellerId: "seller-sony",
-      sellerName: "Sony India Direct",
+      sellerId: "seller-aerotech",
+      sellerName: "AeroTech Official Direct",
       sellerTier: "premium",
       carrier: "Bluedart Air Express",
       deliveryEstimate: "FREE Delivery by Tomorrow, 1 PM",
@@ -24,40 +24,50 @@ export default function CartPage() {
         {
           id: "item-1",
           productId: "prod-1",
-          title: "Sony WH-1000XM5 Wireless Noise Canceling Headphones",
-          brand: "Sony",
+          title: "AeroTech ANC-500 Wireless Studio Noise Canceling Headphones",
+          brand: "AeroTech",
           price: 29990,
           originalPrice: 34990,
           quantity: 1,
-          image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80",
+          image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=400&q=80",
           variantName: "Midnight Black",
-          inStock: true,
-          priceChangedAlert: {
-            oldPrice: 30990,
-            newPrice: 29990,
-            type: "drop",
-          },
-        },
-        {
-          id: "item-2",
-          productId: "prod-2",
-          title: "Sony WF-1000XM5 Truly Wireless Noise Canceling Earbuds",
-          brand: "Sony",
-          price: 23990,
-          originalPrice: 26990,
-          quantity: 1,
-          image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=400&q=80",
-          variantName: "Platinum Silver",
           inStock: true,
         },
       ],
     },
-    {
-      sellerId: "seller-keychron",
-      sellerName: "Keychron Official India",
-      sellerTier: "premium",
-      carrier: "Delhivery Surface",
-      deliveryEstimate: "FREE Delivery in 2 Days",
+  ]);
+
+  useEffect(() => {
+    const stored = getStoredCart();
+    if (stored.length > 0) {
+      // Group by seller
+      const sellerMap: Record<string, CartLineItem[]> = {};
+      stored.forEach((item) => {
+        const seller = item.sellerName || "Office Connect Direct";
+        if (!sellerMap[seller]) sellerMap[seller] = [];
+        sellerMap[seller].push({
+          id: item.id,
+          productId: item.productId,
+          title: item.title,
+          price: item.price,
+          originalPrice: item.originalPrice,
+          quantity: item.quantity,
+          image: item.image,
+          inStock: true,
+        });
+      });
+
+      const newPackages: SellerPackage[] = Object.entries(sellerMap).map(([sellerName, items], idx) => ({
+        sellerId: `seller-${idx}`,
+        sellerName,
+        sellerTier: "verified",
+        carrier: "Express Priority Courier",
+        deliveryEstimate: "FREE Delivery in 1-2 Days",
+        items,
+      }));
+      setPackages(newPackages);
+    }
+  }, []);
       items: [
         {
           id: "item-3",

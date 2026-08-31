@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { StorefrontAnnouncementBar } from "./StorefrontAnnouncementBar";
@@ -10,10 +10,35 @@ import { StorefrontAccountDropdown } from "./StorefrontAccountDropdown";
 import { StorefrontCategoriesBar } from "./StorefrontCategoriesBar";
 import { StorefrontMobileDrawer } from "./StorefrontMobileDrawer";
 import { StorefrontCartDrawer } from "./StorefrontCartDrawer";
+import { getStoredCart, getStoredWishlist, formatINR } from "@/lib/cart-wishlist";
 
 export const StorefrontHeader = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cartItemsCount, setCartItemsCount] = useState(0);
+  const [cartSubtotal, setCartSubtotal] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
+
+  const updateCounts = () => {
+    const cart = getStoredCart();
+    const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+    const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    setCartItemsCount(totalCount);
+    setCartSubtotal(subtotal);
+
+    const wishlist = getStoredWishlist();
+    setWishlistCount(wishlist.length);
+  };
+
+  useEffect(() => {
+    updateCounts();
+    window.addEventListener("oc_cart_updated", updateCounts);
+    window.addEventListener("oc_wishlist_updated", updateCounts);
+    return () => {
+      window.removeEventListener("oc_cart_updated", updateCounts);
+      window.removeEventListener("oc_wishlist_updated", updateCounts);
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-2xs">
@@ -74,7 +99,7 @@ export const StorefrontHeader = () => {
               <span className="text-sm text-slate-600 group-hover:text-red-600 transition">♥</span>
               <span className="hidden xl:inline text-slate-800">Wishlist</span>
               <span className="flex h-4 w-4 items-center justify-center rounded-full bg-red-100 text-red-700 text-[10px] font-black">
-                4
+                {wishlistCount}
               </span>
             </Link>
 
@@ -91,9 +116,9 @@ export const StorefrontHeader = () => {
               <span className="text-base">🛒</span>
               <span className="hidden sm:inline font-extrabold text-slate-900">Cart</span>
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#404d85] text-[10px] font-black text-white">
-                3
+                {cartItemsCount}
               </span>
-              <span className="hidden xl:inline text-slate-500 font-normal">₹2,450</span>
+              <span className="hidden xl:inline text-slate-500 font-normal">{formatINR(cartSubtotal)}</span>
             </button>
 
           </div>

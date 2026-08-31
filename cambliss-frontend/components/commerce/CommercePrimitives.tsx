@@ -1,9 +1,8 @@
-"use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Badge } from "../ui/Badge";
 import { Button, IconButton } from "../ui/Button";
+import { addToCartStorage, toggleWishlistStorage, isWishlistedStorage } from "@/lib/cart-wishlist";
 
 // Format INR currency without floating-point errors
 export const formatINR = (amount: number | string) => {
@@ -242,22 +241,32 @@ export const ProductCard = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isAddedToCart, setIsAddedToCart] = useState(false);
 
+  useEffect(() => {
+    setIsWishlisted(isWishlistedStorage(id));
+  }, [id]);
+
   const numPrice = typeof price === "string" ? parseFloat(price) : price;
   const numOrig = originalPrice ? (typeof originalPrice === "string" ? parseFloat(originalPrice) : originalPrice) : undefined;
   const isOutOfStock = variant === "out_of_stock" || stockQty <= 0;
 
   const handleAddToCart = () => {
     if (isOutOfStock) return;
+    addToCartStorage({ id, title, price, originalPrice, image, sellerName, quantity });
     setIsAddedToCart(true);
     if (onAddToCart) onAddToCart(quantity);
     setTimeout(() => setIsAddedToCart(false), 2000);
+  };
+
+  const handleToggleWishlist = () => {
+    const nowSaved = toggleWishlistStorage({ id, title, price, originalPrice, image, sellerName, rating });
+    setIsWishlisted(nowSaved);
   };
 
   // 1. COMPACT VARIANT
   if (variant === "compact") {
     return (
       <div className="group border border-slate-200 rounded-[6px] bg-white overflow-hidden hover:border-slate-400 transition-all flex flex-col justify-between p-2.5 space-y-2 select-none">
-        <div className="relative aspect-square bg-slate-50 rounded-[4px] overflow-hidden">
+        <Link href={`/product/${id}`} className="relative aspect-square bg-slate-50 rounded-[4px] overflow-hidden block">
           <img
             src={image}
             alt={title}
@@ -268,13 +277,15 @@ export const ProductCard = ({
               {badge}
             </span>
           )}
-        </div>
+        </Link>
 
         <div className="space-y-1">
           {brand && <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block truncate">{brand}</span>}
-          <h4 className="text-xs font-bold text-slate-900 line-clamp-1 group-hover:text-[#404d85] transition">
-            {title}
-          </h4>
+          <Link href={`/product/${id}`} className="block">
+            <h4 className="text-xs font-bold text-slate-900 line-clamp-1 group-hover:text-[#404d85] transition">
+              {title}
+            </h4>
+          </Link>
           <Rating score={rating} reviewsCount={reviewsCount} />
           <ProductPrice price={price} originalPrice={originalPrice} size="xs" />
         </div>
@@ -655,18 +666,20 @@ export const ProductCard = ({
       className="group border border-slate-200 rounded-[8px] bg-white overflow-hidden hover:border-slate-400 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between select-none"
     >
       <div className="relative aspect-square bg-slate-50 overflow-hidden border-b border-slate-100">
-        <img
-          src={isHovered && secondaryImage ? secondaryImage : image}
-          alt={title}
-          className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
-        />
+        <Link href={`/product/${id}`} className="block w-full h-full">
+          <img
+            src={isHovered && secondaryImage ? secondaryImage : image}
+            alt={title}
+            className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
+          />
+        </Link>
         {badge && (
           <span className="absolute top-2 left-2 rounded bg-slate-900/90 text-white px-2 py-0.5 text-[9px] font-black backdrop-blur-xs">
             {badge}
           </span>
         )}
         <div className="absolute top-2 right-2">
-          <WishlistButton isSaved={isWishlisted} onToggle={() => setIsWishlisted(!isWishlisted)} />
+          <WishlistButton isSaved={isWishlisted} onToggle={handleToggleWishlist} />
         </div>
       </div>
 
@@ -676,9 +689,11 @@ export const ProductCard = ({
             {brand && <span className="text-[10px] font-black text-[#404d85] uppercase tracking-wider">{brand}</span>}
             <SellerBadge sellerName={sellerName} sellerTier={sellerTier} />
           </div>
-          <h4 className="font-bold text-xs text-slate-900 line-clamp-2 leading-snug group-hover:text-[#404d85] transition">
-            {title}
-          </h4>
+          <Link href={`/product/${id}`} className="block">
+            <h4 className="font-bold text-xs text-slate-900 line-clamp-2 leading-snug group-hover:text-[#404d85] transition">
+              {title}
+            </h4>
+          </Link>
           <Rating score={rating} reviewsCount={reviewsCount} />
         </div>
 

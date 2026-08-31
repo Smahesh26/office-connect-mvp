@@ -1,20 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { StorefrontShell } from "@/components/storefront/StorefrontShell";
 import { ProductCard, ProductCardProps } from "@/components/commerce/CommercePrimitives";
+import { getStoredWishlist, saveWishlist } from "@/lib/cart-wishlist";
 
 export default function CustomerWishlistPage() {
   const [wishlistItems, setWishlistItems] = useState<ProductCardProps[]>([
     {
       id: "prod-1",
-      title: "Sony WH-1000XM5 Wireless Noise Canceling Headphones",
-      brand: "Sony",
-      image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80",
+      title: "AeroTech ANC-500 Wireless Noise Canceling Headphones",
+      brand: "AeroTech",
+      image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=600&q=80",
       price: 29990,
       originalPrice: 34990,
-      sellerName: "Office Connect Direct",
+      sellerName: "AeroTech Direct",
       sellerTier: "premium",
       rating: 4.9,
       reviewsCount: 1420,
@@ -22,40 +23,43 @@ export default function CustomerWishlistPage() {
       deliveryEstimate: "FREE Delivery by Tomorrow",
       variant: "wishlist",
     },
-    {
-      id: "prod-3",
-      title: "Keychron Q1 Pro Wireless Custom Mechanical Keyboard",
-      brand: "Keychron",
-      image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80",
-      price: 16999,
-      originalPrice: 19999,
-      sellerName: "Mechanical Keyboards India",
-      sellerTier: "verified",
-      rating: 4.8,
-      reviewsCount: 380,
-      stockQty: 8,
-      deliveryEstimate: "Express Delivery in 2 Days",
-      variant: "wishlist",
-    },
-    {
-      id: "prod-7",
-      title: "Anker Prime 27,650mAh Power Bank (250W Fast Charger)",
-      brand: "Anker",
-      image: "https://images.unsplash.com/photo-1609081219090-a6d81d3085bf?auto=format&fit=crop&w=600&q=80",
-      price: 14999,
-      originalPrice: 17999,
-      sellerName: "Anker Official India",
-      sellerTier: "premium",
-      rating: 4.9,
-      reviewsCount: 680,
-      stockQty: 22,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      variant: "wishlist",
-    },
   ]);
 
+  useEffect(() => {
+    const stored = getStoredWishlist();
+    if (stored.length > 0) {
+      const items: ProductCardProps[] = stored.map((s) => ({
+        id: s.id,
+        title: s.title,
+        price: s.price,
+        originalPrice: s.originalPrice,
+        image: s.image,
+        sellerName: s.sellerName || "Office Connect Direct",
+        sellerTier: "verified",
+        rating: s.rating || 4.8,
+        reviewsCount: 210,
+        stockQty: 12,
+        deliveryEstimate: "FREE Delivery in 1-2 Days",
+        variant: "wishlist",
+      }));
+      setWishlistItems(items);
+    }
+  }, []);
+
   const handleRemove = (id: string) => {
-    setWishlistItems((prev) => prev.filter((i) => i.id !== id));
+    setWishlistItems((prev) => {
+      const updated = prev.filter((i) => i.id !== id);
+      saveWishlist(updated.map((u) => ({
+        id: u.id,
+        title: u.title,
+        price: typeof u.price === "string" ? parseFloat(u.price) : u.price,
+        originalPrice: u.originalPrice ? (typeof u.originalPrice === "string" ? parseFloat(u.originalPrice) : u.originalPrice) : undefined,
+        image: u.image,
+        sellerName: u.sellerName,
+        rating: u.rating,
+      })));
+      return updated;
+    });
   };
 
   return (
