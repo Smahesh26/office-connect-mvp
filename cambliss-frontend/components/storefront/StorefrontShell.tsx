@@ -5,20 +5,30 @@ import { StorefrontHeader } from "./StorefrontHeader";
 import { StorefrontFooter } from "./StorefrontFooter";
 import { StorefrontMobileBottomNav } from "./StorefrontMobileBottomNav";
 
-export const StorefrontShell = ({ children }: { children: ReactNode }) => {
+export interface StorefrontShellProps {
+  children: ReactNode;
+  showAnnouncement?: boolean;
+  showCategoryBar?: boolean;
+}
+
+export const StorefrontShell = ({
+  children,
+}: StorefrontShellProps) => {
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-[#0f172a] flex flex-col antialiased selection:bg-[#404d85] selection:text-white">
-      {/* Global Header */}
+      
+      {/* 1. Global Header (Includes Announcement Bar, Location Selector, Search, Account, Wishlist, Cart, Mega Menu & Mobile Drawer) */}
       <StorefrontHeader />
 
-      {/* Main View Area */}
+      {/* 2. Main Page Content Viewport */}
       <main className="flex-1 w-full">{children}</main>
 
-      {/* Global Footer */}
+      {/* 3. Global Marketplace Footer */}
       <StorefrontFooter />
 
-      {/* Mobile Fixed Bottom Bar */}
+      {/* 4. Mobile Fixed Bottom Navigation */}
       <StorefrontMobileBottomNav onOpenCart={() => {}} />
+
     </div>
   );
 };

@@ -41,14 +41,19 @@
 
 ---
 
-## 4. Reusable Component Catalog
-All components are available in `components/ui/`, `components/commerce/`, and `components/admin/`:
-- **UI Primitives**: `Button`, `IconButton`, `Input`, `SearchInput`, `Select`, `Checkbox`, `Radio`, `Switch`, `Textarea`, `Badge`, `Chip`, `Modal`, `ConfirmationDialog`, `Drawer`, `Tabs`, `AccordionItem`, `Breadcrumb`, `Pagination`, `Alert`, `Spinner`, `Skeleton`, `EmptyState`, `ErrorState`.
-- **Commerce Primitives**: `ProductCard`, `ProductPrice`, `Rating`, `QuantitySelector`, `WishlistButton`, `SellerBadge`, `StockIndicator`, `DeliveryInformation`.
-- **Admin Primitives**: `StatCard`, `PageHeader`, `DataTable`, `BulkActionsBar`.
+## 4. Phase 3 — Customer Storefront Shell & Navigation Architecture
+The global storefront layout encapsulates the universal multi-vendor marketplace shell:
+- **`StorefrontShell`**: Master layout wrapper enclosing AnnouncementBar, Header, CategoryRibbon, MainContent, and Footer.
+- **`StorefrontAnnouncementBar`**: Configurable promotional message ribbon (Free delivery, Returns, dismissible).
+- **`StorefrontLocationSelector`**: Multi-region delivery address and pincode popover.
+- **`StorefrontSearchBar`**: Dominant marketplace search input with category dropdown prefix and keyboard focus.
+- **`StorefrontAccountDropdown`**: Dual state support (Logged-out with Sign In/Register vs. Logged-in with Orders, Wishlist, Addresses, Reviews, Notifications, and Portal Switchers).
+- **`StorefrontCategoriesBar`**: Multi-department mega-menu ribbon with structured subcategory grids.
+- **`StorefrontMobileDrawer`**: Touch-friendly mobile navigation drawer with expandable department accordions.
+- **`StorefrontFooter`**: Grouped multi-column directory (Shop, Customer Service, Sell With Us, About, Trust Badges, Payment Gateway logos, and Mobile Accordions).
 
 ---
 
-## 5. Visual Inspection Showcase Route
-Access the live interactive design system showcase at:
-🔗 **`/design-system`**
+## 5. Visual Inspection Showcase Routes
+- 🔗 **`/storefront-shell-demo`** — Live Storefront Shell & Navigation Inspection Demo
+- 🔗 **`/design-system`** — UI Primitives & Atomic Component Catalog

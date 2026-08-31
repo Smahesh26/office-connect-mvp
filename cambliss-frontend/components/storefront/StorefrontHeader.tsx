@@ -3,10 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { StorefrontAnnouncementBar } from "./StorefrontAnnouncementBar";
+import { StorefrontLocationSelector } from "./StorefrontLocationSelector";
 import { StorefrontSearchBar } from "./StorefrontSearchBar";
 import { StorefrontAccountDropdown } from "./StorefrontAccountDropdown";
-import { StorefrontCartDrawer } from "./StorefrontCartDrawer";
 import { StorefrontCategoriesBar } from "./StorefrontCategoriesBar";
+import { StorefrontMobileDrawer } from "./StorefrontMobileDrawer";
+import { StorefrontCartDrawer } from "./StorefrontCartDrawer";
 
 export const StorefrontHeader = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -14,128 +17,113 @@ export const StorefrontHeader = () => {
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-2xs">
-      {/* Top Utility Bar */}
-      <div className="bg-[#1f2430] text-slate-300 px-4 sm:px-6 py-1.5 text-[11px] font-medium border-b border-[#252f5a]">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4 text-blue-200">
-            <span>🚚 Express 48-Hour Delivery Across All Verified Stores</span>
-            <span className="hidden lg:inline text-slate-400">• 100% Stripe & Razorpay Escrow Protection</span>
-          </div>
+      
+      {/* 1. Slim Announcement Bar */}
+      <StorefrontAnnouncementBar />
 
-          <div className="flex items-center gap-3 text-slate-300">
-            <span className="hidden sm:inline">Currency: <strong>INR (₹)</strong></span>
-            <span className="hidden sm:inline">|</span>
-            <Link href="/seller-central" className="text-amber-300 font-bold hover:underline">
-              Sell on Office Connect
-            </Link>
-            <span>|</span>
-            <Link href="/login" className="hover:text-white font-semibold">
-              Sign In
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+      {/* 2. Main Desktop Header Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5">
         
-        {/* Mobile Drawer Trigger */}
-        <button
-          type="button"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="lg:hidden h-9 w-9 rounded-[6px] border border-slate-200 flex items-center justify-center text-slate-700 text-base font-bold"
-          aria-label="Toggle Navigation Menu"
-        >
-          ☰
-        </button>
+        {/* DESKTOP & TABLET ROW */}
+        <div className="flex items-center justify-between gap-3 md:gap-4">
+          
+          {/* LEFT: Mobile Menu Trigger + Logo + Delivery Selector */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Mobile Drawer Hamburger */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden h-9 w-9 rounded-[6px] border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-700 text-base font-bold transition"
+              aria-label="Open Navigation Menu"
+            >
+              ☰
+            </button>
 
-        {/* Brand Logo */}
-        <Link href="/storefront" className="shrink-0 flex items-center">
-          <Image
-            src="/officeconnectlogo.png"
-            alt="Office Connect"
-            width={200}
-            height={50}
-            priority
-            className="h-9 sm:h-11 w-auto object-contain"
-          />
-        </Link>
+            {/* Marketplace Wordmark Logo */}
+            <Link href="/storefront" className="shrink-0 flex items-center group">
+              <Image
+                src="/officeconnectlogo.png"
+                alt="Office Connect Marketplace"
+                width={180}
+                height={40}
+                priority
+                className="h-8 sm:h-9 w-auto object-contain transition-transform group-hover:scale-102"
+              />
+            </Link>
 
-        {/* Center Search Bar */}
-        <div className="flex-1 max-w-2xl hidden md:block">
+            {/* Location / Delivery Selector (Desktop / Tablet) */}
+            <div className="hidden lg:block ml-1 border-l border-slate-200 pl-3">
+              <StorefrontLocationSelector />
+            </div>
+          </div>
+
+          {/* CENTER: Primary Search Bar (Hidden on small mobile, rendered below) */}
+          <div className="flex-1 max-w-2xl hidden md:block">
+            <StorefrontSearchBar />
+          </div>
+
+          {/* RIGHT: Actions (Wishlist, Account, Cart) */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            
+            {/* Wishlist Button */}
+            <Link
+              href="/wishlist"
+              aria-label="View Wishlist"
+              className="relative hidden sm:flex items-center gap-1.5 h-9 px-2.5 rounded-[6px] hover:bg-slate-100 border border-transparent hover:border-slate-200 text-slate-700 transition font-bold text-xs select-none group"
+            >
+              <span className="text-sm text-slate-600 group-hover:text-red-600 transition">♥</span>
+              <span className="hidden xl:inline text-slate-800">Wishlist</span>
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-red-100 text-red-700 text-[10px] font-black">
+                4
+              </span>
+            </Link>
+
+            {/* Account Controls */}
+            <StorefrontAccountDropdown />
+
+            {/* Header Cart Bag Button */}
+            <button
+              type="button"
+              onClick={() => setIsCartOpen(true)}
+              aria-label="View Cart Bag"
+              className="flex items-center gap-2 h-9 px-3 rounded-[6px] bg-[#404d85]/10 border border-[#404d85]/20 text-[#404d85] hover:bg-[#404d85]/15 transition font-bold text-xs select-none shadow-2xs"
+            >
+              <span className="text-base">🛒</span>
+              <span className="hidden sm:inline font-extrabold text-slate-900">Cart</span>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#404d85] text-[10px] font-black text-white">
+                3
+              </span>
+              <span className="hidden xl:inline text-slate-500 font-normal">₹2,450</span>
+            </button>
+
+          </div>
+
+        </div>
+
+        {/* MOBILE ROW 2: Search Bar */}
+        <div className="md:hidden pt-2.5">
           <StorefrontSearchBar />
         </div>
 
-        {/* Right Actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Account Controls */}
-          <StorefrontAccountDropdown />
-
-          {/* Cart Bag Button */}
-          <button
-            type="button"
-            onClick={() => setIsCartOpen(true)}
-            className="flex items-center gap-2 h-9 px-3.5 rounded-[6px] bg-[#404d85]/10 border border-[#404d85]/20 text-[#404d85] hover:bg-[#404d85]/15 transition font-bold text-xs select-none"
-          >
-            <span className="text-base">🛒</span>
-            <span className="hidden sm:inline">Bag</span>
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#404d85] text-[10px] font-black text-white">
-              0
-            </span>
-          </button>
+        {/* MOBILE ROW 3: Delivery Location (Compact) */}
+        <div className="lg:hidden pt-2 flex items-center justify-between border-t border-slate-100 mt-2">
+          <StorefrontLocationSelector />
+          <Link href="/seller-central" className="text-[11px] text-[#404d85] font-bold hover:underline">
+            Sell with Us →
+          </Link>
         </div>
 
       </div>
 
-      {/* Mobile Search Bar (Visible on mobile screens) */}
-      <div className="md:hidden px-4 pb-3">
-        <StorefrontSearchBar />
-      </div>
-
-      {/* Secondary Categories Bar */}
+      {/* 3. Category Navigation Ribbon (Desktop / Tablet) */}
       <StorefrontCategoriesBar />
 
-      {/* Cart Drawer */}
+      {/* 4. Mobile Drawer Navigation */}
+      <StorefrontMobileDrawer isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+
+      {/* 5. Cart Drawer Component */}
       <StorefrontCartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
 
-      {/* Mobile Slide-Over Menu */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="fixed inset-0 bg-slate-900/60" onClick={() => setMobileMenuOpen(false)} />
-          <div className="fixed top-0 bottom-0 left-0 w-4/5 max-w-xs bg-white p-6 shadow-2xl z-10 flex flex-col justify-between overflow-y-auto">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <Image src="/officeconnectlogo.png" alt="Office Connect" width={140} height={35} className="h-7 w-auto" />
-                <button onClick={() => setMobileMenuOpen(false)} className="text-slate-400 text-lg font-bold p-1">✕</button>
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Departments</h4>
-                <div className="space-y-1 font-bold text-xs text-slate-800">
-                  <Link href="/category/electronics" onClick={() => setMobileMenuOpen(false)} className="block p-2 rounded hover:bg-slate-50">⚡ Electronics & Audio</Link>
-                  <Link href="/category/beauty" onClick={() => setMobileMenuOpen(false)} className="block p-2 rounded hover:bg-slate-50">🌸 Skincare & Cosmetics</Link>
-                  <Link href="/category/cloud" onClick={() => setMobileMenuOpen(false)} className="block p-2 rounded hover:bg-slate-50">☁️ Cloud Servers & SaaS</Link>
-                  <Link href="/category/automotive" onClick={() => setMobileMenuOpen(false)} className="block p-2 rounded hover:bg-slate-50">🚘 Auto Motors & Spares</Link>
-                  <Link href="/storefront?vendor=All" onClick={() => setMobileMenuOpen(false)} className="block p-2 rounded hover:bg-slate-50">🏬 Verified Stores Directory</Link>
-                </div>
-              </div>
-
-              <div className="space-y-3 border-t border-slate-100 pt-4">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Account & Merchant</h4>
-                <div className="space-y-1 font-semibold text-xs text-slate-700">
-                  <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block p-2 rounded hover:bg-slate-50">🔑 Customer Sign In</Link>
-                  <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="block p-2 rounded hover:bg-slate-50">📦 My Orders</Link>
-                  <Link href="/vendor-dashboard" onClick={() => setMobileMenuOpen(false)} className="block p-2 rounded bg-blue-50 text-[#404d85] font-bold">🏬 3P Seller Portal</Link>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-[11px] text-slate-400 border-t border-slate-100 pt-4">
-              Office Connect Multi-Vendor v2.0
-            </div>
-          </div>
-        </div>
-      )}
     </header>
   );
 };

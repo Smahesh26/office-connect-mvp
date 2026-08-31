@@ -1,13 +1,69 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
 export const StorefrontFooter = () => {
+  const [openMobileSection, setOpenMobileSection] = useState<string | null>(null);
+
+  const toggleMobileSection = (key: string) => {
+    setOpenMobileSection((prev) => (prev === key ? null : key));
+  };
+
+  const footerGroups = [
+    {
+      id: "shop",
+      title: "Shop",
+      links: [
+        { label: "Electronics & Audio", href: "/category/electronics" },
+        { label: "Mobiles & Accessories", href: "/category/mobiles" },
+        { label: "Fashion & Apparel", href: "/category/fashion" },
+        { label: "Home & Kitchen", href: "/category/home-kitchen" },
+        { label: "Beauty & Personal Care", href: "/category/beauty" },
+        { label: "Grocery & Gourmet", href: "/category/grocery" },
+        { label: "Automotive Spares", href: "/category/automotive" },
+      ],
+    },
+    {
+      id: "customer_service",
+      title: "Customer Service",
+      links: [
+        { label: "Help Center & FAQs", href: "/support" },
+        { label: "Order Tracking Timeline", href: "/orders" },
+        { label: "Returns & RMA Policy", href: "/returns" },
+        { label: "Contact Customer Care", href: "/support" },
+        { label: "Dispute Arbitration Desk", href: "/support" },
+      ],
+    },
+    {
+      id: "sell_with_us",
+      title: "Sell With Us",
+      links: [
+        { label: "Become a Verified Seller", href: "/seller-central" },
+        { label: "Merchant Seller Portal", href: "/vendor-dashboard" },
+        { label: "Seller Commission & Fees", href: "/vendor-dashboard" },
+        { label: "Fulfillment & Dispatch SLA", href: "/vendor-dashboard" },
+        { label: "Seller Code of Conduct", href: "/terms" },
+      ],
+    },
+    {
+      id: "about",
+      title: "About Office Connect",
+      links: [
+        { label: "About Our Marketplace", href: "/about" },
+        { label: "Careers & Engineering", href: "/careers" },
+        { label: "Terms of Service", href: "/terms" },
+        { label: "Privacy Policy", href: "/privacy" },
+        { label: "100% Escrow Security", href: "/security" },
+      ],
+    },
+  ];
+
   return (
     <footer className="bg-[#1f2430] text-slate-300 font-sans text-xs border-t border-slate-800 select-none">
       
-      {/* Trust Guarantee Band */}
+      {/* 1. Trust & Reliability Band */}
       <div className="border-b border-slate-800 py-8 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           
@@ -17,7 +73,7 @@ export const StorefrontFooter = () => {
             </div>
             <div>
               <h5 className="font-bold text-white text-xs">100% Escrow Protection</h5>
-              <p className="text-[11px] text-slate-400">Funds held until delivery confirmation</p>
+              <p className="text-[11px] text-slate-400">Funds released only after delivery confirmation</p>
             </div>
           </div>
 
@@ -37,7 +93,7 @@ export const StorefrontFooter = () => {
             </div>
             <div>
               <h5 className="font-bold text-white text-xs">Verified Genuine Sellers</h5>
-              <p className="text-[11px] text-slate-400">5-Stage KYB & KYC merchant vetting</p>
+              <p className="text-[11px] text-slate-400">5-Stage KYB & KYC merchant credential vetting</p>
             </div>
           </div>
 
@@ -54,11 +110,11 @@ export const StorefrontFooter = () => {
         </div>
       </div>
 
-      {/* Main 5-Column Navigation Directory */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 grid grid-cols-2 md:grid-cols-5 gap-8">
+      {/* 2. Main Desktop 5-Column Navigation Directory */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 hidden md:grid md:grid-cols-5 gap-8">
         
         {/* Col 1: Brand & Certification */}
-        <div className="col-span-2 md:col-span-1 space-y-3">
+        <div className="space-y-3">
           <Image
             src="/officeconnectlogo.png"
             alt="Office Connect"
@@ -74,67 +130,61 @@ export const StorefrontFooter = () => {
           </div>
         </div>
 
-        {/* Col 2: Customer Care */}
-        <div className="space-y-3">
-          <h4 className="text-xs font-black uppercase tracking-wider text-white">Customer Care</h4>
-          <ul className="space-y-2 text-[11px] text-slate-400 font-medium">
-            <li><Link href="/orders" className="hover:text-white transition">Track Your Order</Link></li>
-            <li><Link href="/returns" className="hover:text-white transition">Returns & RMA Refunds</Link></li>
-            <li><Link href="/support" className="hover:text-white transition">24x7 Help Center</Link></li>
-            <li><Link href="/support" className="hover:text-white transition">Dispute Resolution Desk</Link></li>
-          </ul>
-        </div>
-
-        {/* Col 3: Merchant & Sellers */}
-        <div className="space-y-3">
-          <h4 className="text-xs font-black uppercase tracking-wider text-white">Sell on Marketplace</h4>
-          <ul className="space-y-2 text-[11px] text-slate-400 font-medium">
-            <li><Link href="/vendor-dashboard" className="text-amber-300 font-bold hover:underline">Seller Registration (5-Step)</Link></li>
-            <li><Link href="/vendor-dashboard" className="hover:text-white transition">Merchant Seller Portal</Link></li>
-            <li><Link href="/vendor-dashboard" className="hover:text-white transition">Fee Schedule & 8.5% Cut</Link></li>
-            <li><Link href="/vendor-dashboard" className="hover:text-white transition">Fulfillment by Office Connect</Link></li>
-          </ul>
-        </div>
-
-        {/* Col 4: Governance & Legal */}
-        <div className="space-y-3">
-          <h4 className="text-xs font-black uppercase tracking-wider text-white">Legal & Compliance</h4>
-          <ul className="space-y-2 text-[11px] text-slate-400 font-medium">
-            <li><Link href="/terms" className="hover:text-white transition">Terms of Service</Link></li>
-            <li><Link href="/privacy" className="hover:text-white transition">Privacy Policy</Link></li>
-            <li><Link href="/security" className="hover:text-white transition">Security Assessment</Link></li>
-            <li><Link href="/gst" className="hover:text-white transition">GST Invoicing Rules</Link></li>
-          </ul>
-        </div>
-
-        {/* Col 5: Newsletter Subscription */}
-        <div className="space-y-3 col-span-2 md:col-span-1">
-          <h4 className="text-xs font-black uppercase tracking-wider text-white">Marketplace Updates</h4>
-          <p className="text-[11px] text-slate-400">Subscribe for weekly merchant flash deals and industry insights.</p>
-          <div className="space-y-2">
-            <input
-              type="email"
-              placeholder="Enter corporate email..."
-              className="w-full h-9 rounded-[6px] bg-slate-800 border border-slate-700 px-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#6678c1]"
-            />
-            <button
-              type="button"
-              className="w-full h-9 rounded-[6px] bg-[#404d85] hover:bg-[#323d6a] text-white font-bold text-xs transition"
-            >
-              Subscribe
-            </button>
+        {/* Col 2-5: Grouped Navigation Links */}
+        {footerGroups.map((group) => (
+          <div key={group.id} className="space-y-3">
+            <h4 className="text-xs font-black uppercase tracking-wider text-white">{group.title}</h4>
+            <ul className="space-y-2 text-[11px] text-slate-400 font-medium">
+              {group.links.map((link, idx) => (
+                <li key={idx}>
+                  <Link href={link.href} className="hover:text-white transition block truncate">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
+        ))}
 
       </div>
 
-      {/* Bottom Copyright & Payment Gateway Badges */}
-      <div className="border-t border-slate-800 py-6 px-4 sm:px-6">
+      {/* 3. Mobile Collapsible Accordion Navigation */}
+      <div className="md:hidden px-4 py-6 space-y-3 border-b border-slate-800">
+        {footerGroups.map((group) => {
+          const isOpen = openMobileSection === group.id;
+          return (
+            <div key={group.id} className="border-b border-slate-800/80 pb-2">
+              <button
+                type="button"
+                onClick={() => toggleMobileSection(group.id)}
+                className="w-full flex items-center justify-between text-left py-2 text-white font-bold text-xs"
+              >
+                <span>{group.title}</span>
+                <span className="text-slate-400">{isOpen ? "▲" : "▼"}</span>
+              </button>
+              {isOpen && (
+                <ul className="space-y-2 py-2 pl-2 text-[11px] text-slate-400 font-medium animate-in fade-in duration-150">
+                  {group.links.map((link, idx) => (
+                    <li key={idx}>
+                      <Link href={link.href} className="hover:text-white block">
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 4. Bottom Copyright & Payment Badges */}
+      <div className="py-6 px-4 sm:px-6 border-t border-slate-800/60">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
           <div>
             © 2026 Office Connect Global Inc. All rights reserved. Built with precision multi-vendor architecture.
           </div>
-          <div className="flex items-center gap-3 text-slate-400 text-xs font-bold">
+          <div className="flex items-center gap-3 text-slate-400 text-xs font-bold flex-wrap justify-center">
             <span>Stripe</span>
             <span>•</span>
             <span>Razorpay</span>
@@ -144,6 +194,10 @@ export const StorefrontFooter = () => {
             <span>Visa</span>
             <span>•</span>
             <span>Mastercard</span>
+            <span>•</span>
+            <span>RuPay</span>
+            <span>•</span>
+            <span>NetBanking</span>
           </div>
         </div>
       </div>
