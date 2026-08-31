@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { StorefrontShell } from "@/components/storefront/StorefrontShell";
 import { ProductPurchaseHero, ProductHeroData } from "@/components/pdp/ProductPurchaseHero";
@@ -8,6 +8,149 @@ import { ProductOffersStrip } from "@/components/pdp/ProductOffersStrip";
 import { FrequentlyBoughtTogether, BundleItem } from "@/components/pdp/FrequentlyBoughtTogether";
 import { ProductFullSpecsAndReviews, OtherSellerOffer } from "@/components/pdp/ProductFullSpecsAndReviews";
 import { ProductCard } from "@/components/commerce/CommercePrimitives";
+import { fetchPDPDetails } from "@/lib/catalog-api";
+import { addToCartStorage } from "@/lib/cart-wishlist";
+
+const KNOWN_PRODUCTS: Record<string, ProductHeroData> = {
+  "prod-1": {
+    id: "prod-1",
+    title: "AeroTech ANC-500 Wireless Studio Noise Canceling Headphones",
+    brand: "AeroTech",
+    brandSlug: "aerotech",
+    category: "Electronics",
+    rating: 4.9,
+    reviewsCount: 1420,
+    questionsCount: 284,
+    basePrice: 29990,
+    originalPrice: 34990,
+    images: [
+      "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=800&q=80",
+    ],
+    variants: [
+      { id: "v-black", name: "Midnight Black", colorCode: "#111827", image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+      { id: "v-silver", name: "Platinum Silver", colorCode: "#e2e8f0", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+    ],
+    sellerName: "AeroTech Official Direct 👑",
+    sellerTier: "premium",
+    dispatchSla: "Express 24-Hour Dispatch",
+    stockCount: 24,
+  },
+  "prod-2": {
+    id: "prod-2",
+    title: "UrbanStyle 240 GSM Heavyweight Oversized French Terry T-Shirt",
+    brand: "UrbanStyle",
+    brandSlug: "urbanstyle",
+    category: "Apparel",
+    rating: 4.8,
+    reviewsCount: 310,
+    questionsCount: 42,
+    basePrice: 1499,
+    originalPrice: 2499,
+    images: [
+      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=800&q=80",
+    ],
+    variants: [
+      { id: "v-s", name: "Small (S)", colorCode: "#111827", image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+      { id: "v-m", name: "Medium (M)", colorCode: "#111827", image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+      { id: "v-l", name: "Large (L)", colorCode: "#111827", image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+    ],
+    sellerName: "UrbanStyle Official",
+    sellerTier: "verified",
+    dispatchSla: "Same-Day Warehouse Dispatch",
+    stockCount: 45,
+  },
+  "rec-p3": {
+    id: "rec-p3",
+    title: "Damask Rose Botanical Hydrating Serum (50ml)",
+    brand: "Glow Beauty",
+    brandSlug: "glowbeauty",
+    category: "Beauty",
+    rating: 5.0,
+    reviewsCount: 310,
+    questionsCount: 18,
+    basePrice: 2499,
+    originalPrice: 3200,
+    images: [
+      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80",
+    ],
+    variants: [
+      { id: "v-50ml", name: "50ml Bottle", colorCode: "#f43f5e", image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+    ],
+    sellerName: "Glow Beauty Organics 🌸",
+    sellerTier: "premium",
+    dispatchSla: "Express 24-Hour Dispatch",
+    stockCount: 30,
+  },
+  "rec-p4": {
+    id: "rec-p4",
+    title: "5W-40 Fully Synthetic Engine Motor Oil (5 Liters)",
+    brand: "AutoCare",
+    brandSlug: "autocare",
+    category: "Automotive",
+    rating: 4.8,
+    reviewsCount: 88,
+    questionsCount: 12,
+    basePrice: 3200,
+    originalPrice: 3800,
+    images: [
+      "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80",
+    ],
+    variants: [
+      { id: "v-5l", name: "5L Canister", colorCode: "#0284c7", image: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+    ],
+    sellerName: "AutoCare Motors 🚘",
+    sellerTier: "verified",
+    dispatchSla: "Priority Courier 2-Day Delivery",
+    stockCount: 15,
+  },
+  "prod-3": {
+    id: "prod-3",
+    title: "Lumina Q1 Pro Custom Wireless Mechanical Keyboard QMK/VIA",
+    brand: "Lumina Keyboards",
+    brandSlug: "lumina",
+    category: "Electronics",
+    rating: 4.9,
+    reviewsCount: 680,
+    questionsCount: 95,
+    basePrice: 16999,
+    originalPrice: 19999,
+    images: [
+      "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80",
+    ],
+    variants: [
+      { id: "v-carbon", name: "Carbon Black", colorCode: "#1e293b", image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+    ],
+    sellerName: "Lumina Keyboards Official",
+    sellerTier: "premium",
+    dispatchSla: "Express 24-Hour Dispatch",
+    stockCount: 12,
+  },
+  "prod-7": {
+    id: "prod-7",
+    title: "Anker Prime 27,650mAh Power Bank (250W Fast Charger)",
+    brand: "Anker",
+    brandSlug: "anker",
+    category: "Electronics",
+    rating: 4.9,
+    reviewsCount: 680,
+    questionsCount: 54,
+    basePrice: 14999,
+    originalPrice: 17999,
+    images: [
+      "https://images.unsplash.com/photo-1609081219090-a6d81d3085bf?auto=format&fit=crop&w=800&q=80",
+    ],
+    variants: [
+      { id: "v-blk", name: "Matte Black", colorCode: "#0f172a", image: "https://images.unsplash.com/photo-1609081219090-a6d81d3085bf?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+    ],
+    sellerName: "Anker Official Direct",
+    sellerTier: "premium",
+    dispatchSla: "FREE Delivery by Tomorrow",
+    stockCount: 22,
+  },
+};
 
 export default function ProductDetailPage({
   params,
@@ -17,158 +160,193 @@ export default function ProductDetailPage({
   const resolvedParams = use(params);
   const productId = resolvedParams.id;
 
-  // Mock Canonical Flagship Product Data
-  const product: ProductHeroData = {
-    id: productId,
-    title: "Sony WH-1000XM5 Wireless Industry Leading Noise Canceling Headphones",
-    brand: "Sony",
-    brandSlug: "sony",
-    category: "Electronics",
-    rating: 4.9,
-    reviewsCount: 1420,
-    questionsCount: 284,
-    basePrice: 29990,
-    originalPrice: 34990,
-    images: [
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
-    ],
-    variants: [
-      {
-        id: "v-black",
-        name: "Midnight Black",
-        colorCode: "#111827",
-        image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
-        inStock: true,
-        priceOffset: 0,
-      },
-      {
-        id: "v-silver",
-        name: "Platinum Silver",
-        colorCode: "#e2e8f0",
-        image: "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=800&q=80",
-        inStock: true,
-        priceOffset: 0,
-      },
-      {
-        id: "v-blue",
-        name: "Smoky Navy Blue",
-        colorCode: "#1e3a8a",
-        image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
-        inStock: true,
-        priceOffset: 1000,
-      },
-    ],
-    sellerName: "Sony India Direct",
-    sellerTier: "premium",
-    dispatchSla: "Express 24-Hour Dispatch",
-    stockCount: 24,
-  };
+  const [productData, setProductData] = useState<ProductHeroData>(() => {
+    if (KNOWN_PRODUCTS[productId]) {
+      return KNOWN_PRODUCTS[productId];
+    }
+    // Dynamic fallback for any custom product ID
+    const formattedTitle = productId
+      .replace(/^prod-|^rec-/, "")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
 
-  // Technical Specs
+    return {
+      id: productId,
+      title: formattedTitle ? `${formattedTitle} Premium Edition` : "Verified Marketplace Product",
+      brand: "Verified Brand",
+      brandSlug: "verified-brand",
+      category: "General Merchandise",
+      rating: 4.8,
+      reviewsCount: 140,
+      questionsCount: 22,
+      basePrice: 4999,
+      originalPrice: 6999,
+      images: [
+        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80",
+      ],
+      variants: [
+        { id: "v-standard", name: "Standard Edition", colorCode: "#3b82f6", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+      ],
+      sellerName: "Office Connect Direct 👑",
+      sellerTier: "verified",
+      dispatchSla: "Standard 2-3 Business Days",
+      stockCount: 18,
+    };
+  });
+
+  useEffect(() => {
+    async function loadApiProduct() {
+      try {
+        const pdp = await fetchPDPDetails(productId);
+        if (pdp && pdp.product) {
+          const apiP = pdp.product;
+          setProductData({
+            id: apiP.id,
+            title: apiP.title,
+            brand: apiP.brandName || "Verified Brand",
+            brandSlug: (apiP.brandName || "brand").toLowerCase().replace(/\s+/g, "-"),
+            category: apiP.categoryName || "General",
+            rating: 4.9,
+            reviewsCount: 320,
+            questionsCount: 45,
+            basePrice: pdp.buyBoxOffer?.sellingPrice || 29990,
+            originalPrice: pdp.buyBoxOffer?.mrp || 34990,
+            images: apiP.primaryImage ? [apiP.primaryImage, ...(apiP.galleryImages || [])] : ["https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80"],
+            variants: apiP.variants && apiP.variants.length > 0
+              ? apiP.variants.map((v, i) => ({
+                  id: v.id,
+                  name: v.title,
+                  colorCode: i === 0 ? "#111827" : "#e2e8f0",
+                  image: apiP.primaryImage,
+                  inStock: true,
+                  priceOffset: 0,
+                }))
+              : [{ id: "v-default", name: "Default Option", colorCode: "#111827", image: apiP.primaryImage, inStock: true, priceOffset: 0 }],
+            sellerName: pdp.buyBoxOffer?.sellerName || `${apiP.brandName || "Office Connect"} Direct`,
+            sellerTier: "premium",
+            dispatchSla: pdp.buyBoxOffer?.dispatchSla || "Express 24-Hour Dispatch",
+            stockCount: pdp.buyBoxOffer?.stockAvailable || 20,
+          });
+        }
+      } catch (err) {
+        console.warn("Using fallback local product data for:", productId, err);
+      }
+    }
+    loadApiProduct();
+  }, [productId]);
+
   const specifications: Record<string, string> = {
-    "Brand & Model": "Sony WH-1000XM5",
-    "Headphone Type": "Closed, dynamic over-ear",
-    "Driver Unit": "30mm (Carbon fiber composite dome)",
-    "Frequency Response": "4 Hz - 40,000 Hz (Hi-Res Audio Wireless)",
-    "Battery Life": "Up to 30 Hours (NC ON), 40 Hours (NC OFF)",
-    "Charging Time": "Approx. 3.5 Hours (3 min quick charge gives 3 hours playback)",
-    "Bluetooth Version": "Bluetooth v5.2 (LDAC, AAC, SBC, multipoint connect)",
-    "Weight": "Approx. 250 grams",
-    "Active Noise Cancellation": "Integrated Processor V1 + HD Noise Cancelling Processor QN1 (8 microphones)",
-    "Warranty": "1 Year Comprehensive Sony India Domestic Brand Warranty",
+    "Brand & Model": `${productData.brand} (${productData.id})`,
+    "Category": productData.category,
+    "Seller": productData.sellerName,
+    "Fulfillment SLA": productData.dispatchSla,
+    "Warranty": "1 Year Manufacturer Official Domestic Warranty",
+    "Return Window": "7 Days Hassle-Free Returns & Replacements",
   };
 
   const features: string[] = [
-    "Industry-leading Noise Cancellation with two processors and 8 microphones",
-    "Magnificent Sound engineered with the new Integrated Processor V1",
-    "Crystal clear hands-free calling with 4 beamforming microphones and AI noise reduction",
-    "Up to 30-hour battery life with quick charging (3 min charge for 3 hours of playback)",
-    "Ultra-comfortable, lightweight design with soft fit leather",
-    "Multipoint connection allows you to quickly switch between devices",
+    `Authentic ${productData.brand} brand specification with full quality assurance.`,
+    "Direct warehouse dispatch with sealed protective packaging.",
+    "B2B tax invoice eligible with GST input credit.",
+    "Backed by Office Connect buyer protection guarantee.",
   ];
 
   const otherSellers: OtherSellerOffer[] = [
     {
       sellerId: "s-102",
-      sellerName: "AudioPhile Hub India",
+      sellerName: "Apex Digital Solutions",
       sellerTier: "verified",
-      price: 30490,
-      condition: "Brand New (Original Factory Seal)",
+      price: productData.basePrice + 500,
+      condition: "Brand New (Factory Sealed)",
       deliveryEstimate: "FREE Delivery in 2 Days",
-      dispatchRate: "99.4%",
+      dispatchRate: "99.2%",
       rating: 4.8,
-    },
-    {
-      sellerId: "s-103",
-      sellerName: "Apex Enterprise Tech",
-      sellerTier: "verified",
-      price: 30990,
-      condition: "Brand New (B2B Bulk Invoice Eligible)",
-      deliveryEstimate: "Delivery by Tomorrow, 5 PM",
-      dispatchRate: "98.7%",
-      rating: 4.7,
     },
   ];
 
-  // Recommendations
   const similarProducts = [
     {
       id: "prod-2",
-      title: "Sony WF-1000XM5 Truly Wireless Noise Canceling Earbuds",
-      brand: "Sony",
-      price: 23990,
-      originalPrice: 26990,
+      title: "UrbanStyle 240 GSM Heavyweight Oversized French Terry T-Shirt",
+      brand: "UrbanStyle",
+      price: 1499,
+      originalPrice: 2499,
       rating: 4.8,
-      reviewsCount: 930,
+      reviewsCount: 310,
       deliveryEstimate: "Tomorrow, by 5 PM",
-      sellerName: "Sony India Direct",
-      sellerTier: "premium" as const,
-      stockQty: 18,
-      image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=600&q=80",
+      sellerName: "UrbanStyle Store",
+      sellerTier: "verified" as const,
+      stockQty: 45,
+      image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80",
     },
     {
-      id: "prod-4",
-      title: "Keychron Q1 Pro Custom Wireless Mechanical Keyboard QMK/VIA",
-      brand: "Keychron",
-      price: 18499,
-      originalPrice: 21999,
+      id: "prod-3",
+      title: "Lumina Q1 Pro Custom Wireless Mechanical Keyboard QMK/VIA",
+      brand: "Lumina Keyboards",
+      price: 16999,
+      originalPrice: 19999,
       rating: 4.9,
       reviewsCount: 680,
       deliveryEstimate: "Tomorrow, by 11 AM",
-      sellerName: "Keychron Official India",
+      sellerName: "Lumina Keyboards Official",
       sellerTier: "premium" as const,
       stockQty: 12,
       image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80",
     },
     {
-      id: "prod-3",
-      title: "Dell UltraSharp 32-inch 4K UHD Thunderbolt Hub USB-C Monitor",
-      brand: "Dell",
-      price: 78900,
-      originalPrice: 89900,
-      rating: 4.7,
-      reviewsCount: 412,
-      deliveryEstimate: "In 2 Days via Bluedart",
-      sellerName: "Office Connect Direct",
+      id: "prod-7",
+      title: "Anker Prime 27,650mAh Power Bank (250W Fast Charger)",
+      brand: "Anker",
+      price: 14999,
+      originalPrice: 17999,
+      rating: 4.9,
+      reviewsCount: 680,
+      deliveryEstimate: "Tomorrow, by 2 PM",
+      sellerName: "Anker Official Direct",
       sellerTier: "premium" as const,
-      stockQty: 5,
-      image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80",
+      stockQty: 22,
+      image: "https://images.unsplash.com/photo-1609081219090-a6d81d3085bf?auto=format&fit=crop&w=600&q=80",
     },
   ];
 
   const handleAddToCart = (variantId: string, qty: number) => {
-    alert(`Added ${qty}x ${product.title} to Bag!`);
+    addToCartStorage({
+      id: productData.id,
+      title: productData.title,
+      price: productData.basePrice,
+      originalPrice: productData.originalPrice,
+      image: productData.images[0],
+      sellerName: productData.sellerName,
+      quantity: qty,
+    });
+    alert(`Added ${qty}x "${productData.title}" to Shopping Bag!`);
   };
 
   const handleBuyNow = (variantId: string, qty: number) => {
+    addToCartStorage({
+      id: productData.id,
+      title: productData.title,
+      price: productData.basePrice,
+      originalPrice: productData.originalPrice,
+      image: productData.images[0],
+      sellerName: productData.sellerName,
+      quantity: qty,
+    });
     window.location.href = "/checkout";
   };
 
   const handleAddBundleToCart = (bundleItems: BundleItem[]) => {
-    alert(`Added all ${bundleItems.length} bundle accessories to Bag!`);
+    bundleItems.forEach((b) => {
+      addToCartStorage({
+        id: b.id,
+        title: b.title,
+        price: b.price,
+        originalPrice: b.originalPrice,
+        image: b.image,
+        quantity: 1,
+      });
+    });
+    alert(`Added all ${bundleItems.length} bundle items to Shopping Bag!`);
   };
 
   return (
@@ -179,16 +357,14 @@ export default function ProductDetailPage({
         <nav className="flex items-center gap-2 text-xs text-slate-500">
           <Link href="/storefront" className="hover:text-slate-900">Storefront</Link>
           <span>/</span>
-          <Link href="/category/electronics" className="hover:text-slate-900">Electronics</Link>
+          <Link href="/categories" className="hover:text-slate-900">{productData.category}</Link>
           <span>/</span>
-          <Link href="/category/electronics" className="hover:text-slate-900">Headphones & Audio</Link>
-          <span>/</span>
-          <span className="text-slate-900 font-bold truncate max-w-xs sm:max-w-md">{product.title}</span>
+          <span className="text-slate-900 font-bold truncate max-w-xs sm:max-w-md">{productData.title}</span>
         </nav>
 
-        {/* 2. Top Purchase Area (Visual Priority: Gallery, Info, Bold Price, Variants, Delivery SLA, CTAs) */}
+        {/* 2. Top Purchase Area */}
         <ProductPurchaseHero
-          product={product}
+          product={productData}
           onAddToCart={handleAddToCart}
           onBuyNow={handleBuyNow}
         />
@@ -196,29 +372,38 @@ export default function ProductDetailPage({
         {/* 3. Promotional Offers & Bank Deals Strip */}
         <ProductOffersStrip />
 
-        {/* 4. Frequently Bought Together (Accessory Bundle Engine) */}
+        {/* 4. Frequently Bought Together */}
         <FrequentlyBoughtTogether
           mainProduct={{
-            id: product.id,
-            title: product.title,
-            price: product.basePrice,
-            originalPrice: product.originalPrice,
-            image: product.images[0],
+            id: productData.id,
+            title: productData.title,
+            price: productData.basePrice,
+            originalPrice: productData.originalPrice,
+            image: productData.images[0],
           }}
           onAddBundleToCart={handleAddBundleToCart}
         />
 
-        {/* 5. Comprehensive Product Overview, Specs, Seller Profile, Other Sellers Table & Reviews */}
+        {/* 5. Comprehensive Overview, Specs, Seller Profile & Reviews */}
         <ProductFullSpecsAndReviews
-          description="The Sony WH-1000XM5 headphones rewrite the rules for distraction-free listening. Two processors control 8 microphones for unprecedented noise cancellation and exceptional call quality. With a newly developed driver unit, DSEE - Extreme and Hi-Res audio support, the WH-1000XM5 headphones provide awe-inspiring audio quality."
+          description={`Experience exceptional performance with the ${productData.title}. Engineered with premium materials, high-fidelity components, and direct seller warranty.`}
           features={features}
           specifications={specifications}
-          sellerName={product.sellerName}
-          sellerTier={product.sellerTier}
+          sellerName={productData.sellerName}
+          sellerTier={productData.sellerTier}
           otherSellers={otherSellers}
-          rating={product.rating}
-          reviewsCount={product.reviewsCount}
-          onAddToCart={(sName, price) => alert(`Added to cart from ${sName} at ₹${price}!`)}
+          rating={productData.rating}
+          reviewsCount={productData.reviewsCount}
+          onAddToCart={(sName, price) => {
+            addToCartStorage({
+              id: productData.id,
+              title: productData.title,
+              price,
+              image: productData.images[0],
+              sellerName: sName,
+            });
+            alert(`Added to cart from ${sName} at ₹${price}!`);
+          }}
         />
 
         {/* 6. Similar & Recommended Products */}
@@ -227,8 +412,8 @@ export default function ProductDetailPage({
             <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider">
               Similar Products Recommended for You
             </h3>
-            <Link href="/category/electronics" className="text-xs font-bold text-[#404d85] hover:underline">
-              Explore More Electronics →
+            <Link href="/storefront" className="text-xs font-bold text-[#404d85] hover:underline">
+              Explore More Products →
             </Link>
           </div>
 
@@ -249,7 +434,6 @@ export default function ProductDetailPage({
                 stockQty={p.stockQty}
                 image={p.image}
                 variant="standard"
-                onAddToCart={() => alert(`Added ${p.title} to Cart!`)}
               />
             ))}
           </div>
