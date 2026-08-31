@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState, Suspense, FormEvent } from "react";
+import { useEffect, useState, Suspense, FormEvent, MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 type MedusaVendor = {
@@ -72,6 +72,20 @@ function StorefrontContent() {
 	const [searchTab, setSearchTab] = useState<"products" | "services">("products");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [categoryFilter, setCategoryFilter] = useState("All");
+
+	// 3D Card Interactive Mouse Tilt State
+	const [tilt, setTilt] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+	const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+		const rect = e.currentTarget.getBoundingClientRect();
+		const x = (e.clientX - rect.left) / rect.width - 0.5;
+		const y = (e.clientY - rect.top) / rect.height - 0.5;
+		setTilt({ x: x * 20, y: -y * 20 });
+	};
+
+	const handleMouseLeave = () => {
+		setTilt({ x: 0, y: 0 });
+	};
 
 	const [vendors, setVendors] = useState<MedusaVendor[]>([
 		{
@@ -298,38 +312,29 @@ function StorefrontContent() {
 	const [cart, setCart] = useState<MedusaCartItem[]>([]);
 	const [showCartDrawer, setShowCartDrawer] = useState(false);
 	const [showAmazonOnboardingWizard, setShowAmazonOnboardingWizard] = useState(false);
-	const [onboardingStep, setOnboardingStep] = useState(1); // Steps 1 to 5
+	const [onboardingStep, setOnboardingStep] = useState(1);
 	const [addedToast, setAddedToast] = useState<string | null>(null);
 
 	// AMAZON 5-STEP SELLER ONBOARDING WIZARD FORM STATE
 	const [wizardForm, setWizardForm] = useState({
-		// Step 1: Legal Entity (KYB)
 		legalName: "",
 		entityType: "LLC / Private Limited",
 		einNumber: "",
 		businessAddress: "",
-
-		// Step 2: Store Branding
 		storeName: "",
 		storeSlug: "",
 		category: "Electronics & Gadgets",
 		ownerEmail: "",
 		phone: "",
 		description: "",
-
-		// Step 3: Owner KYC
 		ownerFullName: "",
 		idDocType: "Passport",
 		idDocNumber: "",
 		idDocVerified: true,
-
-		// Step 4: Bank Payouts
 		bankAccountHolder: "",
 		bankRouting: "",
 		accountIban: "",
 		stripeConnectAgreed: true,
-
-		// Step 5: Tax & W-9
 		taxIdVat: "",
 		w9DeclarationConfirmed: true
 	});
@@ -367,7 +372,7 @@ function StorefrontContent() {
 		setVendors([...vendors, newVendor]);
 		setShowAmazonOnboardingWizard(false);
 		setOnboardingStep(1);
-		alert(`🎉 Amazon-Grade Verification Complete! Store "${wizardForm.storeName}" is now active and verified!`);
+		alert(`🎉 Amazon Verification Complete! Store "${wizardForm.storeName}" is live!`);
 		router.push(`/storefront?vendor=${newId}`);
 	};
 
@@ -393,7 +398,6 @@ function StorefrontContent() {
 	});
 
 	const activeVendorObj = vendors.find((v) => v.id === activeVendorId);
-	const cartTotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
 
 	return (
 		<div className="min-h-screen bg-[#f8fafc] font-sans text-[#1f2430] flex flex-col antialiased selection:bg-[#404d85] selection:text-white">
@@ -475,7 +479,111 @@ function StorefrontContent() {
 				</div>
 			</header>
 
-			{/* DEDICATED VENDOR STOREFRONT BANNER HEADER */}
+			{/* STYLISH 3D INTERACTIVE MARKETPLACE INTRO BANNER CARD (GLOBAL STORE FRONT ONLY) */}
+			{activeVendorId === "All" && (
+				<section className="relative overflow-hidden bg-gradient-to-r from-[#1f2430] via-[#252f5a] to-[#404d85] text-white py-12 px-4 sm:px-8 border-b border-[#323d6a] shadow-xl">
+					
+					{/* Ambient Glowing Halo background effects */}
+					<div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#6678c1]/20 rounded-full blur-3xl pointer-events-none" />
+					<div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+					<div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-center relative z-10">
+						
+						{/* Left Storytelling Text */}
+						<div className="space-y-5 text-center lg:text-left">
+							<span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 px-4 py-1.5 text-xs font-extrabold text-blue-200 shadow-xl">
+								<span>✨</span> 3D MULTI-VENDOR MARKETPLACE PLATFORM
+							</span>
+
+							<h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+								The Next-Gen Hub for <br />
+								<span className="bg-gradient-to-r from-blue-200 via-indigo-200 to-white bg-clip-text text-transparent">
+									Verified Sellers & Global Brands
+								</span>
+							</h1>
+
+							<p className="text-xs sm:text-sm text-blue-100 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
+								Shop certified products directly from top-rated merchants across cosmetics, audio, cloud servers, and motor spares. Built with 100% Stripe Connect escrow protection.
+							</p>
+
+							{/* Interactive 3D Marketplace Metrics Strip */}
+							<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-left">
+								<div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/15">
+									<div className="text-[10px] text-blue-200 font-bold">Escrow Safety</div>
+									<div className="text-sm font-black text-emerald-300">100% Protection</div>
+								</div>
+								<div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/15">
+									<div className="text-[10px] text-blue-200 font-bold">Platform Fee</div>
+									<div className="text-sm font-black text-amber-300">8.5% Low Cut</div>
+								</div>
+								<div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/15">
+									<div className="text-[10px] text-blue-200 font-bold">Delivery</div>
+									<div className="text-sm font-black text-blue-200">Express 48-Hr</div>
+								</div>
+								<div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/15">
+									<div className="text-[10px] text-blue-200 font-bold">Verified Stores</div>
+									<div className="text-sm font-black text-white">500+ Active</div>
+								</div>
+							</div>
+
+							<div className="flex flex-wrap justify-center lg:justify-start gap-3 pt-2">
+								<button
+									onClick={() => setShowAmazonOnboardingWizard(true)}
+									className="rounded-2xl bg-white px-6 py-3.5 text-xs font-black text-[#404d85] shadow-2xl hover:bg-blue-50 transition transform hover:-translate-y-0.5"
+								>
+									📋 Register Store (5-Step Wizard)
+								</button>
+								<Link
+									href="/vendor-dashboard"
+									className="rounded-2xl border border-white/30 bg-white/10 px-6 py-3.5 text-xs font-bold text-white backdrop-blur-md hover:bg-white/20 transition"
+								>
+									🔑 Access Seller Portal ↗
+								</Link>
+							</div>
+						</div>
+
+						{/* Right 3D Interactive Showcase Card */}
+						<div
+							onMouseMove={handleMouseMove}
+							onMouseLeave={handleMouseLeave}
+							className="relative flex justify-center items-center cursor-pointer perspective-1000"
+						>
+							<div
+								style={{
+									transform: `rotateY(${tilt.x}deg) rotateX(${tilt.y}deg)`,
+									transition: "transform 0.1s ease-out"
+								}}
+								className="relative w-full max-w-md aspect-[4/3] rounded-3xl bg-gradient-to-br from-white/20 via-white/10 to-white/5 border border-white/30 p-6 backdrop-blur-xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] flex flex-col justify-between group overflow-hidden"
+							>
+								<div className="flex justify-between items-center">
+									<span className="rounded-full bg-emerald-500/30 border border-emerald-400 px-3 py-1 text-[10px] font-black text-emerald-200 uppercase tracking-wider">
+										3D Interactive Marketplace
+									</span>
+									<span className="text-xl">✨</span>
+								</div>
+
+								<div className="my-auto text-center space-y-3">
+									<img
+										src={products[0].image}
+										alt="Marketplace Featured Product"
+										className="w-44 h-44 object-cover mx-auto rounded-2xl border border-white/20 shadow-2xl group-hover:scale-110 transition-transform duration-500"
+									/>
+									<h3 className="text-lg font-black text-white">{products[0].title}</h3>
+									<p className="text-xs text-blue-200">{products[0].vendorName}</p>
+								</div>
+
+								<div className="flex justify-between items-center pt-3 border-t border-white/15 text-xs">
+									<span className="font-black text-emerald-300 text-lg">${products[0].price.toFixed(2)}</span>
+									<span className="font-bold text-blue-200 group-hover:underline">Interactive 3D Stage ↗</span>
+								</div>
+							</div>
+						</div>
+
+					</div>
+				</section>
+			)}
+
+			{/* DEDICATED VENDOR STOREFRONT BANNER HEADER (IF FILTERED BY VENDOR) */}
 			{activeVendorObj && (
 				<div className="relative bg-gradient-to-r from-[#1f2430] via-[#252f5a] to-[#404d85] text-white py-10 px-4 sm:px-8 border-b border-[#323d6a] overflow-hidden">
 					<div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
