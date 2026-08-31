@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import { formatINR } from "@/components/commerce/CommercePrimitives";
+import { ProductCreatorStudio } from "./product-creator/ProductCreatorStudio";
 
 export const SellerCatalogSuite = ({
   activeSubView,
+  onFinishAdd,
 }: {
   activeSubView: "products" | "add" | "bulk" | "categories";
+  onFinishAdd?: () => void;
 }) => {
-  const [products, setProducts] = useState([
+  const [products] = useState([
     {
       id: "prod-1",
       sku: "SONY-XM5-BLK",
@@ -43,39 +46,6 @@ export const SellerCatalogSuite = ({
       buyBox: "Yes (100%)",
     },
   ]);
-
-  const [addForm, setAddForm] = useState({
-    title: "",
-    brand: "Sony",
-    category: "Electronics > Audio > Headphones",
-    sku: "",
-    hsn: "85183000",
-    gstRate: "18%",
-    mrp: "",
-    sellingPrice: "",
-    stock: "",
-    description: "",
-  });
-
-  const [isSaved, setIsSaved] = useState(false);
-
-  const handleAddSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newProd = {
-      id: `prod-${Date.now()}`,
-      sku: addForm.sku || `SONY-SKU-${Date.now()}`,
-      title: addForm.title,
-      category: addForm.category,
-      mrp: Number(addForm.mrp) || 9999,
-      price: Number(addForm.sellingPrice) || 8999,
-      stock: Number(addForm.stock) || 10,
-      status: "Active",
-      buyBox: "Yes (100%)",
-    };
-    setProducts([newProd, ...products]);
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
-  };
 
   return (
     <div className="space-y-6 select-none">
@@ -146,129 +116,9 @@ export const SellerCatalogSuite = ({
         </div>
       )}
 
-      {/* 2. ADD LISTING FORM SUBVIEW */}
+      {/* 2. 10-SECTION PRODUCT CREATION STUDIO SUBVIEW */}
       {activeSubView === "add" && (
-        <form onSubmit={handleAddSubmit} className="rounded-[8px] border border-slate-200 bg-white p-5 sm:p-6 space-y-6 shadow-2xs text-xs">
-          <div className="pb-3 border-b border-slate-100">
-            <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
-              Create New Marketplace Product Listing
-            </h3>
-            <p className="text-xs text-slate-500">Provide official brand product details, HSN tax codes, and pricing</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
-              <label className="font-bold text-slate-700 block mb-1">Product Title *</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Sony WH-1000XM5 Wireless Noise Canceling Headphones"
-                value={addForm.title}
-                onChange={(e) => setAddForm({ ...addForm, title: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded font-bold"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">Brand Name *</label>
-              <input
-                type="text"
-                required
-                value={addForm.brand}
-                onChange={(e) => setAddForm({ ...addForm, brand: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">Taxonomy Category *</label>
-              <select
-                value={addForm.category}
-                onChange={(e) => setAddForm({ ...addForm, category: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded font-bold"
-              >
-                <option value="Electronics > Audio > Headphones">Electronics &gt; Audio &gt; Headphones</option>
-                <option value="Electronics > Audio > Earbuds">Electronics &gt; Audio &gt; Earbuds</option>
-                <option value="Electronics > Cameras > Mirrorless">Electronics &gt; Cameras &gt; Mirrorless</option>
-                <option value="Computing > Peripherals > Keyboards">Computing &gt; Peripherals &gt; Keyboards</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">Merchant SKU *</label>
-              <input
-                type="text"
-                required
-                placeholder="SONY-XM5-BLK"
-                value={addForm.sku}
-                onChange={(e) => setAddForm({ ...addForm, sku: e.target.value.toUpperCase() })}
-                className="w-full px-3 py-2 border border-slate-300 rounded font-mono font-bold"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">HSN Tax Code (8-Digit) *</label>
-              <input
-                type="text"
-                required
-                value={addForm.hsn}
-                onChange={(e) => setAddForm({ ...addForm, hsn: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded font-mono font-bold"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">Maximum Retail Price (MRP in ₹) *</label>
-              <input
-                type="number"
-                required
-                placeholder="34990"
-                value={addForm.mrp}
-                onChange={(e) => setAddForm({ ...addForm, mrp: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded font-bold"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">Your Selling Price (INR ₹) *</label>
-              <input
-                type="number"
-                required
-                placeholder="29990"
-                value={addForm.sellingPrice}
-                onChange={(e) => setAddForm({ ...addForm, sellingPrice: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded font-bold text-[#404d85]"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">Initial Stock Units *</label>
-              <input
-                type="number"
-                required
-                placeholder="25"
-                value={addForm.stock}
-                onChange={(e) => setAddForm({ ...addForm, stock: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded"
-              />
-            </div>
-          </div>
-
-          <div className="pt-2 flex items-center justify-between">
-            <button
-              type="submit"
-              className="px-6 py-2.5 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-black text-xs transition shadow-2xs"
-            >
-              Publish Listing to Marketplace →
-            </button>
-
-            {isSaved && (
-              <span className="text-emerald-700 font-bold text-xs">
-                ✓ Product listing published successfully!
-              </span>
-            )}
-          </div>
-        </form>
+        <ProductCreatorStudio onFinishPublish={onFinishAdd || (() => {})} />
       )}
 
       {/* 3. BULK UPLOAD SUBVIEW */}
