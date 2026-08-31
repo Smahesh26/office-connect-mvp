@@ -12,6 +12,7 @@ import { fetchPDPDetails } from "@/lib/catalog-api";
 import { addToCartStorage } from "@/lib/cart-wishlist";
 
 const KNOWN_PRODUCTS: Record<string, ProductHeroData> = {
+  // 1. Headphones & Audio
   "prod-1": {
     id: "prod-1",
     title: "AeroTech ANC-500 Wireless Studio Noise Canceling Headphones",
@@ -37,6 +38,189 @@ const KNOWN_PRODUCTS: Record<string, ProductHeroData> = {
     dispatchSla: "Express 24-Hour Dispatch",
     stockCount: 24,
   },
+  "deal-2": {
+    id: "deal-2",
+    title: "Wireless ANC Noise-Cancelling Headphones Hi-Res Audio",
+    brand: "AeroTech",
+    brandSlug: "aerotech",
+    category: "Electronics",
+    rating: 4.9,
+    reviewsCount: 420,
+    questionsCount: 94,
+    basePrice: 18990,
+    originalPrice: 22490,
+    images: [
+      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
+    ],
+    variants: [
+      { id: "v-blk", name: "Matte Black", colorCode: "#111827", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+    ],
+    sellerName: "Office Connect Direct 👑",
+    sellerTier: "premium",
+    dispatchSla: "Express 24-Hour Dispatch",
+    stockCount: 18,
+  },
+
+  // 2. Beauty & Hydrating Serums
+  "rec-p3": {
+    id: "rec-p3",
+    title: "Damask Rose Botanical Hydrating Serum (50ml)",
+    brand: "Glow Beauty",
+    brandSlug: "glowbeauty",
+    category: "Beauty",
+    rating: 5.0,
+    reviewsCount: 310,
+    questionsCount: 18,
+    basePrice: 2499,
+    originalPrice: 3200,
+    images: [
+      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80",
+    ],
+    variants: [
+      { id: "v-50ml", name: "50ml Bottle", colorCode: "#f43f5e", image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+    ],
+    sellerName: "Glow Beauty Organics 🌸",
+    sellerTier: "premium",
+    dispatchSla: "Express 24-Hour Dispatch",
+    stockCount: 30,
+  },
+  "deal-1": {
+    id: "deal-1",
+    title: "Damask Rose Botanical Hydrating Serum (50ml)",
+    brand: "Glow Beauty",
+    brandSlug: "glowbeauty",
+    category: "Beauty",
+    rating: 5.0,
+    reviewsCount: 310,
+    questionsCount: 18,
+    basePrice: 2499,
+    originalPrice: 3200,
+    images: [
+      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80",
+    ],
+    variants: [
+      { id: "v-50ml", name: "50ml Bottle", colorCode: "#f43f5e", image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+    ],
+    sellerName: "Glow Beauty Organics 🌸",
+    sellerTier: "premium",
+    dispatchSla: "Express 24-Hour Dispatch",
+    stockCount: 30,
+  },
+  "rec-1": {
+    id: "rec-1",
+    title: "Damask Rose Botanical Hydrating Serum (50ml)",
+    brand: "Glow Beauty",
+    brandSlug: "glowbeauty",
+    category: "Beauty",
+    rating: 5.0,
+    reviewsCount: 310,
+    questionsCount: 18,
+    basePrice: 2499,
+    originalPrice: 3200,
+    images: [
+      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80",
+    ],
+    variants: [
+      { id: "v-50ml", name: "50ml Bottle", colorCode: "#f43f5e", image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+    ],
+    sellerName: "Glow Beauty Organics 🌸",
+    sellerTier: "premium",
+    dispatchSla: "Express 24-Hour Dispatch",
+    stockCount: 30,
+  },
+  "deal-3": {
+    id: "deal-3",
+    title: "Organic Damask Rose Lip Elixir Shine Balm",
+    brand: "Glow Beauty",
+    brandSlug: "glowbeauty",
+    category: "Beauty",
+    rating: 4.9,
+    reviewsCount: 140,
+    questionsCount: 12,
+    basePrice: 1200,
+    originalPrice: 1500,
+    images: [
+      "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=800&q=80",
+    ],
+    variants: [
+      { id: "v-rose", name: "Rose Velvet Tint", colorCode: "#e11d48", image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+    ],
+    sellerName: "Glow Beauty Organics 🌸",
+    sellerTier: "premium",
+    dispatchSla: "Express 24-Hour Dispatch",
+    stockCount: 40,
+  },
+
+  // 3. Automotive Engine Oil
+  "rec-p4": {
+    id: "rec-p4",
+    title: "5W-40 Fully Synthetic Engine Motor Oil (5 Liters)",
+    brand: "AutoCare",
+    brandSlug: "autocare",
+    category: "Automotive",
+    rating: 4.8,
+    reviewsCount: 88,
+    questionsCount: 12,
+    basePrice: 3200,
+    originalPrice: 3800,
+    images: [
+      "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80",
+    ],
+    variants: [
+      { id: "v-5l", name: "5L Canister", colorCode: "#0284c7", image: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+    ],
+    sellerName: "AutoCare Motors 🚘",
+    sellerTier: "verified",
+    dispatchSla: "Priority Courier 2-Day Delivery",
+    stockCount: 15,
+  },
+  "deal-4": {
+    id: "deal-4",
+    title: "5W-40 Fully Synthetic Engine Motor Oil (5 Liters)",
+    brand: "AutoCare",
+    brandSlug: "autocare",
+    category: "Automotive",
+    rating: 4.8,
+    reviewsCount: 88,
+    questionsCount: 12,
+    basePrice: 3200,
+    originalPrice: 3800,
+    images: [
+      "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80",
+    ],
+    variants: [
+      { id: "v-5l", name: "5L Canister", colorCode: "#0284c7", image: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+    ],
+    sellerName: "AutoCare Motors 🚘",
+    sellerTier: "verified",
+    dispatchSla: "Priority Courier 2-Day Delivery",
+    stockCount: 15,
+  },
+  "rec-4": {
+    id: "rec-4",
+    title: "5W-40 Fully Synthetic Engine Motor Oil (5 Liters)",
+    brand: "AutoCare",
+    brandSlug: "autocare",
+    category: "Automotive",
+    rating: 4.8,
+    reviewsCount: 88,
+    questionsCount: 12,
+    basePrice: 3200,
+    originalPrice: 3800,
+    images: [
+      "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80",
+    ],
+    variants: [
+      { id: "v-5l", name: "5L Canister", colorCode: "#0284c7", image: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+    ],
+    sellerName: "AutoCare Motors 🚘",
+    sellerTier: "verified",
+    dispatchSla: "Priority Courier 2-Day Delivery",
+    stockCount: 15,
+  },
+
+  // 4. Apparel & T-Shirts
   "prod-2": {
     id: "prod-2",
     title: "UrbanStyle 240 GSM Heavyweight Oversized French Terry T-Shirt",
@@ -62,49 +246,51 @@ const KNOWN_PRODUCTS: Record<string, ProductHeroData> = {
     dispatchSla: "Same-Day Warehouse Dispatch",
     stockCount: 45,
   },
-  "rec-p3": {
-    id: "rec-p3",
-    title: "Damask Rose Botanical Hydrating Serum (50ml)",
-    brand: "Glow Beauty",
-    brandSlug: "glowbeauty",
-    category: "Beauty",
-    rating: 5.0,
-    reviewsCount: 310,
-    questionsCount: 18,
-    basePrice: 2499,
-    originalPrice: 3200,
+
+  // 5. Smartwatch & Cloud Clusters & Keyboards
+  "rec-2": {
+    id: "rec-2",
+    title: "Titanium Fitness & Cardiac Health Smartwatch",
+    brand: "AeroTech",
+    brandSlug: "aerotech",
+    category: "Electronics",
+    rating: 4.9,
+    reviewsCount: 156,
+    questionsCount: 38,
+    basePrice: 24990,
+    originalPrice: 29990,
     images: [
-      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80",
     ],
     variants: [
-      { id: "v-50ml", name: "50ml Bottle", colorCode: "#f43f5e", image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+      { id: "v-ti", name: "Titanium Silver", colorCode: "#cbd5e1", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
     ],
-    sellerName: "Glow Beauty Organics 🌸",
+    sellerName: "AeroTech Official Direct 👑",
     sellerTier: "premium",
     dispatchSla: "Express 24-Hour Dispatch",
-    stockCount: 30,
+    stockCount: 16,
   },
-  "rec-p4": {
-    id: "rec-p4",
-    title: "5W-40 Fully Synthetic Engine Motor Oil (5 Liters)",
-    brand: "AutoCare",
-    brandSlug: "autocare",
-    category: "Automotive",
+  "rec-3": {
+    id: "rec-3",
+    title: "Kubernetes NVMe Cloud Server Cluster (16 vCPU, 64GB RAM)",
+    brand: "Acme Cloud",
+    brandSlug: "acme-cloud",
+    category: "Computing",
     rating: 4.8,
-    reviewsCount: 88,
-    questionsCount: 12,
-    basePrice: 3200,
-    originalPrice: 3800,
+    reviewsCount: 94,
+    questionsCount: 41,
+    basePrice: 62000,
+    originalPrice: 75000,
     images: [
-      "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80",
     ],
     variants: [
-      { id: "v-5l", name: "5L Canister", colorCode: "#0284c7", image: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
+      { id: "v-cluster", name: "Multi-Region Enterprise Node", colorCode: "#0284c7", image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
     ],
-    sellerName: "AutoCare Motors 🚘",
+    sellerName: "Acme Cloud Corp ☁️",
     sellerTier: "verified",
-    dispatchSla: "Priority Courier 2-Day Delivery",
-    stockCount: 15,
+    dispatchSla: "Instant Automated Cloud Provisioning",
+    stockCount: 99,
   },
   "prod-3": {
     id: "prod-3",
@@ -166,7 +352,7 @@ export default function ProductDetailPage({
     }
     // Dynamic fallback for any custom product ID
     const formattedTitle = productId
-      .replace(/^prod-|^rec-/, "")
+      .replace(/^prod-|^rec-|^deal-/, "")
       .replace(/-/g, " ")
       .replace(/\b\w/g, (c) => c.toUpperCase());
 

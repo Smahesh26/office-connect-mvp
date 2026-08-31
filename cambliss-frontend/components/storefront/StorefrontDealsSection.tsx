@@ -58,7 +58,7 @@ export const StorefrontTopDeals = () => {
     {
       id: "deal-4",
       title: "5W-40 Fully Synthetic Engine Motor Oil (5 Liters)",
-      image: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=600&q=80",
+      image: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=600&q=80",
       price: 3200,
       originalPrice: 3800,
       sellerName: "AutoCare Motors 🚘",
