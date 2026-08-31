@@ -68,34 +68,6 @@ export default function CartPage() {
       setPackages(newPackages);
     }
   }, []);
-      items: [
-        {
-          id: "item-3",
-          productId: "prod-4",
-          title: "Keychron Q1 Pro Custom Wireless Mechanical Keyboard QMK/VIA",
-          brand: "Keychron",
-          price: 18499,
-          originalPrice: 21999,
-          quantity: 1,
-          image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=400&q=80",
-          variantName: "Barebone ISO / Carbon Black",
-          inStock: true,
-        },
-        {
-          id: "item-4",
-          productId: "prod-keycaps",
-          title: "OEM Dye-Sub PBT Custom Artisan Keycap Set (134 Keys)",
-          brand: "Keychron",
-          price: 2499,
-          originalPrice: 2999,
-          quantity: 1,
-          image: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=400&q=80",
-          variantName: "Retro Gray & Red",
-          inStock: false, // Out of Stock demonstration
-        },
-      ],
-    },
-  ]);
 
   // Saved for Later state
   const [savedItems, setSavedItems] = useState<CartLineItem[]>([
