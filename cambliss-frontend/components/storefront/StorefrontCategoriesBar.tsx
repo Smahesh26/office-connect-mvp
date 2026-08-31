@@ -61,10 +61,10 @@ export const StorefrontCategoriesBar = () => {
         },
       ],
       featuredPromo: {
-        title: "Sony Flagship Audio",
-        subtitle: "Industry-leading ANC up to 40% off",
-        badge: "OFFICIAL STORE",
-        href: "/brand/sony",
+        title: "AeroTech Studio Audio",
+        subtitle: "High-performance ANC up to 40% off",
+        badge: "VERIFIED MERCHANT",
+        href: "/brand/aerotech",
       },
     },
     {

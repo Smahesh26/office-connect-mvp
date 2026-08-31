@@ -11,7 +11,7 @@ export const StorefrontHero = () => {
       badge: "OFFICIAL CATALOG",
       title: "Enterprise Computing & Cloud Hardware",
       subtitle: "Direct manufacturer pricing from verified IT distributors across India & global markets.",
-      bullets: ["Same-Day Warehouse Dispatch", "100% Escrow Payment Protection", "Official GST Tax Invoice"],
+      bullets: ["Same-Day Warehouse Dispatch", "Encrypted Payment Protection", "Official GST Tax Invoice"],
       ctaPrimary: { label: "Shop Computing Offers", href: "/category/computing" },
       ctaSecondary: { label: "Browse Verified IT Sellers", href: "/storefront?vendor=All" },
       image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1000&q=80",

@@ -55,7 +55,7 @@ export const StorefrontFooter = () => {
         { label: "Careers & Engineering", href: "/careers" },
         { label: "Terms of Service", href: "/terms" },
         { label: "Privacy Policy", href: "/privacy" },
-        { label: "100% Escrow Security", href: "/security" },
+        { label: "Payment & Buyer Security", href: "/security" },
       ],
     },
   ];
@@ -72,8 +72,8 @@ export const StorefrontFooter = () => {
               🛡️
             </div>
             <div>
-              <h5 className="font-bold text-white text-xs">100% Escrow Protection</h5>
-              <p className="text-[11px] text-slate-400">Funds released only after delivery confirmation</p>
+              <h5 className="font-bold text-white text-xs">Secure Payment Processing</h5>
+              <p className="text-[11px] text-slate-400">Encrypted multi-gateway transaction security</p>
             </div>
           </div>
 
@@ -82,8 +82,8 @@ export const StorefrontFooter = () => {
               🚚
             </div>
             <div>
-              <h5 className="font-bold text-white text-xs">Express 48-Hour Dispatch</h5>
-              <p className="text-[11px] text-slate-400">Direct from certified merchant warehouses</p>
+              <h5 className="font-bold text-white text-xs">Express Dispatch Options</h5>
+              <p className="text-[11px] text-slate-400">Direct from participating merchant fulfillment centers</p>
             </div>
           </div>
 
@@ -92,8 +92,8 @@ export const StorefrontFooter = () => {
               👑
             </div>
             <div>
-              <h5 className="font-bold text-white text-xs">Verified Genuine Sellers</h5>
-              <p className="text-[11px] text-slate-400">5-Stage KYB & KYC merchant credential vetting</p>
+              <h5 className="font-bold text-white text-xs">Merchant Verification</h5>
+              <p className="text-[11px] text-slate-400">KYC & business profile onboarding checklist</p>
             </div>
           </div>
 
@@ -102,8 +102,8 @@ export const StorefrontFooter = () => {
               💳
             </div>
             <div>
-              <h5 className="font-bold text-white text-xs">Secure Multi-Gateway Checkout</h5>
-              <p className="text-[11px] text-slate-400">UPI, Cards, NetBanking, Stripe & Razorpay</p>
+              <h5 className="font-bold text-white text-xs">Multi-Gateway Checkout</h5>
+              <p className="text-[11px] text-slate-400">UPI, Cards, NetBanking & Supported Gateways</p>
             </div>
           </div>
 
@@ -126,7 +126,7 @@ export const StorefrontFooter = () => {
             Enterprise multi-vendor commerce platform connecting buyers with verified direct manufacturers and brands.
           </p>
           <div className="text-[10px] text-slate-500 font-mono">
-            ISO 27001 Certified • PCI-DSS Level 1
+            Encrypted 256-Bit SSL • TLS 1.3 Security
           </div>
         </div>
 
