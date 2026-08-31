@@ -9,9 +9,13 @@ type MedusaVendor = {
 	id: string;
 	slug: string;
 	name: string;
+	legalName: string;
+	entityType: string;
+	einNumber: string;
 	logo: string;
 	banner: string;
 	ownerEmail: string;
+	phone: string;
 	category: string;
 	rating: number;
 	reviewsCount: number;
@@ -19,6 +23,8 @@ type MedusaVendor = {
 	grossSales: number;
 	totalEarnings: number;
 	payoutStatus: string;
+	bankAccountIban: string;
+	taxIdVat: string;
 	kycVerified: boolean;
 	location: string;
 	description: string;
@@ -72,9 +78,13 @@ function StorefrontContent() {
 			id: "v-office-direct",
 			slug: "office-direct",
 			name: "Office Connect Direct 👑",
+			legalName: "Office Connect Global Inc.",
+			entityType: "Corporation",
+			einNumber: "EIN-98-4029102",
 			logo: "👑",
 			banner: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80",
 			ownerEmail: "admin@camblissstudio.com",
+			phone: "+1 (800) 555-0199",
 			category: "Electronics & Gadgets",
 			rating: 5.0,
 			reviewsCount: 520,
@@ -82,6 +92,8 @@ function StorefrontContent() {
 			grossSales: 98400.00,
 			totalEarnings: 90036.00,
 			payoutStatus: "Connected (Stripe Active)",
+			bankAccountIban: "US8930192840192019",
+			taxIdVat: "VAT-US9402102",
 			kycVerified: true,
 			location: "Global Platform HQ 🌐",
 			description: "Official 1P Flagship Store for Office Connect Hardware, Smartwear & Cloud Software."
@@ -90,9 +102,13 @@ function StorefrontContent() {
 			id: "v-glow-beauty",
 			slug: "glow-beauty",
 			name: "Glow Beauty Organics 🌸",
+			legalName: "Glow Beauty Grasse SAS",
+			entityType: "LLC / Private Limited",
+			einNumber: "FR-84019201",
 			logo: "🌸",
 			banner: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80",
 			ownerEmail: "care@glowbeautyorganics.com",
+			phone: "+33 1 42 68 55 00",
 			category: "Beauty & Personal Care",
 			rating: 5.0,
 			reviewsCount: 310,
@@ -100,6 +116,8 @@ function StorefrontContent() {
 			grossSales: 48250.00,
 			totalEarnings: 44148.75,
 			payoutStatus: "Connected (Stripe Active)",
+			bankAccountIban: "FR7630006000011234567890189",
+			taxIdVat: "FR-VAT-99201",
 			kycVerified: true,
 			location: "Paris, France 🇫🇷",
 			description: "Luxury French organic skincare, cold-pressed rose extracts, and botanical lip elixirs."
@@ -108,9 +126,13 @@ function StorefrontContent() {
 			id: "v-acme-cloud",
 			slug: "acme-cloud",
 			name: "Acme Cloud Corp ☁️",
+			legalName: "Acme Cloud Infrastructure GmbH",
+			entityType: "Corporation",
+			einNumber: "DE-99201920",
 			logo: "☁️",
 			banner: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80",
 			ownerEmail: "vendors@acmecloud.io",
+			phone: "+49 89 2018 3900",
 			category: "Enterprise Software & Cloud",
 			rating: 4.8,
 			reviewsCount: 94,
@@ -118,6 +140,8 @@ function StorefrontContent() {
 			grossSales: 62000.00,
 			totalEarnings: 56730.00,
 			payoutStatus: "Connected (Stripe Active)",
+			bankAccountIban: "DE89370400440532013000",
+			taxIdVat: "DE-VAT-481029",
 			kycVerified: true,
 			location: "Munich, Germany 🇩🇪",
 			description: "Dedicated enterprise cloud server infrastructure, NVMe VPS nodes, and Kubernetes clusters."
@@ -126,9 +150,13 @@ function StorefrontContent() {
 			id: "v-autocare",
 			slug: "autocare-motors",
 			name: "AutoCare Garage & Motors 🚘",
+			legalName: "AutoCare Motors Inc",
+			entityType: "LLC",
+			einNumber: "EIN-38-991029",
 			logo: "🚘",
 			banner: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=1200&q=80",
 			ownerEmail: "service@autocaregarage.com",
+			phone: "+1 (313) 555-0144",
 			category: "Automotive Parts & Services",
 			rating: 4.9,
 			reviewsCount: 215,
@@ -136,6 +164,8 @@ function StorefrontContent() {
 			grossSales: 35400.00,
 			totalEarnings: 32391.00,
 			payoutStatus: "Connected (Stripe Active)",
+			bankAccountIban: "US94029102948102",
+			taxIdVat: "US-TAX-389910",
 			kycVerified: true,
 			location: "Detroit, USA 🇺🇸",
 			description: "100% Genuine motor oils, high-performance brake pads, and garage service bookings."
@@ -267,47 +297,77 @@ function StorefrontContent() {
 
 	const [cart, setCart] = useState<MedusaCartItem[]>([]);
 	const [showCartDrawer, setShowCartDrawer] = useState(false);
-	const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-	const [showRegisterVendorModal, setShowRegisterVendorModal] = useState(false);
-	const [selectedProductQuickView, setSelectedProductQuickView] = useState<MedusaProduct | null>(null);
+	const [showAmazonOnboardingWizard, setShowAmazonOnboardingWizard] = useState(false);
+	const [onboardingStep, setOnboardingStep] = useState(1); // Steps 1 to 5
 	const [addedToast, setAddedToast] = useState<string | null>(null);
 
-	// New Vendor Registration Form
-	const [regForm, setRegForm] = useState({
+	// AMAZON 5-STEP SELLER ONBOARDING WIZARD FORM STATE
+	const [wizardForm, setWizardForm] = useState({
+		// Step 1: Legal Entity (KYB)
+		legalName: "",
+		entityType: "LLC / Private Limited",
+		einNumber: "",
+		businessAddress: "",
+
+		// Step 2: Store Branding
 		storeName: "",
-		ownerEmail: "",
+		storeSlug: "",
 		category: "Electronics & Gadgets",
-		location: "",
+		ownerEmail: "",
+		phone: "",
 		description: "",
-		logo: "🏬"
+
+		// Step 3: Owner KYC
+		ownerFullName: "",
+		idDocType: "Passport",
+		idDocNumber: "",
+		idDocVerified: true,
+
+		// Step 4: Bank Payouts
+		bankAccountHolder: "",
+		bankRouting: "",
+		accountIban: "",
+		stripeConnectAgreed: true,
+
+		// Step 5: Tax & W-9
+		taxIdVat: "",
+		w9DeclarationConfirmed: true
 	});
 
-	const handleVendorRegister = (e: FormEvent) => {
+	const handleCompleteAmazonOnboarding = (e: FormEvent) => {
 		e.preventDefault();
-		if (!regForm.storeName || !regForm.ownerEmail) return;
+		if (!wizardForm.storeName || !wizardForm.ownerEmail) return;
+
 		const newId = `v-${Date.now()}`;
-		const newSlug = regForm.storeName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 		const newVendor: MedusaVendor = {
 			id: newId,
-			slug: newSlug,
-			name: regForm.storeName,
-			logo: regForm.logo || "🏬",
+			slug: wizardForm.storeSlug || wizardForm.storeName.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+			name: wizardForm.storeName,
+			legalName: wizardForm.legalName || wizardForm.storeName,
+			entityType: wizardForm.entityType,
+			einNumber: wizardForm.einNumber || "EIN-99-402910",
+			logo: "🏬",
 			banner: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80",
-			ownerEmail: regForm.ownerEmail,
-			category: regForm.category,
+			ownerEmail: wizardForm.ownerEmail,
+			phone: wizardForm.phone || "+1 (555) 019-2831",
+			category: wizardForm.category,
 			rating: 5.0,
 			reviewsCount: 1,
 			totalProducts: 0,
 			grossSales: 0,
 			totalEarnings: 0,
-			payoutStatus: "Connected (Stripe Auto Payout)",
+			payoutStatus: "Connected (Stripe Active)",
+			bankAccountIban: wizardForm.accountIban || "US94029102948102",
+			taxIdVat: wizardForm.taxIdVat || "TAX-US94021",
 			kycVerified: true,
-			location: regForm.location || "Online Merchant 🌐",
-			description: regForm.description || "Official seller store on Office Connect Marketplace."
+			location: wizardForm.businessAddress || "Online Verified Merchant 🌐",
+			description: wizardForm.description || "Official verified seller store on Office Connect Marketplace."
 		};
+
 		setVendors([...vendors, newVendor]);
-		setShowRegisterVendorModal(false);
-		alert(`🎉 Congratulations! Store "${regForm.storeName}" is live! Navigating to your dedicated storefront...`);
+		setShowAmazonOnboardingWizard(false);
+		setOnboardingStep(1);
+		alert(`🎉 Amazon-Grade Verification Complete! Store "${wizardForm.storeName}" is now active and verified!`);
 		router.push(`/storefront?vendor=${newId}`);
 	};
 
@@ -333,10 +393,7 @@ function StorefrontContent() {
 	});
 
 	const activeVendorObj = vendors.find((v) => v.id === activeVendorId);
-
 	const cartTotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-	const platformFeeCut = cartTotal * 0.085; // 8.5%
-	const vendorPayoutTotal = cartTotal - platformFeeCut;
 
 	return (
 		<div className="min-h-screen bg-[#f8fafc] font-sans text-[#1f2430] flex flex-col antialiased selection:bg-[#404d85] selection:text-white">
@@ -345,16 +402,16 @@ function StorefrontContent() {
 			<div className="bg-[#1f2430] text-white px-4 sm:px-8 py-2 text-xs font-semibold border-b border-[#252f5a]">
 				<div className="max-w-7xl mx-auto flex items-center justify-between">
 					<div className="flex items-center gap-6 text-blue-200">
-						<span>🚚 Express Delivery Across All Vendor Stores</span>
+						<span>🚚 Express Delivery Across All Verified Vendor Stores</span>
 						<span className="hidden md:inline font-normal text-zinc-300">• 1,280+ Live Buyers Online</span>
 					</div>
 
 					<div className="flex items-center gap-4 text-xs">
 						<button
-							onClick={() => setShowRegisterVendorModal(true)}
-							className="text-amber-300 font-extrabold hover:underline"
+							onClick={() => setShowAmazonOnboardingWizard(true)}
+							className="text-amber-300 font-extrabold hover:underline flex items-center gap-1"
 						>
-							+ Become a Seller / Register Store
+							<span>📋 Amazon Seller Onboarding</span>
 						</button>
 						<span>|</span>
 						<Link href="/vendor-dashboard" className="text-blue-200 font-bold hover:underline">
@@ -385,7 +442,7 @@ function StorefrontContent() {
 						<span className="text-zinc-400 mr-2 text-sm">🔍</span>
 						<input
 							type="text"
-							placeholder="Search products across all registered seller stores..."
+							placeholder="Search products across all verified seller stores..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							className="w-full bg-transparent focus:outline-none text-[#1f2430] placeholder-zinc-400 font-medium"
@@ -395,8 +452,8 @@ function StorefrontContent() {
 					{/* Action Buttons */}
 					<div className="flex items-center gap-3 shrink-0">
 						<button
-							onClick={() => setShowRegisterVendorModal(true)}
-							className="rounded-xl border border-[#404d85] px-4 py-2 text-xs font-bold text-[#404d85] hover:bg-blue-50 transition"
+							onClick={() => setShowAmazonOnboardingWizard(true)}
+							className="rounded-xl bg-[#404d85] px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-[#323d6a] transition"
 						>
 							+ Register Store
 						</button>
@@ -418,7 +475,7 @@ function StorefrontContent() {
 				</div>
 			</header>
 
-			{/* DEDICATED VENDOR STOREFRONT BANNER HEADER (IF FILTERED BY SPECIFIC VENDOR) */}
+			{/* DEDICATED VENDOR STOREFRONT BANNER HEADER */}
 			{activeVendorObj && (
 				<div className="relative bg-gradient-to-r from-[#1f2430] via-[#252f5a] to-[#404d85] text-white py-10 px-4 sm:px-8 border-b border-[#323d6a] overflow-hidden">
 					<div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
@@ -438,6 +495,8 @@ function StorefrontContent() {
 									<span>⭐ {activeVendorObj.rating} / 5.0 ({activeVendorObj.reviewsCount} reviews)</span>
 									<span>•</span>
 									<span>📍 {activeVendorObj.location}</span>
+									<span>•</span>
+									<span>🏛️ {activeVendorObj.legalName} ({activeVendorObj.entityType})</span>
 								</div>
 							</div>
 						</div>
@@ -460,7 +519,7 @@ function StorefrontContent() {
 				</div>
 			)}
 
-			{/* ALL VENDORS QUICK FILTER BAR */}
+			{/* QUICK VENDORS FILTER BAR */}
 			<div className="bg-white border-b border-zinc-200 px-4 sm:px-8 py-3 overflow-x-auto shadow-sm">
 				<div className="max-w-7xl mx-auto flex items-center gap-2 text-xs font-bold">
 					<span className="text-zinc-400 uppercase text-[10px] tracking-wider mr-2 shrink-0">Shop by Store:</span>
@@ -498,10 +557,10 @@ function StorefrontContent() {
 					</div>
 
 					<button
-						onClick={() => setShowRegisterVendorModal(true)}
+						onClick={() => setShowAmazonOnboardingWizard(true)}
 						className="rounded-xl bg-[#404d85] px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-[#323d6a]"
 					>
-						+ Register As Seller Store
+						+ Amazon Seller Onboarding
 					</button>
 				</div>
 
@@ -557,126 +616,325 @@ function StorefrontContent() {
 				</div>
 			</main>
 
-			{/* SHOPPING BAG DRAWER */}
-			{showCartDrawer && (
-				<div className="fixed inset-0 z-[9999] flex justify-end bg-black/60 backdrop-blur-sm">
-					<div className="w-full max-w-md bg-white h-full shadow-2xl p-6 flex flex-col justify-between relative space-y-4">
-						<div>
-							<div className="flex justify-between items-center border-b border-zinc-200 pb-4">
-								<h2 className="text-lg font-bold text-[#404d85]">🛒 Shopping Bag ({cart.length})</h2>
-								<button onClick={() => setShowCartDrawer(false)} className="text-zinc-400 font-bold text-xl">✕</button>
-							</div>
+			{/* AMAZON-GRADE 5-STEP SELLER ONBOARDING WIZARD MODAL */}
+			{showAmazonOnboardingWizard && (
+				<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
+					<div className="w-full max-w-2xl rounded-3xl bg-white p-8 shadow-2xl relative border border-zinc-200 space-y-6 my-6 max-h-[92vh] overflow-y-auto">
+						<button onClick={() => setShowAmazonOnboardingWizard(false)} className="absolute right-6 top-6 text-zinc-400 font-bold text-xl">✕</button>
 
-							<div className="divide-y divide-zinc-100 max-h-[60vh] overflow-y-auto mt-4 space-y-3">
-								{cart.map((item) => (
-									<div key={item.product.id} className="py-3 flex items-center gap-3">
-										<img src={item.product.image} alt={item.product.title} className="w-12 h-12 rounded-xl object-cover border border-zinc-200" />
-										<div className="flex-1 min-w-0">
-											<h4 className="font-bold text-xs text-[#1f2430] truncate">{item.product.title}</h4>
-											<div className="text-[11px] text-zinc-500 font-medium">Qty: {item.quantity} • ${item.product.price.toFixed(2)}</div>
-										</div>
-										<div className="font-bold text-emerald-600 text-xs">${(item.product.price * item.quantity).toFixed(2)}</div>
-									</div>
-								))}
-							</div>
+						<div className="space-y-2">
+							<span className="rounded-full bg-[#404d85]/10 border border-[#404d85]/20 px-3 py-1 text-xs font-extrabold text-[#404d85]">
+								📋 AMAZON SELLER CENTRAL VERIFICATION WIZARD
+							</span>
+							<h2 className="text-2xl font-black text-[#1f2430]">Seller Onboarding & KYC/KYB Verification</h2>
 						</div>
 
-						<div className="border-t border-zinc-200 pt-4 space-y-3">
-							<div className="flex justify-between text-xs font-bold">
-								<span>Subtotal:</span>
-								<span className="text-emerald-600 text-base font-black">${cartTotal.toFixed(2)}</span>
-							</div>
-							<div className="text-[11px] text-zinc-400 bg-zinc-50 p-2.5 rounded-xl border border-zinc-200">
-								💳 Automatic Escrow Split: <span className="font-bold text-zinc-700">${vendorPayoutTotal.toFixed(2)}</span> to Seller Store • <span className="font-bold text-[#404d85]">${platformFeeCut.toFixed(2)}</span> to Office Connect Platform.
-							</div>
-							<button
-								onClick={() => {
-									setShowCartDrawer(false);
-									setShowCheckoutModal(true);
-								}}
-								className="w-full rounded-2xl bg-[#404d85] py-3.5 text-xs font-bold text-white shadow-xl hover:bg-[#323d6a]"
-							>
-								Proceed to 1-Click Checkout 💳
-							</button>
+						{/* 5-Step Progress Bar */}
+						<div className="grid grid-cols-5 gap-2 text-center text-[10px] font-bold">
+							{[
+								{ step: 1, name: "1. Business Identity" },
+								{ step: 2, name: "2. Store Profile" },
+								{ step: 3, name: "3. Owner KYC" },
+								{ step: 4, name: "4. Bank Payout" },
+								{ step: 5, name: "5. Tax Declaration" }
+							].map((item) => (
+								<div key={item.step} className="space-y-1">
+									<div className={`h-2 rounded-full transition-all ${
+										onboardingStep >= item.step ? "bg-[#404d85]" : "bg-zinc-200"
+									}`} />
+									<span className={onboardingStep >= item.step ? "text-[#404d85] font-extrabold" : "text-zinc-400"}>
+										{item.name}
+									</span>
+								</div>
+							))}
 						</div>
-					</div>
-				</div>
-			)}
 
-			{/* VENDOR REGISTER MODAL */}
-			{showRegisterVendorModal && (
-				<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-					<div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl relative border border-zinc-200 space-y-4">
-						<button onClick={() => setShowRegisterVendorModal(false)} className="absolute right-5 top-5 text-zinc-400 font-bold text-lg">✕</button>
-						<h2 className="text-lg font-bold text-[#404d85]">🏬 Register Vendor Seller Store</h2>
-						<p className="text-xs text-zinc-500">Create your official storefront and start selling in 1 minute.</p>
-
-						<form onSubmit={handleVendorRegister} className="space-y-3 text-xs font-medium">
-							<div>
-								<label className="block font-bold text-zinc-700">Store Name *</label>
-								<input
-									type="text"
-									required
-									placeholder="e.g. Apex Electronics ⚡"
-									value={regForm.storeName}
-									onChange={(e) => setRegForm({ ...regForm, storeName: e.target.value })}
-									className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs"
-								/>
-							</div>
-
-							<div className="grid grid-cols-2 gap-3">
+						{/* STEP 1: BUSINESS IDENTITY & KYB */}
+						{onboardingStep === 1 && (
+							<div className="space-y-4 text-xs font-medium">
+								<h3 className="font-extrabold text-sm text-[#404d85] border-b border-zinc-100 pb-2">
+									🏛️ Step 1: Legal Business Entity (KYB)
+								</h3>
 								<div>
-									<label className="block font-bold text-zinc-700">Business Email *</label>
+									<label className="block font-bold text-zinc-700">Legal Business Name *</label>
 									<input
-										type="email"
+										type="text"
 										required
-										placeholder="vendor@company.com"
-										value={regForm.ownerEmail}
-										onChange={(e) => setRegForm({ ...regForm, ownerEmail: e.target.value })}
-										className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs"
+										placeholder="e.g. Apex Electronics Global SAS"
+										value={wizardForm.legalName}
+										onChange={(e) => setWizardForm({ ...wizardForm, legalName: e.target.value })}
+										className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
 									/>
 								</div>
+								<div className="grid grid-cols-2 gap-3">
+									<div>
+										<label className="block font-bold text-zinc-700">Business Structure Type *</label>
+										<select
+											value={wizardForm.entityType}
+											onChange={(e) => setWizardForm({ ...wizardForm, entityType: e.target.value })}
+											className="w-full rounded-xl border border-zinc-300 p-3 text-xs font-bold text-[#404d85]"
+										>
+											<option value="LLC / Private Limited">LLC / Private Limited</option>
+											<option value="Sole Proprietorship">Sole Proprietorship / Individual</option>
+											<option value="Corporation">Corporation / Public Ltd</option>
+											<option value="Partnership">Partnership</option>
+										</select>
+									</div>
+									<div>
+										<label className="block font-bold text-zinc-700">Company Registration EIN/CRN *</label>
+										<input
+											type="text"
+											required
+											placeholder="EIN-98-4029102"
+											value={wizardForm.einNumber}
+											onChange={(e) => setWizardForm({ ...wizardForm, einNumber: e.target.value })}
+											className="w-full rounded-xl border border-zinc-300 p-3 text-xs font-mono"
+										/>
+									</div>
+								</div>
 								<div>
-									<label className="block font-bold text-zinc-700">Primary Category</label>
-									<select
-										value={regForm.category}
-										onChange={(e) => setRegForm({ ...regForm, category: e.target.value })}
-										className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs font-bold text-[#404d85]"
-									>
-										<option value="Electronics & Gadgets">Electronics & Gadgets</option>
-										<option value="Beauty & Personal Care">Beauty & Personal Care</option>
-										<option value="Enterprise Software & Cloud">Enterprise Software & Cloud</option>
-										<option value="Automotive Parts & Services">Automotive Parts & Services</option>
-									</select>
+									<label className="block font-bold text-zinc-700">Registered Business Address *</label>
+									<input
+										type="text"
+										required
+										placeholder="100 Market Street, Suite 400, San Francisco, CA 94105"
+										value={wizardForm.businessAddress}
+										onChange={(e) => setWizardForm({ ...wizardForm, businessAddress: e.target.value })}
+										className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
+									/>
+								</div>
+								<button onClick={() => setOnboardingStep(2)} className="w-full rounded-xl bg-[#404d85] py-3.5 font-bold text-white shadow-lg">
+									Continue to Step 2: Store Profile →
+								</button>
+							</div>
+						)}
+
+						{/* STEP 2: STORE PROFILE & BRANDING */}
+						{onboardingStep === 2 && (
+							<div className="space-y-4 text-xs font-medium">
+								<h3 className="font-extrabold text-sm text-[#404d85] border-b border-zinc-100 pb-2">
+									🏪 Step 2: Store Branding & Identity
+								</h3>
+								<div className="grid grid-cols-2 gap-3">
+									<div>
+										<label className="block font-bold text-zinc-700">Store Display Name *</label>
+										<input
+											type="text"
+											required
+											placeholder="e.g. Apex Electronics ⚡"
+											value={wizardForm.storeName}
+											onChange={(e) => setWizardForm({ ...wizardForm, storeName: e.target.value, storeSlug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-") })}
+											className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
+										/>
+									</div>
+									<div>
+										<label className="block font-bold text-zinc-700">Store Slug / Handle *</label>
+										<input
+											type="text"
+											required
+											placeholder="apex-electronics"
+											value={wizardForm.storeSlug}
+											onChange={(e) => setWizardForm({ ...wizardForm, storeSlug: e.target.value })}
+											className="w-full rounded-xl border border-zinc-300 p-3 text-xs font-mono"
+										/>
+									</div>
+								</div>
+								<div className="grid grid-cols-2 gap-3">
+									<div>
+										<label className="block font-bold text-zinc-700">Primary Product Category *</label>
+										<select
+											value={wizardForm.category}
+											onChange={(e) => setWizardForm({ ...wizardForm, category: e.target.value })}
+											className="w-full rounded-xl border border-zinc-300 p-3 text-xs font-bold text-[#404d85]"
+										>
+											<option value="Electronics & Gadgets">Electronics & Gadgets</option>
+											<option value="Beauty & Personal Care">Beauty & Personal Care</option>
+											<option value="Enterprise Software & Cloud">Enterprise Software & Cloud</option>
+											<option value="Automotive Parts & Services">Automotive Parts & Services</option>
+										</select>
+									</div>
+									<div>
+										<label className="block font-bold text-zinc-700">Customer Support Email *</label>
+										<input
+											type="email"
+											required
+											placeholder="support@apexelectronics.com"
+											value={wizardForm.ownerEmail}
+											onChange={(e) => setWizardForm({ ...wizardForm, ownerEmail: e.target.value })}
+											className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
+										/>
+									</div>
+								</div>
+								<div className="flex gap-3">
+									<button onClick={() => setOnboardingStep(1)} className="w-1/3 rounded-xl border border-zinc-300 py-3 font-bold text-zinc-700">
+										← Back
+									</button>
+									<button onClick={() => setOnboardingStep(3)} className="w-2/3 rounded-xl bg-[#404d85] py-3 font-bold text-white shadow-lg">
+										Continue to Step 3: Owner KYC →
+									</button>
 								</div>
 							</div>
+						)}
 
-							<div>
-								<label className="block font-bold text-zinc-700">Store Location</label>
-								<input
-									type="text"
-									placeholder="e.g. London, UK 🇬🇧"
-									value={regForm.location}
-									onChange={(e) => setRegForm({ ...regForm, location: e.target.value })}
-									className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs"
-								/>
+						{/* STEP 3: OWNER KYC VERIFICATION */}
+						{onboardingStep === 3 && (
+							<div className="space-y-4 text-xs font-medium">
+								<h3 className="font-extrabold text-sm text-[#404d85] border-b border-zinc-100 pb-2">
+									👤 Step 3: Representative Identity (KYC Verification)
+								</h3>
+								<div>
+									<label className="block font-bold text-zinc-700">Primary Owner / Contact Full Name *</label>
+									<input
+										type="text"
+										required
+										placeholder="Johnathan Doe"
+										value={wizardForm.ownerFullName}
+										onChange={(e) => setWizardForm({ ...wizardForm, ownerFullName: e.target.value })}
+										className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
+									/>
+								</div>
+								<div className="grid grid-cols-2 gap-3">
+									<div>
+										<label className="block font-bold text-zinc-700">Government Photo ID Type *</label>
+										<select
+											value={wizardForm.idDocType}
+											onChange={(e) => setWizardForm({ ...wizardForm, idDocType: e.target.value })}
+											className="w-full rounded-xl border border-zinc-300 p-3 text-xs font-bold text-[#404d85]"
+										>
+											<option value="Passport">Passport</option>
+											<option value="Driver's License">Driver's License</option>
+											<option value="National Identity Card">National Identity Card</option>
+										</select>
+									</div>
+									<div>
+										<label className="block font-bold text-zinc-700">ID Document Number *</label>
+										<input
+											type="text"
+											required
+											placeholder="P-94820194"
+											value={wizardForm.idDocNumber}
+											onChange={(e) => setWizardForm({ ...wizardForm, idDocNumber: e.target.value })}
+											className="w-full rounded-xl border border-zinc-300 p-3 text-xs font-mono"
+										/>
+									</div>
+								</div>
+								<div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between">
+									<span>✓ Photo ID Document Uploaded & Verified</span>
+									<span className="text-emerald-600 font-extrabold">Auto-Pass KYB</span>
+								</div>
+								<div className="flex gap-3">
+									<button onClick={() => setOnboardingStep(2)} className="w-1/3 rounded-xl border border-zinc-300 py-3 font-bold text-zinc-700">
+										← Back
+									</button>
+									<button onClick={() => setOnboardingStep(4)} className="w-2/3 rounded-xl bg-[#404d85] py-3 font-bold text-white shadow-lg">
+										Continue to Step 4: Bank Payout →
+									</button>
+								</div>
 							</div>
+						)}
 
-							<div>
-								<label className="block font-bold text-zinc-700">Store Description</label>
-								<textarea
-									rows={2}
-									placeholder="Describe your products..."
-									value={regForm.description}
-									onChange={(e) => setRegForm({ ...regForm, description: e.target.value })}
-									className="w-full rounded-xl border border-zinc-300 p-2.5 text-xs"
-								/>
+						{/* STEP 4: BANK PAYOUT & STRIPE CONNECT */}
+						{onboardingStep === 4 && (
+							<div className="space-y-4 text-xs font-medium">
+								<h3 className="font-extrabold text-sm text-[#404d85] border-b border-zinc-100 pb-2">
+									💳 Step 4: Payout Banking & Stripe Connect Setup
+								</h3>
+								<div>
+									<label className="block font-bold text-zinc-700">Bank Account Holder Name *</label>
+									<input
+										type="text"
+										required
+										placeholder="Apex Electronics Global LLC"
+										value={wizardForm.bankAccountHolder}
+										onChange={(e) => setWizardForm({ ...wizardForm, bankAccountHolder: e.target.value })}
+										className="w-full rounded-xl border border-zinc-300 p-3 text-xs"
+									/>
+								</div>
+								<div className="grid grid-cols-2 gap-3">
+									<div>
+										<label className="block font-bold text-zinc-700">Routing Number / Sort Code *</label>
+										<input
+											type="text"
+											required
+											placeholder="121000358"
+											value={wizardForm.bankRouting}
+											onChange={(e) => setWizardForm({ ...wizardForm, bankRouting: e.target.value })}
+											className="w-full rounded-xl border border-zinc-300 p-3 text-xs font-mono"
+										/>
+									</div>
+									<div>
+										<label className="block font-bold text-zinc-700">Bank IBAN / Account Number *</label>
+										<input
+											type="text"
+											required
+											placeholder="US8930192840192019"
+											value={wizardForm.accountIban}
+											onChange={(e) => setWizardForm({ ...wizardForm, accountIban: e.target.value })}
+											className="w-full rounded-xl border border-zinc-300 p-3 text-xs font-mono"
+										/>
+									</div>
+								</div>
+								<div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-[#404d85] text-xs font-bold flex items-center justify-between">
+									<span>🟢 Stripe Connect Escrow Wallet Enabled (8.5% Fee Split)</span>
+									<span className="font-extrabold text-emerald-600">Active</span>
+								</div>
+								<div className="flex gap-3">
+									<button onClick={() => setOnboardingStep(3)} className="w-1/3 rounded-xl border border-zinc-300 py-3 font-bold text-zinc-700">
+										← Back
+									</button>
+									<button onClick={() => setOnboardingStep(5)} className="w-2/3 rounded-xl bg-[#404d85] py-3 font-bold text-white shadow-lg">
+										Continue to Step 5: Tax Declaration →
+									</button>
+								</div>
 							</div>
+						)}
 
-							<button type="submit" className="w-full rounded-xl bg-[#404d85] py-3 text-xs font-bold text-white shadow-lg hover:bg-[#323d6a]">
-								Create Dedicated Vendor Storefront
-							</button>
-						</form>
+						{/* STEP 5: TAX & FINAL SUBMISSION */}
+						{onboardingStep === 5 && (
+							<form onSubmit={handleCompleteAmazonOnboarding} className="space-y-4 text-xs font-medium">
+								<h3 className="font-extrabold text-sm text-[#404d85] border-b border-zinc-100 pb-2">
+									📑 Step 5: Tax Compliance & W-9 Declaration
+								</h3>
+								<div className="grid grid-cols-2 gap-3">
+									<div>
+										<label className="block font-bold text-zinc-700">Taxpayer TIN / SSN / EIN *</label>
+										<input
+											type="text"
+											required
+											placeholder="TIN-98-401920"
+											value={wizardForm.taxIdVat}
+											onChange={(e) => setWizardForm({ ...wizardForm, taxIdVat: e.target.value })}
+											className="w-full rounded-xl border border-zinc-300 p-3 text-xs font-mono"
+										/>
+									</div>
+									<div>
+										<label className="block font-bold text-zinc-700">Sales Tax / VAT Registration ID</label>
+										<input
+											type="text"
+											placeholder="VAT-US94021"
+											className="w-full rounded-xl border border-zinc-300 p-3 text-xs font-mono"
+										/>
+									</div>
+								</div>
+
+								<div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-medium space-y-2">
+									<label className="flex items-center gap-2 font-bold text-zinc-800 cursor-pointer">
+										<input type="checkbox" required defaultChecked className="rounded text-[#404d85]" />
+										<span>I hereby declare that all legal entity, banking, and tax documents submitted are accurate under perjury of law.</span>
+									</label>
+								</div>
+
+								<div className="flex gap-3">
+									<button type="button" onClick={() => setOnboardingStep(4)} className="w-1/3 rounded-xl border border-zinc-300 py-3.5 font-bold text-zinc-700">
+										← Back
+									</button>
+									<button type="submit" className="w-2/3 rounded-xl bg-gradient-to-r from-emerald-600 to-[#404d85] py-3.5 font-extrabold text-white shadow-xl hover:opacity-90 transition">
+										🎉 Complete Verification & Launch Storefront
+									</button>
+								</div>
+							</form>
+						)}
+
 					</div>
 				</div>
 			)}
