@@ -49,10 +49,12 @@ export default function CartPage() {
           id: item.id,
           productId: item.productId,
           title: item.title,
+          brand: "Verified Brand",
           price: item.price,
           ...(item.originalPrice ? { originalPrice: item.originalPrice } : {}),
           quantity: item.quantity,
           image: item.image,
+          variantName: "Standard",
           inStock: true,
         });
       });
