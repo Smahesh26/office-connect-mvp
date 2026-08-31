@@ -9,7 +9,7 @@ export interface CartLineItem {
   title: string;
   brand: string;
   price: number;
-  originalPrice: number;
+  originalPrice?: number;
   quantity: number;
   image: string;
   variantName: string;
