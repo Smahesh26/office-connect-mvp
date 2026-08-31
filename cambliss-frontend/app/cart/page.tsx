@@ -50,7 +50,7 @@ export default function CartPage() {
           productId: item.productId,
           title: item.title,
           price: item.price,
-          originalPrice: item.originalPrice,
+          ...(item.originalPrice ? { originalPrice: item.originalPrice } : {}),
           quantity: item.quantity,
           image: item.image,
           inStock: true,

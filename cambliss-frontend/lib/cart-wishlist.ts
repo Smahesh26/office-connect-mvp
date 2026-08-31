@@ -1,3 +1,6 @@
+import { formatINR } from "@/components/commerce/CommercePrimitives";
+export { formatINR };
+
 export interface CartStorageItem {
   id: string;
   productId: string;
