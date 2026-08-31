@@ -3,7 +3,7 @@ import { upload } from "../../config/multer";
 import { createRateLimitMiddleware } from "../../middleware/rate-limit.middleware";
 import { authenticateJWT } from "../../middleware/auth.middleware";
 import fs from "fs/promises";
-import { compressPdfFile, convertCsvToXlsx, convertCurrency, convertDocxToPdf, convertPdfToDocx, convertPdfToTxt, convertPptxToTxt, convertTxtToDocx, convertTxtToPptx, convertXlsxToCsv, extractDocumentText, generateQrCode, getDailyUtilityCatalog, mergePdfFiles, removeImageBackgroundAdvanced, splitPdfFile, ToolsError, upscaleImageFile, getMedusaMarketplaceOverview, registerMedusaVendor, createMedusaProduct, checkoutMedusaMultiVendorCart, updateMedusaConfig } from "./tools.service";
+import { compressPdfFile, convertCsvToXlsx, convertCurrency, convertDocxToPdf, convertPdfToDocx, convertPdfToTxt, convertPptxToTxt, convertTxtToDocx, convertTxtToPptx, convertXlsxToCsv, extractDocumentText, generateQrCode, getDailyUtilityCatalog, mergePdfFiles, removeImageBackgroundAdvanced, splitPdfFile, ToolsError, upscaleImageFile } from "./tools.service";
 
 const toolsRouter = Router();
 
@@ -287,6 +287,201 @@ toolsRouter.post("/convert/txt-to-pptx", upload.single("file"), async (req: Requ
 		res.status(200).json(result);
 	} catch (error) {
 		handleToolsError(res, error);
+	}
+});
+
+toolsRouter.post("/pdf/split", upload.single("file"), async (req: Request, res: Response) => {
+	try {
+		if (!req.file) {
+			res.status(400).json({ message: "file is required" });
+			return;
+		}
+
+		const pages = String(req.body?.pages ?? "");
+		const result = await splitPdfFile(req.file, pages);
+		res.status(200).json(result);
+	} catch (error) {
+		handleToolsError(res, error);
+	} finally {
+		await cleanupUploadedFiles([req.file]);
+	}
+});
+
+toolsRouter.post("/pdf/compress", upload.single("file"), async (req: Request, res: Response) => {
+	try {
+		if (!req.file) {
+			res.status(400).json({ message: "file is required" });
+			return;
+		}
+
+		const result = await compressPdfFile(req.file);
+		res.status(200).json(result);
+	} catch (error) {
+		handleToolsError(res, error);
+	} finally {
+		await cleanupUploadedFiles([req.file]);
+	}
+});
+
+toolsRouter.post("/image/upscale", upload.single("file"), async (req: Request, res: Response) => {
+	try {
+		if (!req.file) {
+			res.status(400).json({ message: "file is required" });
+			return;
+		}
+
+		const result = await upscaleImageFile(req.file, String(req.body?.scale ?? "2"));
+		res.status(200).json(result);
+	} catch (error) {
+		handleToolsError(res, error);
+	} finally {
+		await cleanupUploadedFiles([req.file]);
+	}
+});
+
+toolsRouter.post("/image/remove-background", upload.single("file"), async (req: Request, res: Response) => {
+	try {
+		if (!req.file) {
+			res.status(400).json({ message: "file is required" });
+			return;
+		}
+
+		const result = await removeImageBackgroundAdvanced(
+			req.file,
+			String(req.body?.tolerance ?? "42"),
+			String(req.body?.mode ?? "auto"),
+		);
+		res.status(200).json(result);
+	} catch (error) {
+		handleToolsError(res, error);
+	} finally {
+		await cleanupUploadedFiles([req.file]);
+	}
+});
+
+toolsRouter.post("/convert/pdf-to-docx", upload.single("file"), async (req: Request, res: Response) => {
+	try {
+		if (!req.file) {
+			res.status(400).json({ message: "file is required" });
+			return;
+		}
+
+		const result = await convertPdfToDocx(req.file);
+		res.status(200).json(result);
+	} catch (error) {
+		handleToolsError(res, error);
+	} finally {
+		await cleanupUploadedFiles([req.file]);
+	}
+});
+
+toolsRouter.post("/convert/docx-to-pdf", upload.single("file"), async (req: Request, res: Response) => {
+	try {
+		if (!req.file) {
+			res.status(400).json({ message: "file is required" });
+			return;
+		}
+
+		const result = await convertDocxToPdf(req.file);
+		res.status(200).json(result);
+	} catch (error) {
+		handleToolsError(res, error);
+	} finally {
+		await cleanupUploadedFiles([req.file]);
+	}
+});
+
+toolsRouter.post("/convert/xlsx-to-csv", upload.single("file"), async (req: Request, res: Response) => {
+	try {
+		if (!req.file) {
+			res.status(400).json({ message: "file is required" });
+			return;
+		}
+
+		const result = await convertXlsxToCsv(req.file);
+		res.status(200).json(result);
+	} catch (error) {
+		handleToolsError(res, error);
+	} finally {
+		await cleanupUploadedFiles([req.file]);
+	}
+});
+
+toolsRouter.post("/convert/csv-to-xlsx", upload.single("file"), async (req: Request, res: Response) => {
+	try {
+		if (!req.file) {
+			res.status(400).json({ message: "file is required" });
+			return;
+		}
+
+		const result = await convertCsvToXlsx(req.file);
+		res.status(200).json(result);
+	} catch (error) {
+		handleToolsError(res, error);
+	} finally {
+		await cleanupUploadedFiles([req.file]);
+	}
+});
+
+toolsRouter.post("/convert/pdf-to-txt", upload.single("file"), async (req: Request, res: Response) => {
+	try {
+		if (!req.file) {
+			res.status(400).json({ message: "file is required" });
+			return;
+		}
+
+		const result = await convertPdfToTxt(req.file);
+		res.status(200).json(result);
+	} catch (error) {
+		handleToolsError(res, error);
+	} finally {
+		await cleanupUploadedFiles([req.file]);
+	}
+});
+
+toolsRouter.post("/convert/txt-to-docx", upload.single("file"), async (req: Request, res: Response) => {
+	try {
+		if (!req.file) {
+			res.status(400).json({ message: "file is required" });
+			return;
+		}
+
+		const result = await convertTxtToDocx(req.file);
+		res.status(200).json(result);
+	} catch (error) {
+		handleToolsError(res, error);
+	} finally {
+		await cleanupUploadedFiles([req.file]);
+	}
+});
+
+toolsRouter.post("/convert/pptx-to-txt", upload.single("file"), async (req: Request, res: Response) => {
+	try {
+		if (!req.file) {
+			res.status(400).json({ message: "file is required" });
+			return;
+		}
+
+		const result = await convertPptxToTxt(req.file);
+		res.status(200).json(result);
+	} catch (error) {
+		handleToolsError(res, error);
+	} finally {
+		await cleanupUploadedFiles([req.file]);
+	}
+});
+
+toolsRouter.post("/convert/txt-to-pptx", upload.single("file"), async (req: Request, res: Response) => {
+	try {
+		if (!req.file) {
+			res.status(400).json({ message: "file is required" });
+			return;
+		}
+
+		const result = await convertTxtToPptx(req.file);
+		res.status(200).json(result);
+	} catch (error) {
+		handleToolsError(res, error);
 	} finally {
 		await cleanupUploadedFiles([req.file]);
 	}
@@ -297,54 +492,5 @@ toolsRouter.get("/daily-catalog", (_req: Request, res: Response) => {
 		items: getDailyUtilityCatalog(),
 	});
 });
-
-
-
-// MedusaJS v2 Engine Marketplace API Routes
-toolsRouter.get("/medusa/marketplace", async (_req: Request, res: Response) => {
-  try {
-    const result = await getMedusaMarketplaceOverview();
-    res.status(200).json(result);
-  } catch (error) {
-    handleToolsError(res, error);
-  }
-});
-
-toolsRouter.post("/medusa/vendor/register", async (req: Request, res: Response) => {
-  try {
-    const result = await registerMedusaVendor(req.body);
-    res.status(200).json(result);
-  } catch (error) {
-    handleToolsError(res, error);
-  }
-});
-
-toolsRouter.post("/medusa/products/create", async (req: Request, res: Response) => {
-  try {
-    const result = await createMedusaProduct(req.body);
-    res.status(200).json(result);
-  } catch (error) {
-    handleToolsError(res, error);
-  }
-});
-
-toolsRouter.post("/medusa/orders/checkout", async (req: Request, res: Response) => {
-  try {
-    const result = await checkoutMedusaMultiVendorCart(req.body.cartItems);
-    res.status(200).json(result);
-  } catch (error) {
-    handleToolsError(res, error);
-  }
-});
-
-toolsRouter.post("/medusa/config", async (req: Request, res: Response) => {
-  try {
-    const result = await updateMedusaConfig(req.body);
-    res.status(200).json(result);
-  } catch (error) {
-    handleToolsError(res, error);
-  }
-});
-
 
 export default toolsRouter;
