@@ -902,23 +902,18 @@ export const convertPptxToTxt = async (file: Express.Multer.File) => {
 			if (textMatches.length > 0) {
 				slideTexts.push(textMatches.join(" "));
 			}
-	} else {
-		result = await removeImageBackground(file, toleranceRaw);
+		}
+
+		combined = slideTexts.length > 0 ? slideTexts.map((slide, index) => `Slide ${index + 1}: ${slide}`).join("\n\n") : "No readable slide text found.";
+		slideCount = slideTexts.length;
 	}
 
-	const tolerance = Number(toleranceRaw ?? "42");
 	return {
-		fileName: `background-removed-${Date.now()}.png`,
-		dataUrl: toImageDataUrl(result.png, "image/png"),
-		mimeType: "image/png",
-		tolerance,
-		width: result.width,
-		height: result.height,
-		modeRequested: requestedMode,
-		modeUsed: usedMode,
-		fallbackUsed,
-		originalSizeBytes: file.size,
-		processedSizeBytes: result.png.byteLength,
+		fileName: normalizeDownloadName(file.originalname || "converted", "txt"),
+		mimeType: "text/plain",
+		dataUrl: toFileDataUrl(Buffer.from(combined, "utf8"), "text/plain"),
+		slideCount,
+		characterCount: combined.length,
 	};
 };
 
