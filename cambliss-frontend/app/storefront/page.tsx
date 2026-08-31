@@ -492,7 +492,7 @@ function StorefrontContent() {
 						{/* Left Storytelling Text */}
 						<div className="space-y-5 text-center lg:text-left">
 							<span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 px-4 py-1.5 text-xs font-extrabold text-blue-200 shadow-xl">
-								<span>✨</span> 3D MULTI-VENDOR MARKETPLACE PLATFORM
+								<span>✨</span> OFFICIAL MULTI-VENDOR MARKETPLACE
 							</span>
 
 							<h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
@@ -557,7 +557,7 @@ function StorefrontContent() {
 							>
 								<div className="flex justify-between items-center">
 									<span className="rounded-full bg-emerald-500/30 border border-emerald-400 px-3 py-1 text-[10px] font-black text-emerald-200 uppercase tracking-wider">
-										3D Interactive Marketplace
+										Verified Featured Product
 									</span>
 									<span className="text-xl">✨</span>
 								</div>
@@ -574,7 +574,7 @@ function StorefrontContent() {
 
 								<div className="flex justify-between items-center pt-3 border-t border-white/15 text-xs">
 									<span className="font-black text-emerald-300 text-lg">${products[0].price.toFixed(2)}</span>
-									<span className="font-bold text-blue-200 group-hover:underline">Interactive 3D Stage ↗</span>
+									<span className="font-bold text-blue-200 group-hover:underline">View Product Details ↗</span>
 								</div>
 							</div>
 						</div>
