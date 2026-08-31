@@ -1,292 +1,259 @@
 "use client";
 
-import { useState, use } from "react";
+import { use } from "react";
 import Link from "next/link";
 import { StorefrontShell } from "@/components/storefront/StorefrontShell";
-import { ProductImageGallery } from "@/components/pdp/ProductImageGallery";
-import { ProductBuyBox, BuyBoxOffer } from "@/components/pdp/ProductBuyBox";
-import { OtherSellersTable, OtherSellerItem } from "@/components/pdp/OtherSellersTable";
-import { ProductSpecsAndReviews } from "@/components/pdp/ProductSpecsAndReviews";
-import { MobileStickyBuyBar } from "@/components/pdp/MobileStickyBuyBar";
-import { Rating, ProductCard } from "@/components/commerce/CommercePrimitives";
+import { ProductPurchaseHero, ProductHeroData } from "@/components/pdp/ProductPurchaseHero";
+import { ProductOffersStrip } from "@/components/pdp/ProductOffersStrip";
+import { FrequentlyBoughtTogether, BundleItem } from "@/components/pdp/FrequentlyBoughtTogether";
+import { ProductFullSpecsAndReviews, OtherSellerOffer } from "@/components/pdp/ProductFullSpecsAndReviews";
+import { ProductCard } from "@/components/commerce/CommercePrimitives";
 
-export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const [selectedColor, setSelectedColor] = useState("Midnight Black");
-  const [selectedVariant, setSelectedVariant] = useState("Standard Edition");
-  const [activeToast, setActiveToast] = useState<string | null>(null);
+export default function ProductDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const resolvedParams = use(params);
+  const productId = resolvedParams.id;
 
-  const showToast = (msg: string) => {
-    setActiveToast(msg);
-    setTimeout(() => setActiveToast(null), 3000);
-  };
-
-  // Product Data
-  const product = {
-    id: id || "prod-1",
+  // Mock Canonical Flagship Product Data
+  const product: ProductHeroData = {
+    id: productId,
     title: "Sony WH-1000XM5 Wireless Industry Leading Noise Canceling Headphones",
     brand: "Sony",
+    brandSlug: "sony",
     category: "Electronics",
-    categorySlug: "electronics",
-    subCategory: "Wireless Headphones",
-    badge: "👑 OFFICIAL 1P FLAGSHIP",
     rating: 4.9,
     reviewsCount: 1420,
-    images: [
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1000&q=80",
-      "https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=1000&q=80",
-      "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=1000&q=80",
-      "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=1000&q=80",
-    ],
-    highlights: [
-      "Industry-leading noise canceling with two processors and 8 microphones",
-      "Magnificent Sound, engineered with the new Integrated Processor V1",
-      "Crystal clear hands-free calling with 4 beamforming microphones and precise voice pickup",
-      "Up to 30-hour battery life with quick charging (3 min charge for 3 hours of playback)",
-      "Ultra-comfortable, lightweight design with soft fit synthetic leather",
-    ],
-    colors: [
-      { name: "Midnight Black", hex: "#1e2022" },
-      { name: "Platinum Silver", hex: "#d8d9de" },
-      { name: "Smoky Blue", hex: "#2b3a4a" },
-    ],
-    variants: ["Standard Edition", "Travel Case Bundle", "2-Year Extended Care Pack"],
-  };
-
-  // Winning Buy Box Offer
-  const buyBoxOffer: BuyBoxOffer = {
-    sellerId: "v-office-direct",
-    sellerName: "Office Connect Direct",
-    sellerTier: "premium",
-    sellerRating: 4.9,
-    sellerReviewsCount: 520,
-    price: 29990,
+    questionsCount: 284,
+    basePrice: 29990,
     originalPrice: 34990,
-    stockQty: 24,
-    deliveryDays: 1,
-    shipsFrom: "Bangalore Platform Fulfillment Center",
+    images: [
+      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
+    ],
+    variants: [
+      {
+        id: "v-black",
+        name: "Midnight Black",
+        colorCode: "#111827",
+        image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
+        inStock: true,
+        priceOffset: 0,
+      },
+      {
+        id: "v-silver",
+        name: "Platinum Silver",
+        colorCode: "#e2e8f0",
+        image: "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=800&q=80",
+        inStock: true,
+        priceOffset: 0,
+      },
+      {
+        id: "v-blue",
+        name: "Smoky Navy Blue",
+        colorCode: "#1e3a8a",
+        image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
+        inStock: true,
+        priceOffset: 1000,
+      },
+    ],
+    sellerName: "Sony India Direct",
+    sellerTier: "premium",
+    dispatchSla: "Express 24-Hour Dispatch",
+    stockCount: 24,
   };
-
-  // Alternative Verified Sellers
-  const otherSellers: OtherSellerItem[] = [
-    {
-      sellerId: "v-technova",
-      sellerName: "TechNova Enterprises",
-      sellerTier: "verified",
-      rating: 4.8,
-      reviewsCount: 310,
-      condition: "Brand New • Factory Sealed",
-      price: 29499,
-      deliveryDays: 2,
-      shipsFrom: "Mumbai, MH",
-    },
-    {
-      sellerId: "v-audiohub",
-      sellerName: "Pro Audio Direct",
-      sellerTier: "verified",
-      rating: 4.7,
-      reviewsCount: 180,
-      condition: "Brand New • Sony Authorized",
-      price: 29800,
-      deliveryDays: 3,
-      shipsFrom: "New Delhi, DL",
-    },
-    {
-      sellerId: "v-gadgetworld",
-      sellerName: "Gadget World Retail",
-      sellerTier: "verified",
-      rating: 4.6,
-      reviewsCount: 94,
-      condition: "Brand New • Sealed Box",
-      price: 30200,
-      deliveryDays: 2,
-      shipsFrom: "Chennai, TN",
-    },
-  ];
 
   // Technical Specs
-  const specs = [
-    { key: "Headphone Type", value: "Closed, Dynamic Over-Ear" },
-    { key: "Driver Unit", value: "30mm Specially Engineered Carbon Fiber Dome" },
-    { key: "Frequency Response", value: "4 Hz - 40,000 Hz (Active), 20 Hz - 20,000 Hz (Bluetooth)" },
-    { key: "Bluetooth Version", value: "Version 5.2 (LDAC, AAC, SBC Supported)" },
-    { key: "Battery Life", value: "Max. 30 hrs (NC ON), Max. 40 hrs (NC OFF)" },
-    { key: "Weight", value: "Approx. 250 grams" },
-    { key: "Microphone Array", value: "8 Microphones with AI Noise Reduction" },
-    { key: "Warranty", value: "1 Year Official Sony India Manufacturer Warranty" },
+  const specifications: Record<string, string> = {
+    "Brand & Model": "Sony WH-1000XM5",
+    "Headphone Type": "Closed, dynamic over-ear",
+    "Driver Unit": "30mm (Carbon fiber composite dome)",
+    "Frequency Response": "4 Hz - 40,000 Hz (Hi-Res Audio Wireless)",
+    "Battery Life": "Up to 30 Hours (NC ON), 40 Hours (NC OFF)",
+    "Charging Time": "Approx. 3.5 Hours (3 min quick charge gives 3 hours playback)",
+    "Bluetooth Version": "Bluetooth v5.2 (LDAC, AAC, SBC, multipoint connect)",
+    "Weight": "Approx. 250 grams",
+    "Active Noise Cancellation": "Integrated Processor V1 + HD Noise Cancelling Processor QN1 (8 microphones)",
+    "Warranty": "1 Year Comprehensive Sony India Domestic Brand Warranty",
+  };
+
+  const features: string[] = [
+    "Industry-leading Noise Cancellation with two processors and 8 microphones",
+    "Magnificent Sound engineered with the new Integrated Processor V1",
+    "Crystal clear hands-free calling with 4 beamforming microphones and AI noise reduction",
+    "Up to 30-hour battery life with quick charging (3 min charge for 3 hours of playback)",
+    "Ultra-comfortable, lightweight design with soft fit leather",
+    "Multipoint connection allows you to quickly switch between devices",
   ];
 
-  // Customer Reviews
-  const reviews = [
+  const otherSellers: OtherSellerOffer[] = [
     {
-      id: "rev-1",
-      author: "Aditya Sharma",
-      rating: 5,
-      date: "24 August 2026",
-      title: "Unrivaled Noise Cancellation and Pure Comfort",
-      comment: "Upgraded from XM4. The dual processors make airplane cabin noise virtually silent. Mic quality for Zoom calls is vastly superior. Dispatched same day by Office Connect Direct!",
-      isVerifiedPurchase: true,
-      helpfulCount: 42,
+      sellerId: "s-102",
+      sellerName: "AudioPhile Hub India",
+      sellerTier: "verified",
+      price: 30490,
+      condition: "Brand New (Original Factory Seal)",
+      deliveryEstimate: "FREE Delivery in 2 Days",
+      dispatchRate: "99.4%",
+      rating: 4.8,
     },
     {
-      id: "rev-2",
-      author: "Meera Krishnan",
-      rating: 5,
-      date: "18 August 2026",
-      title: "Worth every rupee for remote work",
-      comment: "Sound signature is balanced, LDAC streaming from Apple Music is crystal clear. Battery easily lasts 4 days of full workday usage with ANC on.",
-      isVerifiedPurchase: true,
-      helpfulCount: 19,
+      sellerId: "s-103",
+      sellerName: "Apex Enterprise Tech",
+      sellerTier: "verified",
+      price: 30990,
+      condition: "Brand New (B2B Bulk Invoice Eligible)",
+      deliveryEstimate: "Delivery by Tomorrow, 5 PM",
+      dispatchRate: "98.7%",
+      rating: 4.7,
     },
   ];
+
+  // Recommendations
+  const similarProducts = [
+    {
+      id: "prod-2",
+      title: "Sony WF-1000XM5 Truly Wireless Noise Canceling Earbuds",
+      brand: "Sony",
+      price: 23990,
+      originalPrice: 26990,
+      rating: 4.8,
+      reviewsCount: 930,
+      deliveryEstimate: "Tomorrow, by 5 PM",
+      sellerName: "Sony India Direct",
+      sellerTier: "premium" as const,
+      stockQty: 18,
+      image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=600&q=80",
+    },
+    {
+      id: "prod-4",
+      title: "Keychron Q1 Pro Custom Wireless Mechanical Keyboard QMK/VIA",
+      brand: "Keychron",
+      price: 18499,
+      originalPrice: 21999,
+      rating: 4.9,
+      reviewsCount: 680,
+      deliveryEstimate: "Tomorrow, by 11 AM",
+      sellerName: "Keychron Official India",
+      sellerTier: "premium" as const,
+      stockQty: 12,
+      image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80",
+    },
+    {
+      id: "prod-3",
+      title: "Dell UltraSharp 32-inch 4K UHD Thunderbolt Hub USB-C Monitor",
+      brand: "Dell",
+      price: 78900,
+      originalPrice: 89900,
+      rating: 4.7,
+      reviewsCount: 412,
+      deliveryEstimate: "In 2 Days via Bluedart",
+      sellerName: "Office Connect Direct",
+      sellerTier: "premium" as const,
+      stockQty: 5,
+      image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80",
+    },
+  ];
+
+  const handleAddToCart = (variantId: string, qty: number) => {
+    alert(`Added ${qty}x ${product.title} to Bag!`);
+  };
+
+  const handleBuyNow = (variantId: string, qty: number) => {
+    window.location.href = "/checkout";
+  };
+
+  const handleAddBundleToCart = (bundleItems: BundleItem[]) => {
+    alert(`Added all ${bundleItems.length} bundle accessories to Bag!`);
+  };
 
   return (
     <StorefrontShell>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-8 pb-32 select-none">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-10 pb-32 select-none">
         
-        {/* Toast Alert */}
-        {activeToast && (
-          <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-[8px] shadow-2xl border border-slate-700 text-xs font-bold flex items-center gap-2 animate-bounce">
-            <span className="text-emerald-400">✓</span>
-            <span>{activeToast}</span>
-          </div>
-        )}
-
-        {/* 1. BREADCRUMB */}
-        <nav className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-          <Link href="/storefront" className="hover:text-slate-900 transition">Home</Link>
+        {/* 1. Breadcrumb Navigation */}
+        <nav className="flex items-center gap-2 text-xs text-slate-500">
+          <Link href="/storefront" className="hover:text-slate-900">Storefront</Link>
           <span>/</span>
-          <Link href="/categories" className="hover:text-slate-900 transition">Departments</Link>
+          <Link href="/category/electronics" className="hover:text-slate-900">Electronics</Link>
           <span>/</span>
-          <Link href={`/category/${product.categorySlug}`} className="hover:text-slate-900 transition">{product.category}</Link>
+          <Link href="/category/electronics" className="hover:text-slate-900">Headphones & Audio</Link>
           <span>/</span>
-          <span className="text-slate-900 font-bold truncate max-w-xs">{product.title}</span>
+          <span className="text-slate-900 font-bold truncate max-w-xs sm:max-w-md">{product.title}</span>
         </nav>
 
-        {/* 2. TOP HERO SECTION: GALLERY + PRODUCT SPECS + BUY BOX */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Left Gallery (5 Cols) */}
-          <div className="lg:col-span-5">
-            <ProductImageGallery images={product.images} title={product.title} badge={product.badge} />
+        {/* 2. Top Purchase Area (Visual Priority: Gallery, Info, Bold Price, Variants, Delivery SLA, CTAs) */}
+        <ProductPurchaseHero
+          product={product}
+          onAddToCart={handleAddToCart}
+          onBuyNow={handleBuyNow}
+        />
+
+        {/* 3. Promotional Offers & Bank Deals Strip */}
+        <ProductOffersStrip />
+
+        {/* 4. Frequently Bought Together (Accessory Bundle Engine) */}
+        <FrequentlyBoughtTogether
+          mainProduct={{
+            id: product.id,
+            title: product.title,
+            price: product.basePrice,
+            originalPrice: product.originalPrice,
+            image: product.images[0],
+          }}
+          onAddBundleToCart={handleAddBundleToCart}
+        />
+
+        {/* 5. Comprehensive Product Overview, Specs, Seller Profile, Other Sellers Table & Reviews */}
+        <ProductFullSpecsAndReviews
+          description="The Sony WH-1000XM5 headphones rewrite the rules for distraction-free listening. Two processors control 8 microphones for unprecedented noise cancellation and exceptional call quality. With a newly developed driver unit, DSEE - Extreme and Hi-Res audio support, the WH-1000XM5 headphones provide awe-inspiring audio quality."
+          features={features}
+          specifications={specifications}
+          sellerName={product.sellerName}
+          sellerTier={product.sellerTier}
+          otherSellers={otherSellers}
+          rating={product.rating}
+          reviewsCount={product.reviewsCount}
+          onAddToCart={(sName, price) => alert(`Added to cart from ${sName} at ₹${price}!`)}
+        />
+
+        {/* 6. Similar & Recommended Products */}
+        <div className="space-y-4 pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-between">
+            <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider">
+              Similar Products Recommended for You
+            </h3>
+            <Link href="/category/electronics" className="text-xs font-bold text-[#404d85] hover:underline">
+              Explore More Electronics →
+            </Link>
           </div>
 
-          {/* Center Details (4 Cols) */}
-          <div className="lg:col-span-4 space-y-5">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Link
-                  href={`/brand/${product.brand.toLowerCase()}`}
-                  className="text-xs font-black uppercase tracking-widest text-[#404d85] hover:underline"
-                >
-                  Visit the {product.brand} Store
-                </Link>
-                <span className="text-slate-300">•</span>
-                <span className="text-[11px] text-slate-500 font-medium">SKU: OC-98214-XM5</span>
-              </div>
-
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-snug">
-                {product.title}
-              </h1>
-
-              <div className="flex items-center gap-3 pt-1">
-                <Rating score={product.rating} reviewsCount={product.reviewsCount} />
-                <span className="text-slate-300">•</span>
-                <span className="text-xs font-bold text-emerald-600">✓ In Stock & Verified</span>
-              </div>
-            </div>
-
-            {/* Color Swatches */}
-            <div className="space-y-2 pt-2 border-t border-slate-100">
-              <span className="text-xs font-bold text-slate-700 block">
-                Color: <span className="text-slate-900 font-black">{selectedColor}</span>
-              </span>
-              <div className="flex items-center gap-2">
-                {product.colors.map((c) => (
-                  <button
-                    key={c.name}
-                    type="button"
-                    onClick={() => setSelectedColor(c.name)}
-                    className={`px-3 py-1.5 rounded-[4px] border text-xs font-bold flex items-center gap-2 transition ${
-                      selectedColor === c.name
-                        ? "border-[#404d85] bg-slate-50 text-[#404d85] shadow-2xs"
-                        : "border-slate-200 text-slate-700 hover:border-slate-300"
-                    }`}
-                  >
-                    <span className="w-3 h-3 rounded-full border border-slate-300" style={{ backgroundColor: c.hex }} />
-                    <span>{c.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Variant Package Options */}
-            <div className="space-y-2 pt-2 border-t border-slate-100">
-              <span className="text-xs font-bold text-slate-700 block">Edition / Package:</span>
-              <div className="flex flex-wrap gap-2">
-                {product.variants.map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setSelectedVariant(v)}
-                    className={`px-3 py-1.5 rounded-[4px] border text-xs font-bold transition ${
-                      selectedVariant === v
-                        ? "border-[#404d85] bg-slate-50 text-[#404d85]"
-                        : "border-slate-200 text-slate-700 hover:border-slate-300"
-                    }`}
-                  >
-                    {v}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Key Feature Bullets */}
-            <div className="space-y-2 pt-3 border-t border-slate-100 text-xs">
-              <span className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px] block">
-                About this item:
-              </span>
-              <ul className="space-y-2 text-slate-600 list-disc list-inside leading-relaxed">
-                {product.highlights.map((h, i) => (
-                  <li key={i}><span className="text-slate-800 font-medium">{h}</span></li>
-                ))}
-              </ul>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {similarProducts.map((p) => (
+              <ProductCard
+                key={p.id}
+                id={p.id}
+                title={p.title}
+                brand={p.brand}
+                price={p.price}
+                originalPrice={p.originalPrice}
+                rating={p.rating}
+                reviewsCount={p.reviewsCount}
+                deliveryEstimate={p.deliveryEstimate}
+                sellerName={p.sellerName}
+                sellerTier={p.sellerTier}
+                stockQty={p.stockQty}
+                image={p.image}
+                variant="standard"
+                onAddToCart={() => alert(`Added ${p.title} to Cart!`)}
+              />
+            ))}
           </div>
-
-          {/* Right Buy Box (3 Cols) */}
-          <div className="lg:col-span-3">
-            <ProductBuyBox
-              offer={buyBoxOffer}
-              onAddToCart={(qty) => showToast(`Added ${qty}x "${product.title}" to cart!`)}
-              onBuyNow={() => (window.location.href = "/checkout")}
-            />
-          </div>
-
         </div>
-
-        {/* 3. MULTI-SELLER COMPARISON TABLE */}
-        <OtherSellersTable
-          offers={otherSellers}
-          onAddToCart={(seller) => showToast(`Added from ${seller.sellerName} at ₹${seller.price.toLocaleString()}!`)}
-        />
-
-        {/* 4. TECHNICAL SPECIFICATIONS & CUSTOMER REVIEWS */}
-        <ProductSpecsAndReviews
-          specifications={specs}
-          reviews={reviews}
-          overallRating={product.rating}
-          totalReviews={product.reviewsCount}
-        />
-
-        {/* 5. MOBILE STICKY BUY BAR */}
-        <MobileStickyBuyBar
-          title={product.title}
-          image={product.images[0]}
-          price={buyBoxOffer.price}
-          onAddToCart={() => showToast(`Added "${product.title}" to cart!`)}
-          onBuyNow={() => (window.location.href = "/checkout")}
-        />
 
       </div>
     </StorefrontShell>
