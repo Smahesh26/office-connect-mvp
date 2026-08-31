@@ -1,188 +1,130 @@
 @import "tailwindcss";
 
-/* ============================================
-   DESIGN SYSTEM TOKENS
-   ============================================ */
-
 :root {
-  /* Neutrals */
-  --ink: #0f1114;
-  --body: #3b3f4a;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --surface: #f9fafb;
-  --white: #ffffff;
+  /* =========================================================
+     SEMANTIC COLOR TOKENS
+     ========================================================= */
+  /* Background & Surface */
+  --bg-app: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #ffffff;
+  --bg-subtle: #f1f5f9;
+  --bg-muted: #e2e8f0;
 
-  /* Brand */
-  --brand-900: #1a1a2e;
-  --brand-700: #2b365c;
-  --brand-600: #404d85;
-  --brand-400: #6678c1;
-  --brand-100: #eef0f7;
-  --brand-50: #f5f6fa;
+  /* Text Hierarchy */
+  --text-primary: #0f172a;       /* Slate 900 */
+  --text-secondary: #334155;     /* Slate 700 */
+  --text-muted: #64748b;         /* Slate 500 */
+  --text-disabled: #94a3b8;      /* Slate 400 */
+  --text-inverse: #ffffff;
 
-  /* Commerce */
-  --price: #059669;
-  --sale: #dc2626;
-  --rating: #f59e0b;
+  /* Borders & Dividers */
+  --border-subtle: #f1f5f9;
+  --border-default: #e2e8f0;     /* Slate 200 */
+  --border-strong: #cbd5e1;      /* Slate 300 */
+  --border-focus: #404d85;       /* Primary Focus */
 
-  /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08);
+  /* Brand / Primary Actions */
+  --brand-primary: #404d85;
+  --brand-primary-hover: #323d6a;
+  --brand-primary-active: #252f5a;
+  --brand-primary-subtle: #eef2ff;
+  --brand-accent: #6678c1;
 
-  /* Legacy mappings for existing components */
-  --indigo: var(--brand-600);
-  --indigo-dark: var(--brand-700);
-  --sky: var(--brand-400);
-  --navy: var(--brand-700);
-  --navy-deep: var(--brand-900);
-  --slate: var(--muted);
-  --pale: var(--surface);
-  --pale-2: var(--white);
-  --line: var(--border);
+  /* Semantic Feedback & Status */
+  --color-success: #059669;      /* Emerald 600 */
+  --color-success-bg: #ecfdf5;   /* Emerald 50 */
+  --color-success-border: #a7f3d0;
 
-  --background: var(--white);
-  --foreground: var(--body);
-  --foreground-strong: var(--ink);
-  --foreground-muted: var(--muted);
-  --brand: var(--brand-600);
-  --brand-strong: var(--brand-700);
-  --brand-soft: var(--brand-50);
-  --brand-accent: var(--brand-400);
+  --color-warning: #d97706;      /* Amber 600 */
+  --color-warning-bg: #fffbeb;   /* Amber 50 */
+  --color-warning-border: #fde68a;
 
-  --font-app-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --font-app-mono: "JetBrains Mono", "Fira Code", "Courier New", monospace;
+  --color-destructive: #dc2626;  /* Red 600 */
+  --color-destructive-bg: #fef2f2;/* Red 50 */
+  --color-destructive-border: #fecaca;
+
+  --color-info: #0284c7;         /* Sky 600 */
+  --color-info-bg: #f0f9ff;      /* Sky 50 */
+  --color-info-border: #bae6fd;
+
+  /* Commerce Specific Tokens */
+  --commerce-price: #0f172a;
+  --commerce-discount: #dc2626;
+  --commerce-rating: #f59e0b;    /* Amber Star */
+  --commerce-stock-in: #059669;
+  --commerce-stock-low: #d97706;
+  --commerce-stock-out: #94a3b8;
+
+  /* Component Tokens */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Control Heights */
+  --control-h-sm: 32px;
+  --control-h-md: 40px;
+  --control-h-lg: 48px;
+
+  /* Focus Ring */
+  --focus-ring: 0 0 0 3px rgba(64, 77, 133, 0.2);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-brand: var(--brand);
-  --color-brand-strong: var(--brand-strong);
-  --color-brand-soft: var(--brand-soft);
-  --color-brand-accent: var(--brand-accent);
-  --color-foreground-strong: var(--foreground-strong);
-  --color-foreground-muted: var(--foreground-muted);
-  --color-line: var(--line);
-  --color-navy-deep: var(--navy-deep);
-  --color-ink: var(--ink);
-  --color-body: var(--body);
-  --color-muted: var(--muted);
-  --color-border: var(--border);
-  --color-surface: var(--surface);
-  --color-price: var(--price);
-  --color-sale: var(--sale);
-  --color-rating: var(--rating);
-  --color-brand-900: var(--brand-900);
-  --color-brand-700: var(--brand-700);
-  --color-brand-600: var(--brand-600);
-  --color-brand-400: var(--brand-400);
-  --color-brand-100: var(--brand-100);
-  --color-brand-50: var(--brand-50);
+  --color-bg-app: var(--bg-app);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-surface-elevated: var(--bg-surface-elevated);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-bg-muted: var(--bg-muted);
 
-  --font-sans: var(--font-app-sans);
-  --font-mono: var(--font-app-mono);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-inverse: var(--text-inverse);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+  --color-border-focus: var(--border-focus);
+
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-hover: var(--brand-primary-hover);
+  --color-brand-active: var(--brand-primary-active);
+  --color-brand-subtle: var(--brand-primary-subtle);
+
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-destructive: var(--color-destructive);
+  --color-info: var(--color-info);
+
+  --color-commerce-discount: var(--commerce-discount);
+  --color-commerce-rating: var(--commerce-rating);
 }
-
-/* ============================================
-   BASE STYLES
-   ============================================ */
 
 body {
-  background: var(--white);
-  color: var(--body);
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-::selection {
-  background: color-mix(in srgb, var(--brand-600) 18%, white);
-  color: var(--ink);
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
-
-@layer base {
-  h1, h2, h3, h4, h5, h6 {
-    color: var(--ink);
-    font-weight: 600;
-  }
+::-webkit-scrollbar-track {
+  background: transparent;
 }
-
-/* ============================================
-   SKELETON ANIMATION
-   ============================================ */
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
 }
-
-.skeleton {
-  background: linear-gradient(90deg, var(--surface) 25%, #f0f1f3 50%, var(--surface) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
-  border-radius: 6px;
-}
-
-/* ============================================
-   LEGACY OVERRIDES (for existing SaaS pages)
-   ============================================ */
-
-@layer utilities {
-  .text-black,
-  .text-zinc-900,
-  .text-gray-900,
-  .text-slate-900 {
-    color: var(--foreground-strong) !important;
-  }
-
-  .text-zinc-800,
-  .text-gray-800,
-  .text-slate-800 {
-    color: var(--foreground) !important;
-  }
-
-  .text-zinc-700,
-  .text-gray-700,
-  .text-slate-700,
-  .text-zinc-600,
-  .text-gray-600,
-  .text-slate-600,
-  .text-zinc-500,
-  .text-gray-500,
-  .text-slate-500 {
-    color: var(--foreground-muted) !important;
-  }
-
-  .bg-black,
-  .bg-zinc-900,
-  .bg-gray-900,
-  .bg-slate-900 {
-    background-color: var(--brand-strong) !important;
-  }
-
-  .hover\:bg-black:hover,
-  .hover\:bg-zinc-900:hover,
-  .hover\:bg-zinc-800:hover,
-  .hover\:bg-gray-900:hover,
-  .hover\:bg-gray-800:hover,
-  .hover\:bg-slate-900:hover,
-  .hover\:bg-slate-800:hover {
-    background-color: var(--brand-strong) !important;
-  }
-
-  .border-black,
-  .border-zinc-900,
-  .border-gray-900,
-  .border-slate-900 {
-    border-color: var(--brand) !important;
-  }
-
-  .focus\:border-zinc-900:focus,
-  .focus\:border-black:focus,
-  .focus\:ring-black:focus {
-    border-color: var(--brand) !important;
-    --tw-ring-color: color-mix(in srgb, var(--brand) 28%, transparent) !important;
-  }
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
