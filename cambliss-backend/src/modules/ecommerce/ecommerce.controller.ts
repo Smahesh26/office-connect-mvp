@@ -65,7 +65,8 @@ export async function getListingById(req: Request, res: Response) {
       return;
     }
 
-    const listing = await service.getListingById(orgId, req.params.id);
+    const listingId = Array.isArray(req.params.id) ? req.params.id[0] : (req.params.id as string);
+    const listing = await service.getListingById(orgId, listingId);
     if (!listing) {
       res.status(404).json({ message: "Listing not found" });
       return;
