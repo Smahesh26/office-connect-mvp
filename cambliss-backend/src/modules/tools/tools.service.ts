@@ -908,4 +908,34 @@ export const convertPptxToTxt = async (file: Express.Multer.File) => {
 		slideCount = slideTexts.length;
 	}
 
+	return {
+		fileName: normalizeDownloadName(file.originalname || "converted", "txt"),
+		mimeType: "text/plain",
+		dataUrl: toFileDataUrl(Buffer.from(combined, "utf8"), "text/plain"),
+		slideCount,
+		characterCount: combined.length,
+	};
+};
+
+export const convertTxtToPptx = async (file: Express.Multer.File) => {
+	if (!file) {
+		throw new ToolsError(400, "file is required");
+	}
+
+	const text = await fs.readFile(path.resolve(file.path), "utf8");
+	const presentation = new PptxGenJS();
+	presentation.layout = "LAYOUT_WIDE";
+	presentation.author = "Cambliss";
+	const slide = presentation.addSlide();
+	slide.addText(file.originalname || "Text to PowerPoint", { x: 0.6, y: 0.4, w: 12, h: 0.5, fontSize: 24, bold: true });
+	slide.addText(text || " ", { x: 0.8, y: 1.2, w: 11.5, h: 5.5, fontSize: 16, breakLine: false, margin: 0.15, fit: "shrink" });
+	const buffer = await presentation.write({ outputType: "nodebuffer" });
+
+	return {
+		fileName: normalizeDownloadName(file.originalname || "converted", "pptx"),
+		mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+		dataUrl: toFileDataUrl(buffer as Buffer, "application/vnd.openxmlformats-officedocument.presentationml.presentation"),
+		characterCount: text.length,
+		slideCount: 1,
+	};
 };
