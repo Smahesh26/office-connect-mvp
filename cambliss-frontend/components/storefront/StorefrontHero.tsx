@@ -13,7 +13,7 @@ export const StorefrontHero = () => {
       subtitle: "Direct manufacturer pricing from verified IT distributors across India & global markets.",
       bullets: ["Same-Day Warehouse Dispatch", "Encrypted Payment Protection", "Official GST Tax Invoice"],
       ctaPrimary: { label: "Shop Computing Offers", href: "/category/computing" },
-      ctaSecondary: { label: "Browse Verified IT Sellers", href: "/storefront?vendor=All" },
+      ctaSecondary: { label: "Browse AeroTech Flagship Store", href: "/store/aerotech" },
       image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1000&q=80",
     },
     {
@@ -21,7 +21,7 @@ export const StorefrontHero = () => {
       title: "Botanical Skincare Direct from Grasse",
       subtitle: "Cold-pressed Damask Rose elixirs, certified organic serums, and clinical botanicals.",
       bullets: ["Direct from French Laboratories", "100% Authenticity Verified", "Cruelty-Free & Vegan"],
-      ctaPrimary: { label: "Explore Glow Beauty Store", href: "/storefront?vendor=v-glow-beauty" },
+      ctaPrimary: { label: "Explore Glow Beauty Store", href: "/store/glow-beauty" },
       ctaSecondary: { label: "View All Skincare", href: "/category/beauty" },
       image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1000&q=80",
     },

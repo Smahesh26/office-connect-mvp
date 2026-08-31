@@ -45,7 +45,7 @@ export const SellerHeroHeader = ({
         {/* Banner Overlay Badge */}
         <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-xs px-3 py-1 rounded-[4px] shadow-xs text-xs font-black text-slate-900 flex items-center gap-1.5">
           <span>🛡️</span>
-          <span>100% Escrow Protected Merchant</span>
+          <span>Encrypted Payment Processing</span>
         </div>
       </div>
 
