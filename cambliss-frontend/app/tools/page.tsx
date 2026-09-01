@@ -80,7 +80,7 @@ function ToolsContent() {
     },
     {
       id: "news-4",
-      title: "Next-Gen AI Models Slash Document OCR & Data Extraction Latency by 60%",
+      title: "Next-Gen Smart Models Slash Document OCR & Data Extraction Latency by 60%",
       category: "Tech",
       source: "VentureBeat",
       timeAgo: "2 hours ago",
@@ -104,7 +104,7 @@ function ToolsContent() {
       category: "Startup",
       source: "Inc42",
       timeAgo: "4 hours ago",
-      summary: "Investors channel capital into automated inventory management, AI demand forecasting, and cross-border trade payment infrastructure.",
+      summary: "Investors channel capital into automated inventory management, smart demand forecasting, and cross-border trade payment infrastructure.",
       url: "#",
       readTime: "3 min read",
     },
@@ -1060,13 +1060,13 @@ function ToolsContent() {
                 </div>
               </div>
 
-              {/* AI BACKGROUND REMOVER */}
+              {/* BACKGROUND REMOVER */}
               <div className="rounded-[8px] border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">✂️</span>
                     <div>
-                      <h3 className="font-semibold text-sm text-slate-900">AI Background Remover</h3>
+                      <h3 className="font-semibold text-sm text-slate-900">Background Remover</h3>
                       <p className="text-xs text-slate-500">Extract clean transparent PNG images for e-commerce catalogs</p>
                     </div>
                   </div>
@@ -1112,18 +1112,18 @@ function ToolsContent() {
                 </div>
               </div>
 
-              {/* AI IMAGE UPSCALER */}
+              {/* IMAGE UPSCALER */}
               <div className="rounded-[8px] border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🖼️</span>
                     <div>
-                      <h3 className="font-semibold text-sm text-slate-900">AI Image Upscaler (2x / 4x)</h3>
+                      <h3 className="font-semibold text-sm text-slate-900">Image Upscaler (2x / 4x)</h3>
                       <p className="text-xs text-slate-500">Enhance low-resolution product photos for storefront catalogs</p>
                     </div>
                   </div>
                   <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-100">
-                    IMAGE AI
+                    HD RESOLUTION
                   </span>
                 </div>
 
@@ -1247,7 +1247,7 @@ function ToolsContent() {
                   Paid Tools Available on Our Premium Platform
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-600 max-w-lg mx-auto leading-relaxed">
-                  Enterprise API integrations, dedicated high-throughput AI copilot tokens, Meta WhatsApp Cloud API, automated bank reconciliation, and dedicated NVMe Kubernetes cloud hosting are available under the Cambliss Premium Enterprise subscription.
+                  Enterprise API integrations, dedicated high-throughput automation tokens, Meta WhatsApp Cloud API, automated bank reconciliation, and dedicated NVMe Kubernetes cloud hosting are available under the Cambliss Premium Enterprise subscription.
                 </p>
               </div>
 
