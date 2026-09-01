@@ -71,6 +71,7 @@ const clientMenuItems: SidebarItem[] = [
 	{ label: "File Sharing", href: "/file-sharing", accessKey: "FILE_SHARING" },
 	{ label: "Video Connect", href: "/video-connect" },
 	{ label: "Marketplace", href: "/storefront", badge: "Live" },
+	{ label: "Tools Suite", href: "/tools", badge: "Free & Paid" },
 	{ label: "Profile Completion", href: "/profile-completion" },
 	{ label: "User Management", href: "/user-management", accessKey: "USER_MANAGEMENT" },
 ];
@@ -85,6 +86,7 @@ const adminMenuItems: SidebarItem[] = [
 	{ label: "File Sharing", href: "/file-sharing" },
 	{ label: "Video Connect", href: "/video-connect" },
 	{ label: "Marketplace", href: "/storefront", badge: "Live" },
+	{ label: "Tools Suite", href: "/tools", badge: "Free & Paid" },
 	{ label: "User Management", href: "/user-management" },
 ];
 
@@ -92,6 +94,14 @@ function SidebarIcon({ label }: { label: string }) {
 	const common = "h-[18px] w-[18px] text-current";
 
 	switch (label) {
+		case "Tools Suite":
+		case "Tools":
+		case "Tools Store":
+			return (
+				<svg viewBox="0 0 24 24" fill="none" className={common}>
+					<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+				</svg>
+			);
 		case "Marketplace":
 		case "Marketplace Hub":
 		case "Marketplace Control Hub":
@@ -212,7 +222,7 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
 	};
 
 	useEffect(() => {
-		const isPublicPath = pathname.startsWith("/video-connect/room/") || pathname === "/storefront" || pathname.startsWith("/product/") || pathname.startsWith("/store/") || pathname.startsWith("/category/") || pathname.startsWith("/brand/") || pathname === "/cart" || pathname === "/categories" || pathname === "/search" || pathname === "/wishlist" || pathname === "/checkout" || pathname === "/orders";
+		const isPublicPath = pathname.startsWith("/video-connect/room/") || pathname === "/storefront" || pathname.startsWith("/product/") || pathname.startsWith("/store/") || pathname.startsWith("/category/") || pathname.startsWith("/brand/") || pathname === "/cart" || pathname === "/categories" || pathname === "/search" || pathname === "/wishlist" || pathname === "/checkout" || pathname === "/orders" || pathname === "/tools" || pathname.startsWith("/tools");
 		const token = localStorage.getItem("authToken");
 
 		if (!token && !isPublicPath) {
