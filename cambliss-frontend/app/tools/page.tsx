@@ -2,7 +2,6 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import WorkspaceShell from "@/components/WorkspaceShell";
 
 type DocumentConversionKind =
@@ -41,10 +40,6 @@ function ToolsContent() {
   const [upscaleBusy, setUpscaleBusy] = useState(false);
   const [upscaleResult, setUpscaleResult] = useState<string | null>(null);
 
-  const [bgFile, setBgFile] = useState<File | null>(null);
-  const [bgBusy, setBgBusy] = useState(false);
-  const [bgResult, setBgResult] = useState<string | null>(null);
-
   const [ocrFile, setOcrFile] = useState<File | null>(null);
   const [ocrBusy, setOcrBusy] = useState(false);
   const [ocrResult, setOcrResult] = useState<string | null>(null);
@@ -54,199 +49,73 @@ function ToolsContent() {
   const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfMessage, setPdfMessage] = useState<string | null>(null);
 
-  // Purchase Modal State for Paid Tools
-  const [selectedPaidTool, setSelectedPaidTool] = useState<{
-    id: string;
-    title: string;
-    price: string;
-    billingPeriod: string;
-    features: string[];
-    icon: string;
-  } | null>(null);
-  const [isPurchasing, setIsPurchasing] = useState(false);
-  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
-
-  // Free Platform Tools Cards
-  const freeApps = [
+  // Open Source Software & Engines Catalog (Integrated Open Source Tools)
+  const openSourceTools = [
     {
       id: "akaunting",
-      title: "Accountech ERP & Billing",
-      category: "Finance & Accounting",
-      description: "Full corporate double-entry accounting, recurring invoices, vendor bills, customer balances, and ledger.",
+      title: "Accountech (Akaunting)",
+      category: "Open Source Accounting",
+      tagline: "Free Open-Source ERP & Invoicing Engine",
+      description: "Complete double-entry accounting, customer billing, recurring invoices, vendor bills, and financial ledger management.",
       icon: "💰",
-      badge: "FREE APP",
+      badge: "OPEN SOURCE ERP",
       route: "/akaunting",
       cta: "Open Accountech ERP →",
     },
     {
-      id: "crm",
-      title: "CRM & Sales Pipeline",
-      category: "Customer Relations",
-      description: "Lead capture management, sales deals Kanban pipeline, customer contacts directory, and conversion tracking.",
-      icon: "📊",
-      badge: "FREE APP",
-      route: "/crm",
-      cta: "Open CRM Portal →",
-    },
-    {
-      id: "hrm",
-      title: "HRM & Workforce Suite",
-      category: "Human Resources",
-      description: "Employee directory records, biometric attendance tracking, leave approvals, and payroll calculation engine.",
-      icon: "👥",
-      badge: "FREE APP",
-      route: "/hrm",
-      cta: "Open HRM Suite →",
-    },
-    {
-      id: "inventory",
-      title: "Inventory & Stock Engine",
-      category: "Warehouse & Stock",
-      description: "SKU tracking, automated reorder thresholds, warehouse stock quantities, and cost price analysis.",
-      icon: "📦",
-      badge: "FREE APP",
-      route: "/inventory",
-      cta: "Open Inventory Manager →",
-    },
-    {
-      id: "marketplace",
-      title: "Multi-Vendor Marketplace",
-      category: "E-Commerce",
-      description: "Browse verified manufacturer products, multi-seller packages, catalog management, and buyer escrow protection.",
+      id: "mercur",
+      title: "MercurJS Marketplace Engine",
+      category: "Open Source E-Commerce",
+      tagline: "Headless MedusaJS Multi-Vendor Framework",
+      description: "Open-source multi-vendor marketplace backend with order splitting, seller onboarding, commission routing, and buyer escrow.",
       icon: "🛍️",
-      badge: "LIVE STORE",
+      badge: "OPEN SOURCE MARKETPLACE",
       route: "/storefront",
-      cta: "Launch Marketplace →",
+      cta: "Launch Mercur Engine →",
     },
     {
-      id: "file-sharing",
-      title: "Cloud File Sharing & Storage",
-      category: "Cloud Repository",
-      description: "Organization document repository, team shared folders, permission controls, and cloud file management.",
-      icon: "📁",
-      badge: "FREE APP",
-      route: "/file-sharing",
-      cta: "Open File Sharing →",
+      id: "twenty-crm",
+      title: "Twenty CRM Engine",
+      category: "Open Source CRM",
+      tagline: "Modern Open-Source Customer Pipeline",
+      description: "Open-source lead management, customer deal Kanban pipelines, contact directory, and conversion tracking.",
+      icon: "📊",
+      badge: "OPEN SOURCE CRM",
+      route: "/crm",
+      cta: "Open Twenty CRM →",
     },
     {
-      id: "video",
-      title: "Video Connect & Meetings",
-      category: "WebRTC Video",
-      description: "Instant video conferencing rooms, screen sharing, real-time chat, and multi-participant HD meetings.",
-      icon: "📹",
-      badge: "FREE APP",
-      route: "/video-connect",
-      cta: "Start Video Meeting →",
-    },
-    {
-      id: "user-management",
-      title: "User & Access Management",
-      category: "Administration",
-      description: "Manage team member accounts, Role-Based Access Control (RBAC), permission keys, and admin security logs.",
+      id: "erpnext-dolibarr",
+      title: "ERPNext & Dolibarr ERP",
+      category: "Open Source Enterprise ERP",
+      tagline: "All-in-One Open-Source Business Management",
+      description: "Full-suite open-source ERP modules covering manufacturing, stock cataloging, purchase orders, and multi-location warehouses.",
       icon: "⚙️",
-      badge: "FREE APP",
-      route: "/user-management",
-      cta: "Open User Management →",
-    },
-  ];
-
-  // Paid Premium Tools & Extensions Catalog
-  const paidToolsCatalog = [
-    {
-      id: "ai-copilot",
-      title: "AI Copilot & High-Throughput Tokens",
-      price: "₹2,499",
-      billingPeriod: "/ month",
-      icon: "🤖",
-      tagline: "Unrestricted DeepSeek & GPT-4o Enterprise API Keys",
-      description: "High-speed AI document generation, automated customer response drafting, inventory forecasting, and unlimited prompt tokens.",
-      features: [
-        "Unrestricted GPT-4o & DeepSeek-R1 token access",
-        "Automated customer support chat auto-responder",
-        "AI-assisted financial report analysis",
-        "Dedicated rate-limit priority queue",
-      ],
-      popular: true,
+      badge: "OPEN SOURCE ERP",
+      route: "/inventory",
+      cta: "Open ERP & Inventory →",
     },
     {
-      id: "bank-sync",
-      title: "Automated Bank Feed Sync & GST Filing",
-      price: "₹1,999",
-      billingPeriod: "/ month",
-      icon: "🏦",
-      tagline: "Direct ICICI, HDFC, SBI API Bank Reconciliation",
-      description: "Connect your business bank accounts for real-time statement auto-matching, payment reconciliation, and 1-click GSTR-1/3B filings.",
-      features: [
-        "Real-time bank statement auto-reconciliation",
-        "Direct ICICI, HDFC, SBI & Axis API integration",
-        "Automatic GSTR-1 & GSTR-3B tax preparation",
-        "E-way bill & e-Invoice automated generation",
-      ],
-      popular: false,
+      id: "orange-frappe-hrm",
+      title: "OrangeHRM, IceHRM & Frappe HR",
+      category: "Open Source HR Suite",
+      tagline: "Open-Source Workforce & Payroll System",
+      description: "Employee records management, biometric attendance sync, leave approvals, and automated payroll calculation engines.",
+      icon: "👥",
+      badge: "OPEN SOURCE HR",
+      route: "/hrm",
+      cta: "Open HR Suite →",
     },
     {
-      id: "whatsapp-api",
-      title: "WhatsApp & Bulk SMS Business Automation",
-      price: "₹1,499",
-      billingPeriod: "/ month",
-      icon: "📱",
-      tagline: "Meta Official WhatsApp Cloud API Integration",
-      description: "Automatically dispatch order tracking alerts, invoice PDFs, payment reminders, and promotional campaigns directly on WhatsApp.",
-      features: [
-        "Official Meta Green Tick WhatsApp API setup",
-        "Automated invoice PDF & payment link delivery",
-        "Interactive chatbot auto-reply workflows",
-        "10,000 free monthly utility template messages",
-      ],
-      popular: false,
-    },
-    {
-      id: "dedicated-vps",
-      title: "Dedicated NVMe Kubernetes VPS Node",
-      price: "₹4,999",
-      billingPeriod: "/ month",
-      icon: "☁️",
-      tagline: "Isolated Private Infrastructure with 99.99% SLA",
-      description: "Upgrade your workspace to dedicated cloud compute resources with custom database backups, zero noisy neighbors, and enterprise SLA.",
-      features: [
-        "Dedicated 8 vCPU / 32GB RAM NVMe cloud instance",
-        "99.99% uptime financial SLA guarantee",
-        "Automated hourly database snapshot backups",
-        "Custom IP address & dedicated firewall isolation",
-      ],
-      popular: true,
-    },
-    {
-      id: "bi-analytics",
-      title: "Advanced BI Analytics & Metabase Suite",
-      price: "₹3,299",
-      billingPeriod: "/ month",
-      icon: "📈",
-      tagline: "Interactive Executive Dashboards & Custom Reports",
-      description: "Embed customized SQL analytics dashboards, sales performance heatmaps, customer churn predictions, and scheduled PDF digests.",
-      features: [
-        "Custom Metabase BI dashboard builder",
-        "Automated weekly executive PDF email reports",
-        "Multi-branch revenue & profit margin breakdown",
-        "Data export to BigQuery, Snowflake, and CSV",
-      ],
-      popular: false,
-    },
-    {
-      id: "white-label",
-      title: "Custom Domain & White-Label Portal",
-      price: "₹2,999",
-      billingPeriod: "/ month",
-      icon: "🌐",
-      tagline: "Your Brand, Custom Subdomain & Custom Email SMTP",
-      description: "Completely remove Office Connect branding. Host the platform on your custom domain (e.g. portal.yourbrand.com) with custom logos.",
-      features: [
-        "Host on custom domain (portal.yourbrand.com)",
-        "Zero Office Connect branding (Fully White-Labeled)",
-        "Custom email SMTP server for system notifications",
-        "Custom CSS color themes & branded login page",
-      ],
-      popular: false,
+      id: "inventree",
+      title: "InvenTree Asset & Part Manager",
+      category: "Open Source Asset Tracking",
+      tagline: "Open-Source Stock & Hardware Inventory",
+      description: "Open-source part tracking, bill of materials (BOM), SKU barcode generation, and hardware component stock manager.",
+      icon: "📦",
+      badge: "OPEN SOURCE HARDWARE",
+      route: "/inventory",
+      cta: "Open InvenTree →",
     },
   ];
 
@@ -273,7 +142,6 @@ function ToolsContent() {
       setDocDownloadUrl(data.dataUrl);
       setDocDownloadName(data.fileName);
     } catch {
-      // Demo Fallback
       setDocDownloadUrl(URL.createObjectURL(docFile));
       const ext = docConversion.split("-to-")[1];
       setDocDownloadName(docFile.name.replace(/\.[^/.]+$/, "") + `.${ext}`);
@@ -289,16 +157,6 @@ function ToolsContent() {
     setTimeout(() => {
       setUpscaleResult(URL.createObjectURL(upscaleFile));
       setUpscaleBusy(false);
-    }, 1200);
-  };
-
-  // Background Removal Handler
-  const handleRemoveBg = async () => {
-    if (!bgFile) return;
-    setBgBusy(true);
-    setTimeout(() => {
-      setBgResult(URL.createObjectURL(bgFile));
-      setBgBusy(false);
     }, 1200);
   };
 
@@ -324,19 +182,6 @@ function ToolsContent() {
     }, 1200);
   };
 
-  // Subscribe / Buy Paid Tool Handler
-  const handleConfirmPurchase = () => {
-    setIsPurchasing(true);
-    setTimeout(() => {
-      setIsPurchasing(false);
-      setPurchaseSuccess(true);
-      setTimeout(() => {
-        setPurchaseSuccess(false);
-        setSelectedPaidTool(null);
-      }, 2500);
-    }, 1500);
-  };
-
   return (
     <WorkspaceShell>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-8 pb-32 select-none">
@@ -353,7 +198,7 @@ function ToolsContent() {
               Tools & Workspace Utilities Suite
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Access all integrated free platform applications, open-source file converters, AI image processing tools, and enterprise premium add-ons in one centralized hub.
+              Explore integrated open-source business software, online document converters, OCR tools, and premium platform extensions.
             </p>
           </div>
 
@@ -371,9 +216,9 @@ function ToolsContent() {
                   : "text-slate-300 hover:text-white"
               }`}
             >
-              <span>🆓 Free Tools & Apps</span>
-              <span className="bg-emerald-500 text-white text-[10px] px-1.5 py-0.2 rounded-full">
-                100% FREE
+              <span>🌐 Free Open-Source Tools</span>
+              <span className="bg-emerald-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-black">
+                FREE
               </span>
             </button>
             <button
@@ -388,7 +233,7 @@ function ToolsContent() {
                   : "text-slate-300 hover:text-white"
               }`}
             >
-              <span>💎 Paid Tools & Add-ons</span>
+              <span>💎 Paid Tools</span>
               <span className="bg-amber-400 text-slate-900 text-[10px] px-1.5 py-0.2 rounded-full font-black">
                 PREMIUM
               </span>
@@ -397,69 +242,70 @@ function ToolsContent() {
         </div>
 
         {/* ========================================================================= */}
-        {/* 1. TAB: FREE TOOLS & OPEN-SOURCE UTILITIES */}
+        {/* 1. TAB: FREE OPEN-SOURCE TOOLS */}
         {/* ========================================================================= */}
         {activeTab === "free" && (
           <div className="space-y-10">
             
-            {/* SECTION A: FREE INTEGRATED PLATFORM APPLICATIONS */}
+            {/* SECTION A: INTEGRATED OPEN-SOURCE SOFTWARE & ENGINES */}
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                 <div>
                   <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                    <span>🚀</span> Free Platform Applications
+                    <span>🌐</span> Integrated Open-Source Tools & Software
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Click any application card to directly launch the workspace module
+                    Pre-integrated open-source frameworks, ERPs, CRM engines, and workforce applications
                   </p>
                 </div>
                 <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                  8 Apps Available
+                  6 Open Source Engines
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {freeApps.map((app) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {openSourceTools.map((tool) => (
                   <div
-                    key={app.id}
-                    onClick={() => router.push(app.route)}
+                    key={tool.id}
+                    onClick={() => router.push(tool.route)}
                     className="group cursor-pointer rounded-xl border border-slate-200 bg-white p-5 shadow-2xs hover:border-[#404d85] hover:shadow-md transition-all flex flex-col justify-between space-y-4"
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-3xl group-hover:scale-110 transition-transform">{app.icon}</span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          {app.badge}
+                        <span className="text-3xl group-hover:scale-110 transition-transform">{tool.icon}</span>
+                        <span className="px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          {tool.badge}
                         </span>
                       </div>
 
                       <div>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                          {app.category}
+                          {tool.category}
                         </span>
-                        <h3 className="font-extrabold text-sm text-slate-900 group-hover:text-[#404d85] transition">
-                          {app.title}
+                        <h3 className="font-extrabold text-base text-slate-900 group-hover:text-[#404d85] transition">
+                          {tool.title}
                         </h3>
+                        <p className="text-xs font-bold text-[#404d85] mt-0.5">{tool.tagline}</p>
                       </div>
 
                       <p className="text-xs text-slate-600 leading-relaxed">
-                        {app.description}
+                        {tool.description}
                       </p>
                     </div>
 
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#404d85] group-hover:translate-x-1 transition-transform">
-                      <span>{app.cta}</span>
+                      <span>{tool.cta}</span>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* SECTION B: INTERACTIVE OPEN-SOURCE FILE & MEDIA UTILITIES */}
+            {/* SECTION B: INTERACTIVE ONLINE UTILITIES */}
             <div className="space-y-6 pt-6 border-t border-slate-200">
               <div>
                 <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                  <span>🛠️</span> Free Online File & Media Processing Utilities
+                  <span>🛠️</span> Open-Source Document & Media Processing Utilities
                 </h2>
                 <p className="text-xs text-slate-500">
                   Client-side and open-source file converters, OCR extraction, AI image upscaler, and PDF processing
@@ -720,173 +566,47 @@ function ToolsContent() {
         )}
 
         {/* ========================================================================= */}
-        {/* 2. TAB: PAID PREMIUM TOOLS & ENTERPRISE ADD-ONS */}
+        {/* 2. TAB: PAID TOOLS */}
         {/* ========================================================================= */}
         {activeTab === "paid" && (
-          <div className="space-y-8">
-            
-            {/* Header Banner */}
-            <div className="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                  <span>💎</span> Enterprise Premium Tools & Extension Store
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 p-8 sm:p-12 text-white shadow-xl text-center space-y-6 max-w-3xl mx-auto">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-3xl mx-auto shadow-inner">
+                💎
+              </div>
+
+              <div className="space-y-2">
+                <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-black uppercase tracking-wider border border-amber-400/30">
+                  PREMIUM ENTERPRISE PLATFORM
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+                  Paid Tools Available on Our Premium Platform
                 </h2>
-                <p className="text-xs text-slate-500">
-                  Upgrade your workspace with high-throughput AI API tokens, bank reconciliation, WhatsApp automation, and dedicated VPS hosting.
+                <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
+                  Enterprise API integrations, dedicated high-throughput AI copilot tokens, Meta WhatsApp Cloud API, automated bank reconciliation, and dedicated NVMe Kubernetes cloud hosting are available under the Cambliss Premium Enterprise subscription.
                 </p>
               </div>
 
-              <div className="text-xs font-bold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 shrink-0">
-                ⚡ All Paid Subscriptions include 24/7 Dedicated Priority Support
+              <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => alert("Redirecting to Premium Enterprise Subscription upgrade desk...")}
+                  className="w-full sm:w-auto px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs transition shadow-lg"
+                >
+                  Upgrade to Premium Platform →
+                </button>
+                <a
+                  href="mailto:enterprise@theofficeconnect.com"
+                  className="w-full sm:w-auto px-8 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/15 transition"
+                >
+                  Contact Enterprise Sales
+                </a>
               </div>
             </div>
-
-            {/* Paid Tools Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paidToolsCatalog.map((tool) => (
-                <div
-                  key={tool.id}
-                  className={`relative rounded-2xl border bg-white p-6 shadow-sm flex flex-col justify-between space-y-6 transition-all hover:shadow-lg ${
-                    tool.popular ? "border-indigo-500 ring-2 ring-indigo-500/20" : "border-slate-200"
-                  }`}
-                >
-                  {tool.popular && (
-                    <span className="absolute -top-3 right-4 px-3 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase tracking-wider shadow-sm">
-                      POPULAR CHOICE
-                    </span>
-                  )}
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-4xl">{tool.icon}</span>
-                      <div className="text-right">
-                        <span className="text-2xl font-black text-slate-900">{tool.price}</span>
-                        <span className="text-xs font-bold text-slate-400 block">{tool.billingPeriod}</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="font-extrabold text-base text-slate-900">{tool.title}</h3>
-                      <p className="text-xs font-bold text-indigo-600 mt-0.5">{tool.tagline}</p>
-                    </div>
-
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      {tool.description}
-                    </p>
-
-                    <div className="space-y-2 pt-2 border-t border-slate-100">
-                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
-                        Included Plan Features:
-                      </span>
-                      <ul className="space-y-1.5 text-xs text-slate-700 font-semibold">
-                        {tool.features.map((feat, idx) => (
-                          <li key={idx} className="flex items-center gap-2">
-                            <span className="text-emerald-500 font-bold">✓</span>
-                            <span>{feat}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPaidTool(tool)}
-                    className={`w-full py-2.5 rounded-xl font-black text-xs transition shadow-xs ${
-                      tool.popular
-                        ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                        : "bg-slate-900 hover:bg-slate-800 text-white"
-                    }`}
-                  >
-                    Subscribe & Activate ({tool.price}) →
-                  </button>
-                </div>
-              ))}
-            </div>
-
           </div>
         )}
 
       </div>
-
-      {/* ========================================================================= */}
-      {/* 3. PAID TOOL PURCHASE MODAL */}
-      {/* ========================================================================= */}
-      {selectedPaidTool && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-6 animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">{selectedPaidTool.icon}</span>
-                <div>
-                  <h3 className="font-black text-lg text-slate-900">{selectedPaidTool.title}</h3>
-                  <span className="text-xs font-bold text-indigo-600">{selectedPaidTool.price} {selectedPaidTool.billingPeriod}</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedPaidTool(null)}
-                className="text-slate-400 hover:text-slate-700 font-bold text-lg"
-              >
-                ✕
-              </button>
-            </div>
-
-            {purchaseSuccess ? (
-              <div className="p-8 text-center space-y-3 bg-emerald-50 rounded-xl border border-emerald-200">
-                <span className="text-4xl">🎉</span>
-                <h4 className="font-black text-emerald-900 text-base">Subscription Activated Successfully!</h4>
-                <p className="text-xs text-emerald-700">
-                  {selectedPaidTool.title} is now active on your organization workspace. License key dispatched to admin email.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  You are activating <strong>{selectedPaidTool.title}</strong> for your current workspace organization under Cambliss enterprise billing.
-                </p>
-
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
-                  <div className="flex justify-between font-bold text-slate-700">
-                    <span>Plan Price:</span>
-                    <span>{selectedPaidTool.price}</span>
-                  </div>
-                  <div className="flex justify-between font-bold text-slate-700">
-                    <span>Billing Cycle:</span>
-                    <span>Monthly (Cancel anytime)</span>
-                  </div>
-                  <div className="flex justify-between font-bold text-slate-700">
-                    <span>GST (18%):</span>
-                    <span>Included</span>
-                  </div>
-                  <div className="pt-2 border-t border-slate-200 flex justify-between font-black text-slate-900 text-sm">
-                    <span>Total Monthly Amount:</span>
-                    <span className="text-indigo-600">{selectedPaidTool.price}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPaidTool(null)}
-                    className="flex-1 py-2.5 rounded-xl border border-slate-300 font-bold text-xs text-slate-700 hover:bg-slate-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isPurchasing}
-                    onClick={handleConfirmPurchase}
-                    className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs transition shadow-sm"
-                  >
-                    {isPurchasing ? "Activating Subscription..." : `Confirm Payment (${selectedPaidTool.price})`}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </WorkspaceShell>
   );
 }
