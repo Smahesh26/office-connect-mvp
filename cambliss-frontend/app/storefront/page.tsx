@@ -10,15 +10,31 @@ import { StorefrontFeaturedBrands } from "@/components/storefront/StorefrontFeat
 import { StorefrontPersonalizedArea } from "@/components/storefront/StorefrontPersonalizedArea";
 import { ProductCard } from "@/components/commerce/CommercePrimitives";
 import { fetchCatalogProducts, ApiProduct } from "@/lib/catalog-api";
-
 import WorkspaceShell from "@/components/WorkspaceShell";
 
 export default function StorefrontPage() {
+  const [isWorkspaceUser, setIsWorkspaceUser] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("authToken");
+      if (token) {
+        setIsWorkspaceUser(true);
+      }
+    }
+  }, []);
+
+  const content = <StorefrontHomeContent />;
+
   return (
     <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-800 font-bold">Loading Marketplace...</div>}>
-      <WorkspaceShell>
-        <StorefrontHomeContent />
-      </WorkspaceShell>
+      {isMounted && isWorkspaceUser ? (
+        <WorkspaceShell>{content}</WorkspaceShell>
+      ) : (
+        <StorefrontShell>{content}</StorefrontShell>
+      )}
     </Suspense>
   );
 }
@@ -96,7 +112,6 @@ function StorefrontHomeContent() {
     },
   ];
 
-  // Map live API products or fallback seamlessly
   const displayProducts = liveCatalogProducts.length > 0
     ? [
         ...liveCatalogProducts.map((p) => ({

@@ -194,11 +194,16 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
 	const pathname = usePathname();
 	const router = useRouter();
 	const searchParams = useSearchParams();
+	const [isMounted, setIsMounted] = useState(false);
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [authRole, setAuthRole] = useState<string | null>(null);
 	const [authAccesses, setAuthAccesses] = useState<string[]>([]);
 	const [currentHash, setCurrentHash] = useState("");
 	const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+
+	useEffect(() => {
+		setIsMounted(true);
+	}, []);
 
 	const toggleExpanded = (label: string, e: React.MouseEvent) => {
 		e.preventDefault();
@@ -359,7 +364,7 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
 		return pathname === baseHref && currentHash === `#${hashPart}`;
 	});
 
-	const isGuestUser = typeof window !== "undefined" && !localStorage.getItem("authToken");
+	const isGuestUser = isMounted && typeof window !== "undefined" && !localStorage.getItem("authToken");
 
 	if (pathname.startsWith("/video-connect/room/") && isGuestUser) {
 		return <div className="min-h-screen bg-[#f8faff] text-[#1f2430]">{children}</div>;
