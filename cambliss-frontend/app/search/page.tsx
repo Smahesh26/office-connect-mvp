@@ -3,7 +3,7 @@
 import { useState, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { StorefrontShell } from "@/components/storefront/StorefrontShell";
+import { MarketplacePageWrapper } from "@/components/storefront/MarketplacePageWrapper";
 import { TypoCorrectionBanner } from "@/components/search/TypoCorrectionBanner";
 import { SearchEmptyState } from "@/components/search/SearchEmptyState";
 import { ProductCard } from "@/components/commerce/CommercePrimitives";
@@ -457,10 +457,10 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <StorefrontShell>
+    <MarketplacePageWrapper>
       <Suspense fallback={<div className="p-12 text-center text-xs text-slate-500">Loading Search Results...</div>}>
         <SearchContent />
       </Suspense>
-    </StorefrontShell>
+    </MarketplacePageWrapper>
   );
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { StorefrontShell } from "@/components/storefront/StorefrontShell";
+import { MarketplacePageWrapper } from "@/components/storefront/MarketplacePageWrapper";
 import {
   CheckoutStep1Address,
   DeliveryAddress,
@@ -116,8 +116,8 @@ export default function CheckoutPage() {
   };
 
   return (
-    <StorefrontShell>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8 pb-32 select-none">
+    <MarketplacePageWrapper>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6 pb-32 select-none">
         
         {/* Header */}
         <div className="pb-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -275,6 +275,6 @@ export default function CheckoutPage() {
         </div>
 
       </div>
-    </StorefrontShell>
+    </MarketplacePageWrapper>
   );
 }

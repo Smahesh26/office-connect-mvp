@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { StorefrontShell } from "@/components/storefront/StorefrontShell";
+import { MarketplacePageWrapper } from "@/components/storefront/MarketplacePageWrapper";
 import { ProductCard, ProductCardProps } from "@/components/commerce/CommercePrimitives";
 import { getStoredWishlist, saveWishlist } from "@/lib/cart-wishlist";
 
@@ -63,7 +63,7 @@ export default function CustomerWishlistPage() {
   };
 
   return (
-    <StorefrontShell>
+    <MarketplacePageWrapper>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8 pb-32 select-none">
         
         {/* Breadcrumb */}
@@ -144,6 +144,6 @@ export default function CustomerWishlistPage() {
         )}
 
       </div>
-    </StorefrontShell>
+    </MarketplacePageWrapper>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { StorefrontShell } from "@/components/storefront/StorefrontShell";
+import { MarketplacePageWrapper } from "@/components/storefront/MarketplacePageWrapper";
 import { OrderCard, CustomerOrder } from "@/components/account/OrderCard";
 import { RmaReturnModal, RmaItemDetails } from "@/components/account/RmaReturnModal";
 
@@ -112,8 +112,8 @@ export default function CustomerOrdersPage() {
   });
 
   return (
-    <StorefrontShell>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8 pb-32 select-none">
+    <MarketplacePageWrapper>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8 pb-32 select-none">
         
         {/* Header */}
         <div className="pb-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -197,6 +197,6 @@ export default function CustomerOrdersPage() {
         />
 
       </div>
-    </StorefrontShell>
+    </MarketplacePageWrapper>
   );
 }

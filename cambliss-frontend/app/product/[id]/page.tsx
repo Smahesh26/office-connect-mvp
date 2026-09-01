@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
-import { StorefrontShell } from "@/components/storefront/StorefrontShell";
+import { MarketplacePageWrapper } from "@/components/storefront/MarketplacePageWrapper";
 import { ProductPurchaseHero, ProductHeroData } from "@/components/pdp/ProductPurchaseHero";
 import { ProductOffersStrip } from "@/components/pdp/ProductOffersStrip";
 import { FrequentlyBoughtTogether, BundleItem } from "@/components/pdp/FrequentlyBoughtTogether";
@@ -536,7 +536,7 @@ export default function ProductDetailPage({
   };
 
   return (
-    <StorefrontShell>
+    <MarketplacePageWrapper>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-10 pb-32 select-none">
         
         {/* 1. Breadcrumb Navigation */}
@@ -626,6 +626,6 @@ export default function ProductDetailPage({
         </div>
 
       </div>
-    </StorefrontShell>
+    </MarketplacePageWrapper>
   );
 }

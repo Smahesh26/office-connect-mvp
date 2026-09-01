@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { StorefrontShell } from "@/components/storefront/StorefrontShell";
+import { MarketplacePageWrapper } from "@/components/storefront/MarketplacePageWrapper";
 import {
   MultiVendorPackageGroup,
   SellerPackage,
@@ -193,7 +193,7 @@ export default function CartPage() {
   };
 
   return (
-    <StorefrontShell>
+    <MarketplacePageWrapper>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8 pb-32 select-none">
         
         {/* Header */}
@@ -279,6 +279,6 @@ export default function CartPage() {
         )}
 
       </div>
-    </StorefrontShell>
+    </MarketplacePageWrapper>
   );
 }

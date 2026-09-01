@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { StorefrontShell } from "@/components/storefront/StorefrontShell";
+import { MarketplacePageWrapper } from "@/components/storefront/MarketplacePageWrapper";
 
 export default function CategoriesDirectoryPage() {
   const departments = [
@@ -56,7 +56,7 @@ export default function CategoriesDirectoryPage() {
   ];
 
   return (
-    <StorefrontShell>
+    <MarketplacePageWrapper>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8 pb-28 select-none">
         
         {/* Breadcrumb */}
@@ -119,6 +119,6 @@ export default function CategoriesDirectoryPage() {
         </div>
 
       </div>
-    </StorefrontShell>
+    </MarketplacePageWrapper>
   );
 }

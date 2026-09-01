@@ -212,7 +212,7 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
 	};
 
 	useEffect(() => {
-		const isPublicPath = pathname.startsWith("/video-connect/room/") || pathname === "/storefront" || pathname.startsWith("/product/") || pathname.startsWith("/store/") || pathname === "/cart" || pathname === "/categories" || pathname === "/search" || pathname === "/wishlist";
+		const isPublicPath = pathname.startsWith("/video-connect/room/") || pathname === "/storefront" || pathname.startsWith("/product/") || pathname.startsWith("/store/") || pathname.startsWith("/category/") || pathname.startsWith("/brand/") || pathname === "/cart" || pathname === "/categories" || pathname === "/search" || pathname === "/wishlist" || pathname === "/checkout" || pathname === "/orders";
 		const token = localStorage.getItem("authToken");
 
 		if (!token && !isPublicPath) {

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, use } from "react";
 import Link from "next/link";
-import { StorefrontShell } from "@/components/storefront/StorefrontShell";
+import { MarketplacePageWrapper } from "@/components/storefront/MarketplacePageWrapper";
 import {
   ProductListingFilters,
   FilterState,
@@ -378,7 +378,7 @@ export default function CategoryListingPage({ params }: { params: Promise<{ slug
     (filters.minDiscount > 0 ? 1 : 0);
 
   return (
-    <StorefrontShell>
+    <MarketplacePageWrapper>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6 pb-28 select-none">
         
         {/* 1. BREADCRUMB */}
@@ -614,6 +614,6 @@ export default function CategoryListingPage({ params }: { params: Promise<{ slug
         onChange={setFilters}
         onReset={() => setFilters(initialFilters)}
       />
-    </StorefrontShell>
+    </MarketplacePageWrapper>
   );
 }
