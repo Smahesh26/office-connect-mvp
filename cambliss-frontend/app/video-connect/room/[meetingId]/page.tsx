@@ -68,14 +68,24 @@ function RemoteParticipantMediaTile({
 		stream.addEventListener("addtrack", updateTracks);
 		stream.addEventListener("removetrack", updateTracks);
 
-		if (videoRef.current) {
+		if (videoRef.current && videoRef.current.srcObject !== stream) {
 			videoRef.current.srcObject = stream;
 			void videoRef.current.play().catch(() => {});
 		}
 
-		if (audioRef.current) {
+		if (audioRef.current && audioRef.current.srcObject !== stream) {
 			audioRef.current.srcObject = stream;
-			void audioRef.current.play().catch(() => {});
+			audioRef.current.volume = 1.0;
+			audioRef.current.play().catch((err) => {
+				console.log("Audio autoplay blocked by browser policy, attaching gesture listener:", err);
+				const playAudioOnGesture = () => {
+					audioRef.current?.play().catch(() => {});
+					document.removeEventListener("click", playAudioOnGesture);
+					document.removeEventListener("keydown", playAudioOnGesture);
+				};
+				document.addEventListener("click", playAudioOnGesture);
+				document.addEventListener("keydown", playAudioOnGesture);
+			});
 		}
 
 		return () => {
@@ -333,11 +343,22 @@ export default function VideoMeetingRoomPage() {
 		const pc = new RTCPeerConnection(RTC_CONFIG);
 		peerConnections.current[targetId] = pc;
 
+		try {
+			pc.addTransceiver("audio", { direction: "sendrecv" });
+			pc.addTransceiver("video", { direction: "sendrecv" });
+		} catch {}
+
 		const currentStream = mediaStreamRef.current || mediaStream;
 		if (currentStream) {
+			const senders = pc.getSenders();
 			currentStream.getTracks().forEach((track) => {
 				try {
-					pc.addTrack(track, currentStream);
+					const existing = senders.find((s) => s.track?.kind === track.kind);
+					if (existing) {
+						void existing.replaceTrack(track).catch(() => {});
+					} else {
+						pc.addTrack(track, currentStream);
+					}
 				} catch {}
 			});
 		}
@@ -481,20 +502,19 @@ export default function VideoMeetingRoomPage() {
 
 	const setLocalPreviewRef = (node: HTMLVideoElement | null) => {
 		previewRef.current = node;
-		if (node && mediaStream) {
+		if (node && mediaStream && node.srcObject !== mediaStream) {
 			node.srcObject = mediaStream;
 			void node.play().catch(() => {});
 		}
 	};
 
-	// Local Video Stream Assignment (Synchronized across single-tile vs grid layout re-renders)
+	// Local Video Stream Assignment (Prevent redundant srcObject re-assignment camera blinking)
 	useEffect(() => {
-		if (!previewRef.current) return;
-		previewRef.current.srcObject = mediaStream;
-		if (mediaStream) {
+		if (previewRef.current && mediaStream && previewRef.current.srcObject !== mediaStream) {
+			previewRef.current.srcObject = mediaStream;
 			void previewRef.current.play().catch(() => {});
 		}
-	}, [mediaStream, joined, remoteParticipants.length, videoEnabled]);
+	}, [mediaStream, joined, videoEnabled]);
 
 	// Screen Sharing Stream Ref Assignment
 	useEffect(() => {
