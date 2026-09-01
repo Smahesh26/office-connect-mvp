@@ -59,8 +59,14 @@ function RemoteParticipantMediaTile({
 	useEffect(() => {
 		if (!stream) return;
 
-		const videoTracks = stream.getVideoTracks();
-		setHasVideoTrack(videoTracks.length > 0 && videoTracks.some((t) => t.enabled));
+		const updateTracks = () => {
+			const videoTracks = stream.getVideoTracks();
+			setHasVideoTrack(videoTracks.length > 0 && videoTracks.some((t) => t.enabled));
+		};
+
+		updateTracks();
+		stream.addEventListener("addtrack", updateTracks);
+		stream.addEventListener("removetrack", updateTracks);
 
 		if (videoRef.current) {
 			videoRef.current.srcObject = stream;
@@ -71,6 +77,11 @@ function RemoteParticipantMediaTile({
 			audioRef.current.srcObject = stream;
 			void audioRef.current.play().catch(() => {});
 		}
+
+		return () => {
+			stream.removeEventListener("addtrack", updateTracks);
+			stream.removeEventListener("removetrack", updateTracks);
+		};
 	}, [stream]);
 
 	return (
@@ -91,15 +102,15 @@ function RemoteParticipantMediaTile({
 				</span>
 			</div>
 
-			{/* Audio Element for Unmuted Audible Remote Microphone Voice */}
-			<audio ref={audioRef} autoPlay playsInline muted={false} />
+			{/* Dedicated Audio Element for Remote Mic Voice */}
+			<audio ref={audioRef} autoPlay playsInline />
 
-			{/* Video Element for Remote Camera Stream */}
+			{/* Dedicated Video Element for Remote Camera Stream */}
 			<video
 				ref={videoRef}
 				autoPlay
 				playsInline
-				muted={false}
+				muted
 				className={`absolute inset-0 h-full w-full object-cover ${hasVideoTrack && stream ? "opacity-100" : "opacity-0 pointer-events-none"}`}
 			/>
 
@@ -332,13 +343,11 @@ export default function VideoMeetingRoomPage() {
 		}
 
 		pc.ontrack = (event) => {
-			if (event.streams && event.streams[0]) {
-				const stream = event.streams[0];
-				setRemoteStreams((prev) => ({
-					...prev,
-					[targetId]: stream,
-				}));
-			}
+			const stream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
+			setRemoteStreams((prev) => ({
+				...prev,
+				[targetId]: stream,
+			}));
 		};
 
 		pc.onicecandidate = (event) => {
@@ -350,12 +359,13 @@ export default function VideoMeetingRoomPage() {
 		return pc;
 	};
 
-	// Initiate WebRTC Calls to Remote Participants
+	// Initiate WebRTC Calls to Remote Participants (Tie-break by myId > p.id to eliminate glare collisions)
 	useEffect(() => {
 		if (!joined || remoteParticipants.length === 0) return;
 
 		remoteParticipants.forEach((p) => {
-			if (!peerConnections.current[p.id]) {
+			const isInitiator = myId > p.id;
+			if (isInitiator && !peerConnections.current[p.id]) {
 				const pc = createPeerConnection(p.id);
 				void (async () => {
 					try {
@@ -414,7 +424,7 @@ export default function VideoMeetingRoomPage() {
 
 		const interval = setInterval(() => {
 			void pollSignals();
-		}, 1000);
+		}, 400);
 
 		return () => clearInterval(interval);
 	}, [joined, meetingId, myId, mediaStream]);
@@ -469,19 +479,22 @@ export default function VideoMeetingRoomPage() {
 		} catch {}
 	};
 
-	// Local Video Stream Assignment
+	const setLocalPreviewRef = (node: HTMLVideoElement | null) => {
+		previewRef.current = node;
+		if (node && mediaStream) {
+			node.srcObject = mediaStream;
+			void node.play().catch(() => {});
+		}
+	};
+
+	// Local Video Stream Assignment (Synchronized across single-tile vs grid layout re-renders)
 	useEffect(() => {
 		if (!previewRef.current) return;
 		previewRef.current.srcObject = mediaStream;
 		if (mediaStream) {
 			void previewRef.current.play().catch(() => {});
 		}
-		return () => {
-			if (previewRef.current) {
-				previewRef.current.srcObject = null;
-			}
-		};
-	}, [mediaStream, joined]);
+	}, [mediaStream, joined, remoteParticipants.length, videoEnabled]);
 
 	// Screen Sharing Stream Ref Assignment
 	useEffect(() => {
@@ -621,7 +634,7 @@ export default function VideoMeetingRoomPage() {
 
 								<div className="relative h-72 w-full rounded-xl bg-zinc-900 overflow-hidden flex items-center justify-center border border-zinc-800">
 									{mediaStream && videoEnabled ? (
-										<video ref={previewRef} autoPlay muted playsInline className="h-full w-full object-cover" />
+										<video ref={setLocalPreviewRef} autoPlay muted playsInline className="h-full w-full object-cover" />
 									) : (
 										<div className="flex flex-col items-center justify-center p-6 text-center">
 											<div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white text-2xl font-black border-2 border-indigo-400 shadow-lg mb-3">
@@ -797,7 +810,7 @@ export default function VideoMeetingRoomPage() {
 
 									{/* Main Live Webcam Stream */}
 									{mediaStream && videoEnabled ? (
-										<video ref={previewRef} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
+										<video ref={setLocalPreviewRef} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
 									) : (
 										<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-indigo-950/40 to-zinc-950">
 											<div className="w-28 h-28 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-black border-4 border-indigo-400 shadow-2xl mb-3">
@@ -849,7 +862,7 @@ export default function VideoMeetingRoomPage() {
 										</div>
 
 										{mediaStream && videoEnabled ? (
-											<video ref={previewRef} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
+											<video ref={setLocalPreviewRef} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
 										) : (
 											<div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-indigo-950/40 to-zinc-950">
 												<div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-black border-2 border-indigo-400 shadow-xl mb-2">
