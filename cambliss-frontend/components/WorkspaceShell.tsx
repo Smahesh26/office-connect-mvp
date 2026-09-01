@@ -64,20 +64,19 @@ function ChevronRightIcon({ className = "" }: { className?: string }) {
 
 const clientMenuItems: SidebarItem[] = [
 	{ label: "Dashboard", href: "/dashboard" },
-	{ label: "Marketplace & Storefronts", href: "/storefront", badge: "Live" },
 	{ label: "CRM", href: "/crm", accessKey: "CRM" },
 	{ label: "HRM", href: "/hrm", accessKey: "HRM" },
 	{ label: "Inventory", href: "/inventory", accessKey: "INVENTORY" },
 	{ label: "Accountech ERP", href: "/akaunting" },
 	{ label: "File Sharing", href: "/file-sharing", accessKey: "FILE_SHARING" },
 	{ label: "Video Connect", href: "/video-connect" },
+	{ label: "Marketplace", href: "/storefront", badge: "Live" },
 	{ label: "Profile Completion", href: "/profile-completion" },
 	{ label: "User Management", href: "/user-management", accessKey: "USER_MANAGEMENT" },
 ];
 
 const adminMenuItems: SidebarItem[] = [
 	{ label: "Admin Dashboard", href: "/admin-dashboard" },
-	{ label: "Marketplace & Storefronts", href: "/storefront", badge: "Live" },
 	{ label: "Vendor Portal", href: "/vendor-dashboard" },
 	{ label: "CRM", href: "/crm" },
 	{ label: "HRM", href: "/hrm" },
@@ -85,6 +84,7 @@ const adminMenuItems: SidebarItem[] = [
 	{ label: "Accountech ERP", href: "/akaunting" },
 	{ label: "File Sharing", href: "/file-sharing" },
 	{ label: "Video Connect", href: "/video-connect" },
+	{ label: "Marketplace", href: "/storefront", badge: "Live" },
 	{ label: "User Management", href: "/user-management" },
 ];
 
@@ -92,6 +92,7 @@ function SidebarIcon({ label }: { label: string }) {
 	const common = "h-[18px] w-[18px] text-current";
 
 	switch (label) {
+		case "Marketplace":
 		case "Marketplace Hub":
 		case "Marketplace Control Hub":
 		case "Marketplace & Storefronts":
