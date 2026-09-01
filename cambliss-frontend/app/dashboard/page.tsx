@@ -297,6 +297,10 @@ export default function DashboardPage() {
 							</svg>
 							{trialSummary.isExpired ? "Trial Expired" : `${trialSummary.daysLeft} days left`}
 						</div>
+						<Link href="/storefront" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 px-4 py-2 text-sm font-bold text-slate-950 shadow-md hover:from-amber-400 hover:to-amber-300">
+							<span>🏬</span>
+							<span>Browse Marketplace</span>
+						</Link>
 						<Link href="/crm" className="inline-flex items-center rounded-xl bg-[#6678c1] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_24px_-16px_rgba(102,120,193,0.35)] hover:bg-[#404d85]">
 							Open CRM
 						</Link>
@@ -306,7 +310,48 @@ export default function DashboardPage() {
 					</div>
 				</div>
 
-				{/* Removed large countdown card as requested */}
+				{/* MULTI-VENDOR MARKETPLACE HUB WIDGET */}
+				<div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+						<div>
+							<div className="flex items-center gap-2">
+								<h2 className="text-xl font-extrabold text-slate-900">Multi-Vendor Marketplace Hub</h2>
+								<span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
+									Live Inside Dashboard
+								</span>
+							</div>
+							<p className="text-xs text-slate-500 mt-1">
+								Explore thousands of verified products from top 3P sellers, manage RFQs, and order business supplies directly.
+							</p>
+						</div>
+						<Link
+							href="/storefront"
+							className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#404d85] px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#2b345e] transition"
+						>
+							<span>Explore Full Marketplace Catalog</span>
+							<span>→</span>
+						</Link>
+					</div>
+
+					<div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+						{[
+							{ title: "Electronics & Tech", icon: "🎧", count: "1,240+ Products", href: "/categories" },
+							{ title: "Apparel & Uniforms", icon: "👕", count: "850+ Products", href: "/categories" },
+							{ title: "Beauty & Wellness", icon: "🌸", count: "420+ Products", href: "/categories" },
+							{ title: "Automotive Parts", icon: "🚘", count: "310+ Products", href: "/categories" },
+						].map((dept) => (
+							<Link
+								key={dept.title}
+								href={dept.href}
+								className="group flex flex-col p-4 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-white hover:border-[#6678c1] hover:shadow-md transition-all"
+							>
+								<span className="text-2xl mb-2 group-hover:scale-110 transition-transform">{dept.icon}</span>
+								<h3 className="text-xs font-bold text-slate-900 group-hover:text-[#404d85]">{dept.title}</h3>
+								<span className="text-[10px] text-slate-500 mt-0.5">{dept.count}</span>
+							</Link>
+						))}
+					</div>
+				</div>
 
 				<div className="mt-8 overflow-hidden rounded-[24px] bg-gradient-to-br from-[#404d85] to-[#252f5a] shadow-[0_20px_48px_-24px_rgba(64,77,133,0.5)]">
 					<div className="px-8 py-12 md:px-12 md:py-16 text-center lg:text-left lg:flex lg:items-center lg:justify-between">

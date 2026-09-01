@@ -11,12 +11,14 @@ import { StorefrontPersonalizedArea } from "@/components/storefront/StorefrontPe
 import { ProductCard } from "@/components/commerce/CommercePrimitives";
 import { fetchCatalogProducts, ApiProduct } from "@/lib/catalog-api";
 
+import WorkspaceShell from "@/components/WorkspaceShell";
+
 export default function StorefrontPage() {
   return (
     <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-800 font-bold">Loading Marketplace...</div>}>
-      <StorefrontShell>
+      <WorkspaceShell>
         <StorefrontHomeContent />
-      </StorefrontShell>
+      </WorkspaceShell>
     </Suspense>
   );
 }

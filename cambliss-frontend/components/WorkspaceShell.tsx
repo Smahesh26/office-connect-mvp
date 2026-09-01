@@ -64,20 +64,28 @@ function ChevronRightIcon({ className = "" }: { className?: string }) {
 
 const clientMenuItems: SidebarItem[] = [
 	{ label: "Dashboard", href: "/dashboard" },
-	{ label: "Profile Completion", href: "/profile-completion" },
+	{ label: "Marketplace & Storefronts", href: "/storefront", badge: "Live" },
 	{ label: "CRM", href: "/crm", accessKey: "CRM" },
 	{ label: "HRM", href: "/hrm", accessKey: "HRM" },
 	{ label: "Inventory", href: "/inventory", accessKey: "INVENTORY" },
-	{ label: "Marketplace & Storefronts", href: "/storefront" },
 	{ label: "Accountech ERP", href: "/akaunting" },
-	{ label: "Store", href: "/store" },
 	{ label: "File Sharing", href: "/file-sharing", accessKey: "FILE_SHARING" },
 	{ label: "Video Connect", href: "/video-connect" },
+	{ label: "Profile Completion", href: "/profile-completion" },
 	{ label: "User Management", href: "/user-management", accessKey: "USER_MANAGEMENT" },
 ];
 
 const adminMenuItems: SidebarItem[] = [
 	{ label: "Admin Dashboard", href: "/admin-dashboard" },
+	{ label: "Marketplace & Storefronts", href: "/storefront", badge: "Live" },
+	{ label: "Vendor Portal", href: "/vendor-dashboard" },
+	{ label: "CRM", href: "/crm" },
+	{ label: "HRM", href: "/hrm" },
+	{ label: "Inventory", href: "/inventory" },
+	{ label: "Accountech ERP", href: "/akaunting" },
+	{ label: "File Sharing", href: "/file-sharing" },
+	{ label: "Video Connect", href: "/video-connect" },
+	{ label: "User Management", href: "/user-management" },
 ];
 
 function SidebarIcon({ label }: { label: string }) {
@@ -198,10 +206,10 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
 	};
 
 	useEffect(() => {
-		const isPublicRoomPath = pathname.startsWith("/video-connect/room/");
+		const isPublicPath = pathname.startsWith("/video-connect/room/") || pathname === "/storefront" || pathname.startsWith("/product/") || pathname.startsWith("/store/") || pathname === "/cart" || pathname === "/categories" || pathname === "/search" || pathname === "/wishlist";
 		const token = localStorage.getItem("authToken");
 
-		if (!token && !isPublicRoomPath) {
+		if (!token && !isPublicPath) {
 			router.replace("/login");
 			return;
 		}
