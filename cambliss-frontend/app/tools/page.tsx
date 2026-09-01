@@ -17,7 +17,7 @@ type DocumentConversionKind =
 
 export default function ToolsSuitePage() {
   return (
-    <Suspense fallback={<div className="p-12 text-center text-xs text-slate-500 font-bold">Loading Tools Suite...</div>}>
+    <Suspense fallback={<div className="p-12 text-center text-xs text-slate-500 font-semibold">Loading Tools Suite...</div>}>
       <ToolsContent />
     </Suspense>
   );
@@ -60,14 +60,13 @@ function ToolsContent() {
   const [pdfMessage, setPdfMessage] = useState<string | null>(null);
 
   // 6. Interactive Calendar & Scheduler State
-  const [currentMonthDate, setCurrentMonthDate] = useState(new Date());
+  const [selectedDateStr, setSelectedDateStr] = useState("2026-09-05");
   const [calendarEvents, setCalendarEvents] = useState<Record<string, string[]>>({
     "2026-09-05": ["Client Tax Review Meeting", "Quarterly Audit"],
     "2026-09-12": ["Vendor Escrow Release Sync"],
     "2026-09-20": ["Monthly Payroll Approval"],
   });
   const [newEventText, setNewEventText] = useState("");
-  const [selectedDateStr, setSelectedDateStr] = useState("2026-09-05");
 
   // 7. Business & GST Tax Calculator State
   const [calcMode, setCalcMode] = useState<"gst" | "margin">("gst");
@@ -178,27 +177,27 @@ function ToolsContent() {
 
   return (
     <WorkspaceShell>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6 pb-32 select-none font-sans">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6 pb-32 select-none font-sans text-slate-900">
         
-        {/* Breadcrumb Bar (Identical Typography to Dashboard) */}
-        <nav className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+        {/* Breadcrumb Bar (Matches Sidebar Font & Weight Exactly) */}
+        <nav className="flex items-center gap-2 text-xs font-medium text-slate-500">
           <Link href="/dashboard" className="hover:text-slate-900 transition">Dashboard</Link>
           <span>/</span>
-          <span className="text-slate-900 font-bold">Tools Suite</span>
+          <span className="text-slate-900 font-semibold">Tools Suite</span>
         </nav>
 
         {/* Page Header Bar */}
         <div className="pb-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-semibold text-slate-900">
               Tools & Workspace Utilities Suite
             </h1>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mt-0.5">
+            <p className="text-xs text-slate-500 max-w-2xl mt-1">
               Online document converters, background removers, interactive calendar, business tax calculator, OCR extractors, and PDF power tools.
             </p>
           </div>
 
-          {/* View Tab Switcher Buttons (Matches Workspace Standard Styling) */}
+          {/* View Tab Switcher Buttons (Matches Sidebar Font Weight & Clean Slate Buttons) */}
           <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-[6px] border border-slate-200 shrink-0">
             <button
               type="button"
@@ -206,7 +205,7 @@ function ToolsContent() {
                 setActiveTab("free");
                 router.push("/tools?view=free");
               }}
-              className={`px-3.5 py-1.5 rounded-[4px] font-bold text-xs transition ${
+              className={`px-3.5 py-1.5 rounded-[4px] font-semibold text-xs transition ${
                 activeTab === "free"
                   ? "bg-slate-900 text-white shadow-2xs"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
@@ -220,7 +219,7 @@ function ToolsContent() {
                 setActiveTab("paid");
                 router.push("/tools?view=paid");
               }}
-              className={`px-3.5 py-1.5 rounded-[4px] font-bold text-xs transition ${
+              className={`px-3.5 py-1.5 rounded-[4px] font-semibold text-xs transition ${
                 activeTab === "paid"
                   ? "bg-[#404d85] text-white shadow-2xs"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
@@ -238,10 +237,10 @@ function ToolsContent() {
           <div className="space-y-6">
             
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
                 <span>🛠️</span> Open-Source Document, Image & Productivity Utilities
               </h2>
-              <span className="text-xs font-extrabold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-[4px]">
+              <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2.5 py-1 rounded-[4px] border border-slate-200">
                 7 Free Online Tools
               </span>
             </div>
@@ -252,24 +251,24 @@ function ToolsContent() {
               <div className="rounded-[8px] border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">📄</span>
+                    <span className="text-xl">📄</span>
                     <div>
-                      <h3 className="font-black text-sm text-slate-900">Document Format Converter</h3>
+                      <h3 className="font-semibold text-sm text-slate-900">Document Format Converter</h3>
                       <p className="text-xs text-slate-500">Convert between PDF, Word, Excel, CSV, PPTX & Text</p>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-100 uppercase">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100">
                     OPEN SOURCE
                   </span>
                 </div>
 
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Select Conversion Mode:</label>
+                    <label className="text-xs font-semibold text-slate-700 block">Select Conversion Mode:</label>
                     <select
                       value={docConversion}
                       onChange={(e) => setDocConversion(e.target.value as any)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs font-bold text-slate-800 bg-white focus:border-[#404d85] focus:outline-hidden"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-[4px] text-xs font-medium text-slate-800 bg-white focus:border-[#404d85] focus:outline-hidden"
                     >
                       <option value="pdf-to-docx">PDF to Word (.docx)</option>
                       <option value="docx-to-pdf">Word (.docx) to PDF</option>
@@ -283,7 +282,7 @@ function ToolsContent() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <label className="flex-1 cursor-pointer px-4 py-2 border border-dashed border-slate-300 rounded-[4px] bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 text-center truncate">
+                    <label className="flex-1 cursor-pointer px-4 py-2 border border-dashed border-slate-300 rounded-[4px] bg-slate-50 hover:bg-slate-100 text-xs font-medium text-slate-700 text-center truncate">
                       {docFile ? docFile.name : "📁 Choose File to Convert"}
                       <input
                         type="file"
@@ -296,14 +295,14 @@ function ToolsContent() {
                       type="button"
                       disabled={!docFile || docBusy}
                       onClick={handleConvertDoc}
-                      className="px-4 py-2 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-bold text-xs disabled:opacity-40 transition"
+                      className="px-4 py-2 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-semibold text-xs disabled:opacity-40 transition"
                     >
                       {docBusy ? "Converting..." : "Convert Now"}
                     </button>
                   </div>
 
                   {docDownloadUrl && (
-                    <div className="p-3 rounded-[4px] bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs font-bold text-emerald-800">
+                    <div className="p-3 rounded-[4px] bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs font-semibold text-emerald-800">
                       <span>✅ Conversion Complete!</span>
                       <a
                         href={docDownloadUrl}
@@ -321,20 +320,20 @@ function ToolsContent() {
               <div className="rounded-[8px] border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">✂️</span>
+                    <span className="text-xl">✂️</span>
                     <div>
-                      <h3 className="font-black text-sm text-slate-900">AI Background Remover</h3>
+                      <h3 className="font-semibold text-sm text-slate-900">AI Background Remover</h3>
                       <p className="text-xs text-slate-500">Extract clean transparent PNG images for e-commerce catalogs</p>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-teal-50 text-teal-700 border border-teal-100 uppercase">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-teal-50 text-teal-700 border border-teal-100">
                     TRANSPARENT PNG
                   </span>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <label className="flex-1 cursor-pointer px-4 py-2 border border-dashed border-slate-300 rounded-[4px] bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 text-center truncate">
+                    <label className="flex-1 cursor-pointer px-4 py-2 border border-dashed border-slate-300 rounded-[4px] bg-slate-50 hover:bg-slate-100 text-xs font-medium text-slate-700 text-center truncate">
                       {bgFile ? bgFile.name : "🖼️ Upload Photo"}
                       <input
                         type="file"
@@ -348,14 +347,14 @@ function ToolsContent() {
                       type="button"
                       disabled={!bgFile || bgBusy}
                       onClick={handleRemoveBg}
-                      className="px-4 py-2 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-bold text-xs disabled:opacity-40 transition"
+                      className="px-4 py-2 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-semibold text-xs disabled:opacity-40 transition"
                     >
                       {bgBusy ? "Removing..." : "Remove BG →"}
                     </button>
                   </div>
 
                   {bgResult && (
-                    <div className="p-3 rounded-[4px] bg-teal-50 border border-teal-200 flex items-center justify-between text-xs font-bold text-teal-900">
+                    <div className="p-3 rounded-[4px] bg-teal-50 border border-teal-200 flex items-center justify-between text-xs font-semibold text-teal-900">
                       <span>✨ Background Removed Successfully!</span>
                       <a
                         href={bgResult}
@@ -373,13 +372,13 @@ function ToolsContent() {
               <div className="rounded-[8px] border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">📅</span>
+                    <span className="text-xl">📅</span>
                     <div>
-                      <h3 className="font-black text-sm text-slate-900">Interactive Calendar & Event Scheduler</h3>
+                      <h3 className="font-semibold text-sm text-slate-900">Interactive Calendar & Event Scheduler</h3>
                       <p className="text-xs text-slate-500">Organize deadlines, tax audit dates & client meetings</p>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
                     SCHEDULER
                   </span>
                 </div>
@@ -390,26 +389,26 @@ function ToolsContent() {
                       type="date"
                       value={selectedDateStr}
                       onChange={(e) => setSelectedDateStr(e.target.value)}
-                      className="px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-bold text-slate-800 bg-white"
+                      className="px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-semibold text-slate-800 bg-white"
                     />
                     <input
                       type="text"
                       placeholder="Add meeting or task title..."
                       value={newEventText}
                       onChange={(e) => setNewEventText(e.target.value)}
-                      className="flex-1 px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-semibold focus:border-[#404d85] focus:outline-hidden"
+                      className="flex-1 px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-medium focus:border-[#404d85] focus:outline-hidden"
                     />
                     <button
                       type="button"
                       onClick={handleAddCalendarEvent}
-                      className="px-3 py-1.5 rounded-[4px] bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition"
+                      className="px-3 py-1.5 rounded-[4px] bg-slate-900 text-white font-semibold text-xs hover:bg-slate-800 transition"
                     >
                       + Add
                     </button>
                   </div>
 
                   <div className="space-y-1.5 max-h-36 overflow-y-auto pt-1">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                    <span className="text-[10px] font-semibold uppercase text-slate-400 block">
                       Scheduled Events for {selectedDateStr}:
                     </span>
                     {(calendarEvents[selectedDateStr] || []).length === 0 ? (
@@ -418,7 +417,7 @@ function ToolsContent() {
                       calendarEvents[selectedDateStr].map((evt, idx) => (
                         <div
                           key={idx}
-                          className="px-3 py-1.5 rounded-[4px] bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 flex items-center justify-between"
+                          className="px-3 py-1.5 rounded-[4px] bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 flex items-center justify-between"
                         >
                           <span>• {evt}</span>
                           <span className="text-[10px] font-semibold text-emerald-600">CONFIRMED</span>
@@ -433,13 +432,13 @@ function ToolsContent() {
               <div className="rounded-[8px] border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">🧮</span>
+                    <span className="text-xl">🧮</span>
                     <div>
-                      <h3 className="font-black text-sm text-slate-900">Business & GST Tax Calculator</h3>
+                      <h3 className="font-semibold text-sm text-slate-900">Business & GST Tax Calculator</h3>
                       <p className="text-xs text-slate-500">Calculate GST breakups, profit margins & markup percentages</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded border border-slate-200 text-[10px] font-bold">
+                  <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded border border-slate-200 text-[10px] font-semibold">
                     <button
                       type="button"
                       onClick={() => setCalcMode("gst")}
@@ -461,20 +460,20 @@ function ToolsContent() {
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[11px] font-bold text-slate-600 block">Base Amount (₹):</label>
+                        <label className="text-[11px] font-semibold text-slate-600 block">Base Amount (₹):</label>
                         <input
                           type="number"
                           value={calcAmount}
                           onChange={(e) => setCalcAmount(Number(e.target.value) || 0)}
-                          className="w-full px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-bold text-slate-900"
+                          className="w-full px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-semibold text-slate-900"
                         />
                       </div>
                       <div>
-                        <label className="text-[11px] font-bold text-slate-600 block">GST Rate (%):</label>
+                        <label className="text-[11px] font-semibold text-slate-600 block">GST Rate (%):</label>
                         <select
                           value={gstRate}
                           onChange={(e) => setGstRate(Number(e.target.value))}
-                          className="w-full px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-bold text-slate-900 bg-white"
+                          className="w-full px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-semibold text-slate-900 bg-white"
                         >
                           <option value={5}>5% (Essential)</option>
                           <option value={12}>12% (Standard)</option>
@@ -485,15 +484,15 @@ function ToolsContent() {
                     </div>
 
                     <div className="p-3 bg-slate-50 rounded-[4px] border border-slate-200 space-y-1.5 text-xs">
-                      <div className="flex justify-between font-semibold text-slate-700">
+                      <div className="flex justify-between font-medium text-slate-700">
                         <span>CGST ({(gstRate / 2).toFixed(1)}%):</span>
-                        <span>₹{gstCalculated.cgst.toLocaleString()}</span>
+                        <span className="font-semibold">₹{gstCalculated.cgst.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between font-semibold text-slate-700">
+                      <div className="flex justify-between font-medium text-slate-700">
                         <span>SGST ({(gstRate / 2).toFixed(1)}%):</span>
-                        <span>₹{gstCalculated.sgst.toLocaleString()}</span>
+                        <span className="font-semibold">₹{gstCalculated.sgst.toLocaleString()}</span>
                       </div>
-                      <div className="pt-1 border-t border-slate-200 flex justify-between font-black text-slate-900 text-sm">
+                      <div className="pt-1 border-t border-slate-200 flex justify-between font-semibold text-slate-900 text-sm">
                         <span>Total Inclusive Amount:</span>
                         <span className="text-[#404d85]">₹{gstCalculated.totalInclusive.toLocaleString()}</span>
                       </div>
@@ -503,37 +502,37 @@ function ToolsContent() {
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[11px] font-bold text-slate-600 block">Cost Price (₹):</label>
+                        <label className="text-[11px] font-semibold text-slate-600 block">Cost Price (₹):</label>
                         <input
                           type="number"
                           value={costPrice}
                           onChange={(e) => setCostPrice(Number(e.target.value) || 0)}
-                          className="w-full px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-bold text-slate-900"
+                          className="w-full px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-semibold text-slate-900"
                         />
                       </div>
                       <div>
-                        <label className="text-[11px] font-bold text-slate-600 block">Selling Price (₹):</label>
+                        <label className="text-[11px] font-semibold text-slate-600 block">Selling Price (₹):</label>
                         <input
                           type="number"
                           value={sellingPrice}
                           onChange={(e) => setSellingPrice(Number(e.target.value) || 0)}
-                          className="w-full px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-bold text-slate-900"
+                          className="w-full px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-semibold text-slate-900"
                         />
                       </div>
                     </div>
 
                     <div className="p-3 bg-slate-50 rounded-[4px] border border-slate-200 space-y-1.5 text-xs">
-                      <div className="flex justify-between font-semibold text-slate-700">
+                      <div className="flex justify-between font-medium text-slate-700">
                         <span>Profit Amount:</span>
-                        <span className="font-bold text-emerald-700">₹{marginCalculated.profit.toLocaleString()}</span>
+                        <span className="font-semibold text-emerald-700">₹{marginCalculated.profit.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between font-semibold text-slate-700">
+                      <div className="flex justify-between font-medium text-slate-700">
                         <span>Profit Margin Rate:</span>
-                        <span className="font-bold text-slate-900">{marginCalculated.profitMarginPct.toFixed(2)}%</span>
+                        <span className="font-semibold text-slate-900">{marginCalculated.profitMarginPct.toFixed(2)}%</span>
                       </div>
-                      <div className="flex justify-between font-semibold text-slate-700">
+                      <div className="flex justify-between font-medium text-slate-700">
                         <span>Markup Rate:</span>
-                        <span className="font-bold text-slate-900">{marginCalculated.markupPct.toFixed(2)}%</span>
+                        <span className="font-semibold text-slate-900">{marginCalculated.markupPct.toFixed(2)}%</span>
                       </div>
                     </div>
                   </div>
@@ -544,20 +543,20 @@ function ToolsContent() {
               <div className="rounded-[8px] border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">🖼️</span>
+                    <span className="text-xl">🖼️</span>
                     <div>
-                      <h3 className="font-black text-sm text-slate-900">AI Image Upscaler (2x / 4x)</h3>
+                      <h3 className="font-semibold text-sm text-slate-900">AI Image Upscaler (2x / 4x)</h3>
                       <p className="text-xs text-slate-500">Enhance low-resolution product photos for storefront catalogs</p>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-purple-50 text-purple-700 border border-purple-100 uppercase">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-100">
                     IMAGE AI
                   </span>
                 </div>
 
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <label className="cursor-pointer px-4 py-2 border border-dashed border-slate-300 rounded-[4px] bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 text-center truncate">
+                    <label className="cursor-pointer px-4 py-2 border border-dashed border-slate-300 rounded-[4px] bg-slate-50 hover:bg-slate-100 text-xs font-medium text-slate-700 text-center truncate">
                       {upscaleFile ? upscaleFile.name : "🖼️ Select Image"}
                       <input
                         type="file"
@@ -570,7 +569,7 @@ function ToolsContent() {
                     <select
                       value={upscaleScale}
                       onChange={(e) => setUpscaleScale(e.target.value)}
-                      className="px-3 py-2 border border-slate-200 rounded-[4px] text-xs font-bold text-slate-800 bg-white"
+                      className="px-3 py-2 border border-slate-200 rounded-[4px] text-xs font-semibold text-slate-800 bg-white"
                     >
                       <option value="2">2x Upscale (HD)</option>
                       <option value="3">3x Upscale (Ultra HD)</option>
@@ -582,13 +581,13 @@ function ToolsContent() {
                     type="button"
                     disabled={!upscaleFile || upscaleBusy}
                     onClick={handleUpscale}
-                    className="w-full py-2 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-bold text-xs disabled:opacity-40 transition"
+                    className="w-full py-2 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-semibold text-xs disabled:opacity-40 transition"
                   >
                     {upscaleBusy ? "Upscaling Image..." : "Enhance Resolution →"}
                   </button>
 
                   {upscaleResult && (
-                    <div className="p-3 rounded-[4px] bg-purple-50 border border-purple-200 flex items-center justify-between text-xs font-bold text-purple-900">
+                    <div className="p-3 rounded-[4px] bg-purple-50 border border-purple-200 flex items-center justify-between text-xs font-semibold text-purple-900">
                       <span>✨ Image Upscaled ({upscaleScale}x Resolution)</span>
                       <a
                         href={upscaleResult}
@@ -606,20 +605,20 @@ function ToolsContent() {
               <div className="rounded-[8px] border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">🔍</span>
+                    <span className="text-xl">🔍</span>
                     <div>
-                      <h3 className="font-black text-sm text-slate-900">OCR Optical Text Extractor</h3>
+                      <h3 className="font-semibold text-sm text-slate-900">OCR Optical Text Extractor</h3>
                       <p className="text-xs text-slate-500">Extract editable text from scanned receipts, invoices & documents</p>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-100 uppercase">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100">
                     TEXT OCR
                   </span>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <label className="flex-1 cursor-pointer px-4 py-2 border border-dashed border-slate-300 rounded-[4px] bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 text-center truncate">
+                    <label className="flex-1 cursor-pointer px-4 py-2 border border-dashed border-slate-300 rounded-[4px] bg-slate-50 hover:bg-slate-100 text-xs font-medium text-slate-700 text-center truncate">
                       {ocrFile ? ocrFile.name : "📷 Upload Receipt or Scan"}
                       <input
                         type="file"
@@ -633,7 +632,7 @@ function ToolsContent() {
                       type="button"
                       disabled={!ocrFile || ocrBusy}
                       onClick={handleOcr}
-                      className="px-4 py-2 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-bold text-xs disabled:opacity-40 transition"
+                      className="px-4 py-2 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-semibold text-xs disabled:opacity-40 transition"
                     >
                       {ocrBusy ? "Scanning..." : "Extract Text"}
                     </button>
@@ -641,7 +640,7 @@ function ToolsContent() {
 
                   {ocrResult && (
                     <div className="space-y-1">
-                      <span className="text-[10px] font-extrabold text-slate-500 uppercase">Extracted Result:</span>
+                      <span className="text-[10px] font-semibold text-slate-500 uppercase">Extracted Result:</span>
                       <textarea
                         readOnly
                         value={ocrResult}
@@ -657,19 +656,19 @@ function ToolsContent() {
               <div className="rounded-[8px] border border-slate-200 bg-white p-5 shadow-2xs space-y-4 lg:col-span-2">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">📑</span>
+                    <span className="text-xl">📑</span>
                     <div>
-                      <h3 className="font-black text-sm text-slate-900">PDF Power Utilities</h3>
+                      <h3 className="font-semibold text-sm text-slate-900">PDF Power Utilities</h3>
                       <p className="text-xs text-slate-500">Merge multiple PDFs, split pages, or compress file size</p>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-teal-50 text-teal-700 border border-teal-100 uppercase">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-teal-50 text-teal-700 border border-teal-100">
                     PDF ENGINE
                   </span>
                 </div>
 
                 <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-2 text-xs font-bold max-w-sm">
+                  <div className="grid grid-cols-3 gap-2 text-xs font-semibold max-w-sm">
                     {(["merge", "split", "compress"] as const).map((mode) => (
                       <button
                         key={mode}
@@ -687,7 +686,7 @@ function ToolsContent() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <label className="flex-1 cursor-pointer px-4 py-2 border border-dashed border-slate-300 rounded-[4px] bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 text-center truncate">
+                    <label className="flex-1 cursor-pointer px-4 py-2 border border-dashed border-slate-300 rounded-[4px] bg-slate-50 hover:bg-slate-100 text-xs font-medium text-slate-700 text-center truncate">
                       {pdfFiles.length > 0 ? `${pdfFiles.length} File(s) Selected` : "📁 Select PDF File(s)"}
                       <input
                         type="file"
@@ -702,14 +701,14 @@ function ToolsContent() {
                       type="button"
                       disabled={pdfFiles.length === 0 || pdfBusy}
                       onClick={handlePdfOperation}
-                      className="px-5 py-2 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-bold text-xs disabled:opacity-40 transition"
+                      className="px-5 py-2 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-semibold text-xs disabled:opacity-40 transition"
                     >
                       {pdfBusy ? "Processing..." : `Run ${pdfAction.toUpperCase()}`}
                     </button>
                   </div>
 
                   {pdfMessage && (
-                    <div className="p-3 rounded-[4px] bg-teal-50 border border-teal-200 text-xs font-bold text-teal-900">
+                    <div className="p-3 rounded-[4px] bg-teal-50 border border-teal-200 text-xs font-semibold text-teal-900">
                       {pdfMessage}
                     </div>
                   )}
@@ -731,10 +730,10 @@ function ToolsContent() {
               </div>
 
               <div className="space-y-2">
-                <span className="px-3 py-1 rounded-full bg-indigo-50 text-[#404d85] text-xs font-black uppercase tracking-wider border border-indigo-100">
+                <span className="px-3 py-1 rounded-full bg-indigo-50 text-[#404d85] text-xs font-semibold border border-indigo-100">
                   PREMIUM ENTERPRISE PLATFORM
                 </span>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">
                   Paid Tools Available on Our Premium Platform
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-600 max-w-lg mx-auto leading-relaxed">
@@ -746,13 +745,13 @@ function ToolsContent() {
                 <button
                   type="button"
                   onClick={() => alert("Redirecting to Premium Enterprise Subscription upgrade desk...")}
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-bold text-xs transition shadow-2xs"
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-semibold text-xs transition shadow-2xs"
                 >
                   Upgrade to Premium Platform →
                 </button>
                 <a
                   href="mailto:enterprise@theofficeconnect.com"
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-[4px] bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-200 transition"
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-[4px] bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs border border-slate-200 transition"
                 >
                   Contact Enterprise Sales
                 </a>
