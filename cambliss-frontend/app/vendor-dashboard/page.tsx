@@ -110,8 +110,8 @@ export default function VendorDashboardPage() {
             )}
 
             {/* 7. FINANCE & PAYOUTS */}
-            {activeView === "finance" && (
-              <SellerFinanceSuite />
+            {activeView.startsWith("finance-") && (
+              <SellerFinanceSuite activeSubView={activeView.replace("finance-", "") as any} />
             )}
 
           </main>
