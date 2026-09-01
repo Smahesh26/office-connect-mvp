@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import { formatINR } from "@/components/commerce/CommercePrimitives";
 import { ProductCreatorStudio } from "./product-creator/ProductCreatorStudio";
 
@@ -11,74 +12,122 @@ export const SellerCatalogSuite = ({
   activeSubView: "products" | "add" | "bulk" | "categories";
   onFinishAdd?: () => void;
 }) => {
-  const [products] = useState([
+  const [storeSlug] = useState("aerotech");
+
+  const [products, setProducts] = useState([
     {
       id: "prod-1",
-      sku: "SONY-XM5-BLK",
-      title: "Sony WH-1000XM5 Wireless Noise Canceling Headphones (Midnight Black)",
+      sku: "AERO-ANC500-BLK",
+      title: "AeroTech ANC-500 Wireless Studio Noise Canceling Headphones",
       category: "Electronics > Audio > Headphones",
       mrp: 34990,
       price: 29990,
       stock: 24,
-      status: "Active",
-      buyBox: "Yes (99.4%)",
+      status: "PUBLISHED",
+      buyBox: "Active (99.4%)",
+      slug: "aerotech",
     },
     {
-      id: "prod-2",
-      sku: "SONY-WF5-SLV",
-      title: "Sony WF-1000XM5 Truly Wireless Noise Canceling Earbuds (Platinum Silver)",
+      id: "prod-aerotech-earbuds",
+      sku: "AERO-AIRPULSE-WHT",
+      title: "AeroTech AirPulse Truly Wireless ANC Earbuds (30H Battery)",
       category: "Electronics > Audio > Earbuds",
-      mrp: 26990,
-      price: 23990,
-      stock: 18,
-      status: "Active",
-      buyBox: "Yes (98.1%)",
+      mrp: 15990,
+      price: 12990,
+      stock: 30,
+      status: "PUBLISHED",
+      buyBox: "Active (98.1%)",
+      slug: "aerotech",
     },
     {
-      id: "prod-3",
-      sku: "SONY-A7M4-BODY",
-      title: "Sony Alpha 7 IV Full-frame Mirrorless Interchangeable Lens Camera",
-      category: "Electronics > Cameras > Mirrorless",
-      mrp: 269990,
-      price: 241990,
-      stock: 3,
-      status: "Active",
-      buyBox: "Yes (100%)",
+      id: "prod-[#3]",
+      sku: "UT-TSHIRT-BLK-M",
+      title: "UrbanThreads 240 GSM Heavyweight Oversized French Terry T-Shirt",
+      category: "Apparel & Fashion > Men's Apparel",
+      mrp: 2499,
+      price: 1499,
+      stock: 45,
+      status: "PUBLISHED",
+      buyBox: "Active (100%)",
+      slug: "urbanstyle",
     },
   ]);
 
+  const [publishSuccess, setPublishSuccess] = useState(false);
+
+  const handleProductPublished = () => {
+    setPublishSuccess(true);
+    if (onFinishAdd) {
+      setTimeout(() => {
+        onFinishAdd();
+        setPublishSuccess(false);
+      }, 1000);
+    }
+  };
+
   return (
-    <div className="space-y-6 select-none">
+    <div className="space-y-6 select-none font-sans text-slate-900">
       
+      {/* Top Banner: My Storefront Quick Link */}
+      <div className="rounded-[8px] border border-indigo-100 bg-gradient-to-r from-indigo-50/80 via-white to-slate-50 p-4 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#404d85] text-white flex items-center justify-center font-bold text-lg shrink-0">
+            🏪
+          </div>
+          <div>
+            <h4 className="font-bold text-xs text-slate-900">Your Live Multi-Vendor Storefront</h4>
+            <p className="text-[11px] text-slate-500 font-mono">
+              https://theofficeconnect.com/store/{storeSlug}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/store/${storeSlug}`}
+            target="_blank"
+            className="px-3 py-1.5 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-semibold text-xs transition flex items-center gap-1 shadow-2xs"
+          >
+            <span>👁️ View Live Storefront</span>
+          </Link>
+        </div>
+      </div>
+
       {/* 1. PRODUCTS TABLE SUBVIEW */}
       {activeSubView === "products" && (
         <div className="rounded-[8px] border border-slate-200 bg-white p-5 sm:p-6 space-y-4 shadow-2xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
             <div>
-              <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
-                Product Catalog ({products.length} Active Listings)
+              <h3 className="font-semibold text-sm text-slate-900 uppercase tracking-wider">
+                My Published Catalog ({products.length} Active Listings)
               </h3>
-              <p className="text-xs text-slate-500">Live listings synchronized across storefront and search indexes</p>
+              <p className="text-xs text-slate-500">Products uploaded from your dashboard are live on the main marketplace and your custom storefront.</p>
             </div>
             <div className="flex gap-2">
               <input
                 type="text"
                 placeholder="Search SKU or title..."
-                className="px-3 py-1.5 border border-slate-300 rounded text-xs"
+                className="px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-medium focus:border-[#404d85] focus:outline-hidden"
               />
             </div>
           </div>
 
+          {publishSuccess && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-[4px] text-xs font-semibold text-emerald-900">
+              🎉 Product successfully published into the main marketplace and your storefront!
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-200 text-slate-400 font-extrabold text-[10px] uppercase">
-                  <th className="pb-2">SKU & Title</th>
+                <tr className="border-b border-slate-200 text-slate-400 font-bold text-[10px] uppercase">
+                  <th className="pb-2">SKU & Product Title</th>
                   <th className="pb-2">Category</th>
                   <th className="pb-2 text-right">Selling Price</th>
                   <th className="pb-2 text-right">Stock</th>
-                  <th className="pb-2 text-center">BuyBox</th>
-                  <th className="pb-2 text-right">Status</th>
+                  <th className="pb-2 text-center">Status</th>
+                  <th className="pb-2 text-right">Marketplace Link</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -94,19 +143,25 @@ export const SellerCatalogSuite = ({
                       <span className="block text-[10px] text-slate-400 line-through">{formatINR(p.mrp)}</span>
                     </td>
                     <td className="py-3 text-right">
-                      <span className={`font-bold ${p.stock <= 5 ? "text-red-600" : "text-slate-800"}`}>
+                      <span className={`font-semibold ${p.stock <= 5 ? "text-red-600" : "text-slate-800"}`}>
                         {p.stock} units
                       </span>
                     </td>
                     <td className="py-3 text-center">
-                      <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-[10px]">
-                        {p.buyBox}
+                      <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold text-[10px]">
+                        LIVE & PUBLISHED
                       </span>
                     </td>
                     <td className="py-3 text-right">
-                      <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-black text-[10px]">
-                        {p.status}
-                      </span>
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/product/${p.id}`}
+                          target="_blank"
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded font-semibold text-[10px] transition"
+                        >
+                          View Item 🛍️
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -116,42 +171,42 @@ export const SellerCatalogSuite = ({
         </div>
       )}
 
-      {/* 2. 10-SECTION PRODUCT CREATION STUDIO SUBVIEW */}
+      {/* 2. PRODUCT CREATION STUDIO SUBVIEW */}
       {activeSubView === "add" && (
-        <ProductCreatorStudio onFinishPublish={onFinishAdd || (() => {})} />
+        <ProductCreatorStudio onFinishPublish={handleProductPublished} />
       )}
 
       {/* 3. BULK UPLOAD SUBVIEW */}
       {activeSubView === "bulk" && (
         <div className="rounded-[8px] border border-slate-200 bg-white p-5 sm:p-6 space-y-6 shadow-2xs text-xs">
           <div className="pb-3 border-b border-slate-100">
-            <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
+            <h3 className="font-semibold text-sm text-slate-900 uppercase tracking-wider">
               Bulk CSV / Excel Product Importer
             </h3>
-            <p className="text-xs text-slate-500">Upload up to 5,000 product listings in a single batch</p>
+            <p className="text-xs text-slate-500">Upload up to 5,000 product listings in a single batch to your storefront</p>
           </div>
 
           <div className="p-6 rounded-[6px] border-2 border-dashed border-slate-300 bg-slate-50 text-center space-y-3">
             <div className="text-4xl">📄</div>
             <div>
-              <h4 className="font-bold text-slate-900 text-sm">Drag & Drop Catalog File (.csv or .xlsx)</h4>
+              <h4 className="font-semibold text-slate-900 text-sm">Drag & Drop Catalog File (.csv or .xlsx)</h4>
               <p className="text-slate-500 text-[11px]">Maximum file size: 25 MB</p>
             </div>
             <button
               type="button"
               onClick={() => alert("Selecting catalog file from local drive...")}
-              className="px-4 py-2 bg-[#404d85] text-white font-bold rounded text-xs"
+              className="px-4 py-2 bg-[#404d85] text-white font-semibold rounded text-xs"
             >
               Browse Files
             </button>
           </div>
 
           <div className="flex items-center justify-between p-3 rounded bg-slate-50 border border-slate-200">
-            <span className="font-bold text-slate-700">Need the official template?</span>
+            <span className="font-semibold text-slate-700">Need the official template?</span>
             <button
               type="button"
               onClick={() => alert("Downloading Office Connect Bulk Catalog Template (.CSV)...")}
-              className="font-bold text-[#404d85] hover:underline"
+              className="font-semibold text-[#404d85] hover:underline"
             >
               Download Sample CSV Template 📥
             </button>
@@ -163,10 +218,10 @@ export const SellerCatalogSuite = ({
       {activeSubView === "categories" && (
         <div className="rounded-[8px] border border-slate-200 bg-white p-5 sm:p-6 space-y-4 shadow-2xs text-xs">
           <div className="pb-3 border-b border-slate-100">
-            <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
+            <h3 className="font-semibold text-sm text-slate-900 uppercase tracking-wider">
               Marketplace Taxonomy Categories
             </h3>
-            <p className="text-xs text-slate-500">Official catalog categorization tree</p>
+            <p className="text-xs text-slate-500">Official multi-vendor catalog categorization tree</p>
           </div>
 
           <div className="space-y-2">
@@ -177,9 +232,9 @@ export const SellerCatalogSuite = ({
               "🚘 Auto Motors & Spares > Brake Pads, LED Headlights, Engine Filters",
               "☁️ Cloud Servers & SaaS > Dedicated Cloud, Hosting, Enterprise Licenses",
             ].map((cat, idx) => (
-              <div key={idx} className="p-3 rounded border border-slate-200 bg-slate-50/50 font-bold text-slate-800 flex items-center justify-between">
+              <div key={idx} className="p-3 rounded border border-slate-200 bg-slate-50/50 font-semibold text-slate-800 flex items-center justify-between">
                 <span>{cat}</span>
-                <span className="text-[10px] text-emerald-700 font-black">Approved Category</span>
+                <span className="text-[10px] text-emerald-700 font-semibold">Approved Category</span>
               </div>
             ))}
           </div>
