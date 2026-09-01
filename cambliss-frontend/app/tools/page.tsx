@@ -69,7 +69,6 @@ function ToolsContent() {
       readTime: "4 min read",
     },
     {
-      id: "news-[#3]",
       id: "news-3",
       title: "GST Council Approves Simplified E-Invoicing Thresholds for Small Businesses",
       category: "Tax",
