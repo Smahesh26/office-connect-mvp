@@ -64,6 +64,21 @@ function ChevronRightIcon({ className = "" }: { className?: string }) {
 
 const clientMenuItems: SidebarItem[] = [
 	{ label: "Dashboard", href: "/dashboard" },
+	{
+		label: "Your Store",
+		badge: "Seller",
+		href: "/vendor-dashboard",
+		subItems: [
+			{ label: "Overview & Analytics", href: "/vendor-dashboard" },
+			{ label: "Products & Catalog", href: "/vendor-dashboard?view=catalog-products" },
+			{ label: "Add New Product", href: "/vendor-dashboard?view=catalog-add" },
+			{ label: "Orders & Fulfillment", href: "/vendor-dashboard?view=orders-new" },
+			{ label: "Payment Gateway & Payouts", href: "/vendor-dashboard?view=finance-payouts" },
+			{ label: "Pricing & Promotions", href: "/vendor-dashboard?view=pricing" },
+			{ label: "Storefront Settings", href: "/vendor-dashboard?view=settings" },
+			{ label: "View Live Storefront", href: "/store/aerotech" },
+		],
+	},
 	{ label: "CRM", href: "/crm", accessKey: "CRM" },
 	{ label: "HRM", href: "/hrm", accessKey: "HRM" },
 	{ label: "Inventory", href: "/inventory", accessKey: "INVENTORY" },
@@ -71,13 +86,28 @@ const clientMenuItems: SidebarItem[] = [
 	{ label: "File Sharing", href: "/file-sharing", accessKey: "FILE_SHARING" },
 	{ label: "Video Connect", href: "/video-connect" },
 	{ label: "Marketplace", href: "/storefront", badge: "Live" },
-	{ label: "Tools Suite", href: "/tools", badge: "Free & Paid" },
+	{ label: "Tools Suite", href: "/tools" },
 	{ label: "Profile Completion", href: "/profile-completion" },
 	{ label: "User Management", href: "/user-management", accessKey: "USER_MANAGEMENT" },
 ];
 
 const adminMenuItems: SidebarItem[] = [
 	{ label: "Admin Dashboard", href: "/admin-dashboard" },
+	{
+		label: "Your Store",
+		badge: "Seller",
+		href: "/vendor-dashboard",
+		subItems: [
+			{ label: "Overview & Analytics", href: "/vendor-dashboard" },
+			{ label: "Products & Catalog", href: "/vendor-dashboard?view=catalog-products" },
+			{ label: "Add New Product", href: "/vendor-dashboard?view=catalog-add" },
+			{ label: "Orders & Fulfillment", href: "/vendor-dashboard?view=orders-new" },
+			{ label: "Payment Gateway & Payouts", href: "/vendor-dashboard?view=finance-payouts" },
+			{ label: "Pricing & Promotions", href: "/vendor-dashboard?view=pricing" },
+			{ label: "Storefront Settings", href: "/vendor-dashboard?view=settings" },
+			{ label: "View Live Storefront", href: "/store/aerotech" },
+		],
+	},
 	{ label: "Vendor Portal", href: "/vendor-dashboard" },
 	{ label: "CRM", href: "/crm" },
 	{ label: "HRM", href: "/hrm" },
@@ -86,7 +116,7 @@ const adminMenuItems: SidebarItem[] = [
 	{ label: "File Sharing", href: "/file-sharing" },
 	{ label: "Video Connect", href: "/video-connect" },
 	{ label: "Marketplace", href: "/storefront", badge: "Live" },
-	{ label: "Tools Suite", href: "/tools", badge: "Free & Paid" },
+	{ label: "Tools Suite", href: "/tools" },
 	{ label: "User Management", href: "/user-management" },
 ];
 
@@ -94,6 +124,15 @@ function SidebarIcon({ label }: { label: string }) {
 	const common = "h-[18px] w-[18px] text-current";
 
 	switch (label) {
+		case "Your Store":
+		case "My Store":
+		case "Store Dashboard":
+			return (
+				<svg viewBox="0 0 24 24" fill="none" className={common}>
+					<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+					<path d="M9 22V12h6v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+				</svg>
+			);
 		case "Tools Suite":
 		case "Tools":
 		case "Tools Store":
