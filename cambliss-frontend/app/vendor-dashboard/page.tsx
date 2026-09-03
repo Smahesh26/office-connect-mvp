@@ -12,7 +12,7 @@ import { SellerPricingPromos } from "@/components/seller-portal/SellerPricingPro
 
 export default function VendorDashboardPage() {
   const [activeView, setActiveView] = useState<SellerPortalView>("dashboard");
-  const [storeSlug] = useState("aerotech");
+  const [storeSlug] = useState("hisense-computers");
 
   return (
     <MarketplacePageWrapper>
@@ -24,15 +24,20 @@ export default function VendorDashboardPage() {
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
               <Link href="/dashboard" className="hover:text-slate-900 transition">Dashboard</Link>
               <span>/</span>
-              <span className="text-slate-900 font-bold">Vendor Merchant Portal</span>
+              <span className="text-slate-900 font-bold">Hisense Computers</span>
               <span>/</span>
               <span className="capitalize text-slate-600">{activeView.replace("-", " > ")}</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <span>🏪</span> Multi-Vendor Merchant & Seller Portal
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Upload products to the main marketplace, publish your custom storefront, manage order fulfillment, and track escrow payouts.
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                <span>🖥️</span> Hisense Computers — Merchant Portal
+              </h1>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                VERIFIED SELLER
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Store Owner: <strong className="text-slate-800 font-semibold">bhaskeradv1@gmail.com</strong> • Manage hardware catalog, order dispatch, Buy Box pricing, and escrow payouts.
             </p>
           </div>
 

@@ -147,6 +147,51 @@ function DashboardMarketplaceContent() {
       stockQty: 30,
     },
     {
+      id: "prod-hisense-visionbook",
+      title: "Hisense VisionBook Pro 16 AI Workstation Laptop (Core i9, 32GB, RTX 4070)",
+      image: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80",
+      price: 149990,
+      originalPrice: 179990,
+      sellerName: "Hisense Computers (bhaskeradv1@gmail.com) 👑",
+      sellerTier: "premium",
+      badge: "★ FLAGSHIP WORKSTATION",
+      rating: 4.9,
+      reviewsCount: 142,
+      category: "Computing",
+      brand: "Hisense Computers",
+      stockQty: 18,
+    },
+    {
+      id: "prod-hisense-aio27",
+      title: "Hisense Infinity AIO 27\" 4K All-In-One Desktop Computer",
+      image: "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80",
+      price: 84990,
+      originalPrice: 99990,
+      sellerName: "Hisense Computers (bhaskeradv1@gmail.com) 👑",
+      sellerTier: "premium",
+      badge: "4K INFINITYEDGE",
+      rating: 4.9,
+      reviewsCount: 98,
+      category: "Computing",
+      brand: "Hisense Computers",
+      stockQty: 22,
+    },
+    {
+      id: "prod-hisense-ultraview34",
+      title: "Hisense UltraView 34-Inch Curved WQHD USB-C Ergonomic Hub Monitor",
+      image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80",
+      price: 38990,
+      originalPrice: 46990,
+      sellerName: "Hisense Computers (bhaskeradv1@gmail.com) 👑",
+      sellerTier: "premium",
+      badge: "165HZ WQHD",
+      rating: 4.8,
+      reviewsCount: 184,
+      category: "Computing",
+      brand: "Hisense Computers",
+      stockQty: 35,
+    },
+    {
       id: "prod-dell-monitor",
       title: "Dell UltraSharp 27-inch 4K USB-C Hub Ergonomic Monitor",
       image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80",
@@ -359,12 +404,13 @@ function DashboardMarketplaceContent() {
               className="w-full px-2.5 py-1.5 border border-slate-200 rounded-[4px] text-xs font-medium bg-white"
             >
               <option value="All">All Verified Brands</option>
+              <option value="Hisense Computers">Hisense Computers 👑</option>
+              <option value="Dell">Dell</option>
               <option value="Sony">Sony</option>
               <option value="UrbanThreads">UrbanThreads</option>
               <option value="Glow Beauty">Glow Beauty</option>
               <option value="AutoCare">AutoCare</option>
               <option value="AeroTech">AeroTech</option>
-              <option value="Dell">Dell</option>
             </select>
           </div>
 

@@ -12,44 +12,80 @@ export const SellerCatalogSuite = ({
   activeSubView: "products" | "add" | "bulk" | "categories";
   onFinishAdd?: () => void;
 }) => {
-  const [storeSlug] = useState("aerotech");
+  const [storeSlug] = useState("hisense-computers");
 
   const [products, setProducts] = useState([
     {
-      id: "prod-1",
-      sku: "AERO-ANC500-BLK",
-      title: "AeroTech ANC-500 Wireless Studio Noise Canceling Headphones",
-      category: "Electronics > Audio > Headphones",
-      mrp: 34990,
-      price: 29990,
-      stock: 24,
+      id: "prod-hisense-visionbook",
+      sku: "HC-VB16-I9-4070",
+      title: "Hisense VisionBook Pro 16 AI Workstation Laptop (Core i9-14900HX, 32GB DDR5, 1TB NVMe, RTX 4070, 3.2K 165Hz OLED)",
+      category: "Enterprise Computing > Workstation Laptops",
+      mrp: 179990,
+      price: 149990,
+      stock: 18,
       status: "PUBLISHED",
-      buyBox: "Active (99.4%)",
-      slug: "aerotech",
+      buyBox: "Active (99.1%)",
+      slug: "hisense-computers",
     },
     {
-      id: "prod-aerotech-earbuds",
-      sku: "AERO-AIRPULSE-WHT",
-      title: "AeroTech AirPulse Truly Wireless ANC Earbuds (30H Battery)",
-      category: "Electronics > Audio > Earbuds",
-      mrp: 15990,
-      price: 12990,
-      stock: 30,
+      id: "prod-hisense-aio27",
+      sku: "HC-AIO27-I7-4K",
+      title: "Hisense Infinity AIO 27\" 4K All-In-One Desktop Computer (Intel Core i7-13700, 16GB RAM, 1TB SSD, Wireless Peripherals)",
+      category: "Enterprise Computing > All-In-One Desktops",
+      mrp: 99990,
+      price: 84990,
+      stock: 22,
       status: "PUBLISHED",
-      buyBox: "Active (98.1%)",
-      slug: "aerotech",
+      buyBox: "Active (98.4%)",
+      slug: "hisense-computers",
     },
     {
-      id: "prod-[#3]",
-      sku: "UT-TSHIRT-BLK-M",
-      title: "UrbanThreads 240 GSM Heavyweight Oversized French Terry T-Shirt",
-      category: "Apparel & Fashion > Men's Apparel",
-      mrp: 2499,
-      price: 1499,
-      stock: 45,
+      id: "prod-hisense-elitedesk",
+      sku: "HC-ED-R9-64G",
+      title: "Hisense EliteDesk Tower Enterprise PC (AMD Ryzen 9 7900X, 64GB DDR5 ECC, 2TB Gen4 SSD, Windows 11 Pro Enterprise)",
+      category: "Enterprise Computing > Business Towers",
+      mrp: 145000,
+      price: 124500,
+      stock: 8,
       status: "PUBLISHED",
       buyBox: "Active (100%)",
-      slug: "urbanstyle",
+      slug: "hisense-computers",
+    },
+    {
+      id: "prod-hisense-ultraview34",
+      sku: "HC-UV34-WQHD-165",
+      title: "Hisense UltraView 34-Inch Curved WQHD USB-C Ergonomic Hub Monitor (3440x1440, 165Hz, 90W PD, 99% DCI-P3)",
+      category: "Enterprise Computing > Ergonomic Monitors",
+      mrp: 46990,
+      price: 38990,
+      stock: 35,
+      status: "PUBLISHED",
+      buyBox: "Active (99.5%)",
+      slug: "hisense-computers",
+    },
+    {
+      id: "prod-hisense-micropro",
+      sku: "HC-MP-I5-16G",
+      title: "Hisense MicroPro Fanless Mini PC (Intel Core i5-1335U, 16GB DDR4, 512GB PCIe SSD, Triple 4K Display Out)",
+      category: "Enterprise Computing > Mini PCs",
+      mrp: 36990,
+      price: 29990,
+      stock: 25,
+      status: "PUBLISHED",
+      buyBox: "Active (97.8%)",
+      slug: "hisense-computers",
+    },
+    {
+      id: "prod-hisense-combo",
+      sku: "HC-KBMS-PRO-RGB",
+      title: "Hisense Mechanical RGB Ergonomic Hot-Swappable Office Keyboard & Precision Laser Mouse Combo",
+      category: "Enterprise Computing > Peripherals",
+      mrp: 6990,
+      price: 4990,
+      stock: 50,
+      status: "PUBLISHED",
+      buyBox: "Active (99.8%)",
+      slug: "hisense-computers",
     },
   ]);
 
@@ -72,10 +108,15 @@ export const SellerCatalogSuite = ({
       <div className="rounded-[8px] border border-indigo-100 bg-gradient-to-r from-indigo-50/80 via-white to-slate-50 p-4 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-[#404d85] text-white flex items-center justify-center font-bold text-lg shrink-0">
-            🏪
+            🖥️
           </div>
           <div>
-            <h4 className="font-bold text-xs text-slate-900">Your Live Multi-Vendor Storefront</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="font-bold text-xs text-slate-900">Hisense Computers — Live Storefront</h4>
+              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                bhaskeradv1@gmail.com
+              </span>
+            </div>
             <p className="text-[11px] text-slate-500 font-mono">
               https://theofficeconnect.com/store/{storeSlug}
             </p>

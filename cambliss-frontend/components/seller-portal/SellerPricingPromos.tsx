@@ -11,48 +11,48 @@ export const SellerPricingPromos = ({
   const [promos] = useState([
     {
       id: "PR-102",
-      code: "SONYFEST2000",
-      type: "Flat ₹2,000 Off",
-      minOrder: 20000,
-      claims: 184,
+      code: "HISENSEPC5000",
+      type: "Flat ₹5,000 Off on Workstations",
+      minOrder: 80000,
+      claims: 42,
       status: "Active",
     },
     {
       id: "PR-103",
-      code: "EARBUD10",
-      type: "10% Instant Discount",
-      minOrder: 15000,
-      claims: 92,
+      code: "HISENSEMONITOR10",
+      type: "10% Instant Discount on Displays",
+      minOrder: 30000,
+      claims: 78,
       status: "Active",
     },
   ]);
 
   return (
-    <div className="rounded-[8px] border border-slate-200 bg-white p-5 sm:p-6 space-y-6 shadow-2xs select-none text-xs">
+    <div className="rounded-[8px] border border-slate-200 bg-white p-5 sm:p-6 space-y-6 shadow-2xs select-none text-xs font-sans text-slate-900">
       
       {/* 1. PRICING */}
       {viewType === "pricing" && (
         <div className="space-y-4">
           <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
             <div>
-              <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
+              <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
                 Automated Buy Box & Pricing Intelligence
               </h3>
               <p className="text-xs text-slate-500">Monitor competitor offers and automatically match lowest winning Buy Box price</p>
             </div>
-            <span className="px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 font-black text-xs">
-              👑 96.4% Buy Box Win Rate
+            <span className="px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 font-bold text-xs">
+              👑 99.1% Buy Box Win Rate
             </span>
           </div>
 
           <div className="p-4 rounded bg-slate-50 border border-slate-200 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-900">Sony WH-1000XM5 Wireless Headphones</span>
-              <strong className="text-slate-900 font-mono">{formatINR(29990)} (Buy Box Winner)</strong>
+              <span className="font-bold text-slate-900">Hisense VisionBook Pro 16 AI Workstation Laptop</span>
+              <strong className="text-slate-900 font-mono">{formatINR(149990)} (Buy Box Winner)</strong>
             </div>
             <div className="flex items-center justify-between text-slate-500 text-[11px]">
-              <span>Next Lowest Competitor: AudioTech India ({formatINR(30499)})</span>
-              <span className="text-emerald-700 font-bold">Your price is ₹509 lower</span>
+              <span>Next Lowest Competitor: NexGen Systems India ({formatINR(154990)})</span>
+              <span className="text-emerald-700 font-bold">Your price is ₹5,000 lower</span>
             </div>
           </div>
         </div>
@@ -100,10 +100,10 @@ export const SellerPricingPromos = ({
       {viewType === "store" && (
         <div className="space-y-4">
           <div className="pb-3 border-b border-slate-100">
-            <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
-              Brand Flagship Storefront Builder
+            <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
+              Hisense Computers Storefront Builder
             </h3>
-            <p className="text-xs text-slate-500">Customize your verified brand page, hero graphics, and category showcases</p>
+            <p className="text-xs text-slate-500">Customize your verified brand page, hero graphics, and hardware showcases</p>
           </div>
 
           <div className="p-4 rounded border bg-slate-50 space-y-3">
@@ -111,7 +111,7 @@ export const SellerPricingPromos = ({
               <label className="font-bold text-slate-700 block mb-1">Brand Tagline</label>
               <input
                 type="text"
-                defaultValue="For The Music • World-Class Audio & Imaging Technology"
+                defaultValue="High-Performance Enterprise Computing, AI Workstations & 4K Displays"
                 className="w-full px-3 py-1.5 border rounded bg-white font-bold text-slate-900"
               />
             </div>
@@ -119,13 +119,13 @@ export const SellerPricingPromos = ({
               <label className="font-bold text-slate-700 block mb-1">Hero Banner Image URL</label>
               <input
                 type="text"
-                defaultValue="https://images.unsplash.com/photo-1505740420928-5e560c06d30e"
+                defaultValue="https://images.unsplash.com/photo-1550745165-9bc0b252726f"
                 className="w-full px-3 py-1.5 border rounded bg-white font-mono text-[11px]"
               />
             </div>
             <button
               type="button"
-              onClick={() => alert("Storefront visual settings updated!")}
+              onClick={() => alert("Hisense Computers visual storefront settings updated!")}
               className="px-4 py-2 bg-[#404d85] text-white font-bold rounded text-xs"
             >
               Save Storefront Layout
@@ -138,8 +138,8 @@ export const SellerPricingPromos = ({
       {viewType === "settings" && (
         <div className="space-y-4">
           <div className="pb-3 border-b border-slate-100">
-            <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
-              Merchant Settings & Compliance
+            <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
+              Merchant Settings & Compliance (bhaskeradv1@gmail.com)
             </h3>
             <p className="text-xs text-slate-500">Manage KYB documentation, bank accounts, and warehouse logistics nodes</p>
           </div>
@@ -147,8 +147,10 @@ export const SellerPricingPromos = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="p-4 rounded border bg-slate-50 space-y-2">
               <span className="font-bold text-slate-800 block text-xs">KYB & Tax Credentials</span>
-              <p className="text-slate-600 text-[11px]">GSTIN: <strong>29AABCU9603R1ZM</strong> (Verified)</p>
-              <p className="text-slate-600 text-[11px]">PAN: <strong>AABCU9603R</strong> (Verified)</p>
+              <p className="text-slate-600 text-[11px]">Entity: <strong>Hisense Computers & Systems India Pvt Ltd</strong></p>
+              <p className="text-slate-600 text-[11px]">Contact: <strong>bhaskeradv1@gmail.com</strong></p>
+              <p className="text-slate-600 text-[11px]">GSTIN: <strong>29AAACH8921K1Z5</strong> (Verified)</p>
+              <p className="text-slate-600 text-[11px]">PAN: <strong>AAACH8921K</strong> (Verified)</p>
               <span className="inline-block px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
                 ✓ 5-Stage KYB Gold Approved
               </span>
@@ -159,6 +161,9 @@ export const SellerPricingPromos = ({
               <p className="text-slate-600 text-[11px]">Bank: <strong>HDFC Bank Limited</strong></p>
               <p className="text-slate-600 text-[11px]">A/C Number: <strong>50200088910482</strong></p>
               <p className="text-slate-600 text-[11px]">IFSC Code: <strong>HDFC0000240</strong></p>
+              <span className="inline-block px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold text-[10px]">
+                ⚡ Automated Daily T+1 Escrow Settlement
+              </span>
             </div>
           </div>
         </div>
@@ -168,16 +173,16 @@ export const SellerPricingPromos = ({
       {viewType === "inventory" && (
         <div className="space-y-4">
           <div className="pb-3 border-b border-slate-100">
-            <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
-              Warehouse Inventory & Safety Stock
+            <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
+              Hardware Warehouse Inventory & Safety Stock
             </h3>
             <p className="text-xs text-slate-500">Real-time stock monitoring and reorder alerts</p>
           </div>
 
-          <div className="p-4 rounded bg-red-50 border border-red-200 space-y-2">
-            <h5 className="font-black text-red-900">⚠️ 4 SKUs Below Reorder Safety Stock</h5>
-            <p className="text-red-800 text-[11px]">
-              Sony Alpha 7 IV Body (3 units left), Sony FE 24-70mm GM II Lens (2 units left). Reorder recommended to avoid Buy Box suppression.
+          <div className="p-4 rounded bg-amber-50 border border-amber-200 space-y-2">
+            <h5 className="font-bold text-amber-900">⚠️ 1 SKU Approaching Reorder Safety Stock</h5>
+            <p className="text-amber-800 text-[11px]">
+              Hisense EliteDesk Tower Enterprise PC (8 units left). Reorder recommended to maintain uninterrupted Buy Box win share.
             </p>
           </div>
         </div>

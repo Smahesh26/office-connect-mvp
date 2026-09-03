@@ -12,57 +12,57 @@ export const SellerDashboardHeroMetrics = ({
   const topProducts = [
     {
       id: "p1",
-      name: "Sony WH-1000XM5 Noise Canceling Headphones",
-      sku: "SONY-XM5-BLK",
-      unitsSold: 84,
-      revenue: 2519160,
-      stock: 24,
-      buyBoxRate: "99.4%",
+      name: "Hisense VisionBook Pro 16 AI Workstation Laptop",
+      sku: "HC-VB16-I9-4070",
+      unitsSold: 14,
+      revenue: 2099860,
+      stock: 18,
+      buyBoxRate: "99.1%",
     },
     {
       id: "p2",
-      name: "Sony WF-1000XM5 Truly Wireless Earbuds",
-      sku: "SONY-WF5-SLV",
-      unitsSold: 62,
-      revenue: 1487380,
-      stock: 18,
-      buyBoxRate: "98.1%",
+      name: "Hisense Infinity AIO 27\" 4K All-In-One Desktop PC",
+      sku: "HC-AIO27-I7-4K",
+      unitsSold: 18,
+      revenue: 1529820,
+      stock: 22,
+      buyBoxRate: "98.4%",
     },
     {
       id: "p3",
-      name: "Sony Alpha 7 IV Full-frame Mirrorless Camera",
-      sku: "SONY-A7M4-BODY",
-      unitsSold: 12,
-      revenue: 2903880,
-      stock: 3, // Low stock
-      buyBoxRate: "100%",
+      name: "Hisense UltraView 34-Inch Curved WQHD USB-C Monitor",
+      sku: "HC-UV34-WQHD-165",
+      unitsSold: 26,
+      revenue: 1013740,
+      stock: 35,
+      buyBoxRate: "99.5%",
     },
   ];
 
   const recentOrders = [
     {
-      orderId: "OC-89412",
-      customer: "Bhasker Anand (Cambliss Studio)",
-      items: "Sony WH-1000XM5 + WF-1000XM5",
-      amount: 53980,
+      orderId: "HC-90412",
+      customer: "Tech Lead, Enterprise Cloud (Bengaluru)",
+      items: "Hisense VisionBook Pro 16 (Core i9 / RTX 4070 / 32GB)",
+      amount: 149990,
       status: "Ready to Ship",
       statusColor: "bg-amber-50 text-amber-800 border-amber-200",
-      time: "15 mins ago",
+      time: "18 mins ago",
     },
     {
-      orderId: "OC-89408",
-      customer: "Kavita R. (Bengaluru)",
-      items: "Sony WH-1000XM5 (Platinum Silver)",
-      amount: 29990,
+      orderId: "HC-90408",
+      customer: "TCS Systems Architecture Team (Hyderabad)",
+      items: "Hisense Infinity AIO 27\" 4K Desktop Computer",
+      amount: 84990,
       status: "New Order",
       statusColor: "bg-blue-50 text-blue-800 border-blue-200",
-      time: "42 mins ago",
+      time: "45 mins ago",
     },
     {
-      orderId: "OC-89392",
-      customer: "Amitav S. (Mumbai)",
-      items: "Sony WF-1000XM5 Earbuds",
-      amount: 23990,
+      orderId: "HC-90392",
+      customer: "Rajesh V. (Delhi NCR)",
+      items: "Hisense UltraView 34\" Curved WQHD Monitor",
+      amount: 38990,
       status: "Shipped",
       statusColor: "bg-emerald-50 text-emerald-800 border-emerald-200",
       time: "2 hours ago",
@@ -70,47 +70,47 @@ export const SellerDashboardHeroMetrics = ({
   ];
 
   return (
-    <div className="space-y-6 select-none">
+    <div className="space-y-6 select-none font-sans text-slate-900">
       
       {/* 8-Card Hero Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         
         {/* 1. Today's Sales */}
         <div className="p-4 rounded-[8px] border border-slate-200 bg-white shadow-2xs space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
             Today&apos;s Sales
           </span>
-          <div className="text-xl sm:text-2xl font-black text-slate-900">
-            {formatINR(384950)}
+          <div className="text-xl sm:text-2xl font-bold text-slate-900">
+            {formatINR(184980)}
           </div>
-          <span className="text-[11px] font-bold text-emerald-700 block">
-            ↑ +14.2% vs yesterday
+          <span className="text-[11px] font-semibold text-emerald-700 block">
+            ↑ +18.4% vs yesterday
           </span>
         </div>
 
         {/* 2. Today's Orders */}
         <div className="p-4 rounded-[8px] border border-slate-200 bg-white shadow-2xs space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-            Today&apos;s Orders
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+            Today&apos;s Units
           </span>
-          <div className="text-xl sm:text-2xl font-black text-slate-900">
-            148 Orders
+          <div className="text-xl sm:text-2xl font-bold text-slate-900">
+            3 Systems
           </div>
-          <span className="text-[11px] font-bold text-slate-500 block">
-            92% dispatched within SLA
+          <span className="text-[11px] font-medium text-slate-500 block">
+            100% dispatched within SLA
           </span>
         </div>
 
         {/* 3. MTD Revenue */}
         <div className="p-4 rounded-[8px] border border-slate-200 bg-white shadow-2xs space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
             MTD Revenue
           </span>
-          <div className="text-xl sm:text-2xl font-black text-[#404d85]">
-            {formatINR(4820000)}
+          <div className="text-xl sm:text-2xl font-bold text-[#404d85]">
+            {formatINR(1488440)}
           </div>
-          <span className="text-[11px] font-bold text-emerald-700 block">
-            Target 96% achieved
+          <span className="text-[11px] font-semibold text-emerald-700 block">
+            28 systems & monitors sold
           </span>
         </div>
 
@@ -119,15 +119,15 @@ export const SellerDashboardHeroMetrics = ({
           onClick={onNavigateToOrders}
           className="p-4 rounded-[8px] border border-amber-300 bg-amber-50/50 hover:bg-amber-50 cursor-pointer shadow-2xs space-y-1 transition"
         >
-          <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 block flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center justify-between">
             <span>Pending Orders</span>
             <span className="px-1.5 py-0.2 rounded bg-amber-200 text-amber-900 font-bold text-[9px]">ACTION</span>
           </span>
-          <div className="text-xl sm:text-2xl font-black text-amber-900">
-            12 Awaiting Dispatch
+          <div className="text-xl sm:text-2xl font-bold text-amber-900">
+            2 Awaiting Dispatch
           </div>
-          <span className="text-[11px] font-bold text-amber-800 block">
-            Click to process labels →
+          <span className="text-[11px] font-medium text-amber-800 block">
+            Process labels & manifest →
           </span>
         </div>
 
@@ -136,14 +136,14 @@ export const SellerDashboardHeroMetrics = ({
           onClick={onNavigateToInventory}
           className="p-4 rounded-[8px] border border-slate-200 bg-white hover:border-red-300 cursor-pointer shadow-2xs space-y-1 transition"
         >
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
             Low Stock SKUs
           </span>
-          <div className="text-xl sm:text-2xl font-black text-red-600">
-            4 SKUs Low
+          <div className="text-xl sm:text-2xl font-bold text-red-600">
+            1 SKU Low
           </div>
-          <span className="text-[11px] font-bold text-slate-500 block">
-            Reorder threshold reached
+          <span className="text-[11px] font-medium text-slate-500 block">
+            Hisense EliteDesk (8 left)
           </span>
         </div>
 
