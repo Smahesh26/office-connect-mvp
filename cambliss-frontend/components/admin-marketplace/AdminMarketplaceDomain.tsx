@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatINR } from "@/components/commerce/CommercePrimitives";
+import { AdminSellerKybDesk } from "./AdminSellerKybDesk";
 
 export const AdminMarketplaceDomain = ({
   subView,
@@ -115,59 +116,7 @@ export const AdminMarketplaceDomain = ({
 
       {/* 2. SELLERS (KYB DESK) */}
       {subView === "sellers" && (
-        <div className="space-y-4">
-          <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
-            <div>
-              <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
-                Seller KYB & Merchant Compliance Desk ({sellers.length})
-              </h3>
-              <p className="text-xs text-slate-500">5-Stage verification gate for 3P merchants and 1P direct brands</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => alert("Exporting merchant KYB audit trail...")}
-              className="px-3 py-1.5 bg-slate-900 text-white font-bold rounded text-xs"
-            >
-              Export KYB Ledger
-            </button>
-          </div>
-
-          <div className="divide-y divide-slate-100">
-            {sellers.map((s) => (
-              <div key={s.id} className="py-4 space-y-2">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <span className="font-bold text-slate-900 text-sm">{s.name}</span>
-                    <span className="text-slate-500 pl-2">({s.brand} • {s.category})</span>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded font-black text-[10px] ${
-                    s.status === "Active"
-                      ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                      : "bg-amber-50 text-amber-800 border border-amber-200"
-                  }`}>
-                    {s.stage}
-                  </span>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-500">
-                  <span>GSTIN: <strong className="font-mono text-slate-800">{s.gstin}</strong> • PAN: <strong className="font-mono text-slate-800">{s.pan}</strong></span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-900">MTD Volume: {formatINR(s.gmv)}</span>
-                    {s.status === "Under Review" && (
-                      <button
-                        type="button"
-                        onClick={() => handleApproveSeller(s.id)}
-                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded text-xs"
-                      >
-                        ✓ Approve 5-Stage KYB
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <AdminSellerKybDesk />
       )}
 
       {/* 3. STORES */}
