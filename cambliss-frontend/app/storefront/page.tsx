@@ -10,6 +10,9 @@ import { StorefrontFeaturedBrands } from "@/components/storefront/StorefrontFeat
 import { StorefrontPersonalizedArea } from "@/components/storefront/StorefrontPersonalizedArea";
 import { ProductCard, ProductCardProps } from "@/components/commerce/CommercePrimitives";
 import { fetchCatalogProducts, ApiProduct } from "@/lib/catalog-api";
+import { useSearchParams } from "next/navigation";
+import { MerchantOnboardingStatusDesk } from "@/components/seller-portal/MerchantOnboardingStatusDesk";
+import { MerchantStorefrontAndUploadTab } from "@/components/seller-portal/MerchantStorefrontAndUploadTab";
 import WorkspaceShell from "@/components/WorkspaceShell";
 import Link from "next/link";
 
@@ -46,6 +49,67 @@ export default function StorefrontPage() {
 // 1. DASHBOARD MARKETPLACE VIEW (WITH LEFT SIDEBAR FILTERS)
 // =========================================================================
 function DashboardMarketplaceContent() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const [activeMarketplaceTab, setActiveMarketplaceTab] = useState<"browse" | "onboarding" | "store">(
+    tabParam === "onboarding" ? "onboarding" : tabParam === "store" ? "store" : "browse"
+  );
+  const [userEmail, setUserEmail] = useState<string>("bhaskeradv1@gmail.com");
+  const [merchantStatus, setMerchantStatus] = useState<"NOT_STARTED" | "PENDING_REVIEW" | "APPROVED">("PENDING_REVIEW");
+  const [customUploadedProducts, setCustomUploadedProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (tabParam === "onboarding") setActiveMarketplaceTab("onboarding");
+    else if (tabParam === "store") setActiveMarketplaceTab("store");
+    else if (tabParam === "browse") setActiveMarketplaceTab("browse");
+  }, [tabParam]);
+
+  useEffect(() => {
+    try {
+      const rawUser = localStorage.getItem("authUser");
+      if (rawUser) {
+        const parsed = JSON.parse(rawUser);
+        if (parsed.email) setUserEmail(parsed.email);
+      }
+    } catch (e) {}
+  }, []);
+
+  // Check merchant status
+  useEffect(() => {
+    try {
+      const statusKey = `officeconnect_merchant_status_${userEmail}`;
+      const stored = localStorage.getItem(statusKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setMerchantStatus(parsed.status === "Approved" ? "APPROVED" : "PENDING_REVIEW");
+      } else {
+        const allSubmitted = localStorage.getItem("officeconnect_submitted_applications");
+        if (allSubmitted) {
+          const list = JSON.parse(allSubmitted);
+          const found = list.find((a: any) => a.email === userEmail || (a.tradeName && a.tradeName.includes("Hisense")));
+          if (found) {
+            setMerchantStatus(found.status === "Approved" ? "APPROVED" : "PENDING_REVIEW");
+            return;
+          }
+        }
+        setMerchantStatus("PENDING_REVIEW");
+      }
+    } catch (e) {}
+  }, [userEmail, activeMarketplaceTab]);
+
+  // Load custom products from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("officeconnect_custom_products");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setCustomUploadedProducts(parsed);
+        }
+      }
+    } catch (e) {}
+  }, []);
+
   const [liveCatalogProducts, setLiveCatalogProducts] = useState<ApiProduct[]>([]);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
 
@@ -208,9 +272,30 @@ function DashboardMarketplaceContent() {
     },
   ];
 
+  // Combined products: custom merchant-uploaded products + master catalog
+  const combinedProductsList = useMemo(() => {
+    const formattedCustom = customUploadedProducts.map((cp: any) => ({
+      id: cp.id || `custom-${Date.now()}`,
+      title: cp.title || cp.name,
+      image: cp.image || cp.images?.[0] || "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80",
+      price: typeof cp.price === "number" ? cp.price : parseFloat(cp.price) || 0,
+      originalPrice: cp.originalPrice || cp.mrp ? parseFloat(cp.originalPrice || cp.mrp) : undefined,
+      sellerName: cp.sellerName || `${cp.brand || "Hisense Computers"} (${userEmail}) 👑`,
+      sellerTier: (cp.sellerTier === "verified" ? "verified" : cp.sellerTier === "new" ? "new" : "premium") as "verified" | "premium" | "new",
+      badge: cp.badge || "★ STOREFRONT LISTING",
+      rating: cp.rating || 4.9,
+      reviewsCount: cp.reviewsCount || 12,
+      category: cp.category || "Computing",
+      brand: cp.brand || "Hisense Computers",
+      stockQty: typeof cp.stockQty === "number" ? cp.stockQty : parseInt(cp.stockQty || "10", 10),
+    }));
+
+    return [...formattedCustom, ...masterProductsList];
+  }, [customUploadedProducts, masterProductsList, userEmail]);
+
   // Dynamic Filtering Logic
   const filteredProducts = useMemo(() => {
-    let result = masterProductsList.filter((p) => {
+    let result = combinedProductsList.filter((p) => {
       // 1. Category Filter
       if (selectedCategory !== "All" && p.category !== selectedCategory) return false;
       // 2. Brand Filter
@@ -252,7 +337,7 @@ function DashboardMarketplaceContent() {
     }
 
     return result;
-  }, [selectedCategory, selectedPriceRange, selectedBrand, selectedRating, onlyInStock, sortBy, searchQuery]);
+  }, [combinedProductsList, selectedCategory, selectedPriceRange, selectedBrand, selectedRating, onlyInStock, sortBy, searchQuery]);
 
   const resetFilters = () => {
     setSelectedCategory("All");
@@ -276,232 +361,340 @@ function DashboardMarketplaceContent() {
             <span className="text-slate-900 font-bold">Multi-Vendor Marketplace</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <span>🌐</span> Multi-Vendor Marketplace Catalog
+            <span>🌐</span> Office Connect Marketplace & Seller Central
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Browse verified products, direct-from-brand deals, and multi-vendor supplier listings with live Buy Box pricing.
+            Logged in as <strong className="text-slate-800">{userEmail}</strong> • Indian Multi-Vendor Ecosystem
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <Link
-            href="/vendor-dashboard"
-            className="px-3.5 py-1.5 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-semibold text-xs transition shadow-2xs flex items-center gap-1.5"
-          >
-            <span>🏪</span> Sell on Marketplace →
-          </Link>
-        </div>
-      </div>
-
-      {/* Top Search & Filter Bar Controls */}
-      <div className="p-3 bg-slate-50 border border-slate-200 rounded-[6px] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 w-full sm:w-auto flex-1 max-w-md">
-          <span className="text-slate-400">🔍</span>
-          <input
-            type="text"
-            placeholder="Search products, brands, or keywords..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-medium bg-white focus:border-[#404d85] focus:outline-hidden"
-          />
-        </div>
-
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-          <div className="flex items-center gap-1">
-            <span className="font-semibold text-slate-600">Sort By:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-2.5 py-1 border border-slate-200 rounded-[4px] text-xs font-semibold bg-white"
+          {merchantStatus === "APPROVED" ? (
+            <Link
+              href="/store/hisense-computers"
+              target="_blank"
+              className="px-3.5 py-1.5 rounded-[4px] bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition shadow-2xs flex items-center gap-1.5"
             >
-              <option value="recommended">Featured & Recommended</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="rating">Highest Rated</option>
-            </select>
-          </div>
-
-          <button
-            type="button"
-            onClick={resetFilters}
-            className="px-2.5 py-1 rounded border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs transition"
-          >
-            Reset Filters ↺
-          </button>
+              <span>🏪</span> View Live Storefront ↗
+            </Link>
+          ) : (
+            <button
+              onClick={() => setActiveMarketplaceTab("onboarding")}
+              className="px-3.5 py-1.5 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-semibold text-xs transition shadow-2xs flex items-center gap-1.5"
+            >
+              <span>📋</span> Merchant Verification Status →
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 2-COLUMN LAYOUT: LEFT SIDEBAR FILTERS & RIGHT PRODUCTS GRID */}
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
-        
-        {/* ========================================================================= */}
-        {/* LEFT SIDEBAR FILTER PANEL */}
-        {/* ========================================================================= */}
-        <aside className="w-full lg:w-64 shrink-0 rounded-[8px] border border-slate-200 bg-white p-4 space-y-6 shadow-2xs text-xs">
-          
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h3 className="font-semibold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <span>⚡</span> Marketplace Filters
-            </h3>
-            <span className="text-[10px] font-semibold text-slate-500">
-              {filteredProducts.length} Results
+      {/* THREE INTERACTIVE TABS */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-px overflow-x-auto">
+        <button
+          type="button"
+          onClick={() => setActiveMarketplaceTab("browse")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition border-b-2 whitespace-nowrap ${
+            activeMarketplaceTab === "browse"
+              ? "border-[#404d85] text-[#404d85] bg-indigo-50/50"
+              : "border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+          }`}
+        >
+          <span>🛍️</span>
+          <span>Browse Marketplace</span>
+          <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-200 text-slate-700 font-bold">
+            {filteredProducts.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveMarketplaceTab("onboarding")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition border-b-2 whitespace-nowrap ${
+            activeMarketplaceTab === "onboarding"
+              ? "border-[#404d85] text-[#404d85] bg-indigo-50/50"
+              : "border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+          }`}
+        >
+          <span>📋</span>
+          <span>Merchant Onboarding & KYB</span>
+          {merchantStatus === "APPROVED" ? (
+            <span className="ml-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200">
+              👑 Verified
             </span>
-          </div>
+          ) : merchantStatus === "PENDING_REVIEW" ? (
+            <span className="ml-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold border border-amber-200 animate-pulse">
+              ⏳ In Review (~2 Days)
+            </span>
+          ) : (
+            <span className="ml-1 px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 text-[10px] font-bold">
+              12 Steps
+            </span>
+          )}
+        </button>
 
-          {/* 1. CATEGORIES */}
-          <div className="space-y-2">
-            <h4 className="font-semibold text-[11px] text-slate-700 uppercase tracking-wider">Categories</h4>
-            <div className="space-y-1">
-              {["All", "Electronics", "Apparel", "Beauty", "Automotive", "Computing"].map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`w-full text-left px-2.5 py-1.5 rounded-[4px] transition text-xs font-medium flex items-center justify-between ${
-                    selectedCategory === cat
-                      ? "bg-slate-900 text-white font-semibold"
-                      : "text-slate-700 hover:bg-slate-100"
-                  }`}
-                >
-                  <span>{cat}</span>
-                  {selectedCategory === cat && <span>✓</span>}
-                </button>
-              ))}
-            </div>
-          </div>
+        <button
+          type="button"
+          onClick={() => setActiveMarketplaceTab("store")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition border-b-2 whitespace-nowrap ${
+            activeMarketplaceTab === "store"
+              ? "border-[#404d85] text-[#404d85] bg-indigo-50/50"
+              : "border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+          }`}
+        >
+          <span>🏪</span>
+          <span>Your Storefront & Products</span>
+          {merchantStatus === "APPROVED" ? (
+            <span className="ml-1 px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 text-[10px] font-bold">
+              Active Store
+            </span>
+          ) : (
+            <span className="ml-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-bold">
+              🔒 Verification Gate
+            </span>
+          )}
+        </button>
+      </div>
 
-          {/* 2. PRICE RANGE */}
-          <div className="space-y-2 pt-3 border-t border-slate-100">
-            <h4 className="font-semibold text-[11px] text-slate-700 uppercase tracking-wider">Price Range</h4>
-            <div className="space-y-1 font-medium text-slate-700">
-              {[
-                { id: "all", label: "All Prices" },
-                { id: "under-2k", label: "Under ₹2,000" },
-                { id: "2k-10k", label: "₹2,000 – ₹10,000" },
-                { id: "10k-50k", label: "₹10,000 – ₹50,000" },
-                { id: "50k-plus", label: "₹50,000+" },
-              ].map((range) => (
-                <label key={range.id} className="flex items-center gap-2 cursor-pointer py-1 px-1 hover:bg-slate-50 rounded">
-                  <input
-                    type="radio"
-                    name="priceRange"
-                    checked={selectedPriceRange === range.id}
-                    onChange={() => setSelectedPriceRange(range.id)}
-                    className="accent-[#404d85]"
-                  />
-                  <span>{range.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* 3. BRANDS */}
-          <div className="space-y-2 pt-3 border-t border-slate-100">
-            <h4 className="font-semibold text-[11px] text-slate-700 uppercase tracking-wider">Brand / Manufacturer</h4>
-            <select
-              value={selectedBrand}
-              onChange={(e) => setSelectedBrand(e.target.value)}
-              className="w-full px-2.5 py-1.5 border border-slate-200 rounded-[4px] text-xs font-medium bg-white"
-            >
-              <option value="All">All Verified Brands</option>
-              <option value="Hisense Computers">Hisense Computers 👑</option>
-              <option value="Dell">Dell</option>
-              <option value="Sony">Sony</option>
-              <option value="UrbanThreads">UrbanThreads</option>
-              <option value="Glow Beauty">Glow Beauty</option>
-              <option value="AutoCare">AutoCare</option>
-              <option value="AeroTech">AeroTech</option>
-            </select>
-          </div>
-
-          {/* 4. RATING FILTER */}
-          <div className="space-y-2 pt-3 border-t border-slate-100">
-            <h4 className="font-semibold text-[11px] text-slate-700 uppercase tracking-wider">Minimum Rating</h4>
-            <div className="space-y-1">
-              {[0, 4.5, 4.0].map((ratingVal) => (
-                <button
-                  key={ratingVal}
-                  type="button"
-                  onClick={() => setSelectedRating(ratingVal)}
-                  className={`w-full text-left px-2.5 py-1 rounded transition text-xs font-medium ${
-                    selectedRating === ratingVal
-                      ? "bg-amber-50 text-amber-900 font-semibold border border-amber-200"
-                      : "text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  {ratingVal === 0 ? "★ All Star Ratings" : `★ ${ratingVal} & Above`}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 5. IN STOCK TOGGLE */}
-          <div className="pt-3 border-t border-slate-100">
-            <label className="flex items-center justify-between cursor-pointer font-semibold text-slate-800">
-              <span>In-Stock Only</span>
+      {/* TAB 1: BROWSE MARKETPLACE */}
+      {activeMarketplaceTab === "browse" && (
+        <>
+          {/* Top Search & Filter Bar Controls */}
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-[6px] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 w-full sm:w-auto flex-1 max-w-md">
+              <span className="text-slate-400">🔍</span>
               <input
-                type="checkbox"
-                checked={onlyInStock}
-                onChange={(e) => setOnlyInStock(e.target.checked)}
-                className="w-4 h-4 accent-[#404d85] rounded cursor-pointer"
+                type="text"
+                placeholder="Search products, brands, or keywords..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-medium bg-white focus:border-[#404d85] focus:outline-hidden"
               />
-            </label>
-          </div>
+            </div>
 
-        </aside>
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+              <div className="flex items-center gap-1">
+                <span className="font-semibold text-slate-600">Sort By:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="px-2.5 py-1 border border-slate-200 rounded-[4px] text-xs font-semibold bg-white"
+                >
+                  <option value="recommended">Featured & Recommended</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="rating">Highest Rated</option>
+                </select>
+              </div>
 
-        {/* ========================================================================= */}
-        {/* RIGHT PRODUCTS CATALOG GRID */}
-        {/* ========================================================================= */}
-        <main className="flex-1 min-w-0 w-full space-y-4">
-          
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-600 pb-1">
-            <span>Showing {filteredProducts.length} Product(s)</span>
-            {selectedCategory !== "All" && (
-              <span className="bg-indigo-50 text-[#404d85] px-2 py-0.5 rounded font-semibold border border-indigo-100">
-                Filtered by Category: {selectedCategory}
-              </span>
-            )}
-          </div>
-
-          {filteredProducts.length === 0 ? (
-            <div className="rounded-[8px] border border-slate-200 bg-white p-12 text-center space-y-3">
-              <div className="text-4xl">🔍</div>
-              <h3 className="font-bold text-slate-900 text-sm">No Products Match Your Selected Filters</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Try adjusting your category, price range, or brand filters to view available marketplace items.
-              </p>
               <button
                 type="button"
                 onClick={resetFilters}
-                className="px-4 py-2 rounded bg-[#404d85] text-white font-semibold text-xs hover:bg-[#323d6a]"
+                className="px-2.5 py-1 rounded border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs transition"
               >
-                Reset All Filters
+                Reset Filters ↺
               </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-              {filteredProducts.map((p) => (
-                <ProductCard
-                  key={p.id}
-                  id={p.id}
-                  title={p.title}
-                  image={p.image}
-                  price={p.price}
-                  originalPrice={p.originalPrice}
-                  sellerName={p.sellerName}
-                  sellerTier={p.sellerTier}
-                  badge={p.badge}
-                  rating={p.rating}
-                  reviewsCount={p.reviewsCount}
-                />
-              ))}
-            </div>
-          )}
+          </div>
 
-        </main>
+          {/* 2-COLUMN LAYOUT: LEFT SIDEBAR FILTERS & RIGHT PRODUCTS GRID */}
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
+            
+            {/* LEFT SIDEBAR FILTER PANEL */}
+            <aside className="w-full lg:w-64 shrink-0 rounded-[8px] border border-slate-200 bg-white p-4 space-y-6 shadow-2xs text-xs">
+              
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 className="font-semibold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>⚡</span> Marketplace Filters
+                </h3>
+                <span className="text-[10px] font-semibold text-slate-500">
+                  {filteredProducts.length} Results
+                </span>
+              </div>
 
-      </div>
+              {/* 1. CATEGORIES */}
+              <div className="space-y-2">
+                <h4 className="font-semibold text-[11px] text-slate-700 uppercase tracking-wider">Categories</h4>
+                <div className="space-y-1">
+                  {["All", "Electronics", "Apparel", "Beauty", "Automotive", "Computing"].map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`w-full text-left px-2.5 py-1.5 rounded-[4px] transition text-xs font-medium flex items-center justify-between ${
+                        selectedCategory === cat
+                          ? "bg-slate-900 text-white font-semibold"
+                          : "text-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span>{cat}</span>
+                      {selectedCategory === cat && <span>✓</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 2. PRICE RANGE */}
+              <div className="space-y-2 pt-3 border-t border-slate-100">
+                <h4 className="font-semibold text-[11px] text-slate-700 uppercase tracking-wider">Price Range</h4>
+                <div className="space-y-1 font-medium text-slate-700">
+                  {[
+                    { id: "all", label: "All Prices" },
+                    { id: "under-2k", label: "Under ₹2,000" },
+                    { id: "2k-10k", label: "₹2,000 – ₹10,000" },
+                    { id: "10k-50k", label: "₹10,000 – ₹50,000" },
+                    { id: "50k-plus", label: "₹50,000+" },
+                  ].map((range) => (
+                    <label key={range.id} className="flex items-center gap-2 cursor-pointer py-1 px-1 hover:bg-slate-50 rounded">
+                      <input
+                        type="radio"
+                        name="priceRange"
+                        checked={selectedPriceRange === range.id}
+                        onChange={() => setSelectedPriceRange(range.id)}
+                        className="accent-[#404d85]"
+                      />
+                      <span>{range.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. BRANDS */}
+              <div className="space-y-2 pt-3 border-t border-slate-100">
+                <h4 className="font-semibold text-[11px] text-slate-700 uppercase tracking-wider">Brand / Manufacturer</h4>
+                <select
+                  value={selectedBrand}
+                  onChange={(e) => setSelectedBrand(e.target.value)}
+                  className="w-full px-2.5 py-1.5 border border-slate-200 rounded-[4px] text-xs font-medium bg-white"
+                >
+                  <option value="All">All Verified Brands</option>
+                  <option value="Hisense Computers">Hisense Computers 👑</option>
+                  <option value="Dell">Dell</option>
+                  <option value="Sony">Sony</option>
+                  <option value="UrbanThreads">UrbanThreads</option>
+                  <option value="Glow Beauty">Glow Beauty</option>
+                  <option value="AutoCare">AutoCare</option>
+                  <option value="AeroTech">AeroTech</option>
+                </select>
+              </div>
+
+              {/* 4. RATING FILTER */}
+              <div className="space-y-2 pt-3 border-t border-slate-100">
+                <h4 className="font-semibold text-[11px] text-slate-700 uppercase tracking-wider">Minimum Rating</h4>
+                <div className="space-y-1">
+                  {[0, 4.5, 4.0].map((ratingVal) => (
+                    <button
+                      key={ratingVal}
+                      type="button"
+                      onClick={() => setSelectedRating(ratingVal)}
+                      className={`w-full text-left px-2.5 py-1 rounded transition text-xs font-medium ${
+                        selectedRating === ratingVal
+                          ? "bg-amber-50 text-amber-900 font-semibold border border-amber-200"
+                          : "text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {ratingVal === 0 ? "★ All Star Ratings" : `★ ${ratingVal} & Above`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 5. IN STOCK TOGGLE */}
+              <div className="pt-3 border-t border-slate-100">
+                <label className="flex items-center justify-between cursor-pointer font-semibold text-slate-800">
+                  <span>In-Stock Only</span>
+                  <input
+                    type="checkbox"
+                    checked={onlyInStock}
+                    onChange={(e) => setOnlyInStock(e.target.checked)}
+                    className="w-4 h-4 accent-[#404d85] rounded cursor-pointer"
+                  />
+                </label>
+              </div>
+
+            </aside>
+
+            {/* RIGHT PRODUCTS CATALOG GRID */}
+            <main className="flex-1 min-w-0 w-full space-y-4">
+              
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-600 pb-1">
+                <span>Showing {filteredProducts.length} Product(s)</span>
+                {selectedCategory !== "All" && (
+                  <span className="bg-indigo-50 text-[#404d85] px-2 py-0.5 rounded font-semibold border border-indigo-100">
+                    Filtered by Category: {selectedCategory}
+                  </span>
+                )}
+              </div>
+
+              {filteredProducts.length === 0 ? (
+                <div className="rounded-[8px] border border-slate-200 bg-white p-12 text-center space-y-3">
+                  <div className="text-4xl">🔍</div>
+                  <h3 className="font-bold text-slate-900 text-sm">No Products Match Your Selected Filters</h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    Try adjusting your category, price range, or brand filters to view available marketplace items.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="px-4 py-2 rounded bg-[#404d85] text-white font-semibold text-xs hover:bg-[#323d6a]"
+                  >
+                    Reset All Filters
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                  {filteredProducts.map((p) => (
+                    <ProductCard
+                      key={p.id}
+                      id={p.id}
+                      title={p.title}
+                      image={p.image}
+                      price={p.price}
+                      originalPrice={p.originalPrice}
+                      sellerName={p.sellerName}
+                      sellerTier={p.sellerTier}
+                      badge={p.badge}
+                      rating={p.rating}
+                      reviewsCount={p.reviewsCount}
+                    />
+                  ))}
+                </div>
+              )}
+
+            </main>
+
+          </div>
+        </>
+      )}
+
+      {/* TAB 2: ONBOARDING & KYB VERIFICATION DESK */}
+      {activeMarketplaceTab === "onboarding" && (
+        <div className="pt-2">
+          <MerchantOnboardingStatusDesk
+            userEmail={userEmail}
+            onNavigateToStore={() => setActiveMarketplaceTab("store")}
+            onNavigateToBrowse={() => setActiveMarketplaceTab("browse")}
+          />
+        </div>
+      )}
+
+      {/* TAB 3: STOREFRONT & PRODUCT UPLOADER */}
+      {activeMarketplaceTab === "store" && (
+        <div className="pt-2">
+          <MerchantStorefrontAndUploadTab
+            isVerified={merchantStatus === "APPROVED"}
+            userEmail={userEmail}
+            onNavigateToOnboarding={() => setActiveMarketplaceTab("onboarding")}
+            onProductAdded={(newProduct) => {
+              setCustomUploadedProducts((prev) => [newProduct, ...prev]);
+              try {
+                const current = JSON.parse(localStorage.getItem("officeconnect_custom_products") || "[]");
+                localStorage.setItem("officeconnect_custom_products", JSON.stringify([newProduct, ...current]));
+              } catch (e) {}
+            }}
+          />
+        </div>
+      )}
+
     </div>
   );
 }

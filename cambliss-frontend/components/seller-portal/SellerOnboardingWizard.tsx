@@ -236,7 +236,17 @@ const STEPS = [
 
 const LOCAL_STORAGE_KEY = "officeconnect_merchant_onboarding_draft";
 
-export const SellerOnboardingWizard = () => {
+export interface SellerOnboardingWizardProps {
+  initialEmail?: string;
+  initialStoreName?: string;
+  onSubmitted?: (application: any) => void;
+}
+
+export const SellerOnboardingWizard = ({
+  initialEmail,
+  initialStoreName,
+  onSubmitted,
+}: SellerOnboardingWizardProps = {}) => {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [formData, setFormData] = useState<OnboardingFormState>(INITIAL_FORM_STATE);
@@ -252,11 +262,22 @@ export const SellerOnboardingWizard = () => {
       if (saved) {
         const parsed = JSON.parse(saved);
         setFormData((prev) => ({ ...prev, ...parsed }));
+      } else {
+        if (initialEmail || initialStoreName) {
+          setFormData((prev) => ({
+            ...prev,
+            email: initialEmail || prev.email,
+            storeName: initialStoreName || prev.storeName,
+            storeSlug: initialStoreName
+              ? initialStoreName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+              : prev.storeSlug,
+          }));
+        }
       }
     } catch (e) {
       console.warn("Could not load onboarding draft from localStorage", e);
     }
-  }, []);
+  }, [initialEmail, initialStoreName]);
 
   // Auto-save draft on data changes
   useEffect(() => {
@@ -363,9 +384,18 @@ export const SellerOnboardingWizard = () => {
           const list = JSON.parse(stored);
           list.unshift(payload);
           localStorage.setItem("officeconnect_submitted_applications", JSON.stringify(list));
+          localStorage.setItem(`officeconnect_merchant_status_${payload.email}`, JSON.stringify({
+            status: "Pending Review",
+            applicationId: appId,
+            submittedAt: new Date().toISOString(),
+            payload,
+          }));
           localStorage.removeItem(LOCAL_STORAGE_KEY);
         } catch (err) {}
 
+        if (onSubmitted) {
+          onSubmitted(payload);
+        }
         setSubmissionSuccess(true);
       } else {
         const data = await res.json().catch(() => ({}));
@@ -380,7 +410,16 @@ export const SellerOnboardingWizard = () => {
         const list = JSON.parse(stored);
         list.unshift(payload);
         localStorage.setItem("officeconnect_submitted_applications", JSON.stringify(list));
+        localStorage.setItem(`officeconnect_merchant_status_${payload.email}`, JSON.stringify({
+          status: "Pending Review",
+          applicationId: appId,
+          submittedAt: new Date().toISOString(),
+          payload,
+        }));
       } catch (err) {}
+      if (onSubmitted) {
+        onSubmitted(payload);
+      }
       setSubmissionSuccess(true);
     } finally {
       setIsSubmitting(false);

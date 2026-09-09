@@ -85,7 +85,16 @@ const clientMenuItems: SidebarItem[] = [
 	{ label: "Accountech ERP", href: "/akaunting" },
 	{ label: "File Sharing", href: "/file-sharing", accessKey: "FILE_SHARING" },
 	{ label: "Video Connect", href: "/video-connect" },
-	{ label: "Marketplace", href: "/storefront", badge: "Live" },
+	{
+		label: "Marketplace",
+		href: "/storefront",
+		badge: "Live",
+		subItems: [
+			{ label: "Browse Catalog", href: "/storefront?tab=browse" },
+			{ label: "Merchant Onboarding", href: "/storefront?tab=onboarding" },
+			{ label: "Your Storefront & Catalog", href: "/storefront?tab=store" },
+		],
+	},
 	{ label: "Tools Suite", href: "/tools" },
 	{ label: "Profile Completion", href: "/profile-completion" },
 	{ label: "User Management", href: "/user-management", accessKey: "USER_MANAGEMENT" },
@@ -115,7 +124,16 @@ const adminMenuItems: SidebarItem[] = [
 	{ label: "Accountech ERP", href: "/akaunting" },
 	{ label: "File Sharing", href: "/file-sharing" },
 	{ label: "Video Connect", href: "/video-connect" },
-	{ label: "Marketplace", href: "/storefront", badge: "Live" },
+	{
+		label: "Marketplace",
+		href: "/storefront",
+		badge: "Live",
+		subItems: [
+			{ label: "Browse Catalog", href: "/storefront?tab=browse" },
+			{ label: "Merchant Onboarding", href: "/storefront?tab=onboarding" },
+			{ label: "Your Storefront & Catalog", href: "/storefront?tab=store" },
+		],
+	},
 	{ label: "Tools Suite", href: "/tools" },
 	{ label: "User Management", href: "/user-management" },
 ];
