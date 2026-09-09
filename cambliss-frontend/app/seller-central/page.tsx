@@ -79,6 +79,38 @@ export default function SellerCentralPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/60 select-none">
+      {/* Top Brand & Utility Header */}
+      <header className="sticky top-0 z-30 bg-slate-950/85 backdrop-blur-md border-b border-white/10 px-4 sm:px-8 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/storefront" className="flex items-center gap-2 group">
+              <img src="/officeconnectlogo.png" alt="Office Connect" className="h-8 w-auto object-contain brightness-0 invert" />
+              <span className="hidden sm:inline px-2.5 py-0.5 rounded-full bg-violet-900/60 border border-violet-500/40 text-violet-300 text-[10px] font-black uppercase tracking-wider">
+                Seller Central
+              </span>
+            </Link>
+          </div>
+          <div className="flex items-center gap-3 text-xs">
+            <Link href="/storefront" className="text-slate-300 hover:text-white transition font-medium hidden sm:inline">
+              ← Storefront Catalog
+            </Link>
+            <span className="text-slate-600 hidden sm:inline">|</span>
+            <Link
+              href="/vendor-dashboard"
+              className="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold transition"
+            >
+              Seller Sign In
+            </Link>
+            <Link
+              href="/seller-central/onboarding"
+              className="px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-black transition shadow-sm"
+            >
+              Register as Seller
+            </Link>
+          </div>
+        </div>
+      </header>
+
       {/* 1. HIGH-IMPACT HERO */}
       <section className="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white pt-16 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="absolute inset-0 bg-[radial-gradient(#6366f1_1px,transparent_1px)] [background-size:24px_24px] opacity-20 pointer-events-none" />

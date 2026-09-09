@@ -67,13 +67,13 @@ export const StorefrontPersonalizedArea = () => {
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <Link
-            href="/login"
+            href="/seller-central"
             className="px-5 py-2.5 rounded-[6px] bg-[#404d85] text-white font-bold text-xs hover:bg-[#323d6a] transition"
           >
             Sign In to Account
           </Link>
           <Link
-            href="/storefront/signup?mode=customer"
+            href="/seller-central"
             className="px-5 py-2.5 rounded-[6px] border border-slate-300 bg-white text-slate-800 font-bold text-xs hover:bg-slate-50 transition"
           >
             Create Account

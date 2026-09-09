@@ -4,6 +4,20 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  async redirects() {
+    return [
+      {
+        source: "/storefront/signup",
+        destination: "/seller-central",
+        permanent: false,
+      },
+      {
+        source: "/storefront/register",
+        destination: "/seller-central",
+        permanent: false,
+      },
+    ];
+  },
   async rewrites() {
     const backendOrigin = process.env.BACKEND_ORIGIN || process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:5000";
 

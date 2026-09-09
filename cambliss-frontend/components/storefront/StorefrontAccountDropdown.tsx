@@ -59,27 +59,27 @@ export const StorefrontAccountDropdown = () => {
               <span className="text-slate-600 block text-[11px]">Sign in for personalized orders & addresses</span>
               <div className="grid grid-cols-2 gap-2">
                 <Link
-                  href="/login"
+                  href="/seller-central"
                   onClick={() => setIsOpen(false)}
                   className="py-2 px-2.5 rounded-[6px] bg-[#404d85] text-white font-bold text-xs hover:bg-[#323d6a] text-center transition shadow-2xs"
                 >
                   Sign In
                 </Link>
                 <Link
-                  href="/storefront/signup?mode=customer"
+                  href="/seller-central"
                   onClick={() => setIsOpen(false)}
                   className="py-2 px-2.5 rounded-[6px] bg-white border border-slate-300 text-slate-800 font-bold text-xs hover:bg-slate-50 text-center transition"
                 >
-                  Buyer Register
+                  Register
                 </Link>
               </div>
               <Link
-                href="/storefront/signup?mode=seller"
+                href="/seller-central"
                 onClick={() => setIsOpen(false)}
                 className="w-full py-1.5 px-2 rounded-[6px] bg-amber-50 border border-amber-200 text-amber-900 font-bold text-[11px] hover:bg-amber-100 flex items-center justify-center gap-1.5 transition block"
               >
                 <span>🏬</span>
-                <span>Become a Seller (0% Listing Fee) →</span>
+                <span>Sell on Office Connect (0% Fee) →</span>
               </Link>
             </div>
           )}
@@ -161,12 +161,12 @@ export const StorefrontAccountDropdown = () => {
               Marketplace Portals
             </span>
             <Link
-              href="/seller-central/onboarding"
+              href="/seller-central"
               onClick={() => setIsOpen(false)}
               className="flex items-center justify-between px-2.5 py-1.5 rounded bg-violet-50 hover:bg-violet-100/70 text-violet-900 font-bold"
             >
-              <span>📋 Merchant Onboarding</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-200/60 text-violet-800 font-extrabold">12 Steps</span>
+              <span>📋 Sell on Office Connect</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-200/60 text-violet-800 font-extrabold">Seller Hub</span>
             </Link>
             <Link
               href="/vendor-dashboard"
