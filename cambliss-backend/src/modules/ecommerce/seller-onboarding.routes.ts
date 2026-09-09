@@ -51,7 +51,7 @@ export interface MerchantOnboardingApplication {
 }
 
 // In-memory store initialized with realistic seeded Indian seller applications
-const applicationsStore: MerchantOnboardingApplication[] = [
+export const applicationsStore: MerchantOnboardingApplication[] = [
   {
     id: "app-oc-001",
     applicationId: "OC-KYB-2026-8841",

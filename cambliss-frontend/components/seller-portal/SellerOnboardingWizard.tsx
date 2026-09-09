@@ -263,6 +263,25 @@ export const SellerOnboardingWizard = ({
         const parsed = JSON.parse(saved);
         setFormData((prev) => ({ ...prev, ...parsed }));
       } else {
+        const rawUser = localStorage.getItem("authUser");
+        if (rawUser) {
+          try {
+            const u = JSON.parse(rawUser);
+            if (u.email) {
+              setFormData((prev) => ({
+                ...prev,
+                email: u.email || prev.email,
+                ownerName: u.name || prev.ownerName,
+                storeName: u.tradeName || prev.storeName,
+                phone: u.phone || prev.phone,
+                isOtpVerified: Boolean(u.role === "SELLER" || prev.isOtpVerified),
+                storeSlug: u.tradeName
+                  ? u.tradeName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+                  : prev.storeSlug,
+              }));
+            }
+          } catch (e) {}
+        }
         if (initialEmail || initialStoreName) {
           setFormData((prev) => ({
             ...prev,

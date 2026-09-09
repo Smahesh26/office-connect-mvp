@@ -279,7 +279,7 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
 	};
 
 	useEffect(() => {
-		const isPublicPath = pathname.startsWith("/video-connect/room/") || pathname === "/storefront" || pathname.startsWith("/product/") || pathname.startsWith("/store/") || pathname.startsWith("/category/") || pathname.startsWith("/brand/") || pathname === "/cart" || pathname === "/categories" || pathname === "/search" || pathname === "/wishlist" || pathname === "/checkout" || pathname === "/orders" || pathname === "/tools" || pathname.startsWith("/tools");
+		const isPublicPath = pathname.startsWith("/video-connect/room/") || pathname.startsWith("/storefront") || pathname.startsWith("/seller-central") || pathname.startsWith("/product/") || pathname.startsWith("/store/") || pathname.startsWith("/category/") || pathname.startsWith("/brand/") || pathname === "/cart" || pathname === "/categories" || pathname === "/search" || pathname === "/wishlist" || pathname === "/checkout" || pathname === "/orders" || pathname === "/tools" || pathname.startsWith("/tools");
 		const token = localStorage.getItem("authToken");
 
 		if (!token && !isPublicPath) {

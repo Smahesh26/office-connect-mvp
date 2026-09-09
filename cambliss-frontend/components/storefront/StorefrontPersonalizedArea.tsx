@@ -73,7 +73,7 @@ export const StorefrontPersonalizedArea = () => {
             Sign In to Account
           </Link>
           <Link
-            href="/register"
+            href="/storefront/signup?mode=customer"
             className="px-5 py-2.5 rounded-[6px] border border-slate-300 bg-white text-slate-800 font-bold text-xs hover:bg-slate-50 transition"
           >
             Create Account

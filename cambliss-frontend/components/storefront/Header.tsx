@@ -91,18 +91,18 @@ export function StorefrontHeader() {
       {mobileMenuOpen && (
         <nav className="md:hidden border-t border-[var(--border)] bg-white px-4 py-3 space-y-1">
           <Link
-            href="/login"
+            href="/storefront/signup?mode=customer"
             className="block py-2 text-[14px] text-[var(--body)] hover:text-[var(--ink)]"
             onClick={() => setMobileMenuOpen(false)}
           >
-            Sign In / Register
+            Buyer Register / Sign In
           </Link>
           <Link
-            href="/seller-central"
-            className="block py-2 text-[14px] text-[var(--body)] hover:text-[var(--ink)]"
+            href="/seller-central/onboarding"
+            className="block py-2 text-[14px] text-[var(--body)] hover:text-[var(--ink)] font-semibold text-amber-700"
             onClick={() => setMobileMenuOpen(false)}
           >
-            Sell on Office Connect
+            Sell on Office Connect (Merchant Onboarding) →
           </Link>
         </nav>
       )}

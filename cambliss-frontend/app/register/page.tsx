@@ -282,6 +282,14 @@ export default function RegisterPage() {
 								Already have an account?{" "}
 									<a href={nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : "/login"} className="font-semibold text-[#404d85] hover:underline">Log in</a>
 							</p>
+							<div className="mt-4 pt-4 border-t border-[#d9e2ef] text-center">
+								<p className="text-xs text-[#5b6472]">
+									Want to sell products or open a storefront?{" "}
+									<a href="/storefront/signup?mode=seller" className="font-bold text-[#404d85] hover:underline">
+										Register as Merchant →
+									</a>
+								</p>
+							</div>
 						</div>
 
 						<div className="relative hidden overflow-hidden rounded-[24px] border border-line bg-gradient-to-br from-[#f8faff] to-[#eef2fa] p-8 lg:block">

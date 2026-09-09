@@ -180,15 +180,31 @@ export const StorefrontMobileDrawer = ({
 
         </div>
 
-        {/* Footer Merchant Callout */}
+        {/* Footer Merchant & Auth Callouts */}
         <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-2">
           <Link
-            href="/vendor-dashboard"
+            href="/seller-central/onboarding"
             onClick={onClose}
             className="w-full py-2 px-3 rounded-[6px] bg-[#404d85] hover:bg-[#323d6a] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition"
           >
-            <span>🏬</span> Seller Portal Access
+            <span>🏬</span> Start Selling / Merchant Onboarding
           </Link>
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              href="/storefront/signup?mode=customer"
+              onClick={onClose}
+              className="py-1.5 px-2 rounded-[6px] border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-[11px] font-bold text-center transition"
+            >
+              Buyer Register
+            </Link>
+            <Link
+              href="/login"
+              onClick={onClose}
+              className="py-1.5 px-2 rounded-[6px] border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-[11px] font-bold text-center transition"
+            >
+              Sign In
+            </Link>
+          </div>
         </div>
 
       </div>
