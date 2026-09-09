@@ -1,3 +1,5 @@
+"use client";
+
 import { AdminMarketplaceGovernanceDesk, GovernanceTab } from "./AdminMarketplaceGovernanceDesk";
 
 export const AdminFinanceDomain = ({
