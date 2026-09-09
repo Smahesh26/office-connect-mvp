@@ -217,7 +217,7 @@ export const SellerFeeCalculator = ({
                     }}
                     className={`px-2 py-0.5 rounded text-[10px] font-bold transition ${
                       sellingPrice === preset
-                        ? "bg-violet-600 text-white"
+                        ? "bg-[#404d85] text-white shadow-2xs"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                   >
@@ -236,7 +236,7 @@ export const SellerFeeCalculator = ({
                 value={sellingPrice || ""}
                 onChange={(e) => setSellingPrice(Number(e.target.value))}
                 placeholder="e.g. 2499"
-                className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-extrabold text-base focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none transition"
+                className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-extrabold text-base focus:ring-2 focus:ring-[#404d85] focus:border-[#404d85] outline-none transition"
               />
             </div>
           </div>
@@ -250,7 +250,7 @@ export const SellerFeeCalculator = ({
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full appearance-none pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-bold text-xs sm:text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none cursor-pointer transition"
+                className="w-full appearance-none pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-bold text-xs sm:text-sm focus:ring-2 focus:ring-[#404d85] focus:border-[#404d85] outline-none cursor-pointer transition"
               >
                 {Object.entries(CATEGORY_FEE_RATES).map(([catKey, catVal]) => (
                   <option key={catKey} value={catKey}>
@@ -294,16 +294,16 @@ export const SellerFeeCalculator = ({
                   onClick={() => setFulfillment(m.id as any)}
                   className={`p-2.5 rounded-xl text-left border transition flex flex-col justify-between ${
                     fulfillment === m.id
-                      ? "border-violet-600 bg-violet-50/70 shadow-xs ring-1 ring-violet-500"
+                      ? "border-[#404d85] bg-[#eef2ff] shadow-xs ring-1 ring-[#404d85]"
                       : "border-slate-200 bg-white hover:border-slate-300"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-extrabold text-xs text-slate-900">{m.name}</span>
                     <span
-                      className={`text-[9px] font-black px-1.5 py-0.2 rounded ${
+                      className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
                         fulfillment === m.id
-                          ? "bg-violet-600 text-white"
+                          ? "bg-[#404d85] text-white"
                           : "bg-slate-100 text-slate-500"
                       }`}
                     >
@@ -356,7 +356,7 @@ export const SellerFeeCalculator = ({
                     step="50"
                     value={weightGrams}
                     onChange={(e) => setWeightGrams(Math.max(100, Number(e.target.value)))}
-                    className="w-full px-3 py-1.5 bg-white rounded-lg border border-slate-300 text-xs font-bold text-slate-800 focus:ring-1 focus:ring-violet-500 outline-none"
+                    className="w-full px-3 py-1.5 bg-white rounded-lg border border-slate-300 text-xs font-bold text-slate-800 focus:ring-1 focus:ring-[#404d85] outline-none"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">
                     {weightGrams < 1000 ? `${weightGrams}g` : `${(weightGrams / 1000).toFixed(1)}kg`}
@@ -391,18 +391,18 @@ export const SellerFeeCalculator = ({
                 value={cogs || ""}
                 onChange={(e) => setCogs(Number(e.target.value))}
                 placeholder="Product manufacturing / purchase cost"
-                className="w-full pl-7 pr-3 py-2 rounded-xl border border-slate-300 text-slate-800 font-bold text-xs focus:ring-1 focus:ring-violet-500 outline-none"
+                className="w-full pl-7 pr-3 py-2 rounded-xl border border-slate-300 text-slate-800 font-bold text-xs focus:ring-1 focus:ring-[#404d85] outline-none"
               />
             </div>
           </div>
         </div>
 
         {/* Right Output & Receipt (5 Cols) */}
-        <div className="lg:col-span-5 flex flex-col justify-between rounded-xl bg-gradient-to-b from-slate-900 to-slate-950 text-white p-5 sm:p-6 shadow-lg border border-slate-800">
+        <div className="lg:col-span-5 flex flex-col justify-between rounded-2xl bg-gradient-to-br from-[#1b223c] via-[#242e54] to-[#344070] text-white p-5 sm:p-6 shadow-xl border border-white/10">
           <div>
             {/* Top Settlement Highlight */}
-            <div className="pb-4 border-b border-slate-800/80">
-              <span className="text-[10px] font-black uppercase tracking-widest text-violet-400 block mb-1">
+            <div className="pb-4 border-b border-white/10">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#a5b4fc] block mb-1">
                 Net Take-Home Bank Payout
               </span>
               <div className="flex items-baseline gap-2">
@@ -414,18 +414,18 @@ export const SellerFeeCalculator = ({
                   {((breakdown.netPayout / Math.max(1, breakdown.sellingPrice)) * 100).toFixed(0)}% of sale
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">
+              <p className="text-[11px] text-slate-300 mt-1">
                 Credited directly to your escrow bank account every 7 days.
               </p>
             </div>
 
             {/* Profit Margin Indicator if COGS provided */}
             {breakdown.cogs > 0 && (
-              <div className="mt-3 p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/60 flex items-center justify-between text-xs">
+              <div className="mt-3 p-2.5 rounded-lg bg-white/10 border border-white/10 flex items-center justify-between text-xs">
                 <span className="text-slate-300 font-medium">Estimated Net Profit:</span>
                 <span className="font-extrabold text-emerald-400">
                   ₹{Math.round(breakdown.netProfit).toLocaleString("en-IN")}{" "}
-                  <span className="text-[10px] text-slate-400">
+                  <span className="text-[10px] text-slate-300">
                     ({breakdown.profitMargin.toFixed(1)}% margin)
                   </span>
                 </span>
@@ -434,14 +434,14 @@ export const SellerFeeCalculator = ({
 
             {/* Detailed Deductions Line Items */}
             <div className="mt-4 space-y-2.5 text-xs">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-300 block">
                 Itemized Platform Deductions
               </span>
 
               {/* Referral Fee */}
-              <div className="flex items-center justify-between text-slate-300">
+              <div className="flex items-center justify-between text-slate-200">
                 <span className="flex items-center gap-1.5">
-                  <Percent className="w-3.5 h-3.5 text-violet-400" />
+                  <Percent className="w-3.5 h-3.5 text-[#a5b4fc]" />
                   Referral Fee ({breakdown.referralRate}%)
                 </span>
                 <span className="font-mono font-bold text-slate-200">
