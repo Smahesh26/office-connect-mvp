@@ -342,7 +342,7 @@ router.get("/", (req: Request, res: Response) => {
  */
 router.get("/:id", (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const app = applicationsStore.find(
       (a) => a.id === id || a.applicationId.toLowerCase() === id.toLowerCase()
     );
@@ -373,7 +373,7 @@ router.get("/:id", (req: Request, res: Response) => {
  */
 router.patch("/:id/status", (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const { status, notes } = req.body;
 
     if (!status || !["Approved", "Rejected", "Pending Review"].includes(status)) {
