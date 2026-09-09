@@ -317,7 +317,7 @@ export const MerchantStorefrontAndUploadTab = ({
           { label: "Active Listings", val: `${products.length} SKUs`, sub: "Live on marketplace & store" },
           { label: "Total Inventory Units", val: `${products.reduce((acc, p) => acc + (p.stockQty || 0), 0)} Units`, sub: "Easy Ship warehouse stock" },
           { label: "30-Day GMV Volume", val: "₹2,73,970", sub: "Buy Box orders" },
-          { label: "Escrow Settlement", val: "7-Day Payout", sub: "HDFC Bank Verified ✓" },
+          { label: "Escrow Settlement", val: "7-Day Payout", sub: "Razorpay Virtual A/C Active ✓" },
         ].map((m, idx) => (
           <div key={idx} className="p-4 rounded-xl border border-slate-200 bg-white shadow-2xs space-y-0.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">{m.label}</span>
@@ -325,6 +325,70 @@ export const MerchantStorefrontAndUploadTab = ({
             <span className="text-[10px] text-slate-500 block">{m.sub}</span>
           </div>
         ))}
+      </div>
+
+      {/* RAZORPAY VIRTUAL ACCOUNT & SETTLEMENT ESCROW CARD */}
+      <div className="rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50/70 via-white to-indigo-50/40 p-5 space-y-4 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-indigo-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[#404d85] text-white flex items-center justify-center font-bold text-sm shadow-xs">
+              🏦
+            </div>
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                <span>Razorpay Dedicated Virtual Account & Escrow Settlement</span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[9px] border border-emerald-200">
+                  AUTOMATED PAYOUTS
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500">
+                All customer payments are routed through your isolated virtual account with 7-day return cooling & double-entry ledger tracking.
+              </p>
+            </div>
+          </div>
+          <span className="text-[11px] font-bold text-slate-600 font-mono bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
+            VA ID: va_hisense_8819
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
+          <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
+            <span className="text-[10px] text-slate-400 font-bold uppercase block">Virtual Account Number</span>
+            <strong className="text-sm font-mono font-black text-slate-900 block">OCHISENSE9021</strong>
+            <span className="text-[10px] text-slate-500 block">IFSC: RAZR0000001</span>
+          </div>
+
+          <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
+            <span className="text-[10px] text-slate-400 font-bold uppercase block">Virtual UPI Handle</span>
+            <strong className="text-sm font-mono font-black text-indigo-700 block">hisense.officeconnect@icici</strong>
+            <span className="text-[10px] text-slate-500 block">Instant customer split transfer</span>
+          </div>
+
+          <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
+            <span className="text-[10px] text-slate-400 font-bold uppercase block">Net Settled to Bank</span>
+            <strong className="text-sm font-black text-emerald-700 block">₹1,24,900</strong>
+            <span className="text-[10px] text-emerald-600 font-semibold block">HDFC Bank A/C ...9284 ✓</span>
+          </div>
+
+          <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
+            <span className="text-[10px] text-slate-400 font-bold uppercase block">In 7-Day Return Escrow</span>
+            <strong className="text-sm font-black text-amber-700 block">₹46,746</strong>
+            <span className="text-[10px] text-amber-600 font-semibold block">Releases upon return window expiry</span>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-indigo-100 text-[11px] text-slate-500">
+          <div className="flex items-center gap-3">
+            <span>Marketplace Commission Take-Rate: <strong className="text-slate-800 font-bold">7.5%</strong></span>
+            <span>•</span>
+            <span>GST on Commission: <strong className="text-slate-800 font-bold">18% (Automated Invoiced)</strong></span>
+            <span>•</span>
+            <span>TCS Withholding: <strong className="text-slate-800 font-bold">1% (Sec 52 CGST)</strong></span>
+          </div>
+          <span className="text-[10px] font-semibold text-[#404d85]">
+            Immutable Financial Ledger Governed ✓
+          </span>
+        </div>
       </div>
 
       {/* Products Catalog Table */}
