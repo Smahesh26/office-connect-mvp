@@ -29,6 +29,7 @@ import {
   Trash2,
   Send,
   Eye,
+  EyeOff,
 } from "lucide-react";
 import { SellerFeeCalculator } from "./SellerFeeCalculator";
 
@@ -254,6 +255,7 @@ export const SellerOnboardingWizard = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submissionSuccess, setSubmissionSuccess] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   // Load draft from localStorage on mount
   useEffect(() => {
@@ -655,13 +657,23 @@ export const SellerOnboardingWizard = ({
                   <label className="text-xs font-bold text-slate-700 block mb-1">
                     Merchant Portal Password <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => updateForm({ password: e.target.value })}
-                    placeholder="Minimum 8 characters"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-violet-500 outline-none"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) => updateForm({ password: e.target.value })}
+                      placeholder="Minimum 8 characters"
+                      className="w-full px-3.5 pr-11 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-violet-500 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 hover:text-violet-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div>

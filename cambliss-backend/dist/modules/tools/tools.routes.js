@@ -292,6 +292,199 @@ toolsRouter.post("/convert/txt-to-pptx", multer_1.upload.single("file"), (req, r
     catch (error) {
         handleToolsError(res, error);
     }
+}));
+toolsRouter.post("/pdf/split", multer_1.upload.single("file"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
+    try {
+        if (!req.file) {
+            res.status(400).json({ message: "file is required" });
+            return;
+        }
+        const pages = String((_b = (_a = req.body) === null || _a === void 0 ? void 0 : _a.pages) !== null && _b !== void 0 ? _b : "");
+        const result = yield (0, tools_service_1.splitPdfFile)(req.file, pages);
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleToolsError(res, error);
+    }
+    finally {
+        yield cleanupUploadedFiles([req.file]);
+    }
+}));
+toolsRouter.post("/pdf/compress", multer_1.upload.single("file"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!req.file) {
+            res.status(400).json({ message: "file is required" });
+            return;
+        }
+        const result = yield (0, tools_service_1.compressPdfFile)(req.file);
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleToolsError(res, error);
+    }
+    finally {
+        yield cleanupUploadedFiles([req.file]);
+    }
+}));
+toolsRouter.post("/image/upscale", multer_1.upload.single("file"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
+    try {
+        if (!req.file) {
+            res.status(400).json({ message: "file is required" });
+            return;
+        }
+        const result = yield (0, tools_service_1.upscaleImageFile)(req.file, String((_b = (_a = req.body) === null || _a === void 0 ? void 0 : _a.scale) !== null && _b !== void 0 ? _b : "2"));
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleToolsError(res, error);
+    }
+    finally {
+        yield cleanupUploadedFiles([req.file]);
+    }
+}));
+toolsRouter.post("/image/remove-background", multer_1.upload.single("file"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c, _d;
+    try {
+        if (!req.file) {
+            res.status(400).json({ message: "file is required" });
+            return;
+        }
+        const result = yield (0, tools_service_1.removeImageBackgroundAdvanced)(req.file, String((_b = (_a = req.body) === null || _a === void 0 ? void 0 : _a.tolerance) !== null && _b !== void 0 ? _b : "42"), String((_d = (_c = req.body) === null || _c === void 0 ? void 0 : _c.mode) !== null && _d !== void 0 ? _d : "auto"));
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleToolsError(res, error);
+    }
+    finally {
+        yield cleanupUploadedFiles([req.file]);
+    }
+}));
+toolsRouter.post("/convert/pdf-to-docx", multer_1.upload.single("file"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!req.file) {
+            res.status(400).json({ message: "file is required" });
+            return;
+        }
+        const result = yield (0, tools_service_1.convertPdfToDocx)(req.file);
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleToolsError(res, error);
+    }
+    finally {
+        yield cleanupUploadedFiles([req.file]);
+    }
+}));
+toolsRouter.post("/convert/docx-to-pdf", multer_1.upload.single("file"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!req.file) {
+            res.status(400).json({ message: "file is required" });
+            return;
+        }
+        const result = yield (0, tools_service_1.convertDocxToPdf)(req.file);
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleToolsError(res, error);
+    }
+    finally {
+        yield cleanupUploadedFiles([req.file]);
+    }
+}));
+toolsRouter.post("/convert/xlsx-to-csv", multer_1.upload.single("file"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!req.file) {
+            res.status(400).json({ message: "file is required" });
+            return;
+        }
+        const result = yield (0, tools_service_1.convertXlsxToCsv)(req.file);
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleToolsError(res, error);
+    }
+    finally {
+        yield cleanupUploadedFiles([req.file]);
+    }
+}));
+toolsRouter.post("/convert/csv-to-xlsx", multer_1.upload.single("file"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!req.file) {
+            res.status(400).json({ message: "file is required" });
+            return;
+        }
+        const result = yield (0, tools_service_1.convertCsvToXlsx)(req.file);
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleToolsError(res, error);
+    }
+    finally {
+        yield cleanupUploadedFiles([req.file]);
+    }
+}));
+toolsRouter.post("/convert/pdf-to-txt", multer_1.upload.single("file"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!req.file) {
+            res.status(400).json({ message: "file is required" });
+            return;
+        }
+        const result = yield (0, tools_service_1.convertPdfToTxt)(req.file);
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleToolsError(res, error);
+    }
+    finally {
+        yield cleanupUploadedFiles([req.file]);
+    }
+}));
+toolsRouter.post("/convert/txt-to-docx", multer_1.upload.single("file"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!req.file) {
+            res.status(400).json({ message: "file is required" });
+            return;
+        }
+        const result = yield (0, tools_service_1.convertTxtToDocx)(req.file);
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleToolsError(res, error);
+    }
+    finally {
+        yield cleanupUploadedFiles([req.file]);
+    }
+}));
+toolsRouter.post("/convert/pptx-to-txt", multer_1.upload.single("file"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!req.file) {
+            res.status(400).json({ message: "file is required" });
+            return;
+        }
+        const result = yield (0, tools_service_1.convertPptxToTxt)(req.file);
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleToolsError(res, error);
+    }
+    finally {
+        yield cleanupUploadedFiles([req.file]);
+    }
+}));
+toolsRouter.post("/convert/txt-to-pptx", multer_1.upload.single("file"), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!req.file) {
+            res.status(400).json({ message: "file is required" });
+            return;
+        }
+        const result = yield (0, tools_service_1.convertTxtToPptx)(req.file);
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleToolsError(res, error);
+    }
     finally {
         yield cleanupUploadedFiles([req.file]);
     }

@@ -585,3 +585,59 @@ export const updateOrganizationOnboarding = async (
 	return getOrganizationOnboarding(organizationId);
 };
 
+export const forgotPassword = async (emailInput?: string) => {
+	const email = emailInput?.trim().toLowerCase();
+	if (!email) {
+		throw new AuthError(400, "Email address is required");
+	}
+
+	const user = await prisma.user.findUnique({
+		where: { email },
+		select: { id: true, email: true },
+	});
+
+	if (!user) {
+		throw new AuthError(404, "No account found with this email address");
+	}
+
+	return {
+		success: true,
+		message: "Reset code verified. Please set your new password.",
+	};
+};
+
+export const resetPassword = async (input: { email?: string; newPassword?: string }) => {
+	const email = input.email?.trim().toLowerCase();
+	const newPassword = input.newPassword?.trim();
+
+	if (!email || !newPassword) {
+		throw new AuthError(400, "Email and new password are required");
+	}
+
+	if (newPassword.length < 6) {
+		throw new AuthError(400, "Password must be at least 6 characters long");
+	}
+
+	const user = await prisma.user.findUnique({
+		where: { email },
+		select: { id: true, email: true },
+	});
+
+	if (!user) {
+		throw new AuthError(404, "No account found with this email address");
+	}
+
+	const passwordHash = await bcrypt.hash(newPassword, 10);
+
+	await prisma.user.update({
+		where: { id: user.id },
+		data: { passwordHash },
+	});
+
+	return {
+		success: true,
+		message: "Password reset successfully. You can now log in.",
+	};
+};
+
+

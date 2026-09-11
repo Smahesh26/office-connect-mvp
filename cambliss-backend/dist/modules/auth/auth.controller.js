@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateMyOrganizationOnboardingController = exports.getMyOrganizationOnboardingController = exports.clearMyOrganizationController = exports.updateMyOrganizationController = exports.meController = exports.logoutController = exports.loginController = exports.getSsoTokenController = exports.verifyFirebasePhoneController = exports.verifyRegisterOtpController = exports.sendRegisterOtpController = exports.registerController = void 0;
+exports.resetPasswordController = exports.forgotPasswordController = exports.updateMyOrganizationOnboardingController = exports.getMyOrganizationOnboardingController = exports.clearMyOrganizationController = exports.updateMyOrganizationController = exports.meController = exports.logoutController = exports.loginController = exports.getSsoTokenController = exports.verifyFirebasePhoneController = exports.verifyRegisterOtpController = exports.sendRegisterOtpController = exports.registerController = void 0;
 const auth_service_1 = require("./auth.service");
 const mobile_otp_service_1 = require("./mobile-otp.service");
 const firebase_auth_service_1 = require("./firebase-auth.service");
@@ -219,3 +219,24 @@ const updateMyOrganizationOnboardingController = (req, res) => __awaiter(void 0,
     }
 });
 exports.updateMyOrganizationOnboardingController = updateMyOrganizationOnboardingController;
+const forgotPasswordController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const result = yield (0, auth_service_1.forgotPassword)((_a = req.body) === null || _a === void 0 ? void 0 : _a.email);
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleAuthError(res, error);
+    }
+});
+exports.forgotPasswordController = forgotPasswordController;
+const resetPasswordController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield (0, auth_service_1.resetPassword)(req.body);
+        res.status(200).json(result);
+    }
+    catch (error) {
+        handleAuthError(res, error);
+    }
+});
+exports.resetPasswordController = resetPasswordController;

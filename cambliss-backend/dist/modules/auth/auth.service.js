@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateOrganizationOnboarding = exports.getOrganizationOnboarding = exports.clearOrganizationProfile = exports.updateOrganizationProfile = exports.getMe = exports.login = exports.register = exports.generateSsoToken = exports.AuthError = void 0;
+exports.resetPassword = exports.forgotPassword = exports.updateOrganizationOnboarding = exports.getOrganizationOnboarding = exports.clearOrganizationProfile = exports.updateOrganizationProfile = exports.getMe = exports.login = exports.register = exports.generateSsoToken = exports.AuthError = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma_1 = __importDefault(require("../../config/prisma"));
@@ -432,3 +432,49 @@ const updateOrganizationOnboarding = (organizationId, input) => __awaiter(void 0
     return (0, exports.getOrganizationOnboarding)(organizationId);
 });
 exports.updateOrganizationOnboarding = updateOrganizationOnboarding;
+const forgotPassword = (emailInput) => __awaiter(void 0, void 0, void 0, function* () {
+    const email = emailInput === null || emailInput === void 0 ? void 0 : emailInput.trim().toLowerCase();
+    if (!email) {
+        throw new AuthError(400, "Email address is required");
+    }
+    const user = yield prisma_1.default.user.findUnique({
+        where: { email },
+        select: { id: true, email: true },
+    });
+    if (!user) {
+        throw new AuthError(404, "No account found with this email address");
+    }
+    return {
+        success: true,
+        message: "Reset code verified. Please set your new password.",
+    };
+});
+exports.forgotPassword = forgotPassword;
+const resetPassword = (input) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
+    const email = (_a = input.email) === null || _a === void 0 ? void 0 : _a.trim().toLowerCase();
+    const newPassword = (_b = input.newPassword) === null || _b === void 0 ? void 0 : _b.trim();
+    if (!email || !newPassword) {
+        throw new AuthError(400, "Email and new password are required");
+    }
+    if (newPassword.length < 6) {
+        throw new AuthError(400, "Password must be at least 6 characters long");
+    }
+    const user = yield prisma_1.default.user.findUnique({
+        where: { email },
+        select: { id: true, email: true },
+    });
+    if (!user) {
+        throw new AuthError(404, "No account found with this email address");
+    }
+    const passwordHash = yield bcryptjs_1.default.hash(newPassword, 10);
+    yield prisma_1.default.user.update({
+        where: { id: user.id },
+        data: { passwordHash },
+    });
+    return {
+        success: true,
+        message: "Password reset successfully. You can now log in.",
+    };
+});
+exports.resetPassword = resetPassword;

@@ -3,12 +3,14 @@ import { authenticateJWT } from "../../middleware/auth.middleware";
 import { createRateLimitMiddleware } from "../../middleware/rate-limit.middleware";
 import {
 	clearMyOrganizationController,
+	forgotPasswordController,
 	getMyOrganizationOnboardingController,
+	getSsoTokenController,
 	loginController,
 	logoutController,
 	meController,
-	getSsoTokenController,
 	registerController,
+	resetPasswordController,
 	sendRegisterOtpController,
 	verifyFirebasePhoneController,
 	updateMyOrganizationController,
@@ -24,6 +26,8 @@ authRouter.post("/register/otp/send", authRateLimit, sendRegisterOtpController);
 authRouter.post("/register/otp/verify", authRateLimit, verifyRegisterOtpController);
 authRouter.post("/register/firebase/verify", authRateLimit, verifyFirebasePhoneController);
 authRouter.post("/login", authRateLimit, loginController);
+authRouter.post("/forgot-password", authRateLimit, forgotPasswordController);
+authRouter.post("/reset-password", authRateLimit, resetPasswordController);
 authRouter.post("/logout", logoutController);
 authRouter.get("/me", authenticateJWT, meController);
 authRouter.get("/sso-token", authenticateJWT, getSsoTokenController);

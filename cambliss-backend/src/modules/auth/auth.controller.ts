@@ -2,10 +2,12 @@ import { Request, Response } from "express";
 import {
 	AuthError,
 	clearOrganizationProfile,
+	forgotPassword,
 	getMe,
 	getOrganizationOnboarding,
 	login,
 	register,
+	resetPassword,
 	generateSsoToken,
 	updateOrganizationOnboarding,
 	updateOrganizationProfile,
@@ -214,4 +216,23 @@ export const updateMyOrganizationOnboardingController = async (req: Request, res
 		handleAuthError(res, error);
 	}
 };
+
+export const forgotPasswordController = async (req: Request, res: Response): Promise<void> => {
+	try {
+		const result = await forgotPassword(req.body?.email);
+		res.status(200).json(result);
+	} catch (error) {
+		handleAuthError(res, error);
+	}
+};
+
+export const resetPasswordController = async (req: Request, res: Response): Promise<void> => {
+	try {
+		const result = await resetPassword(req.body);
+		res.status(200).json(result);
+	} catch (error) {
+		handleAuthError(res, error);
+	}
+};
+
 

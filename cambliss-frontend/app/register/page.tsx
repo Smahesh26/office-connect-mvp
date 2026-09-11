@@ -3,6 +3,7 @@
 import Image from "next/image";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ConfirmationResult, RecaptchaVerifier, getAuth, signInWithPhoneNumber } from "firebase/auth";
+import { Eye, EyeOff } from "lucide-react";
 import { firebaseApp, isFirebaseConfigured } from "../../lib/firebase";
 
 const getRoleFromToken = (token?: string | null): string | null => {
@@ -79,6 +80,7 @@ export default function RegisterPage() {
 	const [phone, setPhone] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
+	const [showPassword, setShowPassword] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [plans, setPlans] = useState<PlanSummary[]>([]);
@@ -256,15 +258,25 @@ export default function RegisterPage() {
 
 								<div>
 									<label className="mb-2 block text-sm font-medium text-[#5b6472]">Password</label>
-									<input
-										type="password"
-										required
-										minLength={6}
-										value={password}
-										onChange={(event) => setPassword(event.target.value)}
-										placeholder="At least 6 characters"
-										className="w-full rounded-xl border border-[#d9e2ef] bg-white px-4 py-2.5 text-sm text-[#1f2430] outline-none ring-0 transition focus:border-[#6678c1]"
-									/>
+									<div className="relative">
+										<input
+											type={showPassword ? "text" : "password"}
+											required
+											minLength={6}
+											value={password}
+											onChange={(event) => setPassword(event.target.value)}
+											placeholder="At least 6 characters"
+											className="w-full rounded-xl border border-[#d9e2ef] bg-white px-4 pr-11 py-2.5 text-sm text-[#1f2430] outline-none ring-0 transition focus:border-[#6678c1]"
+										/>
+										<button
+											type="button"
+											onClick={() => setShowPassword(!showPassword)}
+											aria-label={showPassword ? "Hide password" : "Show password"}
+											className="absolute inset-y-0 right-0 flex items-center px-3.5 text-zinc-400 transition hover:text-[#404d85]"
+										>
+											{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+										</button>
+									</div>
 								</div>
 
 								{error && <p className="text-sm text-red-600">{error}</p>}

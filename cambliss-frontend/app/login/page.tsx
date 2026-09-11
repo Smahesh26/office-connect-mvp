@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import React, { useEffect, useMemo, useState } from "react";
+import { Eye, EyeOff, ArrowLeft, KeyRound, CheckCircle2 } from "lucide-react";
 
 const getRoleFromToken = (token?: string | null): string | null => {
 	if (!token) {
@@ -75,6 +76,17 @@ export default function LoginPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [subscription, setSubscription] = useState<SubscriptionSnapshot | null>(null);
 	const [nextPath, setNextPath] = useState("");
+
+	const [showPassword, setShowPassword] = useState(false);
+	const [isForgotPassword, setIsForgotPassword] = useState(false);
+	const [forgotEmail, setForgotEmail] = useState("");
+	const [newPassword, setNewPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
+	const [showNewPassword, setShowNewPassword] = useState(false);
+	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+	const [forgotLoading, setForgotLoading] = useState(false);
+	const [forgotError, setForgotError] = useState<string | null>(null);
+	const [forgotSuccess, setForgotSuccess] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (typeof window === "undefined") {
@@ -192,6 +204,65 @@ export default function LoginPage() {
 		}
 	};
 
+	const handleResetPassword = async (event: React.FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		setForgotLoading(true);
+		setForgotError(null);
+		setForgotSuccess(null);
+
+		if (!forgotEmail) {
+			setForgotError("Please enter your registered email");
+			setForgotLoading(false);
+			return;
+		}
+
+		if (newPassword !== confirmPassword) {
+			setForgotError("Passwords do not match");
+			setForgotLoading(false);
+			return;
+		}
+
+		if (newPassword.length < 6) {
+			setForgotError("Password must be at least 6 characters long");
+			setForgotLoading(false);
+			return;
+		}
+
+		try {
+			const response = await fetch("/api/auth/reset-password", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					email: forgotEmail,
+					newPassword,
+				}),
+			});
+
+			const rawResponse = await response.text();
+			let data: any = null;
+
+			try {
+				data = rawResponse ? JSON.parse(rawResponse) : null;
+			} catch {
+				data = null;
+			}
+
+			if (!response.ok) {
+				throw new Error(data?.message || "Failed to reset password");
+			}
+
+			setForgotSuccess("Password updated successfully! You can now sign in with your new password.");
+			setEmail(forgotEmail);
+			setPassword(newPassword);
+		} catch (err: any) {
+			setForgotError(err.message || "Unable to reset password");
+		} finally {
+			setForgotLoading(false);
+		}
+	};
+
 	return (
 		<div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(154,183,219,0.14),transparent_36%),linear-gradient(180deg,#f8faff_0%,#eef2fa_48%,#edf2fa_100%)] px-4 py-8 lg:px-8">
 			<div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-7xl items-center justify-center">
@@ -199,59 +270,186 @@ export default function LoginPage() {
 					<div className="grid grid-cols-1 gap-3 rounded-[34px] border border-line bg-white p-3 lg:grid-cols-[380px_1fr]">
 						<div className="rounded-[24px] bg-white p-8 lg:p-12">
 							<div className="mb-8 flex flex-col items-center">
-									<img src="/officeconnectlogo.png" alt="Office Connect" className="h-12 w-auto object-contain" />
+								<img src="/officeconnectlogo.png" alt="Office Connect" className="h-12 w-auto object-contain" />
 								<div className="mt-8 w-full">
 									<p className="text-xs font-semibold uppercase tracking-[0.28em] text-brand">Workspace access</p>
-									<h1 className="mt-3 text-3xl font-semibold tracking-tight text-brand-strong">Welcome back</h1>
-									<p className="mt-2 text-sm leading-6 text-foreground-muted">Sign in to continue your workspace, trial, and module access.</p>
+									<h1 className="mt-3 text-3xl font-semibold tracking-tight text-brand-strong">
+										{isForgotPassword ? "Reset password" : "Welcome back"}
+									</h1>
+									<p className="mt-2 text-sm leading-6 text-foreground-muted">
+										{isForgotPassword
+											? "Enter your account email and choose a new password."
+											: "Sign in to continue your workspace, trial, and module access."}
+									</p>
 								</div>
 							</div>
 
-							<form onSubmit={handleLogin} className="space-y-4.5">
+							{isForgotPassword ? (
 								<div>
-									<label className="mb-2 block text-[13px] font-semibold text-foreground-muted">Email</label>
-									<input
-										type="email"
-										required
-										value={email}
-										onChange={(event) => setEmail(event.target.value)}
-										placeholder="you@company.com"
-										className="h-11 w-full rounded-[11px] border border-line bg-white px-4 text-sm text-foreground outline-none ring-0 transition focus:border-brand"
-									/>
-								</div>
+									<button
+										type="button"
+										onClick={() => {
+											setIsForgotPassword(false);
+											setForgotError(null);
+											setForgotSuccess(null);
+										}}
+										className="mb-4 inline-flex items-center gap-1.5 text-xs font-semibold text-foreground-muted transition hover:text-brand"
+									>
+										<ArrowLeft className="h-3.5 w-3.5" /> Back to Sign in
+									</button>
 
-								<div>
-									<div className="mb-2 flex items-center justify-between">
-										<label className="block text-[13px] font-semibold text-foreground-muted">Password</label>
-									</div>
-									<div className="relative">
+									{forgotSuccess ? (
+										<div className="space-y-4 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
+											<div className="flex items-start gap-3">
+												<CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+												<p className="text-sm font-medium text-emerald-800">{forgotSuccess}</p>
+											</div>
+											<button
+												type="button"
+												onClick={() => {
+													setIsForgotPassword(false);
+													setForgotSuccess(null);
+												}}
+												className="h-10 w-full rounded-[11px] bg-brand text-xs font-semibold text-white transition hover:bg-brand-strong"
+											>
+												Continue to Sign In
+											</button>
+										</div>
+									) : (
+										<form onSubmit={handleResetPassword} className="space-y-4">
+											<div>
+												<label className="mb-2 block text-[13px] font-semibold text-foreground-muted">Account Email</label>
+												<input
+													type="email"
+													required
+													value={forgotEmail}
+													onChange={(event) => setForgotEmail(event.target.value)}
+													placeholder="you@company.com"
+													className="h-11 w-full rounded-[11px] border border-line bg-white px-4 text-sm text-foreground outline-none ring-0 transition focus:border-brand"
+												/>
+											</div>
+
+											<div>
+												<label className="mb-2 block text-[13px] font-semibold text-foreground-muted">New Password</label>
+												<div className="relative">
+													<input
+														type={showNewPassword ? "text" : "password"}
+														required
+														minLength={6}
+														value={newPassword}
+														onChange={(event) => setNewPassword(event.target.value)}
+														placeholder="At least 6 characters"
+														className="h-11 w-full rounded-[11px] border border-line bg-white px-4 pr-11 text-sm text-foreground outline-none ring-0 transition focus:border-brand"
+													/>
+													<button
+														type="button"
+														onClick={() => setShowNewPassword(!showNewPassword)}
+														aria-label={showNewPassword ? "Hide password" : "Show password"}
+														className="absolute inset-y-0 right-0 flex items-center px-3.5 text-zinc-400 transition hover:text-brand"
+													>
+														{showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+													</button>
+												</div>
+											</div>
+
+											<div>
+												<label className="mb-2 block text-[13px] font-semibold text-foreground-muted">Confirm New Password</label>
+												<div className="relative">
+													<input
+														type={showConfirmPassword ? "text" : "password"}
+														required
+														minLength={6}
+														value={confirmPassword}
+														onChange={(event) => setConfirmPassword(event.target.value)}
+														placeholder="Re-enter new password"
+														className="h-11 w-full rounded-[11px] border border-line bg-white px-4 pr-11 text-sm text-foreground outline-none ring-0 transition focus:border-brand"
+													/>
+													<button
+														type="button"
+														onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+														aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+														className="absolute inset-y-0 right-0 flex items-center px-3.5 text-zinc-400 transition hover:text-brand"
+													>
+														{showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+													</button>
+												</div>
+											</div>
+
+											{forgotError && <p className="text-sm text-red-600">{forgotError}</p>}
+
+											<button
+												type="submit"
+												disabled={forgotLoading}
+												className="mt-1 h-11 w-full rounded-[11px] bg-brand text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-brand/40"
+											>
+												{forgotLoading ? "Resetting password..." : "Set New Password"}
+											</button>
+										</form>
+									)}
+								</div>
+							) : (
+								<form onSubmit={handleLogin} className="space-y-4.5">
+									<div>
+										<label className="mb-2 block text-[13px] font-semibold text-foreground-muted">Email</label>
 										<input
-											type="password"
+											type="email"
 											required
-											value={password}
-											onChange={(event) => setPassword(event.target.value)}
-											placeholder="Enter your password"
-											className="h-11 w-full rounded-[11px] border border-line bg-white px-4 pr-10 text-sm text-foreground outline-none ring-0 transition focus:border-brand"
+											value={email}
+											onChange={(event) => setEmail(event.target.value)}
+											placeholder="you@company.com"
+											className="h-11 w-full rounded-[11px] border border-line bg-white px-4 text-sm text-foreground outline-none ring-0 transition focus:border-brand"
 										/>
-										<span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-											<EyeIcon />
-										</span>
 									</div>
-									<div className="mt-2 text-right">
-										<a href="#" className="text-[12px] font-semibold text-foreground-muted hover:text-brand-strong">Forgot password?</a>
+
+									<div>
+										<div className="mb-2 flex items-center justify-between">
+											<label className="block text-[13px] font-semibold text-foreground-muted">Password</label>
+										</div>
+										<div className="relative">
+											<input
+												type={showPassword ? "text" : "password"}
+												required
+												value={password}
+												onChange={(event) => setPassword(event.target.value)}
+												placeholder="Enter your password"
+												className="h-11 w-full rounded-[11px] border border-line bg-white px-4 pr-11 text-sm text-foreground outline-none ring-0 transition focus:border-brand"
+											/>
+											<button
+												type="button"
+												onClick={() => setShowPassword(!showPassword)}
+												aria-label={showPassword ? "Hide password" : "Show password"}
+												className="absolute inset-y-0 right-0 flex items-center px-3.5 text-zinc-400 transition hover:text-brand"
+											>
+												{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+											</button>
+										</div>
+										<div className="mt-2 text-right">
+											<button
+												type="button"
+												onClick={() => {
+													setIsForgotPassword(true);
+													setForgotEmail(email);
+													setForgotError(null);
+													setForgotSuccess(null);
+												}}
+												className="text-[12px] font-semibold text-foreground-muted transition hover:text-brand-strong"
+											>
+												Forgot password?
+											</button>
+										</div>
 									</div>
-								</div>
 
-								{error && <p className="text-sm text-red-600">{error}</p>}
+									{error && <p className="text-sm text-red-600">{error}</p>}
 
-								<button
-									type="submit"
-									disabled={loading}
-									className="mt-1 h-11 w-full rounded-[11px] bg-brand text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-brand/40"
-								>
-									{loading ? "Signing in..." : "Sign in"}
-								</button>
-							</form>
+									<button
+										type="submit"
+										disabled={loading}
+										className="mt-1 h-11 w-full rounded-[11px] bg-brand text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:bg-brand/40"
+									>
+										{loading ? "Signing in..." : "Sign in"}
+									</button>
+								</form>
+							)}
 
 							<p className="mt-6 text-center text-[14px] text-foreground-muted">
 								Don&apos;t have an account?{" "}
