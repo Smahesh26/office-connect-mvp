@@ -371,6 +371,54 @@ export class CatalogService {
     this.sellerListings.push(newListing);
     return newListing;
   }
+
+  // 6. Update Canonical Master Product
+  public updateProduct(id: string, dto: Partial<CanonicalProductDTO>): CanonicalProductDTO | null {
+    const index = this.canonicalProducts.findIndex((p) => p.id === id || p.slug === id);
+    if (index === -1) {
+      return null;
+    }
+
+    const current = this.canonicalProducts[index];
+    const updated: CanonicalProductDTO = {
+      ...current,
+      ...dto,
+      id: current.id,
+      updatedAt: new Date(),
+    };
+
+    if (dto.title && !dto.slug) {
+      updated.slug = dto.title.toLowerCase().replace(/\s+/g, "-");
+    }
+
+    this.canonicalProducts[index] = updated;
+
+    if (dto.variants && dto.variants.length > 0) {
+      const listing = this.sellerListings.find((l) => l.productId === current.id);
+      if (listing) {
+        listing.variants = dto.variants as any;
+        listing.updatedAt = new Date();
+      }
+    }
+
+    return updated;
+  }
+
+  // 7. Delete Canonical Master Product
+  public deleteProduct(id: string): boolean {
+    const index = this.canonicalProducts.findIndex((p) => p.id === id || p.slug === id);
+    if (index === -1) {
+      return false;
+    }
+
+    const targetId = this.canonicalProducts[index].id;
+    this.canonicalProducts.splice(index, 1);
+
+    // Also remove associated seller listings
+    this.sellerListings = this.sellerListings.filter((l) => l.productId !== targetId);
+
+    return true;
+  }
 }
 
 export const catalogService = new CatalogService();

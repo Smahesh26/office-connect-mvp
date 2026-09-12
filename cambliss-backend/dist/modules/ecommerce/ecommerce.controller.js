@@ -47,6 +47,8 @@ exports.getListingById = getListingById;
 exports.getCategories = getCategories;
 exports.getStores = getStores;
 exports.getFeaturedListings = getFeaturedListings;
+exports.updateListing = updateListing;
+exports.deleteListing = deleteListing;
 const ecommerce_service_1 = require("./ecommerce.service");
 const service = new ecommerce_service_1.EcommerceService();
 // Default organization ID — in production this would come from
@@ -165,6 +167,40 @@ function getFeaturedListings(req, res) {
         catch (error) {
             console.error("[ecommerce] getFeaturedListings error:", error);
             res.status(500).json({ message: "Failed to fetch featured listings" });
+        }
+    });
+}
+function updateListing(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const listingId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+            const updated = yield service.updateListing(listingId, req.body);
+            if (!updated) {
+                res.status(404).json({ success: false, message: "Product listing not found" });
+                return;
+            }
+            res.json({ success: true, data: updated });
+        }
+        catch (error) {
+            console.error("[ecommerce] updateListing error:", error);
+            res.status(400).json({ success: false, message: error.message || "Failed to update product listing" });
+        }
+    });
+}
+function deleteListing(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const listingId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+            const deleted = yield service.deleteListing(listingId);
+            if (!deleted) {
+                res.status(404).json({ success: false, message: "Product listing not found" });
+                return;
+            }
+            res.json({ success: true, message: "Product listing removed successfully" });
+        }
+        catch (error) {
+            console.error("[ecommerce] deleteListing error:", error);
+            res.status(500).json({ success: false, message: error.message || "Failed to delete product listing" });
         }
     });
 }

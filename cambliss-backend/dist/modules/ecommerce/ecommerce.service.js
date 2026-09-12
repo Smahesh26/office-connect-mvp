@@ -270,5 +270,74 @@ class EcommerceService {
             });
         });
     }
+    /**
+     * Update an ecommerce product listing.
+     */
+    updateListing(listingId, updates, organizationId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const existing = yield prisma_1.default.productListing.findUnique({
+                where: { id: listingId },
+                include: { product: true },
+            });
+            if (!existing) {
+                return null;
+            }
+            if (organizationId && existing.organizationId !== organizationId) {
+                throw new Error("Unauthorized to edit this product listing");
+            }
+            if (updates.name || updates.description) {
+                yield prisma_1.default.product.update({
+                    where: { id: existing.productId },
+                    data: Object.assign(Object.assign(Object.assign({}, (updates.name ? { name: updates.name } : {})), (updates.description ? { description: updates.description } : {})), (updates.sellingPrice ? { unitPrice: new client_1.Prisma.Decimal(updates.sellingPrice) } : {})),
+                });
+            }
+            const listingUpdateData = {};
+            if (updates.sellingPrice !== undefined) {
+                listingUpdateData.sellingPrice = new client_1.Prisma.Decimal(updates.sellingPrice);
+            }
+            if (updates.description !== undefined) {
+                listingUpdateData.description = updates.description;
+            }
+            if (updates.categoryId !== undefined) {
+                listingUpdateData.category = updates.categoryId ? { connect: { id: updates.categoryId } } : { disconnect: true };
+            }
+            if (updates.images !== undefined) {
+                listingUpdateData.images = updates.images;
+            }
+            if (updates.isActive !== undefined) {
+                listingUpdateData.isActive = updates.isActive;
+            }
+            return prisma_1.default.productListing.update({
+                where: { id: listingId },
+                data: listingUpdateData,
+                include: {
+                    product: true,
+                    category: true,
+                    store: true,
+                },
+            });
+        });
+    }
+    /**
+     * Delete an ecommerce product listing (soft delete so orders don't break).
+     */
+    deleteListing(listingId, organizationId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const existing = yield prisma_1.default.productListing.findUnique({
+                where: { id: listingId },
+            });
+            if (!existing) {
+                return false;
+            }
+            if (organizationId && existing.organizationId !== organizationId) {
+                throw new Error("Unauthorized to delete this product listing");
+            }
+            yield prisma_1.default.productListing.update({
+                where: { id: listingId },
+                data: { isActive: false },
+            });
+            return true;
+        });
+    }
 }
 exports.EcommerceService = EcommerceService;

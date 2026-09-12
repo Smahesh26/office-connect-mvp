@@ -15,6 +15,11 @@ router.get("/listings/featured", ecommerce_controller_1.getFeaturedListings);
 router.get("/listings/:id", ecommerce_controller_1.getListingById);
 router.get("/categories", ecommerce_controller_1.getCategories);
 router.get("/stores", ecommerce_controller_1.getStores);
+// Merchant Product / Listing Management
+router.put("/listings/:id", ecommerce_controller_1.updateListing);
+router.delete("/listings/:id", ecommerce_controller_1.deleteListing);
+router.put("/products/:id", ecommerce_controller_1.updateListing);
+router.delete("/products/:id", ecommerce_controller_1.deleteListing);
 // Storefront Auth (Dedicated Merchant & Customer Registration/Login)
 router.use("/auth", storefront_auth_routes_1.default);
 // Merchant KYB & Seller Onboarding

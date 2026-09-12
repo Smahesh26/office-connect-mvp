@@ -9,7 +9,9 @@ router.get("/brands", (req, res) => catalog_controller_1.catalogController.getBr
 // Products & PDP
 router.get("/products", (req, res) => catalog_controller_1.catalogController.getProducts(req, res));
 router.get("/products/:identifier", (req, res) => catalog_controller_1.catalogController.getProductDetails(req, res));
-// Admin & Seller creation endpoints
+// Admin & Seller creation, update & delete endpoints
 router.post("/products", (req, res) => catalog_controller_1.catalogController.createMasterProduct(req, res));
+router.put("/products/:id", (req, res) => catalog_controller_1.catalogController.updateProduct(req, res));
+router.delete("/products/:id", (req, res) => catalog_controller_1.catalogController.deleteProduct(req, res));
 router.post("/listings", (req, res) => catalog_controller_1.catalogController.createSellerListing(req, res));
 exports.default = router;

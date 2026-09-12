@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { MarketplacePageWrapper } from "@/components/storefront/MarketplacePageWrapper";
 import { SellerHeroHeader, SellerProfileData } from "@/components/seller-storefront/SellerHeroHeader";
@@ -445,9 +445,6 @@ export default function DedicatedVendorStorePage({
   const resolvedParams = use(params);
   const vendorSlug = resolvedParams.slug.toLowerCase();
 
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-  const [inquiryText, setInquiryText] = useState("");
-
   const storeData = VENDOR_PROFILES[vendorSlug] || {
     seller: {
       id: `v-${vendorSlug}`,
@@ -486,6 +483,37 @@ export default function DedicatedVendorStorePage({
     ],
   };
 
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [inquiryText, setInquiryText] = useState("");
+  const [storeProducts, setStoreProducts] = useState<ProductCardProps[]>(storeData.products);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("officeconnect_custom_products");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0 && (vendorSlug === "hisense-computers" || vendorSlug === "hisense")) {
+          const formatted: ProductCardProps[] = parsed.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            brand: item.brand || "Hisense Computers",
+            price: Number(item.price),
+            originalPrice: Number(item.mrp || item.originalPrice || item.price * 1.2),
+            sellerName: item.sellerName || "Hisense Computers (bhaskeradv1@gmail.com)",
+            sellerTier: "premium",
+            rating: item.rating || 4.9,
+            reviewsCount: item.reviewsCount || 100,
+            stockQty: Number(item.stock !== undefined ? item.stock : (item.stockQty || 10)),
+            deliveryEstimate: "FREE Delivery by Tomorrow",
+            image: item.image || "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80",
+            badge: item.badge || "★ VERIFIED SELLER",
+          }));
+          setStoreProducts(formatted);
+        }
+      }
+    } catch (e) {}
+  }, [vendorSlug]);
+
   const handleSendInquiry = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inquiryText.trim()) return;
@@ -515,7 +543,7 @@ export default function DedicatedVendorStorePage({
 
         {/* 2. Vendor Storefront Navigation Tabs (Catalog, Deals, KYB & Policies) */}
         <SellerStorefrontTabs
-          products={storeData.products}
+          products={storeProducts}
           sellerName={storeData.seller.name}
           legalEntity={storeData.legalEntity}
           gstin={storeData.gstin}

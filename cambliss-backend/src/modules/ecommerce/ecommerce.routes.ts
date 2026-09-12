@@ -5,6 +5,8 @@ import {
   getCategories,
   getStores,
   getFeaturedListings,
+  updateListing,
+  deleteListing,
 } from "./ecommerce.controller";
 
 import sellerOnboardingRoutes from "./seller-onboarding.routes";
@@ -19,6 +21,12 @@ router.get("/listings/featured", getFeaturedListings);
 router.get("/listings/:id", getListingById);
 router.get("/categories", getCategories);
 router.get("/stores", getStores);
+
+// Merchant Product / Listing Management
+router.put("/listings/:id", updateListing);
+router.delete("/listings/:id", deleteListing);
+router.put("/products/:id", updateListing);
+router.delete("/products/:id", deleteListing);
 
 // Storefront Auth (Dedicated Merchant & Customer Registration/Login)
 router.use("/auth", storefrontAuthRoutes);

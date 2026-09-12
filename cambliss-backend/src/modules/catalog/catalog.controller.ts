@@ -75,6 +75,36 @@ export class CatalogController {
       res.status(400).json({ success: false, message: error.message });
     }
   }
+
+  // PUT /api/catalog/products/:id
+  public updateProduct(req: Request, res: Response): void {
+    try {
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const updated = catalogService.updateProduct(id as string, req.body);
+      if (!updated) {
+        res.status(404).json({ success: false, message: "Product not found to update" });
+        return;
+      }
+      res.json({ success: true, data: updated });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  // DELETE /api/catalog/products/:id
+  public deleteProduct(req: Request, res: Response): void {
+    try {
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const deleted = catalogService.deleteProduct(id as string);
+      if (!deleted) {
+        res.status(404).json({ success: false, message: "Product not found to delete" });
+        return;
+      }
+      res.json({ success: true, message: "Product deleted successfully" });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
 }
 
 export const catalogController = new CatalogController();

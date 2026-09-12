@@ -16,6 +16,7 @@ import {
   UploadCloud,
   Layers,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import { ProductCardProps, formatINR } from "@/components/commerce/CommercePrimitives";
 
@@ -197,13 +198,105 @@ export const MerchantStorefrontAndUploadTab = ({
     setTimeout(() => setToastMessage(null), 6000);
   };
 
-  const handleDeleteProduct = (id: string) => {
-    if (window.confirm("Remove this product listing from your storefront and marketplace?")) {
+  // Edit Product Modal States
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<CustomMerchantProduct | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editBrand, setEditBrand] = useState("");
+  const [editCategory, setEditCategory] = useState("Computing");
+  const [editPrice, setEditPrice] = useState("");
+  const [editMrp, setEditMrp] = useState("");
+  const [editStock, setEditStock] = useState("");
+  const [editSku, setEditSku] = useState("");
+  const [editHsn, setEditHsn] = useState("");
+  const [editImage, setEditImage] = useState("");
+
+  const handleOpenEdit = (p: CustomMerchantProduct) => {
+    setEditingProduct(p);
+    setEditTitle(p.title);
+    setEditBrand(p.brand || "Hisense Computers");
+    setEditCategory(p.category || "Computing");
+    setEditPrice(String(p.price));
+    setEditMrp(String(p.originalPrice || p.price * 1.2));
+    setEditStock(String(p.stockQty));
+    setEditSku(p.sku);
+    setEditHsn(p.hsn);
+    setEditImage(p.image);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct || !editTitle.trim()) return;
+
+    const priceNum = parseFloat(editPrice) || editingProduct.price;
+    const mrpNum = parseFloat(editMrp) || priceNum;
+    const stockNum = parseInt(editStock, 10) || 0;
+
+    const updatedList = products.map((p) => {
+      if (p.id === editingProduct.id) {
+        return {
+          ...p,
+          title: editTitle.trim(),
+          brand: editBrand.trim() || p.brand,
+          category: editCategory,
+          price: priceNum,
+          originalPrice: mrpNum,
+          stockQty: stockNum,
+          sku: editSku.trim() || p.sku,
+          hsn: editHsn.trim() || p.hsn,
+          image: editImage || p.image,
+        };
+      }
+      return p;
+    });
+
+    setProducts(updatedList);
+    try {
+      localStorage.setItem("officeconnect_custom_products", JSON.stringify(updatedList));
+    } catch (err) {}
+
+    try {
+      await fetch(`/api/catalog/products/${editingProduct.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editTitle.trim(),
+          categoryName: editCategory,
+          variants: [{ sellingPrice: priceNum, mrp: mrpNum, stockAvailable: stockNum }],
+        }),
+      });
+      await fetch(`/api/ecommerce/products/${editingProduct.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editTitle.trim(),
+          sellingPrice: priceNum,
+        }),
+      });
+    } catch (err) {}
+
+    setIsEditModalOpen(false);
+    setToastMessage(`✓ Product "${editTitle}" updated successfully!`);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    const target = products.find((p) => p.id === id);
+    if (window.confirm(`Remove "${target?.title || "this product"}" from your storefront and marketplace?`)) {
       const filtered = products.filter((p) => p.id !== id);
       setProducts(filtered);
       try {
         localStorage.setItem("officeconnect_custom_products", JSON.stringify(filtered));
       } catch (err) {}
+
+      try {
+        await fetch(`/api/catalog/products/${id}`, { method: "DELETE" });
+        await fetch(`/api/ecommerce/products/${id}`, { method: "DELETE" });
+      } catch (err) {}
+
+      setToastMessage(`🗑️ Product "${target?.title || id}" deleted successfully.`);
+      setTimeout(() => setToastMessage(null), 4000);
     }
   };
 
@@ -485,6 +578,14 @@ export const MerchantStorefrontAndUploadTab = ({
                       </Link>
                       <button
                         type="button"
+                        onClick={() => handleOpenEdit(p)}
+                        className="p-1 rounded text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition"
+                        title="Edit product"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleDeleteProduct(p.id)}
                         className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
                         title="Delete product"
@@ -655,6 +756,171 @@ export const MerchantStorefrontAndUploadTab = ({
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Publish to Marketplace
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Product Modal */}
+      {isEditModalOpen && editingProduct && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                  Edit Store SKU
+                </span>
+                <h3 className="text-lg font-black text-slate-900 mt-1">
+                  Edit Product Details
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Product Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-indigo-500 outline-hidden"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Brand Name</label>
+                  <input
+                    type="text"
+                    value={editBrand}
+                    onChange={(e) => setEditBrand(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs outline-hidden"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Category</label>
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs bg-white outline-hidden"
+                  >
+                    <option value="Computing">Computing & Laptops</option>
+                    <option value="Workstations">AI Workstations</option>
+                    <option value="Monitors">Curved & Ergonomic Monitors</option>
+                    <option value="Peripherals">Keyboards & Mice</option>
+                    <option value="Audio">Headphones & Acoustics</option>
+                    <option value="Apparel">Fashion & Streetwear</option>
+                    <option value="Beauty">Organic Skincare</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Selling Price (₹)</label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">MRP (₹)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={editMrp}
+                    onChange={(e) => setEditMrp(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Inventory Stock</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={editStock}
+                    onChange={(e) => setEditStock(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">SKU Code</label>
+                  <input
+                    type="text"
+                    value={editSku}
+                    onChange={(e) => setEditSku(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">HSN Code</label>
+                  <input
+                    type="text"
+                    value={editHsn}
+                    onChange={(e) => setEditHsn(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Preset Image Selector */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1.5">
+                  Update Thumbnail / Image
+                </label>
+                <div className="grid grid-cols-5 gap-2">
+                  {PRESET_PRODUCT_IMAGES.map((img, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setEditImage(img.url)}
+                      className={`p-1 rounded-xl border transition flex flex-col items-center gap-1 ${
+                        editImage === img.url
+                          ? "border-indigo-600 bg-indigo-50 ring-2 ring-indigo-500"
+                          : "border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
+                      <img src={img.url} alt={img.label} className="w-10 h-10 object-cover rounded-lg" />
+                      <span className="text-[9px] font-bold text-slate-700 truncate w-full text-center">
+                        {img.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 rounded-xl bg-[#404d85] hover:bg-[#323d6a] text-white font-extrabold shadow-md flex items-center gap-1.5"
+                >
+                  Save Changes
                 </button>
               </div>
             </form>
