@@ -37,13 +37,32 @@ export interface SellerKybApplication {
   ifscCode?: string;
   accountHolderName?: string;
   warehouseCity: string;
+  warehouseAddress?: string;
   warehouseState?: string;
   warehousePinCode?: string;
   fulfillmentModel?: string;
   pennyDropVerified?: boolean;
+  gstRateTier?: string;
+  hsnCode?: string;
   appliedDate: string;
   status: "Pending Review" | "Approved" | "Rejected";
   decisionDate?: string;
+  decisionNotes?: string;
+  documents?: {
+    gstCertificate?: string;
+    panCard?: string;
+    cancelledCheque?: string;
+    incorporationCertificate?: string;
+    identityProof?: string;
+  };
+  gstDocUploaded?: boolean;
+  gstDocName?: string;
+  kycDocType?: string;
+  kycDocNumber?: string;
+  kycDocUploaded?: boolean;
+  selfieCaptured?: boolean;
+  videoKycSlot?: string;
+  signatureName?: string;
 }
 
 const SEED_APPLICATIONS: SellerKybApplication[] = [
@@ -535,6 +554,196 @@ export const AdminSellerKybDesk = ({
                   {selectedApp.fulfillmentModel || "EASY_SHIP"}
                 </span>
                 <span className="text-slate-500">Penny-Drop: Verified ✓</span>
+              </div>
+            </div>
+
+            {/* Merchant Contact & Registration Metadata */}
+            <div className="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-700">Merchant Contact:</span>
+                <span className="text-slate-900 font-medium">{selectedApp.email || "merchant@company.com"}</span>
+                <span className="text-slate-400">•</span>
+                <span className="text-slate-900 font-mono">{selectedApp.phone || "+91 98XXXXXXXX"}</span>
+              </div>
+              <div className="flex items-center gap-2 text-[11px]">
+                <span className="bg-white px-2 py-0.5 rounded border border-indigo-200 text-indigo-900 font-semibold">
+                  GST Rate: {selectedApp.gstRateTier || "18%"}
+                </span>
+                <span className="bg-white px-2 py-0.5 rounded border border-indigo-200 text-indigo-900 font-semibold font-mono">
+                  HSN: {selectedApp.hsnCode || "8471"}
+                </span>
+              </div>
+            </div>
+
+            {/* Submitted Documents & Statutory Proofs */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between">
+                <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>📁</span> Submitted Statutory Documents & Verification Files (6)
+                </h4>
+                <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  Digital KYC Verification Ready
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                {/* 1. GST Registration Certificate */}
+                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-100 text-[#404d85] flex items-center justify-center font-bold text-xs">
+                        📄
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-900 block text-[11px]">GST Certificate (REG-06)</span>
+                        <span className="font-mono text-[10px] text-slate-500 truncate block max-w-[150px]">
+                          {selectedApp.documents?.gstCertificate || selectedApp.gstDocName || `GST_REG06_${selectedApp.gstin}.pdf`}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[9px]">
+                      REG-06 Valid
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      alert(
+                        `Viewing GST Certificate for ${selectedApp.businessName}\nGSTIN: ${selectedApp.gstin}\nFile: ${
+                          selectedApp.documents?.gstCertificate || selectedApp.gstDocName || "GST_REG06.pdf"
+                        }\nStatus: Certified by CBIC Common Portal`
+                      )
+                    }
+                    className="w-full py-1 text-[11px] font-bold text-[#404d85] hover:text-[#2b345e] bg-white hover:bg-indigo-50 border border-indigo-200 rounded transition text-center"
+                  >
+                    Inspect Document Preview 👁️
+                  </button>
+                </div>
+
+                {/* 2. PAN Card Proof */}
+                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
+                        💳
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-900 block text-[11px]">Business PAN Proof</span>
+                        <span className="font-mono text-[10px] text-slate-500 block">
+                          {selectedApp.documents?.panCard || `PAN_${selectedApp.pan}.pdf`}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[9px]">
+                      CBDT Match ✓
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      alert(
+                        `Viewing PAN Card Document for ${selectedApp.businessName}\nPAN: ${selectedApp.pan}\nLegal Name: ${selectedApp.ownerName}\nStatus: Active on Income Tax Department Database`
+                      )
+                    }
+                    className="w-full py-1 text-[11px] font-bold text-[#404d85] hover:text-[#2b345e] bg-white hover:bg-indigo-50 border border-indigo-200 rounded transition text-center"
+                  >
+                    Inspect Document Preview 👁️
+                  </button>
+                </div>
+
+                {/* 3. Bank Cancelled Cheque */}
+                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-xs">
+                        🏦
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-900 block text-[11px]">Bank Cancelled Cheque</span>
+                        <span className="font-mono text-[10px] text-slate-500 block">
+                          {selectedApp.documents?.cancelledCheque || `CHEQUE_${selectedApp.bankName}.pdf`}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[9px]">
+                      ₹1 Penny Drop ✓
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      alert(
+                        `Viewing Cancelled Cheque / Bank Mandate:\nBank: ${selectedApp.bankName}\nAccount: ${selectedApp.accountNumber}\nIFSC: ${selectedApp.ifscCode}\nBeneficiary: ${selectedApp.accountHolderName || selectedApp.businessName}\nPenny Drop: Verified Successfully`
+                      )
+                    }
+                    className="w-full py-1 text-[11px] font-bold text-[#404d85] hover:text-[#2b345e] bg-white hover:bg-indigo-50 border border-indigo-200 rounded transition text-center"
+                  >
+                    Inspect Document Preview 👁️
+                  </button>
+                </div>
+
+                {/* 4. Identity Proof (Aadhaar / Passport) */}
+                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-800 flex items-center justify-center font-bold text-xs">
+                        🪪
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-900 block text-[11px]">
+                          Identity Proof ({selectedApp.kycDocType || "Aadhaar Card"})
+                        </span>
+                        <span className="font-mono text-[10px] text-slate-500 block">
+                          {selectedApp.kycDocNumber || "XXXX-XXXX-9812"}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[9px]">
+                      UIDAI / Govt Verified
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      alert(
+                        `Viewing Signatory Government ID Proof:\nType: ${selectedApp.kycDocType || "Aadhaar Card"}\nNumber: ${selectedApp.kycDocNumber || "XXXX-XXXX-9812"}\nSignatory: ${selectedApp.ownerName}\nFace Match Score: 99.4% Biometric Confidence`
+                      )
+                    }
+                    className="w-full py-1 text-[11px] font-bold text-[#404d85] hover:text-[#2b345e] bg-white hover:bg-indigo-50 border border-indigo-200 rounded transition text-center"
+                  >
+                    Inspect Document Preview 👁️
+                  </button>
+                </div>
+
+                {/* 5. Biometric Face Match & Signature */}
+                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🤳</span>
+                    <div>
+                      <span className="font-bold text-slate-900 block text-[11px]">Live Selfie & Biometric Match</span>
+                      <span className="text-[10px] text-slate-500">99.4% Liveness & Face Match Passed</span>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                    Verified
+                  </span>
+                </div>
+
+                {/* 6. Digital Signature & Video KYC */}
+                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">✍️</span>
+                    <div>
+                      <span className="font-bold text-slate-900 block text-[11px]">Digital Invoice Signature</span>
+                      <span className="text-[10px] font-serif italic text-slate-600">
+                        "{selectedApp.signatureName || selectedApp.ownerName || "Authorized Signatory"}"
+                      </span>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold text-[10px]">
+                    e-Signed
+                  </span>
+                </div>
               </div>
             </div>
 

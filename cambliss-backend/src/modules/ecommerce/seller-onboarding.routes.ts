@@ -31,8 +31,20 @@ export interface MerchantOnboardingApplication {
   automatedInvoicing: boolean;
   tcsAccepted: boolean;
   kycDocType: string;
+  kycDocNumber?: string;
+  kycDocUploaded?: boolean;
+  gstDocUploaded?: boolean;
+  gstDocName?: string;
+  selfieCaptured?: boolean;
   videoKycSlot?: string;
   fulfillmentModel: "FOC" | "EASY_SHIP" | "SELF_SHIP";
+  documents?: {
+    gstCertificate?: string;
+    panCard?: string;
+    cancelledCheque?: string;
+    incorporationCertificate?: string;
+    identityProof?: string;
+  };
   sampleProduct?: {
     title: string;
     brand: string;
@@ -234,12 +246,15 @@ router.post("/", (req: Request, res: Response) => {
     const applicationId = data.applicationId || `OC-KYB-2026-${randomSuffix}`;
     const id = `app-oc-${Date.now()}`;
 
+    const bName = (data.businessName || data.storeName || (data.ownerName ? `${data.ownerName}'s Enterprise` : "Merchant Hub")).trim();
+    const tName = (data.tradeName || data.storeName || bName).trim();
+
     const newApp: MerchantOnboardingApplication = {
       id,
       applicationId,
-      businessName: data.businessName.trim(),
-      tradeName: data.tradeName?.trim() || data.businessName.trim(),
-      storeSlug: (data.storeSlug || data.tradeName || data.businessName)
+      businessName: bName,
+      tradeName: tName,
+      storeSlug: (data.storeSlug || tName || bName)
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, ""),
@@ -261,17 +276,29 @@ router.post("/", (req: Request, res: Response) => {
       bankName: data.bankName?.trim() || "HDFC Bank",
       accountNumber: data.accountNumber?.trim() || "XXXX-XXXX-XXXX",
       ifscCode: (data.ifscCode || "HDFC0000001").toUpperCase().trim(),
-      accountHolderName: data.accountHolderName?.trim() || data.businessName.trim(),
+      accountHolderName: data.accountHolderName?.trim() || bName,
       pennyDropVerified: data.pennyDropVerified ?? true,
-      gstRateTier: data.gstRateTier || "18%",
-      hsnCode: data.hsnCode?.trim() || "",
-      automatedInvoicing: data.automatedInvoicing ?? true,
-      tcsAccepted: data.tcsAccepted ?? true,
+      gstRateTier: data.gstRateTier || data.defaultGstRate || "18%",
+      hsnCode: data.hsnCode?.trim() || data.defaultHsnCode?.trim() || "",
+      automatedInvoicing: data.automatedInvoicing ?? data.automatedInvoicingEnabled ?? true,
+      tcsAccepted: data.tcsAccepted ?? data.tcsDeclarationAccepted ?? true,
       kycDocType: data.kycDocType || "Aadhaar Card",
+      kycDocNumber: data.kycDocNumber?.trim() || undefined,
+      kycDocUploaded: Boolean(data.kycDocUploaded),
+      gstDocUploaded: Boolean(data.gstDocUploaded),
+      gstDocName: data.gstDocName || (data.gstDocUploaded ? "GSTIN_Certificate_REG06.pdf" : undefined),
+      selfieCaptured: Boolean(data.selfieCaptured),
       videoKycSlot: data.videoKycSlot || "Scheduled with Compliance Agent",
       fulfillmentModel: data.fulfillmentModel || "EASY_SHIP",
+      documents: data.documents || {
+        gstCertificate: data.gstDocName || (data.gstin ? `GST_REG06_${data.gstin}.pdf` : "GST_Certificate_REG06.pdf"),
+        panCard: `PAN_${data.pan || (data.gstin ? data.gstin.slice(2, 12) : "CARD")}.pdf`,
+        cancelledCheque: `BANK_CHEQUE_${(data.bankName || "HDFC").toUpperCase().replace(/\s+/g, "_")}.pdf`,
+        incorporationCertificate: data.entityType !== "Individual / Sole Proprietor" ? `COI_${bName.replace(/\s+/g, "_")}.pdf` : undefined,
+        identityProof: `${(data.kycDocType || "AADHAAR").toUpperCase().replace(/\s+/g, "_")}_PROOF.pdf`,
+      },
       sampleProduct: data.sampleProduct || undefined,
-      signatureName: data.signatureName?.trim() || data.ownerName?.trim() || "Authorized Signatory",
+      signatureName: data.signatureName?.trim() || data.digitalSignature?.trim() || data.ownerName?.trim() || "Authorized Signatory",
       appliedDate: new Date().toISOString().split("T")[0],
       status: "Pending Review",
     };

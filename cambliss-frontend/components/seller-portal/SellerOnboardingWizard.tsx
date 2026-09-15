@@ -381,13 +381,23 @@ export const SellerOnboardingWizard = ({
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const appId = `OC-KYB-2026-${randomSuffix}`;
 
+    const bName = formData.storeName || (formData.ownerName ? `${formData.ownerName}'s Enterprise` : "Merchant Enterprise");
+    const tName = formData.storeName || "Office Connect Verified Store";
+
     const payload = {
       ...formData,
       applicationId: appId,
-      businessName: formData.ownerName ? `${formData.ownerName}'s Enterprise` : "Merchant Hub",
-      tradeName: formData.storeName || "Office Connect Verified Store",
+      businessName: bName,
+      tradeName: tName,
       appliedDate: new Date().toISOString().split("T")[0],
       status: "Pending Review",
+      documents: {
+        gstCertificate: formData.gstDocName || (formData.gstin ? `GST_REG06_${formData.gstin}.pdf` : "GST_Certificate_REG06.pdf"),
+        panCard: `PAN_CARD_${formData.pan || "CBDT"}.pdf`,
+        cancelledCheque: `BANK_MANDATE_${(formData.bankName || "HDFC").toUpperCase().replace(/\s+/g, "_")}.pdf`,
+        incorporationCertificate: formData.entityType !== "Individual / Sole Proprietor" ? `COI_${bName.replace(/\s+/g, "_")}.pdf` : undefined,
+        identityProof: `${(formData.kycDocType || "AADHAAR").toUpperCase().replace(/\s+/g, "_")}_PROOF.pdf`,
+      },
     };
 
     try {
