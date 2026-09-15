@@ -6,22 +6,24 @@ set -e
 echo "🚀 Starting Hostinger VPS Deployment & 502 Fix..."
 
 PROJECT_DIR="/var/www/office-connect-mvp"
+TARGET_BRANCH="${1:-master}"
 
 # Clean up legacy directories
 rm -rf /var/www/officeconnect-cambliss
 
 # Fetch or clone latest code
 if [ -d "$PROJECT_DIR/.git" ]; then
-    echo "🔄 Updating existing repository..."
+    echo "🔄 Updating existing repository on branch $TARGET_BRANCH..."
     cd "$PROJECT_DIR"
-    git fetch origin master
-    git reset --hard origin/master
+    git fetch origin "$TARGET_BRANCH"
+    git checkout -B "$TARGET_BRANCH" "origin/$TARGET_BRANCH"
+    git reset --hard "origin/$TARGET_BRANCH"
     git clean -fd
 else
     echo "📁 Fresh cloning latest clean repository from GitHub..."
     rm -rf "$PROJECT_DIR"
     mkdir -p /var/www
-    git clone https://github.com/Smahesh26/office-connect-mvp.git "$PROJECT_DIR"
+    git clone -b "$TARGET_BRANCH" https://github.com/Smahesh26/office-connect-mvp.git "$PROJECT_DIR"
     cd "$PROJECT_DIR"
 fi
 

@@ -5,6 +5,11 @@ on:
     branches:
       - master
       - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-hostinger-vps
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -20,9 +25,11 @@ jobs:
           host: ${{ secrets.HOSTINGER_HOST || '200.141.13.198' }}
           username: ${{ secrets.HOSTINGER_USER || 'root' }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
           port: ${{ secrets.HOSTINGER_PORT || '22' }}
           timeout: 120s
-          command_timeout: 20m
+          command_timeout: 25m
           script: |
-            echo "🚀 Executing automated Hostinger VPS Deployment Script..."
-            curl -sSL https://raw.githubusercontent.com/Smahesh26/office-connect-mvp/${{ github.ref_name }}/deploy-hostinger.sh | bash
+            echo "🚀 Executing automated Hostinger VPS Deployment Script for branch ${{ github.ref_name }}..."
+            curl -sSL https://raw.githubusercontent.com/Smahesh26/office-connect-mvp/${{ github.ref_name }}/deploy-hostinger.sh | bash -s -- "${{ github.ref_name }}"
+
