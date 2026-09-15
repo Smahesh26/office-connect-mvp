@@ -68,7 +68,25 @@ const formatDuration = (milliseconds: number) => {
 	const seconds = totalSeconds % 60;
 
 	return `${String(days).padStart(2, "0")}d ${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
-	return `${String(days).padStart(2, "0")}d ${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+};
+
+const resolveDisplayName = (user?: any, org?: any): string => {
+	if (!user && !org) return "";
+	const fName = (user?.firstName || "").trim();
+	const lName = (user?.lastName || "").trim();
+	if (fName && lName) return `${fName} ${lName}`;
+	if (fName) return fName;
+	if (user?.name?.trim()) return user.name.trim();
+	if (user?.fullName?.trim()) return user.fullName.trim();
+	if (user?.legalName?.trim()) return user.legalName.trim();
+	if (org?.name?.trim()) return org.name.trim();
+	if (user?.email?.trim()) {
+		const localPart = user.email.split("@")[0].trim();
+		if (localPart) {
+			return localPart.charAt(0).toUpperCase() + localPart.slice(1);
+		}
+	}
+	return "";
 };
 
 export default function DashboardPage() {
@@ -79,6 +97,56 @@ export default function DashboardPage() {
 	const [now, setNow] = useState(new Date());
 	const [trialStart, setTrialStart] = useState<Date | null>(null);
 	const [trialSnapshot, setTrialSnapshot] = useState<TrialReminderSnapshot | null>(null);
+	const [userName, setUserName] = useState<string>("Team");
+
+	useEffect(() => {
+		// 1. Instantly parse stored auth user credentials to avoid UI flicker
+		try {
+			const rawUser = localStorage.getItem("authUser");
+			if (rawUser) {
+				const parsed = JSON.parse(rawUser);
+				const name = resolveDisplayName(parsed);
+				if (name) {
+					setUserName(name);
+				}
+			}
+		} catch {
+			// ignore parse error
+		}
+
+		// 2. Fetch fresh profile and organization data from /api/auth/me
+		const token = localStorage.getItem("authToken");
+		const fetchMe = async () => {
+			try {
+				const headers: Record<string, string> = {};
+				if (token && token !== "cookie-session") {
+					headers["Authorization"] = `Bearer ${token}`;
+				}
+				const res = await fetch("/api/auth/me", {
+					headers,
+					credentials: "include",
+				});
+				if (res.ok) {
+					const data = await res.json();
+					const name = resolveDisplayName(data?.user, data?.organization);
+					if (name) {
+						setUserName(name);
+						try {
+							const existing = localStorage.getItem("authUser");
+							const parsed = existing ? JSON.parse(existing) : {};
+							localStorage.setItem("authUser", JSON.stringify({ ...parsed, ...data.user }));
+						} catch {
+							// ignore storage error
+						}
+					}
+				}
+			} catch {
+				// Keep fallback
+			}
+		};
+
+		void fetchMe();
+	}, []);
 
 	useEffect(() => {
 		const token = localStorage.getItem("authToken");
@@ -286,7 +354,7 @@ export default function DashboardPage() {
 				<div className="flex flex-wrap items-center justify-between gap-4">
 					<div>
 						<p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#6678c1]">Workspace overview</p>
-						<h1 className="mt-2 text-4xl font-semibold tracking-tight text-[#404d85]">Hello, Team</h1>
+						<h1 className="mt-2 text-4xl font-semibold tracking-tight text-[#404d85]">Hello, {userName}</h1>
 						<p className="mt-2 max-w-2xl text-sm leading-6 text-[#5b6472]">Use this hub to open the core Phase 1 modules. All modules remain enabled during the 90-day free trial.</p>
 					</div>
 					<div className="flex items-center gap-3">
