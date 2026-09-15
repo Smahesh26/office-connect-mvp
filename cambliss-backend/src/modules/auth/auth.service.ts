@@ -51,12 +51,26 @@ interface UpdateOrganizationProfileInput {
 	settlementIFSC?: string;
 }
 
+export interface CardDetailsInput {
+	cardType?: "CREDIT" | "DEBIT" | string;
+	cardHolderName?: string;
+	cardNumber?: string;
+	cardNumberLast4?: string;
+	cardBrand?: string;
+	expiryMonth?: string;
+	expiryYear?: string;
+	cardToken?: string;
+	billingZip?: string;
+	autoPayConsent?: boolean;
+}
+
 interface UpdateOrganizationOnboardingInput {
 	profileCompleted?: boolean;
 	paymentCardOnboarded?: boolean;
 	preferredCurrency?: string;
 	stackSelections?: Record<string, string>;
 	onboardingPayload?: Record<string, unknown>;
+	cardDetails?: CardDetailsInput;
 }
 
 type OrganizationOnboardingState = {
@@ -66,6 +80,7 @@ type OrganizationOnboardingState = {
 	preferredCurrency: string;
 	stackSelections: Record<string, string>;
 	onboardingPayload: Record<string, unknown>;
+	cardDetails?: CardDetailsInput;
 	updatedAt: string;
 };
 
@@ -102,9 +117,30 @@ const ensureOrganizationOnboardingTable = async () => {
 			"preferredCurrency" TEXT NOT NULL DEFAULT 'INR',
 			"stackSelections" JSONB NOT NULL DEFAULT '{}'::jsonb,
 			"onboardingPayload" JSONB NOT NULL DEFAULT '{}'::jsonb,
+			"cardType" TEXT DEFAULT 'CREDIT',
+			"cardHolderName" TEXT,
+			"cardNumberLast4" TEXT,
+			"cardBrand" TEXT,
+			"expiryMonth" TEXT,
+			"expiryYear" TEXT,
+			"cardToken" TEXT,
+			"billingZip" TEXT,
+			"autoPayConsent" BOOLEAN DEFAULT TRUE,
 			"createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
 			"updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
 		);
+	`);
+
+	await prisma.$executeRawUnsafe(`
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "cardType" TEXT DEFAULT 'CREDIT';
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "cardHolderName" TEXT;
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "cardNumberLast4" TEXT;
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "cardBrand" TEXT;
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "expiryMonth" TEXT;
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "expiryYear" TEXT;
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "cardToken" TEXT;
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "billingZip" TEXT;
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "autoPayConsent" BOOLEAN DEFAULT TRUE;
 	`);
 };
 
@@ -509,9 +545,20 @@ export const getOrganizationOnboarding = async (organizationId: string): Promise
 		preferredCurrency: string;
 		stackSelections: unknown;
 		onboardingPayload: unknown;
+		cardType?: string | null;
+		cardHolderName?: string | null;
+		cardNumberLast4?: string | null;
+		cardBrand?: string | null;
+		expiryMonth?: string | null;
+		expiryYear?: string | null;
+		cardToken?: string | null;
+		billingZip?: string | null;
+		autoPayConsent?: boolean | null;
 		updatedAt: Date;
 	}>>(
-		`SELECT "organizationId", "profileCompleted", "paymentCardOnboarded", "preferredCurrency", "stackSelections", "onboardingPayload", "updatedAt"
+		`SELECT "organizationId", "profileCompleted", "paymentCardOnboarded", "preferredCurrency", 
+		        "stackSelections", "onboardingPayload", "cardType", "cardHolderName", "cardNumberLast4", 
+		        "cardBrand", "expiryMonth", "expiryYear", "cardToken", "billingZip", "autoPayConsent", "updatedAt"
 		 FROM "OrganizationOnboarding" WHERE "organizationId" = $1`,
 		organizationId,
 	);
@@ -519,6 +566,19 @@ export const getOrganizationOnboarding = async (organizationId: string): Promise
 	if (!rows[0]) {
 		return defaultOnboardingState(organizationId);
 	}
+
+	const hasCard = Boolean(rows[0].cardNumberLast4 || rows[0].cardHolderName || rows[0].paymentCardOnboarded);
+	const cardDetails: CardDetailsInput | undefined = hasCard ? {
+		cardType: rows[0].cardType || "CREDIT",
+		cardHolderName: rows[0].cardHolderName || "",
+		cardNumberLast4: rows[0].cardNumberLast4 || "",
+		cardBrand: rows[0].cardBrand || "VISA",
+		expiryMonth: rows[0].expiryMonth || "",
+		expiryYear: rows[0].expiryYear || "",
+		cardToken: rows[0].cardToken || undefined,
+		billingZip: rows[0].billingZip || "",
+		autoPayConsent: rows[0].autoPayConsent ?? true,
+	} : undefined;
 
 	return {
 		organizationId: rows[0].organizationId,
@@ -533,6 +593,7 @@ export const getOrganizationOnboarding = async (organizationId: string): Promise
 			typeof rows[0].onboardingPayload === "object" && rows[0].onboardingPayload
 				? (rows[0].onboardingPayload as Record<string, unknown>)
 				: {},
+		cardDetails,
 		updatedAt: rows[0].updatedAt.toISOString(),
 	};
 };
@@ -554,18 +615,44 @@ export const updateOrganizationOnboarding = async (
 
 	const previous = await getOrganizationOnboarding(organizationId);
 	const nextProfileCompleted = input.profileCompleted ?? previous.profileCompleted;
-	const nextPaymentCardOnboarded = input.paymentCardOnboarded ?? previous.paymentCardOnboarded;
 	const nextPreferredCurrency = (input.preferredCurrency ?? previous.preferredCurrency ?? "INR").toUpperCase();
 	const nextStackSelections = input.stackSelections ?? previous.stackSelections;
+
+	const cardInput = input.cardDetails || (input.onboardingPayload?.cardDetails as CardDetailsInput | undefined) || (input.onboardingPayload?.paymentCard as CardDetailsInput | undefined);
+	const rawNumber = cardInput?.cardNumber ? String(cardInput.cardNumber).replace(/\D/g, "") : "";
+	const nextCardNumberLast4 = cardInput?.cardNumberLast4 || (rawNumber.length >= 4 ? rawNumber.slice(-4) : previous.cardDetails?.cardNumberLast4 || null);
+	const nextCardType = cardInput?.cardType || previous.cardDetails?.cardType || "CREDIT";
+	const nextCardHolderName = cardInput?.cardHolderName || previous.cardDetails?.cardHolderName || null;
+	const nextCardBrand = cardInput?.cardBrand || previous.cardDetails?.cardBrand || "VISA";
+	const nextExpiryMonth = cardInput?.expiryMonth || previous.cardDetails?.expiryMonth || null;
+	const nextExpiryYear = cardInput?.expiryYear || previous.cardDetails?.expiryYear || null;
+	const nextCardToken = cardInput?.cardToken || previous.cardDetails?.cardToken || null;
+	const nextBillingZip = cardInput?.billingZip || previous.cardDetails?.billingZip || null;
+	const nextAutoPayConsent = cardInput?.autoPayConsent ?? previous.cardDetails?.autoPayConsent ?? true;
+
+	const nextPaymentCardOnboarded = input.paymentCardOnboarded ?? (Boolean(nextCardNumberLast4) || previous.paymentCardOnboarded);
+
+	const cardSummary = nextCardNumberLast4 ? {
+		cardType: nextCardType,
+		cardHolderName: nextCardHolderName,
+		cardNumberLast4: nextCardNumberLast4,
+		cardBrand: nextCardBrand,
+		expiryMonth: nextExpiryMonth,
+		expiryYear: nextExpiryYear,
+		billingZip: nextBillingZip,
+		autoPayConsent: nextAutoPayConsent,
+	} : undefined;
+
 	const nextPayload = {
 		...previous.onboardingPayload,
 		...(input.onboardingPayload ?? {}),
+		...(cardSummary ? { paymentCard: cardSummary, cardDetails: cardSummary } : {}),
 	};
 
 	await prisma.$executeRawUnsafe(
 		`INSERT INTO "OrganizationOnboarding"
-			("organizationId", "profileCompleted", "paymentCardOnboarded", "preferredCurrency", "stackSelections", "onboardingPayload", "updatedAt")
-		 VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, NOW())
+			("organizationId", "profileCompleted", "paymentCardOnboarded", "preferredCurrency", "stackSelections", "onboardingPayload", "cardType", "cardHolderName", "cardNumberLast4", "cardBrand", "expiryMonth", "expiryYear", "cardToken", "billingZip", "autoPayConsent", "updatedAt")
+		 VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
 		 ON CONFLICT ("organizationId")
 		 DO UPDATE SET
 			"profileCompleted" = EXCLUDED."profileCompleted",
@@ -573,6 +660,15 @@ export const updateOrganizationOnboarding = async (
 			"preferredCurrency" = EXCLUDED."preferredCurrency",
 			"stackSelections" = EXCLUDED."stackSelections",
 			"onboardingPayload" = EXCLUDED."onboardingPayload",
+			"cardType" = EXCLUDED."cardType",
+			"cardHolderName" = EXCLUDED."cardHolderName",
+			"cardNumberLast4" = EXCLUDED."cardNumberLast4",
+			"cardBrand" = EXCLUDED."cardBrand",
+			"expiryMonth" = EXCLUDED."expiryMonth",
+			"expiryYear" = EXCLUDED."expiryYear",
+			"cardToken" = EXCLUDED."cardToken",
+			"billingZip" = EXCLUDED."billingZip",
+			"autoPayConsent" = EXCLUDED."autoPayConsent",
 			"updatedAt" = NOW()`,
 		organizationId,
 		nextProfileCompleted,
@@ -580,6 +676,15 @@ export const updateOrganizationOnboarding = async (
 		nextPreferredCurrency,
 		JSON.stringify(nextStackSelections ?? {}),
 		JSON.stringify(nextPayload ?? {}),
+		nextCardType,
+		nextCardHolderName,
+		nextCardNumberLast4,
+		nextCardBrand,
+		nextExpiryMonth,
+		nextExpiryYear,
+		nextCardToken,
+		nextBillingZip,
+		nextAutoPayConsent,
 	);
 
 	return getOrganizationOnboarding(organizationId);

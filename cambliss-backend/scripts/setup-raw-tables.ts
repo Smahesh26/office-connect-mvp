@@ -57,9 +57,30 @@ async function main() {
       "preferredCurrency" TEXT NOT NULL DEFAULT 'INR',
       "stackSelections" JSONB NOT NULL DEFAULT '{}'::jsonb,
       "onboardingPayload" JSONB NOT NULL DEFAULT '{}'::jsonb,
+      "cardType" TEXT DEFAULT 'CREDIT',
+      "cardHolderName" TEXT,
+      "cardNumberLast4" TEXT,
+      "cardBrand" TEXT,
+      "expiryMonth" TEXT,
+      "expiryYear" TEXT,
+      "cardToken" TEXT,
+      "billingZip" TEXT,
+      "autoPayConsent" BOOLEAN DEFAULT TRUE,
       "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
       "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
     )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "cardType" TEXT DEFAULT 'CREDIT';
+    ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "cardHolderName" TEXT;
+    ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "cardNumberLast4" TEXT;
+    ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "cardBrand" TEXT;
+    ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "expiryMonth" TEXT;
+    ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "expiryYear" TEXT;
+    ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "cardToken" TEXT;
+    ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "billingZip" TEXT;
+    ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "autoPayConsent" BOOLEAN DEFAULT TRUE;
   `);
 
   // Insert missing UserAccessProfile rows for existing users

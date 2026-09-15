@@ -86,16 +86,18 @@ export const buildRazorpayBilling = (form: OrganizationForm, organizationName: s
 });
 
 export const buildOnboardingPayload = (
-	selectedPlanId: string,
+	selectedPlanId: string | undefined,
 	selectedAddOns: string[],
 	razorpayBilling: RazorpayBilling,
 	razorpayIds?: { orderId?: string; paymentId?: string },
+	cardDetails?: import("./types").PaymentCardDetails,
 ): OnboardingPayload => ({
-	selectedPlanId,
+	selectedPlanId: selectedPlanId || undefined,
 	selectedAddOns,
 	razorpayBilling,
 	...(razorpayIds?.orderId ? { razorpayOrderId: razorpayIds.orderId } : {}),
 	...(razorpayIds?.paymentId ? { razorpayPaymentId: razorpayIds.paymentId } : {}),
+	...(cardDetails ? { cardDetails, paymentCard: cardDetails } : {}),
 });
 
 export const buildOnboardingUpdateRequest = (params: {
@@ -104,12 +106,14 @@ export const buildOnboardingUpdateRequest = (params: {
 	preferredCurrency: string;
 	stackSelections: Record<string, string>;
 	onboardingPayload: OnboardingPayload;
+	cardDetails?: import("./types").PaymentCardDetails;
 }): OnboardingUpdateRequest => ({
 	profileCompleted: params.profileCompleted,
 	...(typeof params.paymentCardOnboarded === "boolean" ? { paymentCardOnboarded: params.paymentCardOnboarded } : {}),
 	preferredCurrency: params.preferredCurrency,
 	stackSelections: params.stackSelections,
 	onboardingPayload: params.onboardingPayload,
+	...(params.cardDetails ? { cardDetails: params.cardDetails } : {}),
 });
 
 export const resolveAccountEmail = (me: MeResponse): string => toText(me.user?.email);
