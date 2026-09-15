@@ -124,6 +124,7 @@ export const SellerCatalogSuite = ({
   const [editMrp, setEditMrp] = useState<number | string>("");
   const [editStock, setEditStock] = useState<number | string>("");
   const [editStatus, setEditStatus] = useState("PUBLISHED");
+  const [editImage, setEditImage] = useState("");
 
   // Delete Confirmation States
   const [deleteConfirmProduct, setDeleteConfirmProduct] = useState<CatalogProduct | null>(null);
@@ -186,6 +187,7 @@ export const SellerCatalogSuite = ({
     setEditMrp(p.mrp);
     setEditStock(p.stock);
     setEditStatus(p.status);
+    setEditImage(p.image || "");
     setIsEditModalOpen(true);
   };
 
@@ -204,6 +206,7 @@ export const SellerCatalogSuite = ({
           mrp: Number(editMrp),
           stock: Number(editStock),
           status: editStatus,
+          image: editImage.trim() || p.image,
         };
       }
       return p;
@@ -352,7 +355,7 @@ export const SellerCatalogSuite = ({
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200 text-slate-400 font-bold text-[10px] uppercase">
-                  <th className="pb-2">SKU & Product Title</th>
+                  <th className="pb-2">Product & SKU</th>
                   <th className="pb-2">Category</th>
                   <th className="pb-2 text-right">Selling Price</th>
                   <th className="pb-2 text-right">Stock</th>
@@ -363,9 +366,24 @@ export const SellerCatalogSuite = ({
               <tbody className="divide-y divide-slate-100 font-medium">
                 {filteredProducts.map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50/80 transition">
-                    <td className="py-3 max-w-xs">
-                      <div className="font-bold text-slate-900 line-clamp-1">{p.title}</div>
-                      <span className="font-mono text-[10px] text-slate-400">{p.sku}</span>
+                    <td className="py-3 max-w-sm">
+                      <div className="flex items-center gap-3">
+                        {p.image ? (
+                          <img
+                            src={p.image}
+                            alt={p.title}
+                            className="w-10 h-10 object-cover rounded-md border border-slate-200 shrink-0 bg-slate-50"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-md border border-slate-200 bg-slate-100 flex items-center justify-center text-slate-400 text-xs shrink-0">
+                            📦
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-900 line-clamp-1">{p.title}</div>
+                          <span className="font-mono text-[10px] text-slate-400">{p.sku}</span>
+                        </div>
+                      </div>
                     </td>
                     <td className="py-3 text-slate-500">{p.category}</td>
                     <td className="py-3 text-right">
@@ -393,26 +411,27 @@ export const SellerCatalogSuite = ({
                         <Link
                           href={`/product/${p.id}`}
                           target="_blank"
-                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded font-semibold text-[10px] transition"
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded font-semibold text-[10px] transition inline-flex items-center gap-1"
                         >
                           View
                         </Link>
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(p)}
-                          className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-[#404d85] rounded font-bold text-[10px] transition flex items-center gap-1"
-                          title="Edit product"
+                          className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-[#404d85] border border-indigo-200/80 rounded font-bold text-[10px] transition inline-flex items-center gap-1 shadow-2xs"
+                          title="Edit product details"
                         >
                           <Pencil className="w-3 h-3" />
-                          Edit
+                          <span>Edit</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => setDeleteConfirmProduct(p)}
-                          className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
-                          title="Delete product"
+                          className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 rounded font-bold text-[10px] transition inline-flex items-center gap-1 shadow-2xs"
+                          title="Delete product listing"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3 h-3" />
+                          <span>Delete</span>
                         </button>
                       </div>
                     </td>
@@ -514,6 +533,29 @@ export const SellerCatalogSuite = ({
                     onChange={(e) => setEditStock(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-200 rounded text-xs focus:border-[#404d85] focus:outline-hidden"
                   />
+                </div>
+              </div>
+
+              <div>
+                <label className="block mb-1 font-bold text-slate-800">Product Image URL</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="url"
+                    value={editImage}
+                    onChange={(e) => setEditImage(e.target.value)}
+                    placeholder="https://images.unsplash.com/..."
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded text-xs font-mono focus:border-[#404d85] focus:outline-hidden"
+                  />
+                  {editImage && (
+                    <img
+                      src={editImage}
+                      alt="Preview"
+                      className="w-9 h-9 object-cover rounded border border-slate-200 shrink-0 bg-slate-50"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
+                    />
+                  )}
                 </div>
               </div>
 
