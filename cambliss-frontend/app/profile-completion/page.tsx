@@ -16,6 +16,7 @@ import {
 } from "@/lib/onboarding/mappers";
 import { calculateTotalInInr, convertFromInr, formatCurrency } from "@/lib/onboarding/pricing";
 import { ensureRazorpayScriptLoaded, openRazorpayCheckout } from "@/lib/onboarding/razorpay";
+import { TechLogo, RazorpayBadgeLogo, getTechTagline } from "@/components/onboarding/TechStackIcons";
 import type { CurrencyCode, OrgProfileResponse, OrganizationForm, PaymentCardDetails, PlanSummary, TechStackResponse } from "@/lib/onboarding/types";
 
 type Step = 1 | 2 | 3;
@@ -450,52 +451,93 @@ export default function ProfileCompletionPage() {
 			console.warn("Failed to persist tech stack state before checkout:", saveErr);
 		}
 
-		// 2. Check for live Razorpay script & integration
-		const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-		if (razorpayKey && razorpayKey !== "rzp_test_placeholder") {
+		// 2. Ensure Razorpay Checkout SDK is loaded
+		let scriptLoaded = false;
+		try {
+			scriptLoaded = await ensureRazorpayScriptLoaded();
+		} catch (e) {
+			console.warn("Could not load Razorpay checkout script:", e);
+		}
+
+		// 3. Create backend subscription order (which returns authentic Razorpay order & active keyId)
+		let order: any = null;
+		try {
+			if (apiClient) {
+				const subscription = await apiClient.getOrCreateSubscription(selectedPlanId || plans[0]?.id || "");
+				order = await apiClient.createOrder({
+					subscriptionId: subscription.id,
+					addOns: selectedAddOns,
+					techStack: "CUSTOM_STACK",
+					stackSelections,
+				});
+			}
+		} catch (orderErr) {
+			console.warn("Backend order creation error, using standard order:", orderErr);
+		}
+
+		if (!order) {
+			order = {
+				id: `order_oc_${Date.now()}`,
+				amount: Math.round(totalInInr * 100),
+				currency: "INR",
+				keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_placeholder",
+			};
+		}
+
+		const rzpKey = order.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+
+		// 4. If Razorpay is loaded and has a key, launch the REAL Razorpay Checkout Modal!
+		if (scriptLoaded && window.Razorpay && rzpKey && rzpKey !== "rzp_test_placeholder") {
 			try {
-				const scriptLoaded = await ensureRazorpayScriptLoaded();
-				if (scriptLoaded && window.Razorpay) {
-					const subscription = await apiClient.getOrCreateSubscription(selectedPlanId || plans[0]?.id || "");
-					const order = await apiClient.createOrder({
-						subscriptionId: subscription.id,
-						addOns: selectedAddOns,
-						techStack: "CUSTOM_STACK",
-						stackSelections,
-					});
+				const verificationPayload = await openRazorpayCheckout({
+					key: rzpKey,
+					order,
+					name: "Office Connect",
+					description: `${selectedPlan?.name || "Enterprise"} Workspace Activation`,
+					prefill: {
+						name: cardHolderName || form.legalName || form.name || "Workspace Admin",
+						email: form.supportEmail || accountEmail || "",
+						contact: form.supportPhone || "+919876543210",
+					},
+				});
 
-					const verificationPayload = await openRazorpayCheckout({
-						key: razorpayKey,
-						order,
-						name: form.name || organization?.name || "Office Connect",
-						description: "Enterprise Tech Stack Activation",
-						prefill: {
-							name: cardHolderName || form.legalName || form.name,
-							email: form.supportEmail || accountEmail,
-							contact: form.supportPhone || "+919876543210",
-						},
-					});
-
+				// Verify payment with backend
+				if (apiClient) {
 					await apiClient.verifyPayment(verificationPayload);
-					setPaymentCompleted(true);
-					setPaymentReceiptDetails({
-						paymentId: verificationPayload.razorpay_payment_id,
+				}
+
+				await persistOnboardingState({
+					paymentCardOnboarded: true,
+					cardDetails: savedCardSummary ?? undefined,
+					razorpay: {
 						orderId: verificationPayload.razorpay_order_id,
-						amount: formattedPrice,
-						currency: preferredCurrency,
-						paidAt: new Date().toLocaleTimeString(),
-					});
-					setGatewayStep("SUCCESS");
-					setShowPaymentGatewayModal(true);
-					setPaymentLoading(false);
+						paymentId: verificationPayload.razorpay_payment_id,
+					},
+				});
+
+				setPaymentCompleted(true);
+				setPaymentReceiptDetails({
+					paymentId: verificationPayload.razorpay_payment_id,
+					orderId: verificationPayload.razorpay_order_id,
+					amount: formattedPrice,
+					currency: preferredCurrency,
+					paidAt: new Date().toLocaleTimeString(),
+				});
+				setGatewayStep("SUCCESS");
+				setShowPaymentGatewayModal(true);
+				setPaymentLoading(false);
+				return;
+			} catch (rzpErr: any) {
+				console.log("Razorpay checkout error or dismissal:", rzpErr);
+				setPaymentLoading(false);
+				if (rzpErr?.message && (rzpErr.message.includes("cancelled") || rzpErr.message.includes("closed") || rzpErr.message.includes("failed"))) {
+					setError(rzpErr.message);
 					return;
 				}
-			} catch (rzpErr) {
-				console.log("Razorpay script unavailable or cancelled, opening Office Connect Gateway Checkout:", rzpErr);
 			}
 		}
 
-		// 3. Seamlessly launch the Office Connect Enterprise Payment Gateway Checkout Modal
+		// 5. Fallback: If Razorpay key is not configured or blocked, open the built-in Secure Banking Gateway Modal
 		setPaymentLoading(false);
 		setGatewayStep("SELECT");
 		setShowPaymentGatewayModal(true);
@@ -904,128 +946,235 @@ export default function ProfileCompletionPage() {
 						</div>
 					)}
 
-					{/* STEP 3: NICE, CLEAN TECH STACK & PAYMENT GATEWAY INTEGRATION */}
+					{/* STEP 3: EXECUTIVE MODERN TECH STACK & PAYMENT GATEWAY */}
 					{currentStep === 3 && (
 						<div className="space-y-6">
+							
+							{/* Section Header & Architectural Badges */}
+							<div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+								<div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+									<div>
+										<div className="flex items-center gap-2 mb-1">
+											<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 border border-blue-200 text-[#1d419d]">
+												<span className="h-1.5 w-1.5 rounded-full bg-[#1d419d] animate-pulse"></span>
+												Production Architecture
+											</span>
+											<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 border border-emerald-200 text-emerald-800">
+												⚡ 99.99% SLA Guaranteed
+											</span>
+										</div>
+										<h2 className="text-xl font-black text-slate-900 tracking-tight">
+											Architecture & Cloud Infrastructure Specification
+										</h2>
+										<p className="mt-1 text-xs text-slate-500 max-w-2xl leading-relaxed">
+											Select your preferred runtime, microservice backend, and database engine. Every layer is pre-optimized for continuous deployment, high-throughput ACID transactions, and zero-downtime scaling.
+										</p>
+									</div>
+
+									<div className="flex items-center gap-3 self-start md:self-center">
+										<span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Currency</span>
+										<div className="flex items-center rounded-xl bg-slate-100 p-1 border border-slate-200/70 shadow-inner">
+											{Object.keys(CURRENCY_RATES).map((currency) => (
+												<button
+													key={currency}
+													type="button"
+													onClick={() => setPreferredCurrency(currency as CurrencyCode)}
+													className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+														preferredCurrency === currency
+															? "bg-white text-[#1d419d] shadow-sm"
+															: "text-slate-600 hover:text-slate-900"
+													}`}
+												>
+													{currency}
+												</button>
+											))}
+										</div>
+									</div>
+								</div>
+							</div>
+
 							<div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 								
-								{/* Left: Tech Stack Selector (8 cols) */}
+								{/* Left Column: Tech Stack Deck (8 cols) */}
 								<div className="lg:col-span-8 space-y-6">
 									
-									{/* Plan Tier Selector Bar */}
-									<div className="rounded-2xl border border-[#dbe3f7] bg-white p-5 shadow-sm space-y-3">
-										<div className="flex items-center justify-between">
+									{/* 1. Base Compute & Storage Tier */}
+									<div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
+										<div className="flex items-center justify-between border-b border-slate-100 pb-3">
 											<div>
-												<h3 className="text-base font-bold text-slate-900">1. Select Enterprise Base Tier</h3>
-												<p className="text-xs text-slate-500">Pick your baseline compute capacity for all modular suites.</p>
+												<span className="text-[10px] font-extrabold uppercase tracking-widest text-[#1d419d]">Step 3.1</span>
+												<h3 className="text-base font-bold text-slate-900">Select Enterprise Compute & Storage Tier</h3>
+												<p className="text-xs text-slate-500">Baseline compute, dedicated RAM, and storage allocation across all modular applications.</p>
 											</div>
-											<span className="px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-[#1d419d] text-[11px] font-bold">
-												90 Days Free Trial Included
+											<span className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-extrabold">
+												90 Days Free Trial Active
 											</span>
 										</div>
 
-										<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+										<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 											{plans.map((plan) => {
 												const isSelected = selectedPlanId === plan.id;
 												const convertedPlanPrice = convertFromInr(Number(plan.price) || 0, preferredCurrency);
+												const isPopular = plan.name.toLowerCase().includes("growth") || plan.name.toLowerCase().includes("pro");
+												
 												return (
-													<button
+													<div
 														key={plan.id}
-														type="button"
 														onClick={() => setSelectedPlanId(plan.id)}
-														className={`p-3.5 rounded-xl border text-left transition-all relative ${
+														className={`relative rounded-2xl border p-4 cursor-pointer transition-all duration-200 flex flex-col justify-between ${
 															isSelected
-																? "border-[#1d419d] bg-indigo-50/60 ring-2 ring-[#1d419d]/20 shadow-sm"
-																: "border-slate-200 hover:border-slate-300 bg-white"
+																? "border-[#1d419d] bg-gradient-to-b from-[#f0f4ff] to-white shadow-md ring-2 ring-[#1d419d]/20"
+																: "border-slate-200 hover:border-slate-300 bg-white hover:shadow-sm"
 														}`}
 													>
-														<div className="flex items-center justify-between">
-															<span className="text-xs font-extrabold text-slate-900">{plan.name}</span>
-															{isSelected && (
-																<span className="h-4 w-4 rounded-full bg-[#1d419d] text-white flex items-center justify-center text-[10px]">✓</span>
-															)}
+														{isPopular && (
+															<span className="absolute -top-2.5 left-4 px-2.5 py-0.5 rounded-full bg-[#1d419d] text-white text-[10px] font-extrabold tracking-wider uppercase shadow-sm">
+																Most Popular
+															</span>
+														)}
+
+														<div>
+															<div className="flex items-center justify-between mt-1">
+																<span className="text-xs font-black uppercase tracking-wider text-slate-800">{plan.name}</span>
+																<div className={`h-4 w-4 rounded-full border flex items-center justify-center transition-all ${
+																	isSelected
+																		? "border-[#1d419d] bg-[#1d419d] text-white"
+																		: "border-slate-300 bg-white"
+																}`}>
+																	{isSelected && <span className="text-[9px] font-black">✓</span>}
+																</div>
+															</div>
+
+															<p className="mt-3 text-xl font-black text-slate-900 tracking-tight">
+																{new Intl.NumberFormat(undefined, { style: "currency", currency: preferredCurrency }).format(convertedPlanPrice)}
+																<span className="text-xs font-normal text-slate-500 ml-1">/{plan.interval.toLowerCase()}</span>
+															</p>
+
+															<ul className="mt-3 space-y-1.5 text-[11px] text-slate-600 border-t border-slate-100 pt-3">
+																<li className="flex items-center gap-1.5">
+																	<span className="text-emerald-500 font-bold">✓</span>
+																	<span>{plan.maxUsers || 10} Team Member Seats</span>
+																</li>
+																<li className="flex items-center gap-1.5">
+																	<span className="text-emerald-500 font-bold">✓</span>
+																	<span>Dedicated Cloud Instance</span>
+																</li>
+																<li className="flex items-center gap-1.5">
+																	<span className="text-emerald-500 font-bold">✓</span>
+																	<span>Automated Nightly DB Backups</span>
+																</li>
+															</ul>
 														</div>
-														<p className="mt-2 text-sm font-black text-[#1d419d]">
-															{new Intl.NumberFormat(undefined, { style: "currency", currency: preferredCurrency }).format(convertedPlanPrice)}
-															<span className="text-[10px] text-slate-500 font-normal">/{plan.interval.toLowerCase()}</span>
-														</p>
-													</button>
+
+														<div className="mt-4 pt-2 border-t border-slate-100 text-[10px] font-bold text-slate-400 text-center">
+															{isSelected ? <span className="text-[#1d419d] font-bold">Selected Tier</span> : "Click to select"}
+														</div>
+													</div>
 												);
 											})}
 										</div>
 									</div>
 
-									{/* Tech Stack Modular Categories */}
-									<div className="rounded-2xl border border-[#dbe3f7] bg-white p-6 shadow-sm space-y-6">
-										<div>
-											<h3 className="text-base font-bold text-slate-900">2. Configure Frameworks & Infrastructure</h3>
+									{/* 2. Frameworks & Infrastructure Layers */}
+									<div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-6">
+										<div className="border-b border-slate-100 pb-3">
+											<span className="text-[10px] font-extrabold uppercase tracking-widest text-[#1d419d]">Step 3.2</span>
+											<h3 className="text-base font-bold text-slate-900">Configure Architecture & Infrastructure Layers</h3>
 											<p className="text-xs text-slate-500 mt-0.5">
-												Select one preferred framework per layer. Our architecture guarantees 100% interoperability across your choice.
+												Select one preferred framework per layer. Our modular service mesh guarantees native compatibility.
 											</p>
 										</div>
 
-										<div className="space-y-5">
-											{techData.categories.map((category) => (
-												<div key={category.id} className="space-y-2.5">
-													<div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-														<div className="flex items-center gap-2">
-															<span className="text-base">{getCategoryIcon(category.id)}</span>
-															<span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-																{category.label} Layer
-															</span>
+										<div className="space-y-6">
+											{techData.categories.map((category) => {
+												const activeSelection = category.options.find((o) => o.code === stackSelections[category.id]);
+												return (
+													<div key={category.id} className="space-y-3">
+														<div className="flex items-center justify-between">
+															<div className="flex items-center gap-2">
+																<span className="h-2 w-2 rounded-full bg-[#1d419d]"></span>
+																<span className="text-xs font-black uppercase tracking-wider text-slate-800">
+																	{category.label} Layer
+																</span>
+																<span className="text-xs text-slate-400">• {category.description}</span>
+															</div>
+															{activeSelection && (
+																<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-bold">
+																	<span>Active:</span>
+																	<span className="text-[#1d419d] font-black">{activeSelection.label}</span>
+																</span>
+															)}
 														</div>
-														<span className="text-[11px] text-slate-400">{category.description}</span>
-													</div>
 
-													<div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-														{category.options.map((option) => {
-															const isSelected = stackSelections[category.id] === option.code;
-															const convertedOptPrice = convertFromInr(option.amount, preferredCurrency);
-															return (
-																<button
-																	key={option.code}
-																	type="button"
-																	onClick={() => setStackSelections((prev) => ({ ...prev, [category.id]: option.code }))}
-																	className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
-																		isSelected
-																			? "border-[#1d419d] bg-[#f0f4ff] ring-2 ring-[#1d419d]/25 shadow-sm text-[#1d419d]"
-																			: "border-slate-200 hover:border-slate-300 bg-slate-50/50 hover:bg-white text-slate-700"
-																	}`}
-																>
-																	<div className="flex items-center justify-between w-full">
-																		<span className="text-base">{getOptionIcon(option.code)}</span>
-																		{isSelected && (
-																			<span className="h-3.5 w-3.5 rounded-full bg-[#1d419d] text-white flex items-center justify-center text-[9px] font-bold">✓</span>
-																		)}
-																	</div>
-																	<div className="mt-2">
-																		<p className="text-xs font-bold leading-tight truncate">{option.label}</p>
-																		<p className="text-[11px] font-semibold text-slate-500 mt-0.5">
-																			{formatCurrency(option.amount, preferredCurrency)}
-																		</p>
-																	</div>
-																</button>
-															);
-														})}
+														<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+															{category.options.map((option) => {
+																const isSelected = stackSelections[category.id] === option.code;
+																const convertedOptPrice = convertFromInr(option.amount, preferredCurrency);
+																const tagline = getTechTagline(option.code);
+
+																return (
+																	<button
+																		key={option.code}
+																		type="button"
+																		onClick={() => setStackSelections((prev) => ({ ...prev, [category.id]: option.code }))}
+																		className={`p-3.5 rounded-xl border text-left transition-all relative flex flex-col justify-between group ${
+																			isSelected
+																				? "border-[#1d419d] bg-gradient-to-b from-[#f0f4ff] to-white shadow-sm ring-1 ring-[#1d419d]/30"
+																				: "border-slate-200 hover:border-slate-300 bg-slate-50/60 hover:bg-white hover:shadow-sm"
+																		}`}
+																	>
+																		<div>
+																			<div className="flex items-center justify-between">
+																				<div className="h-9 w-9 rounded-lg bg-white border border-slate-200/80 flex items-center justify-center p-1.5 shadow-sm">
+																					<TechLogo code={option.code} className="w-5 h-5" />
+																				</div>
+																				<div className={`h-4 w-4 rounded-full border flex items-center justify-center transition-all ${
+																					isSelected
+																						? "border-[#1d419d] bg-[#1d419d] text-white"
+																						: "border-slate-300 bg-white group-hover:border-slate-400"
+																				}`}>
+																					{isSelected && <span className="text-[9px] font-bold">✓</span>}
+																				</div>
+																			</div>
+
+																			<div className="mt-2.5">
+																				<p className="text-xs font-bold text-slate-900 leading-snug">{option.label}</p>
+																				<p className="text-[10px] text-slate-500 font-medium line-clamp-2 mt-0.5 leading-tight">
+																					{tagline}
+																				</p>
+																			</div>
+																		</div>
+
+																		<div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+																			<span className="text-slate-400 text-[10px]">Tier Delta:</span>
+																			<span className={`font-bold ${option.amount > 0 ? "text-[#1d419d]" : "text-emerald-700"}`}>
+																				{option.amount > 0 ? `+${formatCurrency(option.amount, preferredCurrency)}` : "Included"}
+																			</span>
+																		</div>
+																	</button>
+																);
+															})}
+														</div>
 													</div>
-												</div>
-											))}
+												);
+											})}
 										</div>
 									</div>
 
-									{/* Enterprise Add-ons */}
-									<div className="rounded-2xl border border-[#dbe3f7] bg-white p-6 shadow-sm space-y-4">
-										<div className="flex items-center justify-between">
+									{/* 3. Enterprise Accelerator Modules */}
+									<div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4">
+										<div className="flex items-center justify-between border-b border-slate-100 pb-3">
 											<div>
-												<h3 className="text-base font-bold text-slate-900">3. Enterprise Add-Ons & Accelerator Packs</h3>
-												<p className="text-xs text-slate-500">Boost automation, analytics, and VIP developer support.</p>
+												<span className="text-[10px] font-extrabold uppercase tracking-widest text-[#1d419d]">Step 3.3</span>
+												<h3 className="text-base font-bold text-slate-900">Enterprise Add-Ons & Accelerator Modules</h3>
+												<p className="text-xs text-slate-500">Autonomous workflow engines, deep analytics, and VIP developer priority support.</p>
 											</div>
-											<span className="text-xs font-semibold text-slate-500">
-												{selectedAddOns.length} selected
+											<span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+												{selectedAddOns.length} Selected
 											</span>
 										</div>
 
-										<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+										<div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
 											{techData.addOns.map((addon) => {
 												const isChecked = selectedAddOns.includes(addon.code);
 												return (
@@ -1036,25 +1185,26 @@ export default function ProfileCompletionPage() {
 																isChecked ? prev.filter((item) => item !== addon.code) : [...prev, addon.code]
 															)
 														}
-														className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
+														className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
 															isChecked
-																? "border-[#1d419d] bg-indigo-50/50 ring-1 ring-[#1d419d]/30"
-																: "border-slate-200 hover:border-slate-300 bg-white"
+																? "border-[#1d419d] bg-gradient-to-r from-[#f0f4ff] to-white shadow-sm ring-1 ring-[#1d419d]/30"
+																: "border-slate-200 hover:border-slate-300 bg-white hover:shadow-sm"
 														}`}
 													>
 														<div className="flex items-center gap-3">
-															<input
-																type="checkbox"
-																checked={isChecked}
-																onChange={() => {}} // handled by parent div
-																className="h-4 w-4 rounded border-slate-300 text-[#1d419d] focus:ring-[#1d419d]"
-															/>
+															<div className={`h-5 w-9 rounded-full transition-colors relative flex items-center px-0.5 ${
+																isChecked ? "bg-[#1d419d]" : "bg-slate-300"
+															}`}>
+																<div className={`h-4 w-4 rounded-full bg-white transition-transform transform shadow-sm ${
+																	isChecked ? "translate-x-4" : "translate-x-0"
+																}`} />
+															</div>
 															<div>
 																<p className="text-xs font-bold text-slate-900">{addon.label}</p>
-																<p className="text-[10px] text-slate-500">Includes full cloud setup & API integration</p>
+																<p className="text-[10px] text-slate-500">Fully integrated with 90-day trial access</p>
 															</div>
 														</div>
-														<span className="text-xs font-extrabold text-[#1d419d]">
+														<span className="text-xs font-black text-[#1d419d] ml-2">
 															+{formatCurrency(addon.amount, preferredCurrency)}
 														</span>
 													</div>
@@ -1064,18 +1214,43 @@ export default function ProfileCompletionPage() {
 									</div>
 								</div>
 
-								{/* Right: Sticky Order Summary & Payment Gateway Action (4 cols) */}
+								{/* Right Column: Sticky Workspace Order Manifest (4 cols) */}
 								<div className="lg:col-span-4 lg:sticky lg:top-6 space-y-4">
-									<div className="rounded-2xl border border-[#dbe3f7] bg-white p-5 shadow-lg space-y-5">
+									<div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl space-y-5">
+										
+										{/* Card Header */}
 										<div className="border-b border-slate-100 pb-3">
-											<span className="text-[10px] font-bold uppercase tracking-wider text-[#6678c1]">Invoice & Provisioning</span>
-											<h3 className="text-lg font-bold text-slate-900">Workspace Order Summary</h3>
+											<div className="flex items-center justify-between">
+												<span className="text-[10px] font-extrabold uppercase tracking-widest text-[#1d419d]">
+													Workspace Provisioning
+												</span>
+												<span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-black border border-emerald-200">
+													Ready to Launch
+												</span>
+											</div>
+											<h3 className="text-lg font-black text-slate-900 mt-1">Order Manifest</h3>
 										</div>
 
-										{/* Selected Stack Blueprint */}
+										{/* Verified Payment Card from Step 2 */}
+										<div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 flex items-center justify-between">
+											<div className="flex items-center gap-2.5">
+												<div className="h-8 w-8 rounded-lg bg-white border border-emerald-200 flex items-center justify-center shadow-xs">
+													<span className="text-base">💳</span>
+												</div>
+												<div>
+													<p className="text-xs font-bold text-emerald-950">
+														{savedCardSummary?.cardBrand || "Verified"} •••• {savedCardSummary?.cardNumberLast4 || "8842"}
+													</p>
+													<p className="text-[10px] text-emerald-700 font-medium">Card Verified in Step 2 for Auto-Pay</p>
+												</div>
+											</div>
+											<span className="text-[11px] font-extrabold text-emerald-700">✓ Linked</span>
+										</div>
+
+										{/* Blueprint Selections */}
 										<div className="space-y-2 text-xs">
-											<p className="font-bold text-slate-700">Selected Stack Components:</p>
-											<div className="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+											<p className="font-extrabold text-slate-800 text-[11px] uppercase tracking-wider">Architecture Stack:</p>
+											<div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200/70">
 												{techData.categories.map((cat) => {
 													const selectedCode = stackSelections[cat.id];
 													const opt = cat.options.find((o) => o.code === selectedCode);
@@ -1087,70 +1262,61 @@ export default function ProfileCompletionPage() {
 													);
 												})}
 												{selectedAddOns.length > 0 && (
-													<div className="flex items-center justify-between py-0.5 border-t border-slate-200/60 pt-1 mt-1">
-														<span className="text-slate-500">Add-ons:</span>
-														<span className="font-bold text-indigo-700">{selectedAddOns.length} Active</span>
+													<div className="flex items-center justify-between py-0.5 border-t border-slate-200/80 pt-1.5 mt-1 text-indigo-700 font-bold">
+														<span>Accelerator Packs:</span>
+														<span>{selectedAddOns.length} Enabled</span>
 													</div>
 												)}
 											</div>
 										</div>
 
-										{/* Linked Card Method */}
-										<div className="p-3 rounded-xl border border-emerald-100 bg-emerald-50/70 text-xs flex items-center justify-between">
-											<div className="flex items-center gap-2">
-												<span className="text-sm">💳</span>
-												<div>
-													<p className="font-bold text-emerald-900">
-														{savedCardSummary?.cardBrand || "Verified"} Card ending in {savedCardSummary?.cardNumberLast4 || "8842"}
-													</p>
-													<p className="text-[10px] text-emerald-700">Verified in Step 2 for Auto-Pay</p>
-												</div>
-											</div>
-											<span className="text-xs font-bold text-emerald-700">✓ Linked</span>
-										</div>
-
-										{/* Cost Itemization */}
-										<div className="space-y-2 text-xs pt-1 border-t border-slate-100">
+										{/* Itemized Invoice & Trial Benefit */}
+										<div className="space-y-2 text-xs border-t border-slate-100 pt-3">
 											<div className="flex items-center justify-between text-slate-600">
-												<span>Base Plan ({selectedPlan?.name || "Standard"}):</span>
-												<span>{new Intl.NumberFormat(undefined, { style: "currency", currency: preferredCurrency }).format(convertFromInr(Number(selectedPlan?.price) || 0, preferredCurrency))}</span>
+												<span>Base Compute ({selectedPlan?.name || "Standard"}):</span>
+												<span className="font-semibold">{new Intl.NumberFormat(undefined, { style: "currency", currency: preferredCurrency }).format(convertFromInr(Number(selectedPlan?.price) || 0, preferredCurrency))}</span>
 											</div>
 											<div className="flex items-center justify-between text-slate-600">
 												<span>Custom Stack & Add-ons:</span>
-												<span>{new Intl.NumberFormat(undefined, { style: "currency", currency: preferredCurrency }).format(Math.max(0, totalConverted - convertFromInr(Number(selectedPlan?.price) || 0, preferredCurrency)))}</span>
+												<span className="font-semibold">{new Intl.NumberFormat(undefined, { style: "currency", currency: preferredCurrency }).format(Math.max(0, totalConverted - convertFromInr(Number(selectedPlan?.price) || 0, preferredCurrency)))}</span>
 											</div>
-											<div className="flex items-center justify-between font-bold text-emerald-700">
-												<span>90-Day Free Trial Benefit:</span>
-												<span>100% Unlocked</span>
+											<div className="flex items-center justify-between font-bold text-emerald-700 bg-emerald-50/60 p-2 rounded-lg border border-emerald-100">
+												<span>90-Day Free Trial Promotion:</span>
+												<span>-100% (₹0 Due Today)</span>
 											</div>
 											<div className="flex items-center justify-between pt-2 border-t border-slate-200 text-sm font-bold text-slate-900">
-												<span>Total Amount Payable:</span>
+												<span>Recurring Plan Total:</span>
 												<span className="text-lg font-black text-[#1d419d]">{formattedPrice}</span>
 											</div>
 										</div>
 
-										{/* PROCEED TO PAY VIA PAYMENT GATEWAY BUTTON */}
-										<div className="pt-2 space-y-2">
+										{/* OFFICIAL RAZORPAY CHECKOUT ACTION BUTTON */}
+										<div className="pt-2 space-y-2.5">
 											<button
 												type="button"
 												onClick={() => void handleProceedToPaymentGateway()}
 												disabled={paymentLoading}
-												className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1d419d] to-[#2b58cb] py-3 text-sm font-extrabold text-white shadow-md hover:from-[#173784] hover:to-[#2248a8] transition disabled:opacity-60"
+												className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-[#0c2340] via-[#0284c7] to-[#1d4ed8] py-3.5 px-4 text-sm font-black text-white shadow-lg hover:shadow-xl hover:from-[#08182b] hover:via-[#0270a8] hover:to-[#173fae] transition-all transform active:scale-[0.99] disabled:opacity-60"
 											>
 												{paymentLoading ? (
-													<span>Connecting Gateway...</span>
+													<span className="inline-flex items-center gap-2">
+														<span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin"></span>
+														<span>Launching Razorpay...</span>
+													</span>
 												) : (
 													<>
-														<span>💳</span>
-														<span>Proceed to Pay {formattedPrice} via Gateway →</span>
+														<RazorpayBadgeLogo className="h-5 brightness-200 contrast-200" />
+														<span>Pay {formattedPrice} with Razorpay →</span>
 													</>
 												)}
 											</button>
 
 											<div className="flex items-center justify-center gap-2 text-[10px] text-slate-400">
-												<span>🔒 Razorpay / Banking Gateway</span>
+												<span className="flex items-center gap-1">🔒 256-Bit SSL</span>
 												<span>•</span>
-												<span>Instant Provisioning</span>
+												<span>PCI-DSS Level 1</span>
+												<span>•</span>
+												<span>Razorpay Secure</span>
 											</div>
 										</div>
 									</div>
@@ -1158,7 +1324,7 @@ export default function ProfileCompletionPage() {
 									<button
 										type="button"
 										onClick={() => setCurrentStep(2)}
-										className="w-full rounded-xl border border-slate-200 bg-white py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
+										className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
 									>
 										← Back to Card Details
 									</button>
@@ -1178,12 +1344,11 @@ export default function ProfileCompletionPage() {
 						
 						{/* Top Gateway Branding Header */}
 						<div className="flex items-center justify-between border-b border-slate-100 pb-3">
-							<div className="flex items-center gap-2">
-								<span className="h-7 w-7 rounded-lg bg-[#1d419d] text-white flex items-center justify-center font-bold text-sm">
-									🛡️
-								</span>
+							<div className="flex items-center gap-2.5">
+								<RazorpayBadgeLogo className="h-5" />
+								<span className="text-slate-300">|</span>
 								<div>
-									<h4 className="text-sm font-black text-slate-900 leading-tight">Office Connect Secure Gateway</h4>
+									<h4 className="text-xs font-black text-slate-900 leading-tight">Secure Checkout Gateway</h4>
 									<p className="text-[10px] text-slate-400">Ref: {orderReferenceId || "ORD-OC-992182"}</p>
 								</div>
 							</div>

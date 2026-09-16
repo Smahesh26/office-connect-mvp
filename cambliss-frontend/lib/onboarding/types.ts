@@ -45,6 +45,7 @@ export type PlanSummary = {
 	price: number | string;
 	currency: string;
 	interval: string;
+	maxUsers?: number;
 };
 
 export type AddOn = {
@@ -128,6 +129,7 @@ export type RazorpayOrder = {
 	id: string;
 	amount: number;
 	currency: string;
+	keyId?: string;
 };
 
 export type RazorpayVerifyPayload = {

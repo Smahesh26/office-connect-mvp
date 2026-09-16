@@ -46,6 +46,10 @@ pm2 delete all || true
 echo "⚙️ Setting up Backend (cambliss-backend)..."
 cd "$PROJECT_DIR/cambliss-backend"
 
+# Preserve existing Razorpay keys if already set on VPS
+EXISTING_RZP_KEY=$(grep -E "^(RAZORPAY_KEY_ID|RAZORPAY_KEY)=" .env 2>/dev/null | tail -n 1 || true)
+EXISTING_RZP_SEC=$(grep -E "^(RAZORPAY_KEY_SECRET|RAZORPAY_SECRET)=" .env 2>/dev/null | tail -n 1 || true)
+
 cat <<EOT > .env
 DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/cambliss?schema=public"
 JWT_SECRET="super-secret-jwt-token-key-2026"
@@ -54,6 +58,13 @@ NODE_ENV=production
 SUPER_ADMIN_EMAIL="admin@camblissstudio.com"
 SUPER_ADMIN_PASSWORD="SecureAdminPassword123!"
 EOT
+
+if [ -n "$EXISTING_RZP_KEY" ]; then
+    echo "$EXISTING_RZP_KEY" >> .env
+fi
+if [ -n "$EXISTING_RZP_SEC" ]; then
+    echo "$EXISTING_RZP_SEC" >> .env
+fi
 
 npm install
 npx prisma generate
@@ -67,9 +78,12 @@ cd "$PROJECT_DIR/cambliss-frontend"
 rm -rf .next
 mkdir -p .next
 
+RZP_PUBLIC_KEY=$(grep -E "^(RAZORPAY_KEY_ID|RAZORPAY_KEY)=" "$PROJECT_DIR/cambliss-backend/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || true)
+
 cat <<EOT > .env.local
 BACKEND_ORIGIN="http://127.0.0.1:5000"
 NEXT_PUBLIC_API_URL="https://theofficeconnect.com/api"
+NEXT_PUBLIC_RAZORPAY_KEY_ID="${RZP_PUBLIC_KEY}"
 EOT
 
 npm install
