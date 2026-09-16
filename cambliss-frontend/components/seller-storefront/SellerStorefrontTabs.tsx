@@ -83,11 +83,23 @@ export const SellerStorefrontTabs = ({
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((p) => (
-              <ProductCard key={p.id} {...p} onAddToCart={() => alert(`Added "${p.title}" to bag!`)} />
-            ))}
-          </div>
+          {filteredProducts.length === 0 ? (
+            <div className="py-16 text-center flex flex-col items-center justify-center rounded-[8px] border border-dashed border-slate-200 bg-white p-8">
+              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3 text-xl">
+                📦
+              </div>
+              <h4 className="text-sm font-bold text-slate-800">No Products Listed Yet</h4>
+              <p className="text-xs text-slate-500 max-w-sm mt-1 mb-4">
+                This merchant account is verified and ready. Upload your products from the seller portal to make them appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredProducts.map((p) => (
+                <ProductCard key={p.id} {...p} onAddToCart={() => alert(`Added "${p.title}" to bag!`)} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -97,11 +109,17 @@ export const SellerStorefrontTabs = ({
           <div className="p-4 rounded-[6px] bg-red-50 border border-red-200 text-xs font-bold text-red-700">
             🔥 Exclusive limited-time discounts directly authorized by {sellerName}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {dealProducts.map((p) => (
-              <ProductCard key={p.id} {...p} variant="discounted" onAddToCart={() => alert(`Added "${p.title}" to bag!`)} />
-            ))}
-          </div>
+          {dealProducts.length === 0 ? (
+            <div className="py-12 text-center text-xs text-slate-500 rounded-[8px] border border-dashed border-slate-200 bg-white p-6">
+              No promotional deals active right now. Check back soon!
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {dealProducts.map((p) => (
+                <ProductCard key={p.id} {...p} variant="discounted" onAddToCart={() => alert(`Added "${p.title}" to bag!`)} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 

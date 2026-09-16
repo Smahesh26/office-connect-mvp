@@ -20,86 +20,7 @@ export interface CatalogProduct {
   image?: string;
 }
 
-const DEFAULT_PRODUCTS: CatalogProduct[] = [
-  {
-    id: "prod-hisense-visionbook",
-    sku: "HC-VB16-I9-4070",
-    title: "Hisense VisionBook Pro 16 AI Workstation Laptop (Core i9-14900HX, 32GB DDR5, 1TB NVMe, RTX 4070, 3.2K 165Hz OLED)",
-    category: "Enterprise Computing > Workstation Laptops",
-    mrp: 179990,
-    price: 149990,
-    stock: 18,
-    status: "PUBLISHED",
-    buyBox: "Active (99.1%)",
-    slug: "hisense-computers",
-    image: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    id: "prod-hisense-aio27",
-    sku: "HC-AIO27-I7-4K",
-    title: "Hisense Infinity AIO 27\" 4K All-In-One Desktop Computer (Intel Core i7-13700, 16GB RAM, 1TB SSD, Wireless Peripherals)",
-    category: "Enterprise Computing > All-In-One Desktops",
-    mrp: 99990,
-    price: 84990,
-    stock: 22,
-    status: "PUBLISHED",
-    buyBox: "Active (98.4%)",
-    slug: "hisense-computers",
-    image: "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    id: "prod-hisense-elitedesk",
-    sku: "HC-ED-R9-64G",
-    title: "Hisense EliteDesk Tower Enterprise PC (AMD Ryzen 9 7900X, 64GB DDR5 ECC, 2TB Gen4 SSD, Windows 11 Pro Enterprise)",
-    category: "Enterprise Computing > Business Towers",
-    mrp: 145000,
-    price: 124500,
-    stock: 8,
-    status: "PUBLISHED",
-    buyBox: "Active (100%)",
-    slug: "hisense-computers",
-    image: "https://images.unsplash.com/photo-1587831990711-23ca6441447b?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    id: "prod-hisense-ultraview34",
-    sku: "HC-UV34-WQHD-165",
-    title: "Hisense UltraView 34-Inch Curved WQHD USB-C Ergonomic Hub Monitor (3440x1440, 165Hz, 90W PD, 99% DCI-P3)",
-    category: "Enterprise Computing > Ergonomic Monitors",
-    mrp: 46990,
-    price: 38990,
-    stock: 35,
-    status: "PUBLISHED",
-    buyBox: "Active (99.5%)",
-    slug: "hisense-computers",
-    image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    id: "prod-hisense-micropro",
-    sku: "HC-MP-I5-16G",
-    title: "Hisense MicroPro Fanless Mini PC (Intel Core i5-1335U, 16GB DDR4, 512GB PCIe SSD, Triple 4K Display Out)",
-    category: "Enterprise Computing > Mini PCs",
-    mrp: 36990,
-    price: 29990,
-    stock: 25,
-    status: "PUBLISHED",
-    buyBox: "Active (97.8%)",
-    slug: "hisense-computers",
-    image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    id: "prod-hisense-combo",
-    sku: "HC-KBMS-PRO-RGB",
-    title: "Hisense Mechanical RGB Ergonomic Hot-Swappable Office Keyboard & Precision Laser Mouse Combo",
-    category: "Enterprise Computing > Peripherals",
-    mrp: 6990,
-    price: 4990,
-    stock: 50,
-    status: "PUBLISHED",
-    buyBox: "Active (99.8%)",
-    slug: "hisense-computers",
-    image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80",
-  },
-];
+const DEFAULT_PRODUCTS: CatalogProduct[] = [];
 
 export const SellerCatalogSuite = ({
   activeSubView,
@@ -351,95 +272,120 @@ export const SellerCatalogSuite = ({
             </div>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 text-slate-400 font-bold text-[10px] uppercase">
-                  <th className="pb-2">Product & SKU</th>
-                  <th className="pb-2">Category</th>
-                  <th className="pb-2 text-right">Selling Price</th>
-                  <th className="pb-2 text-right">Stock</th>
-                  <th className="pb-2 text-center">Status</th>
-                  <th className="pb-2 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {filteredProducts.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50/80 transition">
-                    <td className="py-3 max-w-sm">
-                      <div className="flex items-center gap-3">
-                        {p.image ? (
-                          <img
-                            src={p.image}
-                            alt={p.title}
-                            className="w-10 h-10 object-cover rounded-md border border-slate-200 shrink-0 bg-slate-50"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-md border border-slate-200 bg-slate-100 flex items-center justify-center text-slate-400 text-xs shrink-0">
-                            📦
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <div className="font-bold text-slate-900 line-clamp-1">{p.title}</div>
-                          <span className="font-mono text-[10px] text-slate-400">{p.sku}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 text-slate-500">{p.category}</td>
-                    <td className="py-3 text-right">
-                      <strong className="text-slate-900">{formatINR(p.price)}</strong>
-                      <span className="block text-[10px] text-slate-400 line-through">{formatINR(p.mrp)}</span>
-                    </td>
-                    <td className="py-3 text-right">
-                      <span className={`font-semibold ${p.stock <= 5 ? "text-red-600 font-bold" : "text-slate-800"}`}>
-                        {p.stock} units
-                      </span>
-                    </td>
-                    <td className="py-3 text-center">
-                      <span className={`px-2 py-0.5 rounded font-semibold text-[10px] border ${
-                        p.status === "PUBLISHED"
-                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                          : p.status === "DRAFT"
-                          ? "bg-amber-50 text-amber-800 border-amber-200"
-                          : "bg-slate-100 text-slate-600 border-slate-200"
-                      }`}>
-                        {p.status}
-                      </span>
-                    </td>
-                    <td className="py-3 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Link
-                          href={`/product/${p.id}`}
-                          target="_blank"
-                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded font-semibold text-[10px] transition inline-flex items-center gap-1"
-                        >
-                          View
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEdit(p)}
-                          className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-[#404d85] border border-indigo-200/80 rounded font-bold text-[10px] transition inline-flex items-center gap-1 shadow-2xs"
-                          title="Edit product details"
-                        >
-                          <Pencil className="w-3 h-3" />
-                          <span>Edit</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteConfirmProduct(p)}
-                          className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 rounded font-bold text-[10px] transition inline-flex items-center gap-1 shadow-2xs"
-                          title="Delete product listing"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    </td>
+          {filteredProducts.length === 0 ? (
+            <div className="py-16 text-center flex flex-col items-center justify-center rounded-[8px] border border-dashed border-slate-200 bg-slate-50/50 p-8">
+              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3 text-xl">
+                📦
+              </div>
+              <h4 className="text-sm font-bold text-slate-800">
+                {products.length === 0 ? "No Products in Your Catalog Yet" : "No Matching Products Found"}
+              </h4>
+              <p className="text-xs text-slate-500 max-w-sm mt-1 mb-5">
+                {products.length === 0
+                  ? "Only your registered merchant account is connected. Upload your products using the button below to start selling on the marketplace."
+                  : "No listings match your search query. Try searching with a different keyword or SKU."}
+              </p>
+              {products.length === 0 && onFinishAdd && (
+                <button
+                  type="button"
+                  onClick={onFinishAdd}
+                  className="px-4 py-2 bg-[#404d85] hover:bg-[#323d6a] text-white rounded font-bold text-xs shadow-xs transition inline-flex items-center gap-1.5"
+                >
+                  <span>+ Upload Your First Product</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-400 font-bold text-[10px] uppercase">
+                    <th className="pb-2">Product & SKU</th>
+                    <th className="pb-2">Category</th>
+                    <th className="pb-2 text-right">Selling Price</th>
+                    <th className="pb-2 text-right">Stock</th>
+                    <th className="pb-2 text-center">Status</th>
+                    <th className="pb-2 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {filteredProducts.map((p) => (
+                    <tr key={p.id} className="hover:bg-slate-50/80 transition">
+                      <td className="py-3 max-w-sm">
+                        <div className="flex items-center gap-3">
+                          {p.image ? (
+                            <img
+                              src={p.image}
+                              alt={p.title}
+                              className="w-10 h-10 object-cover rounded-md border border-slate-200 shrink-0 bg-slate-50"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-md border border-slate-200 bg-slate-100 flex items-center justify-center text-slate-400 text-xs shrink-0">
+                              📦
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="font-bold text-slate-900 line-clamp-1">{p.title}</div>
+                            <span className="font-mono text-[10px] text-slate-400">{p.sku}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 text-slate-500">{p.category}</td>
+                      <td className="py-3 text-right">
+                        <strong className="text-slate-900">{formatINR(p.price)}</strong>
+                        <span className="block text-[10px] text-slate-400 line-through">{formatINR(p.mrp)}</span>
+                      </td>
+                      <td className="py-3 text-right">
+                        <span className={`font-semibold ${p.stock <= 5 ? "text-red-600 font-bold" : "text-slate-800"}`}>
+                          {p.stock} units
+                        </span>
+                      </td>
+                      <td className="py-3 text-center">
+                        <span className={`px-2 py-0.5 rounded font-semibold text-[10px] border ${
+                          p.status === "PUBLISHED"
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            : p.status === "DRAFT"
+                            ? "bg-amber-50 text-amber-800 border-amber-200"
+                            : "bg-slate-100 text-slate-600 border-slate-200"
+                        }`}>
+                          {p.status}
+                        </span>
+                      </td>
+                      <td className="py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Link
+                            href={`/product/${p.id}`}
+                            target="_blank"
+                            className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded font-semibold text-[10px] transition inline-flex items-center gap-1"
+                          >
+                            View
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(p)}
+                            className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-[#404d85] border border-indigo-200/80 rounded font-bold text-[10px] transition inline-flex items-center gap-1 shadow-2xs"
+                            title="Edit product details"
+                          >
+                            <Pencil className="w-3 h-3" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteConfirmProduct(p)}
+                            className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 rounded font-bold text-[10px] transition inline-flex items-center gap-1 shadow-2xs"
+                            title="Delete product listing"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

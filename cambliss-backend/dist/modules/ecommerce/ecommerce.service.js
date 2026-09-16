@@ -271,6 +271,60 @@ class EcommerceService {
         });
     }
     /**
+     * Create a new ecommerce product and listing.
+     */
+    createListing(organizationId, data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const product = yield prisma_1.default.product.create({
+                data: {
+                    organizationId,
+                    name: data.name,
+                    sku: data.sku || `SKU-${Date.now()}`,
+                    hsnCode: data.hsnCode || "8471",
+                    description: data.description || "",
+                    unitPrice: new client_1.Prisma.Decimal(data.sellingPrice),
+                    isActive: true,
+                },
+            });
+            let storeId = data.storeId;
+            if (!storeId) {
+                const existingStore = yield prisma_1.default.store.findFirst({
+                    where: { organizationId },
+                });
+                if (existingStore) {
+                    storeId = existingStore.id;
+                }
+                else {
+                    const newStore = yield prisma_1.default.store.create({
+                        data: {
+                            organizationId,
+                            name: "Merchant Storefront",
+                        },
+                    });
+                    storeId = newStore.id;
+                }
+            }
+            const listing = yield prisma_1.default.productListing.create({
+                data: {
+                    organizationId,
+                    productId: product.id,
+                    storeId,
+                    categoryId: data.categoryId || undefined,
+                    sellingPrice: new client_1.Prisma.Decimal(data.sellingPrice),
+                    description: data.description || "",
+                    images: data.images || [],
+                    isActive: true,
+                },
+                include: {
+                    product: true,
+                    category: true,
+                    store: true,
+                },
+            });
+            return listing;
+        });
+    }
+    /**
      * Update an ecommerce product listing.
      */
     updateListing(listingId, updates, organizationId) {

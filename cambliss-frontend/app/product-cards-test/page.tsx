@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { StorefrontShell } from "@/components/storefront/StorefrontShell";
 import {
@@ -50,397 +50,38 @@ export default function ProductCardsTestPage() {
     showToast(`Added ${quantity}x "${product.title}" to cart (${formatINR(product.price * quantity)})`);
   };
 
-  // 26 Comprehensive Realistic Marketplace Products
-  const sampleProducts: DemoProduct[] = [
-    // 1. STANDARD
-    {
-      id: "prod-1",
-      title: "Sony WH-1000XM5 Wireless Industry Leading Noise Canceling Headphones",
-      brand: "Sony",
-      category: "Electronics",
-      image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80",
-      secondaryImage: "https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=600&q=80",
-      price: 29990,
-      originalPrice: 34990,
-      sellerName: "Office Connect Direct",
-      sellerTier: "premium",
-      rating: 4.9,
-      reviewsCount: 1420,
-      stockQty: 24,
-      badge: "BESTSELLER",
-      deliveryEstimate: "FREE Delivery by Tomorrow, 11 AM",
-      variant: "standard",
-    },
-    {
-      id: "prod-2",
-      title: "Keychron Q1 Pro Wireless Custom Mechanical Keyboard (QMK/VIA ANSI)",
-      brand: "Keychron",
-      category: "Computing",
-      image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80",
-      price: 16999,
-      originalPrice: 19999,
-      sellerName: "Mechanical Keyboards India",
-      sellerTier: "verified",
-      rating: 4.8,
-      reviewsCount: 380,
-      stockQty: 8,
-      badge: "HOT ITEM",
-      deliveryEstimate: "Express Delivery in 2 Days",
-      variant: "standard",
-    },
+  // Dynamic Marketplace Products (Purged mock data - loads from custom uploaded products or starts clean)
+  const [sampleProducts, setSampleProducts] = useState<DemoProduct[]>([]);
 
-    // 2. COMPACT
-    {
-      id: "prod-3",
-      title: "Apple 20W USB-C Fast Power Adapter",
-      brand: "Apple",
-      category: "Electronics",
-      image: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=600&q=80",
-      price: 1900,
-      originalPrice: 2200,
-      sellerName: "Office Connect Direct",
-      sellerTier: "premium",
-      rating: 4.8,
-      reviewsCount: 4890,
-      stockQty: 150,
-      badge: "GENUINE",
-      deliveryEstimate: "Same-Day Dispatch",
-      variant: "compact",
-    },
-    {
-      id: "prod-4",
-      title: "Logitech MX Master 3S Wireless Performance Mouse",
-      brand: "Logitech",
-      category: "Computing",
-      image: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=600&q=80",
-      price: 8995,
-      originalPrice: 10995,
-      sellerName: "Prime Tech Supplies",
-      sellerTier: "verified",
-      rating: 4.9,
-      reviewsCount: 2310,
-      stockQty: 42,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      variant: "compact",
-    },
-    {
-      id: "prod-5",
-      title: "SanDisk Extreme 1TB Portable External NVMe SSD USB-C",
-      brand: "SanDisk",
-      category: "Computing",
-      image: "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=600&q=80",
-      price: 11499,
-      originalPrice: 14500,
-      sellerName: "Silicon Distro Hub",
-      sellerTier: "verified",
-      rating: 4.7,
-      reviewsCount: 920,
-      stockQty: 18,
-      deliveryEstimate: "FREE Delivery by Wednesday",
-      variant: "compact",
-    },
-
-    // 3. HORIZONTAL
-    {
-      id: "prod-6",
-      title: "Herman Miller Aeron Ergonomic Chair - Graphite Edition (Size B)",
-      brand: "Herman Miller",
-      category: "Workspace",
-      image: "https://images.unsplash.com/photo-1580481077195-731da89f3799?auto=format&fit=crop&w=600&q=80",
-      price: 142000,
-      originalPrice: 165000,
-      sellerName: "ErgoWork Solutions",
-      sellerTier: "premium",
-      rating: 5.0,
-      reviewsCount: 215,
-      stockQty: 4,
-      deliveryEstimate: "Special Freight Delivery in 3 Days (White Glove)",
-      variant: "horizontal",
-    },
-    {
-      id: "prod-7",
-      title: "Dell UltraSharp 32-inch 4K UHD Thunderbolt Hub USB-C Monitor (U3223QE)",
-      brand: "Dell",
-      category: "Computing",
-      image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80",
-      price: 78900,
-      originalPrice: 89900,
-      sellerName: "Office Connect Direct",
-      sellerTier: "premium",
-      rating: 4.8,
-      reviewsCount: 310,
-      stockQty: 12,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      variant: "horizontal",
-    },
-
-    // 4. SEARCH RESULT
-    {
-      id: "prod-8",
-      title: "Kubernetes NVMe Cloud Server Cluster (16 vCPU, 64GB RAM, 1TB NVMe, 10Gbps)",
-      brand: "Acme Cloud",
-      category: "Cloud",
-      image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80",
-      price: 62000,
-      originalPrice: 75000,
-      sellerName: "Acme Cloud Corp",
-      sellerTier: "premium",
-      rating: 4.9,
-      reviewsCount: 94,
-      stockQty: 15,
-      deliveryEstimate: "Instant Automated Provisioning (under 3 mins)",
-      specifications: ["16 Dedicated vCPUs", "64GB DDR5 ECC RAM", "1TB Enterprise PCIe 4.0", "99.99% SLA Uptime Guarantee", "BGP Anycast Routing"],
-      otherSellersCount: 3,
-      variant: "search_result",
-    },
-    {
-      id: "prod-9",
-      title: "Motul 300V Factory Line 15W-50 100% Synthetic 4T Ester Core Engine Oil (4 Liters)",
-      brand: "Motul",
-      category: "Automotive",
-      image: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=600&q=80",
-      price: 4850,
-      originalPrice: 5600,
-      sellerName: "AutoCare Spares",
-      sellerTier: "verified",
-      rating: 4.9,
-      reviewsCount: 420,
-      stockQty: 30,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      specifications: ["Ester Core Technology", "JASO MA2 Certified", "High Thermal Stability", "Anti-Wear Protection"],
-      otherSellersCount: 4,
-      variant: "search_result",
-    },
-
-    // 5. WISHLIST
-    {
-      id: "prod-10",
-      title: "Glow Beauty Damask Rose Organic Botanical Hydrating Facial Serum (50ml)",
-      brand: "Glow Beauty",
-      category: "Beauty",
-      image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80",
-      price: 2499,
-      originalPrice: 3200,
-      sellerName: "Glow Beauty Organics",
-      sellerTier: "premium",
-      rating: 5.0,
-      reviewsCount: 310,
-      stockQty: 18,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      priceDropAmount: 400,
-      variant: "wishlist",
-    },
-    {
-      id: "prod-11",
-      title: "Garmin Fenix 7 Pro Solar Sapphire Multi-Sport GPS Smartwatch",
-      brand: "Garmin",
-      category: "Electronics",
-      image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80",
-      price: 84990,
-      originalPrice: 94990,
-      sellerName: "Office Connect Direct",
-      sellerTier: "premium",
-      rating: 4.9,
-      reviewsCount: 164,
-      stockQty: 6,
-      deliveryEstimate: "FREE Express Delivery",
-      priceDropAmount: 5000,
-      variant: "wishlist",
-    },
-
-    // 6. RECOMMENDED
-    {
-      id: "prod-12",
-      title: "Anker Prime 27,650mAh Power Bank (250W Multi-Port Fast Charger)",
-      brand: "Anker",
-      category: "Electronics",
-      image: "https://images.unsplash.com/photo-1609081219090-a6d81d3085bf?auto=format&fit=crop&w=600&q=80",
-      price: 14999,
-      originalPrice: 17999,
-      sellerName: "Anker Official India",
-      sellerTier: "premium",
-      rating: 4.9,
-      reviewsCount: 680,
-      stockQty: 22,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      matchScore: 98,
-      variant: "recommended",
-    },
-    {
-      id: "prod-13",
-      title: "Organic Damask Rose Lip Elixir Peptide Balm (15ml)",
-      brand: "Glow Beauty",
-      category: "Beauty",
-      image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=600&q=80",
-      price: 1200,
-      originalPrice: 1500,
-      sellerName: "Glow Beauty Organics",
-      sellerTier: "premium",
-      rating: 4.9,
-      reviewsCount: 140,
-      stockQty: 35,
-      deliveryEstimate: "FREE Delivery in 2 Days",
-      matchScore: 95,
-      variant: "recommended",
-    },
-
-    // 7. SPONSORED
-    {
-      id: "prod-14",
-      title: "Brembo Ceramic Front Brake Pad Set for German Sedans & SUVs",
-      brand: "Brembo",
-      category: "Automotive",
-      image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80",
-      price: 6800,
-      originalPrice: 7900,
-      sellerName: "AutoCare Spares",
-      sellerTier: "verified",
-      rating: 4.8,
-      reviewsCount: 88,
-      stockQty: 14,
-      deliveryEstimate: "FREE Delivery in 2 Days",
-      variant: "sponsored",
-    },
-    {
-      id: "prod-15",
-      title: "Sennheiser Profile USB-C Condenser Studio Microphone with Boom Arm",
-      brand: "Sennheiser",
-      category: "Electronics",
-      image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=600&q=80",
-      price: 18900,
-      originalPrice: 21900,
-      sellerName: "Pro Audio Direct",
-      sellerTier: "verified",
-      rating: 4.9,
-      reviewsCount: 290,
-      stockQty: 11,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      variant: "sponsored",
-    },
-
-    // 8. OUT OF STOCK
-    {
-      id: "prod-16",
-      title: "NVIDIA GeForce RTX 4090 24GB GDDR6X Founders Edition",
-      brand: "NVIDIA",
-      category: "Computing",
-      image: "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=600&q=80",
-      price: 175000,
-      originalPrice: 195000,
-      sellerName: "Office Connect Direct",
-      sellerTier: "premium",
-      rating: 5.0,
-      reviewsCount: 890,
-      stockQty: 0,
-      deliveryEstimate: "Currently Unavailable",
-      variant: "out_of_stock",
-    },
-    {
-      id: "prod-17",
-      title: "Dyson Solarcycle Morph Desk Light with Intelligent Sun-Tracking",
-      brand: "Dyson",
-      category: "Workspace",
-      image: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=600&q=80",
-      price: 41900,
-      originalPrice: 46900,
-      sellerName: "Modern Living India",
-      sellerTier: "verified",
-      rating: 4.7,
-      reviewsCount: 110,
-      stockQty: 0,
-      deliveryEstimate: "Currently Unavailable",
-      variant: "out_of_stock",
-    },
-
-    // 9. DISCOUNTED / FLASH DEAL
-    {
-      id: "prod-18",
-      title: "Castrol EDGE 5W-40 Advanced Full Synthetic Engine Oil (5 Liters)",
-      brand: "Castrol",
-      category: "Automotive",
-      image: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=600&q=80",
-      price: 3200,
-      originalPrice: 4200,
-      sellerName: "AutoCare Spares",
-      sellerTier: "verified",
-      rating: 4.8,
-      reviewsCount: 88,
-      stockQty: 3,
-      badge: "⚡ 24% OFF",
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      variant: "discounted",
-    },
-    {
-      id: "prod-19",
-      title: "French Botanical Anti-Aging Rose Elixir Night Concentrate (30ml)",
-      brand: "Glow Beauty",
-      category: "Beauty",
-      image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=600&q=80",
-      price: 1999,
-      originalPrice: 2800,
-      sellerName: "Glow Beauty Organics",
-      sellerTier: "premium",
-      rating: 4.9,
-      reviewsCount: 220,
-      stockQty: 2,
-      badge: "⚡ 28% OFF",
-      deliveryEstimate: "FREE Delivery by Wednesday",
-      variant: "discounted",
-    },
-
-    // 10. MULTI-SELLER
-    {
-      id: "prod-20",
-      title: "Apple AirPods Pro (2nd Generation) with MagSafe Case (USB-C)",
-      brand: "Apple",
-      category: "Electronics",
-      image: "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?auto=format&fit=crop&w=600&q=80",
-      price: 21990,
-      originalPrice: 24900,
-      sellerName: "Office Connect Direct",
-      sellerTier: "premium",
-      rating: 4.9,
-      reviewsCount: 5410,
-      stockQty: 45,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      otherSellersCount: 6,
-      variant: "multi_seller",
-    },
-    {
-      id: "prod-21",
-      title: "Sony PlayStation 5 DualSense Wireless Controller - Midnight Black",
-      brand: "Sony",
-      category: "Electronics",
-      image: "https://images.unsplash.com/photo-1606318801954-d46846092b2a?auto=format&fit=crop&w=600&q=80",
-      price: 5490,
-      originalPrice: 6390,
-      sellerName: "Console Hub Retailers",
-      sellerTier: "verified",
-      rating: 4.8,
-      reviewsCount: 3410,
-      stockQty: 28,
-      deliveryEstimate: "FREE Delivery in 2 Days",
-      otherSellersCount: 4,
-      variant: "multi_seller",
-    },
-    {
-      id: "prod-22",
-      title: "Ergonomic Aluminium Height-Adjustable Laptop Stand with Heat Dissipation",
-      brand: "Office Connect",
-      category: "Workspace",
-      image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=600&q=80",
-      price: 1899,
-      originalPrice: 2499,
-      sellerName: "Office Connect Direct",
-      sellerTier: "premium",
-      rating: 4.8,
-      reviewsCount: 940,
-      stockQty: 80,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      otherSellersCount: 5,
-      variant: "multi_seller",
-    },
-  ];
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("officeconnect_custom_products");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const mapped: DemoProduct[] = parsed.map((p: any) => ({
+            id: p.id || `custom-${Math.random()}`,
+            title: p.title || p.name || "Custom Product",
+            brand: p.brand || "Verified Merchant",
+            category: p.category || "Electronics",
+            image: p.image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80",
+            price: Number(p.price) || 0,
+            originalPrice: p.originalPrice ? Number(p.originalPrice) : undefined,
+            sellerName: p.sellerName || "Registered Merchant",
+            sellerTier: "verified" as const,
+            rating: 5.0,
+            reviewsCount: 0,
+            stockQty: Number(p.stockQty) || 10,
+            deliveryEstimate: "Standard Dispatch",
+            variant: "standard" as const,
+          }));
+          setSampleProducts(mapped);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const variantsList: { key: string; label: string; count: number; desc: string }[] = [
     { key: "all", label: "All Variants Showcase", count: sampleProducts.length, desc: "Explore the comprehensive production suite across 10 specialized variants" },
@@ -622,14 +263,20 @@ export default function ProductCardsTestPage() {
 
         {/* Main Product Cards Test Matrix */}
         {filteredProducts.length === 0 ? (
-          <div className="p-12 text-center border border-dashed border-slate-300 rounded-[8px] space-y-2">
-            <p className="text-sm font-bold text-slate-700">No products match the selected variant & category filter.</p>
-            <button
-              onClick={() => { setSelectedVariantFilter("all"); setSelectedCategoryFilter("all"); }}
-              className="text-xs font-bold text-[#404d85] underline"
-            >
-              Reset Filters
-            </button>
+          <div className="p-12 text-center border border-dashed border-slate-300 rounded-[8px] space-y-3 bg-slate-50">
+            <span className="text-3xl">📦</span>
+            <h3 className="text-base font-black text-slate-900">No products uploaded yet</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              The product test suite is clean and ready. Upload your products via the Seller Portal to preview all 10 variant layouts here.
+            </p>
+            <div className="pt-2 flex items-center justify-center gap-3">
+              <Link
+                href="/seller/products"
+                className="px-5 py-2 rounded-[6px] bg-[#404d85] text-white font-bold text-xs hover:bg-[#323d6a] transition shadow-xs"
+              >
+                + Upload Products
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="space-y-8">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, use } from "react";
+import { useState, useMemo, useEffect, use } from "react";
 import Link from "next/link";
 import { MarketplacePageWrapper } from "@/components/storefront/MarketplacePageWrapper";
 import {
@@ -120,213 +120,64 @@ export default function CategoryListingPage({ params }: { params: Promise<{ slug
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  // Realistic Catalog Data for this category
-  const allCatalogProducts: ProductCardProps[] = [
-    {
-      id: "cat-p1",
-      title: "Sony WH-1000XM5 Wireless Industry Leading Noise Canceling Headphones",
-      brand: "Sony",
-      image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80",
-      secondaryImage: "https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=600&q=80",
-      price: 29990,
-      originalPrice: 34990,
-      sellerName: "Office Connect Direct",
-      sellerTier: "premium",
-      rating: 4.9,
-      reviewsCount: 1420,
-      stockQty: 24,
-      badge: "BESTSELLER",
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      variant: "standard",
-    },
-    {
-      id: "cat-p2",
-      title: "Apple AirPods Pro (2nd Generation) with MagSafe Case (USB-C)",
-      brand: "Apple",
-      image: "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?auto=format&fit=crop&w=600&q=80",
-      price: 21990,
-      originalPrice: 24900,
-      sellerName: "Office Connect Direct",
-      sellerTier: "premium",
-      rating: 4.9,
-      reviewsCount: 5410,
-      stockQty: 45,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      otherSellersCount: 6,
-      variant: "multi_seller",
-    },
-    {
-      id: "cat-p3",
-      title: "Keychron Q1 Pro Wireless Custom Mechanical Keyboard (QMK/VIA ANSI)",
-      brand: "Keychron",
-      image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80",
-      price: 16999,
-      originalPrice: 19999,
-      sellerName: "Mechanical Keyboards India",
-      sellerTier: "verified",
-      rating: 4.8,
-      reviewsCount: 380,
-      stockQty: 8,
-      badge: "HOT ITEM",
-      deliveryEstimate: "Express Delivery in 2 Days",
-      variant: "standard",
-    },
-    {
-      id: "cat-p4",
-      title: "Glow Beauty Damask Rose Organic Botanical Hydrating Facial Serum (50ml)",
-      brand: "Glow Beauty",
-      image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80",
-      price: 2499,
-      originalPrice: 3200,
-      sellerName: "Glow Beauty Organics",
-      sellerTier: "premium",
-      rating: 5.0,
-      reviewsCount: 310,
-      stockQty: 18,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      badge: "🔥 22% OFF",
-      variant: "discounted",
-    },
-    {
-      id: "cat-p5",
-      title: "Dell UltraSharp 32-inch 4K UHD Thunderbolt Hub USB-C Monitor (U3223QE)",
-      brand: "Dell",
-      image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80",
-      price: 78900,
-      originalPrice: 89900,
-      sellerName: "Office Connect Direct",
-      sellerTier: "premium",
-      rating: 4.8,
-      reviewsCount: 310,
-      stockQty: 12,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      variant: "standard",
-    },
-    {
-      id: "cat-p6",
-      title: "Motul 300V Factory Line 15W-50 100% Synthetic 4T Ester Core Engine Oil (4 Liters)",
-      brand: "Motul",
-      image: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=600&q=80",
-      price: 4850,
-      originalPrice: 5600,
-      sellerName: "AutoCare Spares",
-      sellerTier: "verified",
-      rating: 4.9,
-      reviewsCount: 420,
-      stockQty: 30,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      variant: "standard",
-    },
-    {
-      id: "cat-p7",
-      title: "Anker Prime 27,650mAh Power Bank (250W Multi-Port Fast Charger)",
-      brand: "Anker",
-      image: "https://images.unsplash.com/photo-1609081219090-a6d81d3085bf?auto=format&fit=crop&w=600&q=80",
-      price: 14999,
-      originalPrice: 17999,
-      sellerName: "Anker Official India",
-      sellerTier: "premium",
-      rating: 4.9,
-      reviewsCount: 680,
-      stockQty: 22,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      matchScore: 98,
-      variant: "recommended",
-    },
-    {
-      id: "cat-p8",
-      title: "Herman Miller Aeron Ergonomic Chair - Graphite Edition (Size B)",
-      brand: "Herman Miller",
-      image: "https://images.unsplash.com/photo-1580481077195-731da89f3799?auto=format&fit=crop&w=600&q=80",
-      price: 142000,
-      originalPrice: 165000,
-      sellerName: "ErgoWork Solutions",
-      sellerTier: "premium",
-      rating: 5.0,
-      reviewsCount: 215,
-      stockQty: 4,
-      deliveryEstimate: "Special Freight Delivery in 3 Days",
-      variant: "standard",
-    },
-    {
-      id: "cat-p9",
-      title: "Sennheiser Profile USB-C Condenser Studio Microphone with Boom Arm",
-      brand: "Sennheiser",
-      image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=600&q=80",
-      price: 18900,
-      originalPrice: 21900,
-      sellerName: "Pro Audio Direct",
-      sellerTier: "verified",
-      rating: 4.9,
-      reviewsCount: 290,
-      stockQty: 11,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      variant: "sponsored",
-    },
-    {
-      id: "cat-p10",
-      title: "Brembo Ceramic Front Brake Pad Set for German Sedans & SUVs",
-      brand: "Brembo",
-      image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80",
-      price: 6800,
-      originalPrice: 7900,
-      sellerName: "AutoCare Spares",
-      sellerTier: "verified",
-      rating: 4.8,
-      reviewsCount: 88,
-      stockQty: 14,
-      deliveryEstimate: "FREE Delivery in 2 Days",
-      variant: "standard",
-    },
-  ];
+  // Dynamic Catalog Data (Purged mock data - loads from custom uploaded products or starts clean)
+  const [allCatalogProducts, setAllCatalogProducts] = useState<ProductCardProps[]>([]);
 
-  // Facet Options
-  const facets: AvailableFacetOptions = {
-    brands: [
-      { name: "Sony", count: 14 },
-      { name: "Apple", count: 12 },
-      { name: "Keychron", count: 8 },
-      { name: "Dell", count: 9 },
-      { name: "Glow Beauty", count: 6 },
-      { name: "Motul", count: 7 },
-      { name: "Anker", count: 11 },
-      { name: "Herman Miller", count: 4 },
-      { name: "Sennheiser", count: 5 },
-      { name: "Brembo", count: 3 },
-    ],
-    priceRange: { min: 0, max: 200000 },
-    ratingCounts: [
-      { rating: 4, count: 42 },
-      { rating: 3, count: 58 },
-      { rating: 2, count: 65 },
-    ],
-    discountBrackets: [
-      { label: "10% or more", min: 10, count: 32 },
-      { label: "20% or more", min: 20, count: 18 },
-      { label: "30% or more", min: 30, count: 9 },
-    ],
-    categoryAttributes: [
-      {
-        name: "Connectivity / Spec",
-        key: "spec",
-        options: [
-          { label: "Bluetooth 5.3 & Wireless", count: 28 },
-          { label: "USB-C Thunderbolt 4", count: 19 },
-          { label: "QMK / VIA Programmable", count: 8 },
-          { label: "Active Noise Cancellation", count: 14 },
-        ],
-      },
-      {
-        name: "Warranty Coverage",
-        key: "warranty",
-        options: [
-          { label: "2 Years Official Manufacturer", count: 35 },
-          { label: "1 Year Official Manufacturer", count: 22 },
-          { label: "Lifetime Limited Frame", count: 4 },
-        ],
-      },
-    ],
-  };
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("officeconnect_custom_products");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const mapped: ProductCardProps[] = parsed.map((p: any) => ({
+            id: p.id || `custom-${Math.random()}`,
+            title: p.title || p.name || "Custom Product",
+            brand: p.brand || "Verified Merchant",
+            image: p.image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80",
+            price: Number(p.price) || 0,
+            originalPrice: p.originalPrice ? Number(p.originalPrice) : undefined,
+            sellerName: p.sellerName || "Office Connect Merchant",
+            sellerTier: "verified" as const,
+            rating: 5.0,
+            reviewsCount: 0,
+            stockQty: Number(p.stockQty) || 10,
+            deliveryEstimate: "Standard Dispatch",
+            variant: "standard" as const,
+          }));
+          setAllCatalogProducts(mapped);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Facet Options dynamically calculated
+  const facets: AvailableFacetOptions = useMemo(() => {
+    const brandMap: Record<string, number> = {};
+    let maxP = 10000;
+    allCatalogProducts.forEach((p) => {
+      if (p.brand) brandMap[p.brand] = (brandMap[p.brand] || 0) + 1;
+      const num = typeof p.price === "string" ? parseFloat(p.price) : p.price;
+      if (num > maxP) maxP = num;
+    });
+
+    return {
+      brands: Object.entries(brandMap).map(([name, count]) => ({ name, count })),
+      priceRange: { min: 0, max: Math.max(maxP, 10000) },
+      ratingCounts: [
+        { rating: 4, count: allCatalogProducts.filter((p) => (p.rating || 0) >= 4).length },
+        { rating: 3, count: allCatalogProducts.filter((p) => (p.rating || 0) >= 3).length },
+        { rating: 2, count: allCatalogProducts.filter((p) => (p.rating || 0) >= 2).length },
+      ],
+      discountBrackets: [
+        { label: "10% or more", min: 10, count: 0 },
+        { label: "20% or more", min: 20, count: 0 },
+        { label: "30% or more", min: 30, count: 0 },
+      ],
+      categoryAttributes: [],
+    };
+  }, [allCatalogProducts]);
 
   // Filter & Sort Logic
   const filteredProducts = useMemo(() => {
@@ -508,8 +359,31 @@ export default function CategoryListingPage({ params }: { params: Promise<{ slug
             </div>
 
             {/* 5. PRODUCT LISTING GRID / LIST */}
-            {filteredProducts.length === 0 ? (
-              /* EMPTY STATE */
+            {allCatalogProducts.length === 0 ? (
+              /* EMPTY DEPARTMENT STATE */
+              <div className="p-12 text-center border border-dashed border-slate-300 rounded-[8px] bg-slate-50 space-y-3">
+                <span className="text-3xl">📦</span>
+                <h3 className="text-base font-black text-slate-900">No products in this department yet</h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  Registered merchants can upload their inventory directly through the Seller Portal to appear in this department.
+                </p>
+                <div className="pt-2 flex items-center justify-center gap-3">
+                  <Link
+                    href="/seller/products"
+                    className="px-5 py-2 rounded-[6px] bg-[#404d85] text-white font-bold text-xs hover:bg-[#323d6a] transition shadow-xs"
+                  >
+                    + Upload Products Now
+                  </Link>
+                  <Link
+                    href="/storefront"
+                    className="px-5 py-2 rounded-[6px] border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-100 transition"
+                  >
+                    Return to Storefront
+                  </Link>
+                </div>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              /* EMPTY FILTER MATCH STATE */
               <div className="p-12 text-center border border-dashed border-slate-300 rounded-[8px] bg-slate-50 space-y-3">
                 <span className="text-3xl">🔍</span>
                 <h3 className="text-base font-black text-slate-900">No products match your selected filters</h3>

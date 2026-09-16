@@ -85,54 +85,7 @@ export async function fetchCatalogProducts(params?: {
     const json = await res.json();
     return json.data || [];
   } catch (err) {
-    console.warn("[CatalogAPI] Falling back to default products:", err);
-    return [
-      {
-        id: "prod-1",
-        title: "Sony WH-1000XM5 Wireless Noise Canceling Headphones",
-        slug: "sony-wh-1000xm5-wireless-noise-canceling-headphones",
-        brandId: "brand-sony",
-        brandName: "Sony",
-        categoryId: "cat-audio-headphones",
-        categoryName: "Over-Ear Headphones",
-        description: "Industry-leading noise canceling with 2 processors and 8 microphones.",
-        hsnCode: "85183000",
-        countryOfOrigin: "Japan",
-        primaryImage: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
-        galleryImages: ["https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80"],
-        status: "APPROVED",
-        attributes: [
-          { id: "a1", name: "Form Factor", value: "Over-Ear", isFilterable: true },
-          { id: "a2", name: "Battery Life", value: "30 Hours", isFilterable: true },
-        ],
-        variants: [
-          { id: "v1", title: "Midnight Black", sku: "SONY-XM5-BLK", options: { color: "Black" } },
-        ],
-      },
-      {
-        id: "prod-2",
-        title: "UrbanThreads 240 GSM Heavyweight Oversized French Terry T-Shirt",
-        slug: "urbanthreads-240-gsm-heavyweight-oversized-tshirt",
-        brandId: "brand-urbanthreads",
-        brandName: "UrbanThreads",
-        categoryId: "cat-men-tshirts",
-        categoryName: "Men's T-Shirts",
-        description: "100% Super-Combed Organic Cotton 240 GSM French Terry.",
-        hsnCode: "61091000",
-        countryOfOrigin: "India",
-        primaryImage: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80",
-        galleryImages: ["https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=800&q=80"],
-        status: "APPROVED",
-        attributes: [
-          { id: "at1", name: "GSM", value: "240 GSM", isFilterable: true },
-          { id: "at2", name: "Fit", value: "Relaxed Oversized", isFilterable: true },
-        ],
-        variants: [
-          { id: "vt1", title: "Black / S", sku: "UT-TSHIRT-BLK-S", options: { color: "Black", size: "S" } },
-          { id: "vt2", title: "White / M", sku: "UT-TSHIRT-WHT-M", options: { color: "White", size: "M" } },
-        ],
-      },
-    ];
+    return [];
   }
 }
 

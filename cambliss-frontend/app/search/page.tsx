@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { MarketplacePageWrapper } from "@/components/storefront/MarketplacePageWrapper";
@@ -26,125 +26,10 @@ interface SearchProductItem {
   fullDescription: string;
 }
 
-const masterSearchDatabase: SearchProductItem[] = [
-  {
-    id: "prod-1",
-    title: "Sony WH-1000XM5 Wireless Industry Leading Noise Canceling Headphones",
-    brand: "Sony",
-    category: "Electronics",
-    rating: 4.9,
-    reviewsCount: 1420,
-    price: 29990,
-    originalPrice: 34990,
-    deliveryEstimate: "Tomorrow, by 1 PM (Express Air)",
-    sellerName: "Sony India Direct",
-    sellerTier: "premium",
-    inStock: true,
-    stockQty: 24,
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80",
-    fullDescription: "Premium wireless noise canceling headphones with Auto NC Optimizer, 30-hour battery life, and crystal-clear hands-free calling.",
-  },
-  {
-    id: "prod-2",
-    title: "Sony WF-1000XM5 Truly Wireless Noise Canceling Earbuds",
-    brand: "Sony",
-    category: "Electronics",
-    rating: 4.8,
-    reviewsCount: 930,
-    price: 23990,
-    originalPrice: 26990,
-    deliveryEstimate: "Tomorrow, by 5 PM",
-    sellerName: "Sony India Direct",
-    sellerTier: "premium",
-    inStock: true,
-    stockQty: 18,
-    image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=600&q=80",
-    fullDescription: "The best noise canceling truly wireless earbuds with dynamic driver X, dual processors, and bone conduction sensors.",
-  },
-  {
-    id: "prod-3",
-    title: "Dell UltraSharp 32-inch 4K UHD Thunderbolt Hub USB-C Monitor (U3224KB)",
-    brand: "Dell",
-    category: "Computing",
-    rating: 4.7,
-    reviewsCount: 412,
-    price: 78900,
-    originalPrice: 89900,
-    deliveryEstimate: "In 2 Days via Bluedart Heavy",
-    sellerName: "Office Connect Direct",
-    sellerTier: "premium",
-    inStock: true,
-    stockQty: 5,
-    image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80",
-    fullDescription: "Professional 6K UHD IPS Black monitor with built-in 4K HDR webcam, 140W power delivery, and Thunderbolt 4 connectivity.",
-  },
-  {
-    id: "prod-4",
-    title: "Keychron Q1 Pro Custom Wireless Mechanical Keyboard QMK/VIA",
-    brand: "Keychron",
-    category: "Computing",
-    rating: 4.9,
-    reviewsCount: 680,
-    price: 18499,
-    originalPrice: 21999,
-    deliveryEstimate: "Tomorrow, by 11 AM",
-    sellerName: "Keychron Official India",
-    sellerTier: "premium",
-    inStock: true,
-    stockQty: 12,
-    image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80",
-    fullDescription: "Full aluminum CNC body, wireless Bluetooth 5.1 and wired USB-C, hot-swappable switches with South-facing RGB backlighting.",
-  },
-  {
-    id: "prod-5",
-    title: "Minimalist 100% Organic Hyaluronic Acid & Vitamin C Serum",
-    brand: "Minimalist",
-    category: "Beauty",
-    rating: 4.6,
-    reviewsCount: 2840,
-    price: 699,
-    originalPrice: 899,
-    deliveryEstimate: "Tomorrow, by 2 PM",
-    sellerName: "Glow Beauty Organics",
-    sellerTier: "verified",
-    inStock: true,
-    stockQty: 50,
-    image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80",
-    fullDescription: "Brightening antioxidant facial serum with 10% ethyl ascorbic acid and centella water for glowing radiant skin tone.",
-  },
-  {
-    id: "prod-6",
-    title: "Brembo High Performance Carbon Ceramic Brake Disc Spares",
-    brand: "Brembo",
-    category: "Automotive",
-    rating: 4.9,
-    reviewsCount: 195,
-    price: 14500,
-    originalPrice: 16900,
-    deliveryEstimate: "In 2 Days via Surface Freight",
-    sellerName: "AutoCare Spares Direct",
-    sellerTier: "verified",
-    inStock: true,
-    stockQty: 8,
-    image: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=600&q=80",
-    fullDescription: "High-friction carbon ceramic ventilated disc brakes designed for maximum stopping power and zero thermal fade under high load.",
-  },
-];
+const masterSearchDatabase: SearchProductItem[] = [];
 
 // Typo mapping
-const typoCorrections: Record<string, string> = {
-  soni: "Sony",
-  "sony headfone": "Sony WH-1000XM5 headphones",
-  "sony headfones": "Sony WH-1000XM5 headphones",
-  keychorn: "Keychron",
-  "keychron keybord": "Keychron mechanical keyboard",
-  del: "Dell",
-  "del monitor": "Dell 4K Monitor",
-  "brak pad": "Brembo Brake Spares",
-  "brembo brake": "Brembo High Performance Brake Discs",
-  minimilist: "Minimalist",
-  "vit c serum": "Vitamin C Serum",
-};
+const typoCorrections: Record<string, string> = {};
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -153,6 +38,38 @@ function SearchContent() {
   const rawQuery = searchParams.get("q") || "";
   const categoryParam = searchParams.get("category") || "All Categories";
   const exact = searchParams.get("exact") === "true";
+
+  const [productsList, setProductsList] = useState<SearchProductItem[]>(masterSearchDatabase);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("officeconnect_custom_products");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setProductsList(
+            parsed.map((item: any) => ({
+              id: item.id || `prod-${Date.now()}`,
+              title: item.title,
+              brand: item.brand || "Store Brand",
+              category: item.category || "General",
+              rating: item.rating || 5.0,
+              reviewsCount: item.reviewsCount || 0,
+              price: Number(item.price),
+              originalPrice: Number(item.mrp || item.originalPrice || item.price * 1.2),
+              deliveryEstimate: "FREE Delivery in 2 Days",
+              sellerName: item.sellerName || "Registered Merchant",
+              sellerTier: "verified" as const,
+              inStock: true,
+              stockQty: Number(item.stock !== undefined ? item.stock : 10),
+              image: item.image || "",
+              fullDescription: item.description || item.title,
+            }))
+          );
+        }
+      }
+    } catch {}
+  }, []);
 
   // Check typo
   const correctedQuery = useMemo(() => {
@@ -175,7 +92,7 @@ function SearchContent() {
   const filteredProducts = useMemo(() => {
     const queryTerm = activeSearchQuery.toLowerCase().trim();
 
-    return masterSearchDatabase
+    return productsList
       .filter((p) => {
         // Query match
         if (queryTerm) {

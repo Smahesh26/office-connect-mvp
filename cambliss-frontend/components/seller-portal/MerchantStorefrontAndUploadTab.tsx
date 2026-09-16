@@ -39,69 +39,13 @@ export interface CustomMerchantProduct {
   createdAt: string;
 }
 
-const DEFAULT_HISENSE_PRODUCTS: CustomMerchantProduct[] = [
-  {
-    id: "prod-hisense-visionbook",
-    title: "Hisense VisionBook Pro 16 AI Workstation Laptop (Core i9, 32GB, RTX 4070)",
-    brand: "Hisense Computers",
-    category: "Computing",
-    price: 149990,
-    originalPrice: 179990,
-    stockQty: 18,
-    sku: "HS-VB16-AI",
-    hsn: "84713010",
-    image: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80",
-    sellerName: "Hisense Computers (bhaskeradv1@gmail.com) 👑",
-    sellerTier: "premium",
-    badge: "★ FLAGSHIP WORKSTATION",
-    rating: 4.9,
-    reviewsCount: 142,
-    createdAt: "2026-09-01",
-  },
-  {
-    id: "prod-hisense-aio27",
-    title: "Hisense Infinity AIO 27\" 4K All-In-One Desktop Computer",
-    brand: "Hisense Computers",
-    category: "Computing",
-    price: 84990,
-    originalPrice: 99990,
-    stockQty: 22,
-    sku: "HS-AIO27-4K",
-    hsn: "84714190",
-    image: "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80",
-    sellerName: "Hisense Computers (bhaskeradv1@gmail.com) 👑",
-    sellerTier: "premium",
-    badge: "4K INFINITYEDGE",
-    rating: 4.9,
-    reviewsCount: 98,
-    createdAt: "2026-09-02",
-  },
-  {
-    id: "prod-hisense-ultraview34",
-    title: "Hisense UltraView 34-Inch Curved WQHD USB-C Ergonomic Hub Monitor",
-    brand: "Hisense Computers",
-    category: "Computing",
-    price: 38990,
-    originalPrice: 46990,
-    stockQty: 35,
-    sku: "HS-UV34-WQHD",
-    hsn: "85285200",
-    image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80",
-    sellerName: "Hisense Computers (bhaskeradv1@gmail.com) 👑",
-    sellerTier: "premium",
-    badge: "165HZ WQHD",
-    rating: 4.8,
-    reviewsCount: 184,
-    createdAt: "2026-09-03",
-  },
-];
+const DEFAULT_HISENSE_PRODUCTS: CustomMerchantProduct[] = [];
 
 const PRESET_PRODUCT_IMAGES = [
-  { label: "AI Laptop", url: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80" },
-  { label: "4K Desktop", url: "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80" },
-  { label: "Curved Monitor", url: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80" },
-  { label: "Wireless Keyboard", url: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80" },
-  { label: "Pro Gaming Mouse", url: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=600&q=80" },
+  { label: "Hardware Product", url: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80" },
+  { label: "Display / Screen", url: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80" },
+  { label: "Office Accessories", url: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80" },
+  { label: "Peripherals & Audio", url: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80" },
 ];
 
 interface MerchantStorefrontAndUploadTabProps {
@@ -117,18 +61,18 @@ export const MerchantStorefrontAndUploadTab = ({
   onNavigateToOnboarding,
   onProductAdded,
 }: MerchantStorefrontAndUploadTabProps) => {
-  const [products, setProducts] = useState<CustomMerchantProduct[]>(DEFAULT_HISENSE_PRODUCTS);
+  const [products, setProducts] = useState<CustomMerchantProduct[]>([]);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // New Product Form State
   const [newTitle, setNewTitle] = useState("");
-  const [newBrand, setNewBrand] = useState("Hisense Computers");
-  const [newCategory, setNewCategory] = useState("Computing");
-  const [newPrice, setNewPrice] = useState("24990");
-  const [newMrp, setNewMrp] = useState("29990");
+  const [newBrand, setNewBrand] = useState("My Store");
+  const [newCategory, setNewCategory] = useState("Electronics");
+  const [newPrice, setNewPrice] = useState("1999");
+  const [newMrp, setNewMrp] = useState("2499");
   const [newStock, setNewStock] = useState("25");
-  const [newSku, setNewSku] = useState("HS-PROD-" + Math.floor(100 + Math.random() * 900));
+  const [newSku, setNewSku] = useState("SKU-" + Math.floor(100 + Math.random() * 900));
   const [newHsn, setNewHsn] = useState("8471");
   const [newImage, setNewImage] = useState(PRESET_PRODUCT_IMAGES[0].url);
 
@@ -138,12 +82,8 @@ export const MerchantStorefrontAndUploadTab = ({
       const stored = localStorage.getItem("officeconnect_custom_products");
       if (stored) {
         const customList: CustomMerchantProduct[] = JSON.parse(stored);
-        if (customList.length > 0) {
-          // Merge avoiding duplicates
-          const map = new Map<string, CustomMerchantProduct>();
-          DEFAULT_HISENSE_PRODUCTS.forEach((p) => map.set(p.id, p));
-          customList.forEach((p) => map.set(p.id, p));
-          setProducts(Array.from(map.values()));
+        if (Array.isArray(customList)) {
+          setProducts(customList);
         }
       }
     } catch (e) {}
@@ -160,7 +100,7 @@ export const MerchantStorefrontAndUploadTab = ({
     const newProd: CustomMerchantProduct = {
       id: `prod-custom-${Date.now()}`,
       title: newTitle.trim(),
-      brand: newBrand.trim() || "Hisense Computers",
+      brand: newBrand.trim() || "My Store",
       category: newCategory,
       price: priceNum,
       originalPrice: mrpNum,
@@ -168,26 +108,37 @@ export const MerchantStorefrontAndUploadTab = ({
       sku: newSku.trim() || "SKU-" + Date.now(),
       hsn: newHsn.trim() || "8471",
       image: newImage || PRESET_PRODUCT_IMAGES[0].url,
-      sellerName: `Hisense Computers (${userEmail}) 👑`,
+      sellerName: `Store (${userEmail}) 👑`,
       sellerTier: "premium",
       badge: "⚡ NEW LAUNCH",
       rating: 5.0,
-      reviewsCount: 1,
+      reviewsCount: 0,
       createdAt: new Date().toISOString().split("T")[0],
     };
 
     const updatedList = [newProd, ...products];
     setProducts(updatedList);
-
-    // Save to localStorage
     try {
       localStorage.setItem("officeconnect_custom_products", JSON.stringify(updatedList));
-    } catch (err) {}
+    } catch (e) {}
 
-    // Notify parent to inject into Marketplace live catalog
-    if (onProductAdded) {
-      onProductAdded(newProd);
-    }
+    try {
+      fetch("/api/ecommerce/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newProd.title,
+          price: newProd.price,
+          originalPrice: newProd.originalPrice,
+          sku: newProd.sku,
+          hsn: newProd.hsn,
+          images: [newProd.image],
+          category: newProd.category,
+          brand: newProd.brand,
+        }),
+      }).catch(() => {});
+    } catch (e) {}
+    if (onProductAdded) onProductAdded(newProd);
 
     // Reset Form & Close Modal
     setIsUploadModalOpen(false);

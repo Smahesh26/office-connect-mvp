@@ -69,6 +69,7 @@ fi
 npm install
 npx prisma generate
 npx prisma db push --accept-data-loss || npx prisma migrate deploy || true
+npx tsx scripts/clean-ecommerce-data.ts || npx ts-node scripts/clean-ecommerce-data.ts || true
 npx ts-node scripts/seed-credentials.ts || true
 npm run build
 

@@ -3,35 +3,7 @@
 import { useState } from "react";
 
 export const AccountNotificationsCenter = () => {
-  const [notifications, setNotifications] = useState([
-    {
-      id: "notif-1",
-      type: "shipping",
-      title: "Out for Delivery: Package 1 (Sony WH-1000XM5)",
-      message: "Bluedart executive Suresh K. is out for delivery in Bengaluru. Expected arrival before 1:00 PM.",
-      time: "2 hours ago",
-      read: false,
-      icon: "🚚",
-    },
-    {
-      id: "notif-2",
-      type: "price",
-      title: "Price Drop Alert: Keychron Q1 Pro Barebone",
-      message: "An item on your wishlist dropped by ₹3,500! Now available for ₹18,499.",
-      time: "1 day ago",
-      read: false,
-      icon: "⚡",
-    },
-    {
-      id: "notif-3",
-      type: "escrow",
-      title: "Escrow Vault Secured: Order #OC-89412",
-      message: "₹70,479 placed in Escrow Vault. Payouts to Sony India & Keychron scheduled upon confirmed delivery scan.",
-      time: "Yesterday",
-      read: true,
-      icon: "🛡️",
-    },
-  ]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   const handleMarkAllRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -50,39 +22,51 @@ export const AccountNotificationsCenter = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleMarkAllRead}
-          className="text-xs font-bold text-[#404d85] hover:underline"
-        >
-          Mark all as read
-        </button>
+        {notifications.length > 0 && (
+          <button
+            type="button"
+            onClick={handleMarkAllRead}
+            className="text-xs font-bold text-[#404d85] hover:underline"
+          >
+            Mark all as read
+          </button>
+        )}
       </div>
 
-      <div className="divide-y divide-slate-100">
-        {notifications.map((n) => (
-          <div
-            key={n.id}
-            className={`py-3.5 px-3 rounded flex items-start gap-3 text-xs transition ${
-              n.read ? "bg-white" : "bg-slate-50/80 font-medium"
-            }`}
-          >
-            <span className="text-xl shrink-0 mt-0.5">{n.icon}</span>
-            <div className="flex-1 min-w-0 space-y-1">
-              <div className="flex items-center justify-between gap-2">
-                <h5 className={`text-xs ${n.read ? "font-bold text-slate-700" : "font-black text-slate-900"}`}>
-                  {n.title}
-                </h5>
-                <span className="text-[10px] text-slate-400 font-mono shrink-0">{n.time}</span>
+      {notifications.length === 0 ? (
+        <div className="p-8 text-center border border-dashed border-slate-200 rounded-[6px] bg-slate-50 space-y-2">
+          <span className="text-3xl">🔔</span>
+          <h4 className="font-bold text-slate-800 text-sm">No notifications at this time</h4>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            Order dispatches, delivery confirmations, and escrow milestones will appear here in real time.
+          </p>
+        </div>
+      ) : (
+        <div className="divide-y divide-slate-100">
+          {notifications.map((n) => (
+            <div
+              key={n.id}
+              className={`py-3.5 px-3 rounded flex items-start gap-3 text-xs transition ${
+                n.read ? "bg-white" : "bg-slate-50/80 font-medium"
+              }`}
+            >
+              <span className="text-xl shrink-0 mt-0.5">{n.icon}</span>
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <h5 className={`text-xs ${n.read ? "font-bold text-slate-700" : "font-black text-slate-900"}`}>
+                    {n.title}
+                  </h5>
+                  <span className="text-[10px] text-slate-400 font-mono shrink-0">{n.time}</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed text-[11px]">{n.message}</p>
               </div>
-              <p className="text-slate-600 leading-relaxed text-[11px]">{n.message}</p>
+              {!n.read && (
+                <span className="w-2 h-2 rounded-full bg-[#404d85] shrink-0 mt-2" />
+              )}
             </div>
-            {!n.read && (
-              <span className="w-2 h-2 rounded-full bg-[#404d85] shrink-0 mt-2" />
-            )}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
     </div>
   );

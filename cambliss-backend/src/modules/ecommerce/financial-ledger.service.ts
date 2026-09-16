@@ -47,77 +47,8 @@ let financialLedgerStore: FinancialLedgerEntry[] = [];
 let sellerSettlementsStore: SellerSettlement[] = [];
 let orderReturnsStore: OrderReturn[] = [];
 
-// Seeded active sellers
-export let sellersStore: SellerProfile[] = [
-  {
-    id: "sel-hisense-01",
-    sellerCode: "SEL-HISENSE",
-    storeSlug: "hisense-computers",
-    businessName: "Hisense Computers India Private Limited",
-    tradeName: "Hisense Computers Official",
-    ownerName: "Bhasker Advani",
-    email: "bhaskeradv1@gmail.com",
-    phone: "+91 98765 43210",
-    pan: "AAACH9102K",
-    gstin: "29AAACH9102K1Z5",
-    category: "Computing",
-    bankAccount: {
-      accountNumber: "50100294819284",
-      ifscCode: "HDFC0000128",
-      accountHolderName: "Hisense Computers India Pvt Ltd",
-      bankName: "HDFC Bank",
-    },
-    virtualAccount: {
-      virtualAccountId: "va_hisense_8819",
-      accountNumber: "OCHISENSE9021",
-      ifscCode: "RAZR0000001",
-      bankName: "ICICI Virtual Escrow Desk",
-      upiId: "hisense.officeconnect@icici",
-      entityName: "Hisense Computers Official",
-      status: "ACTIVE",
-      createdAt: "2026-09-01T00:00:00.000Z",
-    },
-    kycStatus: "VERIFIED_ACTIVE",
-    isSettlementEligible: true,
-    commissionRate: 0.075, // 7.5%
-    createdAt: "2026-09-01T00:00:00.000Z",
-    updatedAt: "2026-09-08T00:00:00.000Z",
-  },
-  {
-    id: "sel-sony-02",
-    sellerCode: "SEL-SONY",
-    storeSlug: "sony-india-official",
-    businessName: "Sony India Direct Private Limited",
-    tradeName: "Sony Electronics Direct",
-    ownerName: "Sunil Nayyar",
-    email: "marketplace@sonyindia.co.in",
-    phone: "+91 98100 12345",
-    pan: "AABCU9603R",
-    gstin: "29AABCU9603R1ZM",
-    category: "Electronics",
-    bankAccount: {
-      accountNumber: "50200049281729",
-      ifscCode: "HDFC0000128",
-      accountHolderName: "Sony India Direct Private Limited",
-      bankName: "HDFC Bank",
-    },
-    virtualAccount: {
-      virtualAccountId: "va_sony_7741",
-      accountNumber: "OCSONY5128",
-      ifscCode: "RAZR0000001",
-      bankName: "ICICI Virtual Escrow Desk",
-      upiId: "sony.officeconnect@icici",
-      entityName: "Sony Electronics Direct",
-      status: "ACTIVE",
-      createdAt: "2026-09-01T00:00:00.000Z",
-    },
-    kycStatus: "VERIFIED_ACTIVE",
-    isSettlementEligible: true,
-    commissionRate: 0.085, // 8.5%
-    createdAt: "2026-09-01T00:00:00.000Z",
-    updatedAt: "2026-09-08T00:00:00.000Z",
-  },
-];
+// Active registered sellers store
+export let sellersStore: SellerProfile[] = [];
 
 // Helper to generate cryptographically verifiable audit hash
 function createAuditHash(data: any): string {

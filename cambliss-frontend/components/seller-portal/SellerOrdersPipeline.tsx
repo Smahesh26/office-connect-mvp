@@ -10,56 +10,18 @@ export const SellerOrdersPipeline = ({
 }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
 
-  const orders = [
-    {
-      id: "HC-90412",
-      customer: "Tech Lead, Enterprise Cloud (Bengaluru)",
-      pincode: "560103",
-      items: "Hisense VisionBook Pro 16 AI Workstation (Core i9 / RTX 4070 / 32GB) × 1",
-      amount: 149990,
-      payment: "Corporate Escrow Hold",
-      status: "Ready to Ship",
-      tab: "ready",
-      sla: "Dispatch by Today 4:00 PM",
-      awb: "BD-98421094",
-    },
-    {
-      id: "HC-90408",
-      customer: "TCS Systems Architecture Team (Hyderabad)",
-      pincode: "500081",
-      items: "Hisense Infinity AIO 27\" 4K Desktop Computer × 1",
-      amount: 84990,
-      payment: "Corporate Card (HDFC)",
-      status: "New Order",
-      tab: "new",
-      sla: "Accept order within 2 hours",
-      awb: "Pending",
-    },
-    {
-      id: "HC-90392",
-      customer: "DevStudio Labs (Bengaluru)",
-      pincode: "560001",
-      items: "Hisense UltraView 34\" Curved WQHD USB-C Hub Monitor × 1",
-      amount: 38990,
-      payment: "Net Banking (ICICI)",
-      status: "Shipped",
-      tab: "shipped",
-      sla: "In Transit via Bluedart Air",
-      awb: "BD-99120481",
-    },
-    {
-      id: "HC-90210",
-      customer: "Infosys Campus Hardware Procurement (Mysuru)",
-      pincode: "570027",
-      items: "Hisense EliteDesk Tower Enterprise PC (Ryzen 9 / 64GB) × 2",
-      amount: 249000,
-      payment: "Corporate Net30 Invoice",
-      status: "Delivered",
-      tab: "delivered",
-      sla: "Delivered & Confirmed on Sept 1",
-      awb: "BD-77192019",
-    },
-  ];
+  const orders: {
+    id: string;
+    customer: string;
+    pincode: string;
+    items: string;
+    amount: number;
+    payment: string;
+    status: string;
+    tab: string;
+    sla: string;
+    awb: string;
+  }[] = [];
 
   const filteredOrders = orders.filter((o) => o.tab === activeTab);
 
@@ -76,8 +38,8 @@ export const SellerOrdersPipeline = ({
 
         <button
           type="button"
-          onClick={() => alert("Generating unified batch shipping manifest for Bluedart courier pickup...")}
-          className="px-3.5 py-1.5 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-bold text-xs transition self-start sm:self-auto"
+          onClick={() => alert("Batch manifest will be available once orders are received.")}
+          className="px-3.5 py-1.5 rounded-[4px] bg-[#404d85] hover:bg-[#323d6a] text-white font-bold text-xs transition self-start sm:self-auto opacity-80"
         >
           📄 Print Batch Dispatch Manifest
         </button>
@@ -86,34 +48,37 @@ export const SellerOrdersPipeline = ({
       {/* 7-Stage Status Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-slate-200 text-xs font-bold">
         {[
-          { id: "new", label: "New", count: 1 },
-          { id: "processing", label: "Processing", count: 0 },
-          { id: "ready", label: "Ready to Ship", count: 1 },
-          { id: "shipped", label: "Shipped", count: 1 },
-          { id: "delivered", label: "Delivered", count: 1 },
-          { id: "cancelled", label: "Cancelled", count: 0 },
-          { id: "returns", label: "Returns", count: 0 },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`px-3 py-1.5 rounded whitespace-nowrap transition flex items-center gap-1.5 ${
-              activeTab === tab.id
-                ? "bg-[#404d85] text-white font-black"
-                : "bg-slate-50 text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            <span>{tab.label}</span>
-            <span
-              className={`px-1.5 py-0.2 rounded text-[10px] font-black ${
-                activeTab === tab.id ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
+          { id: "new", label: "New" },
+          { id: "processing", label: "Processing" },
+          { id: "ready", label: "Ready to Ship" },
+          { id: "shipped", label: "Shipped" },
+          { id: "delivered", label: "Delivered" },
+          { id: "cancelled", label: "Cancelled" },
+          { id: "returns", label: "Returns" },
+        ].map((tab) => {
+          const count = orders.filter((o) => o.tab === tab.id).length;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-3 py-1.5 rounded whitespace-nowrap transition flex items-center gap-1.5 ${
+                activeTab === tab.id
+                  ? "bg-[#404d85] text-white font-black"
+                  : "bg-slate-50 text-slate-600 hover:bg-slate-100"
               }`}
             >
-              {tab.count}
-            </span>
-          </button>
-        ))}
+              <span>{tab.label}</span>
+              <span
+                className={`px-1.5 py-0.2 rounded text-[10px] font-black ${
+                  activeTab === tab.id ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Orders Table */}

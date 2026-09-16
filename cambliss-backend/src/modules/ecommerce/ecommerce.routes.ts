@@ -5,6 +5,7 @@ import {
   getCategories,
   getStores,
   getFeaturedListings,
+  createListing,
   updateListing,
   deleteListing,
 } from "./ecommerce.controller";
@@ -23,6 +24,8 @@ router.get("/categories", getCategories);
 router.get("/stores", getStores);
 
 // Merchant Product / Listing Management
+router.post("/listings", createListing);
+router.post("/products", createListing);
 router.put("/listings/:id", updateListing);
 router.delete("/listings/:id", deleteListing);
 router.put("/products/:id", updateListing);

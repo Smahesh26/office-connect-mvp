@@ -109,101 +109,118 @@ export const SellerCatalogManager = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-              {filtered.map((p) => {
-                const isEditing = editingId === p.id;
-                return (
-                  <tr key={p.id} className="hover:bg-slate-50/70 transition">
-                    
-                    {/* Title & SKU */}
-                    <td className="py-3 px-4 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded bg-slate-50 border overflow-hidden shrink-0">
-                        <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
-                      </div>
-                      <div className="min-w-0 max-w-xs">
-                        <h5 className="font-bold text-slate-900 truncate">{p.title}</h5>
-                        <span className="text-[10px] font-mono text-slate-400 font-bold">SKU: {p.sku}</span>
-                      </div>
-                    </td>
-
-                    {/* Category */}
-                    <td className="py-3 px-4 text-slate-600 font-semibold">{p.category}</td>
-
-                    {/* Price */}
-                    <td className="py-3 px-4">
-                      {isEditing ? (
-                        <input
-                          type="number"
-                          value={editPrice}
-                          onChange={(e) => setEditPrice(Number(e.target.value))}
-                          className="w-24 px-2 py-1 border border-[#404d85] rounded text-xs font-bold"
-                        />
-                      ) : (
-                        <span className="font-black text-slate-900">{formatINR(p.price)}</span>
-                      )}
-                    </td>
-
-                    {/* Stock */}
-                    <td className="py-3 px-4">
-                      {isEditing ? (
-                        <input
-                          type="number"
-                          value={editStock}
-                          onChange={(e) => setEditStock(Number(e.target.value))}
-                          className="w-20 px-2 py-1 border border-[#404d85] rounded text-xs font-bold"
-                        />
-                      ) : (
-                        <span className="font-bold text-slate-800">{p.stockQty} units</span>
-                      )}
-                    </td>
-
-                    {/* Status Badge */}
-                    <td className="py-3 px-4">
-                      <span
-                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded border ${
-                          p.status === "Active"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : p.status === "Low Stock"
-                            ? "bg-amber-50 text-amber-700 border-amber-200"
-                            : "bg-red-50 text-red-700 border-red-200"
-                        }`}
-                      >
-                        ● {p.status}
-                      </span>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="py-3 px-4 text-right">
-                      {isEditing ? (
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleSaveEdit(p.id)}
-                            className="px-2.5 py-1 rounded bg-emerald-600 text-white text-[11px] font-bold"
-                          >
-                            Save
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingId(null)}
-                            className="px-2.5 py-1 rounded bg-slate-200 text-slate-700 text-[11px] font-bold"
-                          >
-                            Cancel
-                          </button>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-slate-500">
+                    <span className="text-3xl block mb-2">📦</span>
+                    <p className="font-bold text-sm text-slate-700">No products in your catalog yet</p>
+                    <p className="text-xs text-slate-400 mt-1">Upload your products to begin selling across the marketplace.</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddModal(true)}
+                      className="mt-4 px-4 py-2 rounded bg-[#404d85] text-white font-bold text-xs hover:bg-[#323d6a] transition shadow-xs"
+                    >
+                      + Add New SKU Listing
+                    </button>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((p) => {
+                  const isEditing = editingId === p.id;
+                  return (
+                    <tr key={p.id} className="hover:bg-slate-50/70 transition">
+                      
+                      {/* Title & SKU */}
+                      <td className="py-3 px-4 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded bg-slate-50 border overflow-hidden shrink-0">
+                          <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
                         </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleStartEdit(p)}
-                          className="px-3 py-1 rounded border border-slate-200 hover:border-slate-300 text-slate-700 font-bold text-xs transition"
-                        >
-                          Quick Edit
-                        </button>
-                      )}
-                    </td>
+                        <div className="min-w-0 max-w-xs">
+                          <h5 className="font-bold text-slate-900 truncate">{p.title}</h5>
+                          <span className="text-[10px] font-mono text-slate-400 font-bold">SKU: {p.sku}</span>
+                        </div>
+                      </td>
 
-                  </tr>
-                );
-              })}
+                      {/* Category */}
+                      <td className="py-3 px-4 text-slate-600 font-semibold">{p.category}</td>
+
+                      {/* Price */}
+                      <td className="py-3 px-4">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            value={editPrice}
+                            onChange={(e) => setEditPrice(Number(e.target.value))}
+                            className="w-24 px-2 py-1 border border-[#404d85] rounded text-xs font-bold"
+                          />
+                        ) : (
+                          <span className="font-black text-slate-900">{formatINR(p.price)}</span>
+                        )}
+                      </td>
+
+                      {/* Stock */}
+                      <td className="py-3 px-4">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            value={editStock}
+                            onChange={(e) => setEditStock(Number(e.target.value))}
+                            className="w-20 px-2 py-1 border border-[#404d85] rounded text-xs font-bold"
+                          />
+                        ) : (
+                          <span className="font-bold text-slate-800">{p.stockQty} units</span>
+                        )}
+                      </td>
+
+                      {/* Status Badge */}
+                      <td className="py-3 px-4">
+                        <span
+                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded border ${
+                            p.status === "Active"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : p.status === "Low Stock"
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : "bg-red-50 text-red-700 border-red-200"
+                          }`}
+                        >
+                          ● {p.status}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3 px-4 text-right">
+                        {isEditing ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleSaveEdit(p.id)}
+                              className="px-2.5 py-1 rounded bg-emerald-600 text-white text-[11px] font-bold"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingId(null)}
+                              className="px-2.5 py-1 rounded bg-slate-200 text-slate-700 text-[11px] font-bold"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleStartEdit(p)}
+                            className="px-3 py-1 rounded border border-slate-200 hover:border-slate-300 text-slate-700 font-bold text-xs transition"
+                          >
+                            Quick Edit
+                          </button>
+                        )}
+                      </td>
+
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -224,7 +241,7 @@ export const SellerCatalogManager = ({
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Sony WH-1000XM5 Wireless Headphones"
+                  placeholder="e.g. Ergonomic Office Desk or Wireless Headset"
                   value={newForm.title}
                   onChange={(e) => setNewForm({ ...newForm, title: e.target.value })}
                   className="w-full px-3 py-1.5 border border-slate-200 rounded-[4px]"

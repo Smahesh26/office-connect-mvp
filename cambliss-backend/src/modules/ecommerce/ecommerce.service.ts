@@ -284,6 +284,73 @@ export class EcommerceService {
   }
 
   /**
+   * Create a new ecommerce product and listing.
+   */
+  async createListing(
+    organizationId: string,
+    data: {
+      name: string;
+      description?: string;
+      sellingPrice: number;
+      categoryId?: string;
+      storeId?: string;
+      sku?: string;
+      images?: string[];
+      hsnCode?: string;
+    }
+  ) {
+    const product = await prisma.product.create({
+      data: {
+        organizationId,
+        name: data.name,
+        sku: data.sku || `SKU-${Date.now()}`,
+        hsnCode: data.hsnCode || "8471",
+        description: data.description || "",
+        unitPrice: new Prisma.Decimal(data.sellingPrice),
+        isActive: true,
+      },
+    });
+
+    let storeId = data.storeId;
+    if (!storeId) {
+      const existingStore = await prisma.store.findFirst({
+        where: { organizationId },
+      });
+      if (existingStore) {
+        storeId = existingStore.id;
+      } else {
+        const newStore = await prisma.store.create({
+          data: {
+            organizationId,
+            name: "Merchant Storefront",
+          },
+        });
+        storeId = newStore.id;
+      }
+    }
+
+    const listing = await prisma.productListing.create({
+      data: {
+        organizationId,
+        productId: product.id,
+        storeId,
+        categoryId: data.categoryId || undefined,
+        sellingPrice: new Prisma.Decimal(data.sellingPrice),
+        description: data.description || "",
+        images: data.images || [],
+        isActive: true,
+      },
+      include: {
+        product: true,
+        category: true,
+        store: true,
+      },
+    });
+
+    return listing;
+  }
+
+  /**
    * Update an ecommerce product listing.
    */
   async updateListing(

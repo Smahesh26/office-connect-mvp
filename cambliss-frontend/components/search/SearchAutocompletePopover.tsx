@@ -15,83 +15,16 @@ interface ProductSuggestion {
   sellerTier: "premium" | "verified" | "new";
 }
 
-const mockProductDatabase: ProductSuggestion[] = [
-  {
-    id: "prod-1",
-    title: "Sony WH-1000XM5 Wireless Noise Canceling Headphones",
-    category: "Electronics",
-    brand: "Sony",
-    price: 29990,
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=300&q=80",
-    sellerName: "Sony India Direct",
-    sellerTier: "premium",
-  },
-  {
-    id: "prod-2",
-    title: "Sony WF-1000XM5 Truly Wireless Noise Canceling Earbuds",
-    category: "Electronics",
-    brand: "Sony",
-    price: 23990,
-    image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=300&q=80",
-    sellerName: "Sony India Direct",
-    sellerTier: "premium",
-  },
-  {
-    id: "prod-3",
-    title: "Dell UltraSharp 32-inch 4K UHD Thunderbolt Hub USB-C Monitor",
-    category: "Computing",
-    brand: "Dell",
-    price: 78900,
-    image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=300&q=80",
-    sellerName: "Office Connect Direct",
-    sellerTier: "premium",
-  },
-  {
-    id: "prod-4",
-    title: "Keychron Q1 Pro Custom Wireless Mechanical Keyboard QMK/VIA",
-    category: "Computing",
-    brand: "Keychron",
-    price: 18499,
-    image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=300&q=80",
-    sellerName: "Keychron Official India",
-    sellerTier: "premium",
-  },
-  {
-    id: "prod-5",
-    title: "Minimalist 100% Organic Hyaluronic Acid & Vitamin C Serum",
-    category: "Beauty",
-    brand: "Minimalist",
-    price: 699,
-    image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=300&q=80",
-    sellerName: "Glow Beauty Organics",
-    sellerTier: "verified",
-  },
-  {
-    id: "prod-6",
-    title: "Brembo High Performance Carbon Ceramic Brake Disc Spares",
-    category: "Automotive",
-    brand: "Brembo",
-    price: 14500,
-    image: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=300&q=80",
-    sellerName: "AutoCare Spares Direct",
-    sellerTier: "verified",
-  },
-];
+const mockProductDatabase: ProductSuggestion[] = [];
 
-const defaultRecentSearches = [
-  "Sony WH-1000XM5",
-  "Keychron mechanical keyboard",
-  "Dell UltraSharp 4K",
-  "Vitamin C Serum",
-];
+const defaultRecentSearches: string[] = [];
 
 const trendingSearches = [
-  "Sony XM5 Noise Canceling",
-  "Wireless Mechanical Keyboards",
-  "4K USB-C Monitor Hub",
-  "Organic Skincare Serums",
-  "Brembo Brake Discs",
-  "Cloud Server Hosting",
+  "Laptops",
+  "Monitors",
+  "Keyboards",
+  "Cloud Infrastructure",
+  "Workstation",
 ];
 
 export const SearchAutocompletePopover = ({
@@ -106,6 +39,7 @@ export const SearchAutocompletePopover = ({
   onClose: () => void;
 }) => {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [customProducts, setCustomProducts] = useState<ProductSuggestion[]>([]);
 
   useEffect(() => {
     try {
@@ -118,6 +52,29 @@ export const SearchAutocompletePopover = ({
     } catch {
       setRecentSearches(defaultRecentSearches);
     }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("officeconnect_custom_products");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setCustomProducts(
+            parsed.map((item: any) => ({
+              id: item.id || `prod-${Date.now()}`,
+              title: item.title,
+              category: item.category || "General",
+              brand: item.brand || "Store Brand",
+              price: Number(item.price),
+              image: item.image || "",
+              sellerName: item.sellerName || "Registered Merchant",
+              sellerTier: "verified" as const,
+            }))
+          );
+        }
+      }
+    } catch {}
   }, []);
 
   const handleRemoveRecent = (itemToRemove: string, e: React.MouseEvent) => {
@@ -143,7 +100,7 @@ export const SearchAutocompletePopover = ({
 
   // Filter products by query
   const matchingProducts = trimmedQuery
-    ? mockProductDatabase.filter(
+    ? customProducts.filter(
         (p) =>
           p.title.toLowerCase().includes(trimmedQuery) ||
           p.brand.toLowerCase().includes(trimmedQuery) ||
@@ -151,18 +108,16 @@ export const SearchAutocompletePopover = ({
       )
     : [];
 
-  // Filter brands
+  // Filter brands from uploaded products
+  const availableBrands = Array.from(new Set(customProducts.map((p) => p.brand)));
   const matchedBrands = trimmedQuery
-    ? ["Sony", "Keychron", "Dell", "Minimalist", "Brembo"].filter((b) =>
-        b.toLowerCase().includes(trimmedQuery)
-      )
+    ? availableBrands.filter((b) => b.toLowerCase().includes(trimmedQuery))
     : [];
 
   // Filter categories
+  const categoriesList = ["Enterprise Computing", "Electronics", "Cloud Infrastructure", "Office Supplies"];
   const matchedCategories = trimmedQuery
-    ? ["Electronics", "Computing", "Beauty", "Automotive", "Cloud"].filter((c) =>
-        c.toLowerCase().includes(trimmedQuery)
-      )
+    ? categoriesList.filter((c) => c.toLowerCase().includes(trimmedQuery))
     : [];
 
   return (

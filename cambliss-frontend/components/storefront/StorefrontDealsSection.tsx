@@ -18,56 +18,11 @@ export const StorefrontTopDeals = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const dealProducts = [
-    {
-      id: "deal-1",
-      title: "Damask Rose Botanical Hydrating Serum (50ml)",
-      image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80",
-      price: 2499,
-      originalPrice: 3200,
-      sellerName: "Glow Beauty Organics 🌸",
-      sellerTier: "premium" as const,
-      badge: "🔥 22% OFF",
-      rating: 5.0,
-      reviewsCount: 310,
-    },
-    {
-      id: "deal-2",
-      title: "Wireless ANC Noise-Cancelling Headphones Hi-Res Audio",
-      image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80",
-      price: 18990,
-      originalPrice: 22490,
-      sellerName: "Office Connect Direct 👑",
-      sellerTier: "premium" as const,
-      badge: "⚡ 15% OFF",
-      rating: 4.9,
-      reviewsCount: 420,
-    },
-    {
-      id: "deal-3",
-      title: "Organic Damask Rose Lip Elixir Shine Balm",
-      image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=600&q=80",
-      price: 1200,
-      originalPrice: 1500,
-      sellerName: "Glow Beauty Organics 🌸",
-      sellerTier: "premium" as const,
-      badge: "🔥 20% OFF",
-      rating: 4.9,
-      reviewsCount: 140,
-    },
-    {
-      id: "deal-4",
-      title: "5W-40 Fully Synthetic Engine Motor Oil (5 Liters)",
-      image: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=600&q=80",
-      price: 3200,
-      originalPrice: 3800,
-      sellerName: "AutoCare Motors 🚘",
-      sellerTier: "verified" as const,
-      badge: "⚡ 16% OFF",
-      rating: 4.8,
-      reviewsCount: 88,
-    },
-  ];
+  const dealProducts: any[] = [];
+
+  if (dealProducts.length === 0) {
+    return null;
+  }
 
   return (
     <section className="space-y-6 select-none">
@@ -75,7 +30,7 @@ export const StorefrontTopDeals = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-red-600 animate-ping" />
-            <h2 className="text-xl font-black text-slate-900">Today's Flash Deals & Limited Offers</h2>
+            <h2 className="text-xl font-black text-slate-900">Today&apos;s Flash Deals & Limited Offers</h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
             Direct-from-brand discounts refreshed daily with verified stock allocation
@@ -102,7 +57,7 @@ export const StorefrontTopDeals = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {dealProducts.map((p) => (
+        {dealProducts.map((p: any) => (
           <ProductCard
             key={p.id}
             id={p.id}

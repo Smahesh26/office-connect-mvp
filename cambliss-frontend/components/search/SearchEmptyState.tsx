@@ -10,11 +10,11 @@ export const SearchEmptyState = ({
   onSuggestionClick?: (q: string) => void;
 }) => {
   const suggestions = [
-    "Sony WH-1000XM5",
-    "Keychron Mechanical Keyboard",
-    "Dell 4K USB-C Monitor",
-    "Minimalist Vitamin C Serum",
-    "Brembo Brake Spares",
+    "Laptops",
+    "Monitors",
+    "Keyboards",
+    "Electronics",
+    "Workstation",
   ];
 
   return (
@@ -27,7 +27,7 @@ export const SearchEmptyState = ({
           No matches found for &ldquo;{query}&rdquo;
         </h3>
         <p className="text-xs text-slate-500 max-w-md mx-auto">
-          We couldn&apos;t find any products, verified brand hubs, or SKUs matching your exact query. Check the spelling or try alternative keywords.
+          We couldn&apos;t find any products, verified brand hubs, or SKUs matching your query. Check the spelling or try alternative keywords.
         </p>
       </div>
 
@@ -37,9 +37,9 @@ export const SearchEmptyState = ({
           💡 Search Tips:
         </span>
         <ul className="list-disc list-inside text-slate-600 space-y-1">
-          <li>Check your spelling or use general keywords like &ldquo;Headphones&rdquo; or &ldquo;Monitors&rdquo;.</li>
-          <li>Search by brand flagship name like &ldquo;Sony&rdquo;, &ldquo;Dell&rdquo;, or &ldquo;Keychron&rdquo;.</li>
-          <li>Try fewer keywords or remove specific filter constraints.</li>
+          <li>Check your spelling or use general keywords like &ldquo;Laptops&rdquo; or &ldquo;Monitors&rdquo;.</li>
+          <li>Search by model or SKU directly.</li>
+          <li>Try fewer keywords or clear filter constraints.</li>
         </ul>
       </div>
 

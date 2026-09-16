@@ -8,24 +8,16 @@ export const SellerPricingPromos = ({
 }: {
   viewType: "pricing" | "promotions" | "store" | "settings" | "inventory" | "analytics";
 }) => {
-  const [promos] = useState([
+  const [promos] = useState<
     {
-      id: "PR-102",
-      code: "HISENSEPC5000",
-      type: "Flat ₹5,000 Off on Workstations",
-      minOrder: 80000,
-      claims: 42,
-      status: "Active",
-    },
-    {
-      id: "PR-103",
-      code: "HISENSEMONITOR10",
-      type: "10% Instant Discount on Displays",
-      minOrder: 30000,
-      claims: 78,
-      status: "Active",
-    },
-  ]);
+      id: string;
+      code: string;
+      type: string;
+      minOrder: number;
+      claims: number;
+      status: string;
+    }[]
+  >([]);
 
   return (
     <div className="rounded-[8px] border border-slate-200 bg-white p-5 sm:p-6 space-y-6 shadow-2xs select-none text-xs font-sans text-slate-900">
@@ -40,20 +32,17 @@ export const SellerPricingPromos = ({
               </h3>
               <p className="text-xs text-slate-500">Monitor competitor offers and automatically match lowest winning Buy Box price</p>
             </div>
-            <span className="px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 font-bold text-xs">
-              👑 99.1% Buy Box Win Rate
+            <span className="px-2.5 py-1 rounded bg-slate-100 text-slate-700 font-bold text-xs">
+              ⚡ Buy Box Engine Ready
             </span>
           </div>
 
-          <div className="p-4 rounded bg-slate-50 border border-slate-200 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-900">Hisense VisionBook Pro 16 AI Workstation Laptop</span>
-              <strong className="text-slate-900 font-mono">{formatINR(149990)} (Buy Box Winner)</strong>
-            </div>
-            <div className="flex items-center justify-between text-slate-500 text-[11px]">
-              <span>Next Lowest Competitor: NexGen Systems India ({formatINR(154990)})</span>
-              <span className="text-emerald-700 font-bold">Your price is ₹5,000 lower</span>
-            </div>
+          <div className="p-8 rounded bg-slate-50 border border-slate-200 text-center space-y-2">
+            <span className="text-2xl block">🏷️</span>
+            <div className="font-bold text-slate-800">No active products to monitor</div>
+            <p className="text-slate-500 text-xs max-w-sm mx-auto">
+              Upload products to your catalog to enable real-time competitor price tracking and automated Buy Box optimization.
+            </p>
           </div>
         </div>
       )}
@@ -70,29 +59,39 @@ export const SellerPricingPromos = ({
             </div>
             <button
               type="button"
-              onClick={() => alert("Opening Create New Promo Campaign Modal...")}
+              onClick={() => alert("Promotions will be available after products are uploaded.")}
               className="px-3 py-1.5 bg-[#404d85] text-white font-bold rounded text-xs"
             >
               + Create Promotion
             </button>
           </div>
 
-          <div className="divide-y divide-slate-100">
-            {promos.map((p) => (
-              <div key={p.id} className="py-3 flex items-center justify-between gap-2">
-                <div>
-                  <span className="font-mono font-bold text-slate-900 text-sm">{p.code}</span>
-                  <span className="text-slate-500 pl-2">({p.type} • Min Order: {formatINR(p.minOrder)})</span>
+          {promos.length === 0 ? (
+            <div className="p-8 rounded bg-slate-50 border border-slate-200 text-center space-y-2">
+              <span className="text-2xl block">🎟️</span>
+              <div className="font-bold text-slate-800">No active promotions</div>
+              <p className="text-slate-500 text-xs max-w-sm mx-auto">
+                Create coupon codes and flash discounts once you have published listings in your store catalog.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {promos.map((p) => (
+                <div key={p.id} className="py-3 flex items-center justify-between gap-2">
+                  <div>
+                    <span className="font-mono font-bold text-slate-900 text-sm">{p.code}</span>
+                    <span className="text-slate-500 pl-2">({p.type} • Min Order: {formatINR(p.minOrder)})</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-slate-500">{p.claims} claims</span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold">
+                      ✓ {p.status}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-slate-500">{p.claims} claims</span>
-                  <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold">
-                    ✓ {p.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -111,7 +110,7 @@ export const SellerPricingPromos = ({
               <label className="font-bold text-slate-700 block mb-1">Brand Tagline</label>
               <input
                 type="text"
-                defaultValue="High-Performance Enterprise Computing, AI Workstations & 4K Displays"
+                defaultValue="High-Performance Enterprise Computing & Hardware"
                 className="w-full px-3 py-1.5 border rounded bg-white font-bold text-slate-900"
               />
             </div>
@@ -179,10 +178,11 @@ export const SellerPricingPromos = ({
             <p className="text-xs text-slate-500">Real-time stock monitoring and reorder alerts</p>
           </div>
 
-          <div className="p-4 rounded bg-amber-50 border border-amber-200 space-y-2">
-            <h5 className="font-bold text-amber-900">⚠️ 1 SKU Approaching Reorder Safety Stock</h5>
-            <p className="text-amber-800 text-[11px]">
-              Hisense EliteDesk Tower Enterprise PC (8 units left). Reorder recommended to maintain uninterrupted Buy Box win share.
+          <div className="p-8 rounded bg-slate-50 border border-slate-200 text-center space-y-2">
+            <span className="text-2xl block">📦</span>
+            <div className="font-bold text-slate-800">Inventory Status Healthy</div>
+            <p className="text-slate-500 text-xs max-w-sm mx-auto">
+              No low-stock alerts or stockout warnings. Real-time safety thresholds will trigger alerts once items reach safety quantities.
             </p>
           </div>
         </div>
@@ -201,17 +201,17 @@ export const SellerPricingPromos = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-4 rounded border bg-slate-50 space-y-1">
               <span className="text-slate-400 block text-[10px] uppercase font-bold">Total Impressions</span>
-              <div className="text-xl font-black text-slate-900">142,800</div>
-              <span className="text-emerald-700 font-bold text-[11px]">↑ +24.1% vs last month</span>
+              <div className="text-xl font-black text-slate-900">0</div>
+              <span className="text-slate-400 font-bold text-[11px]">Tracking initialized</span>
             </div>
             <div className="p-4 rounded border bg-slate-50 space-y-1">
               <span className="text-slate-400 block text-[10px] uppercase font-bold">Product Page Views</span>
-              <div className="text-xl font-black text-slate-900">38,400</div>
-              <span className="text-emerald-700 font-bold text-[11px]">↑ +18.4%</span>
+              <div className="text-xl font-black text-slate-900">0</div>
+              <span className="text-slate-400 font-bold text-[11px]">Live tracking active</span>
             </div>
             <div className="p-4 rounded border bg-slate-50 space-y-1">
               <span className="text-slate-400 block text-[10px] uppercase font-bold">Conversion Rate</span>
-              <div className="text-xl font-black text-emerald-700">4.18%</div>
+              <div className="text-xl font-black text-slate-700">0.0%</div>
               <span className="text-slate-500 text-[11px]">Industry Benchmark: 2.8%</span>
             </div>
           </div>

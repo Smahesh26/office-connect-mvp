@@ -44,76 +44,46 @@ export default function CheckoutPage() {
   // Payment Method State
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethodType>("upi");
 
-  // Multi-Vendor Packages
-  const packages: SellerPackage[] = [
-    {
-      sellerId: "seller-sony",
-      sellerName: "Sony India Direct",
-      sellerTier: "premium",
-      carrier: "Bluedart Air Express",
-      deliveryEstimate: "FREE Delivery by Tomorrow, 1 PM",
-      items: [
-        {
-          id: "item-1",
-          productId: "prod-1",
-          title: "Sony WH-1000XM5 Wireless Noise Canceling Headphones",
-          brand: "Sony",
-          price: 29990,
-          originalPrice: 34990,
-          quantity: 1,
-          image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80",
-          variantName: "Midnight Black",
-          inStock: true,
-        },
-        {
-          id: "item-2",
-          productId: "prod-2",
-          title: "Sony WF-1000XM5 Truly Wireless Noise Canceling Earbuds",
-          brand: "Sony",
-          price: 23990,
-          originalPrice: 26990,
-          quantity: 1,
-          image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=400&q=80",
-          variantName: "Platinum Silver",
-          inStock: true,
-        },
-      ],
-    },
-    {
-      sellerId: "seller-keychron",
-      sellerName: "Keychron Official India",
-      sellerTier: "premium",
-      carrier: "Delhivery Surface",
-      deliveryEstimate: "FREE Delivery in 2 Days",
-      items: [
-        {
-          id: "item-3",
-          productId: "prod-4",
-          title: "Keychron Q1 Pro Custom Wireless Mechanical Keyboard QMK/VIA",
-          brand: "Keychron",
-          price: 18499,
-          originalPrice: 21999,
-          quantity: 1,
-          image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=400&q=80",
-          variantName: "Barebone ISO / Carbon Black",
-          inStock: true,
-        },
-      ],
-    },
-  ];
+  // Multi-Vendor Packages (Purged mock data - user/buyer products populated on checkout)
+  const [packages, setPackages] = useState<SellerPackage[]>([]);
 
-  const subtotal = 72479;
-  const originalTotal = 83979;
-  const discountAmount = 2000; // Promo coupon
+  const subtotal = packages.reduce((acc, pkg) => acc + pkg.items.reduce((iAcc, item) => iAcc + (item.price * item.quantity), 0), 0);
+  const originalTotal = packages.reduce((acc, pkg) => acc + pkg.items.reduce((iAcc, item) => iAcc + ((item.originalPrice || item.price) * item.quantity), 0), 0);
+  const discountAmount = originalTotal > subtotal ? originalTotal - subtotal : 0;
   const deliveryFee = 0;
-  const grandTotal = subtotal - discountAmount + deliveryFee;
+  const grandTotal = subtotal - discountAmount + deliveryFee > 0 ? subtotal - discountAmount + deliveryFee : 0;
 
   const handlePlaceOrder = () => {
+    if (packages.length === 0) return;
     setIsPlacingOrder(true);
     setTimeout(() => {
-      router.push("/order-confirmation/OC-89412");
+      router.push("/orders");
     }, 1200);
   };
+
+  if (packages.length === 0) {
+    return (
+      <MarketplacePageWrapper>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 select-none text-center">
+          <div className="max-w-md mx-auto p-8 rounded-[12px] border border-slate-200 bg-white shadow-sm space-y-4">
+            <span className="text-4xl">🛍️</span>
+            <h1 className="text-xl font-black text-slate-900">Your Shopping Bag is Empty</h1>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              No products are currently staged for checkout. Browse the marketplace to discover products uploaded by registered merchants.
+            </p>
+            <div className="pt-2">
+              <Link
+                href="/storefront"
+                className="inline-flex items-center justify-center px-6 py-2.5 rounded-[6px] bg-[#404d85] hover:bg-[#323d6a] text-white font-black text-xs transition shadow-sm"
+              >
+                ← Explore Marketplace
+              </Link>
+            </div>
+          </div>
+        </div>
+      </MarketplacePageWrapper>
+    );
+  }
 
   return (
     <MarketplacePageWrapper>

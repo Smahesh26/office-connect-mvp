@@ -8,22 +8,22 @@ export const StorefrontHero = () => {
 
   const slides = [
     {
-      badge: "OFFICIAL CATALOG",
-      title: "Enterprise Computing & Cloud Hardware",
-      subtitle: "Direct manufacturer pricing from verified IT distributors across India & global markets.",
+      badge: "ENTERPRISE COMMERCE",
+      title: "Direct Business & Consumer Marketplace",
+      subtitle: "Trade with verified corporate entities and registered merchants with full GST invoice compliance.",
       bullets: ["Same-Day Warehouse Dispatch", "Encrypted Payment Protection", "Official GST Tax Invoice"],
-      ctaPrimary: { label: "Shop Computing Offers", href: "/category/computing" },
-      ctaSecondary: { label: "Browse AeroTech Flagship Store", href: "/store/aerotech" },
+      ctaPrimary: { label: "Browse Marketplace", href: "/storefront" },
+      ctaSecondary: { label: "Register as Merchant", href: "/seller-central" },
       image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1000&q=80",
     },
     {
-      badge: "FRENCH LUXURY ORGANICS",
-      title: "Botanical Skincare Direct from Grasse",
-      subtitle: "Cold-pressed Damask Rose elixirs, certified organic serums, and clinical botanicals.",
-      bullets: ["Direct from French Laboratories", "100% Authenticity Verified", "Cruelty-Free & Vegan"],
-      ctaPrimary: { label: "Explore Glow Beauty Store", href: "/store/glow-beauty" },
-      ctaSecondary: { label: "View All Skincare", href: "/category/beauty" },
-      image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1000&q=80",
+      badge: "VERIFIED MULTI-VENDOR PLATFORM",
+      title: "Sell & Scale Across All 28 Indian States",
+      subtitle: "Zero fixed subscription, 7-day regular escrow bank settlements, and built-in pan-India logistics.",
+      bullets: ["Instant Razorpay Integration", "Automated GST & TCS Invoicing", "Verified KYB Business Desk"],
+      ctaPrimary: { label: "Start Selling Today", href: "/seller-central" },
+      ctaSecondary: { label: "Explore Platform", href: "/storefront" },
+      image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1000&q=80",
     },
   ];
 

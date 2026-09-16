@@ -12,86 +12,7 @@ export default function CustomerOrdersPage() {
   const [selectedRmaItem, setSelectedRmaItem] = useState<RmaItemDetails | null>(null);
   const [isRmaOpen, setIsRmaOpen] = useState(false);
 
-  const initialOrders: CustomerOrder[] = [
-    {
-      id: "ord-1",
-      orderNumber: "OC-89412",
-      date: "31 August 2026",
-      totalAmount: 34988,
-      paymentMethod: "UPI Escrow (GPay)",
-      packages: [
-        {
-          packageId: "PKG-98214-A",
-          sellerName: "Office Connect Direct",
-          sellerTier: "premium",
-          courier: "Bluedart Air Express",
-          trackingNumber: "BD-89124091",
-          status: "In Transit",
-          estimatedArrival: "Tomorrow by 2:00 PM",
-          items: [
-            {
-              id: "prod-1",
-              title: "Sony WH-1000XM5 Wireless Noise Canceling Headphones (Midnight Black)",
-              image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80",
-              price: 29990,
-              quantity: 1,
-              sellerName: "Office Connect Direct",
-              sellerTier: "premium",
-            },
-          ],
-        },
-        {
-          packageId: "PKG-98214-B",
-          sellerName: "Glow Beauty Organics",
-          sellerTier: "premium",
-          courier: "Delhivery Surface",
-          trackingNumber: "DEL-77192031",
-          status: "In Transit",
-          estimatedArrival: "Wednesday, Sept 3",
-          items: [
-            {
-              id: "prod-4",
-              title: "Glow Beauty Damask Rose Organic Botanical Hydrating Facial Serum (50ml)",
-              image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80",
-              price: 2499,
-              quantity: 2,
-              sellerName: "Glow Beauty Organics",
-              sellerTier: "premium",
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: "ord-2",
-      orderNumber: "OC-76190",
-      date: "14 August 2026",
-      totalAmount: 16999,
-      paymentMethod: "HDFC NetBanking",
-      packages: [
-        {
-          packageId: "PKG-55102-A",
-          sellerName: "Mechanical Keyboards India",
-          sellerTier: "verified",
-          courier: "DTDC Express",
-          trackingNumber: "DTDC-4401923",
-          status: "Delivered",
-          estimatedArrival: "Delivered on Aug 16",
-          items: [
-            {
-              id: "prod-3",
-              title: "Keychron Q1 Pro Wireless Custom Mechanical Keyboard (QMK/VIA ANSI)",
-              image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80",
-              price: 16999,
-              quantity: 1,
-              sellerName: "Mechanical Keyboards India",
-              sellerTier: "verified",
-            },
-          ],
-        },
-      ],
-    },
-  ];
+  const initialOrders: CustomerOrder[] = [];
 
   const handleOpenRma = (item: RmaItemDetails) => {
     setSelectedRmaItem(item);
@@ -181,9 +102,29 @@ export default function CustomerOrdersPage() {
 
         {/* Orders List */}
         <div className="space-y-6">
-          {filteredOrders.map((ord) => (
-            <OrderCard key={ord.id} order={ord} onOpenRma={handleOpenRma} />
-          ))}
+          {filteredOrders.length === 0 ? (
+            <div className="py-16 text-center flex flex-col items-center justify-center rounded-[8px] border border-dashed border-slate-200 bg-white p-8">
+              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3 text-xl">
+                🛍️
+              </div>
+              <h4 className="text-sm font-bold text-slate-800">No Orders Found</h4>
+              <p className="text-xs text-slate-500 max-w-sm mt-1 mb-5">
+                {initialOrders.length === 0
+                  ? "You have not placed any orders yet. When you purchase products from verified marketplace merchants, tracking and invoices will appear here."
+                  : "No orders match your search or filter query."}
+              </p>
+              <Link
+                href="/storefront"
+                className="px-4 py-2 bg-[#404d85] hover:bg-[#323d6a] text-white rounded font-bold text-xs shadow-xs transition"
+              >
+                Explore Marketplace
+              </Link>
+            </div>
+          ) : (
+            filteredOrders.map((ord) => (
+              <OrderCard key={ord.id} order={ord} onOpenRma={handleOpenRma} />
+            ))
+          )}
         </div>
 
         {/* RMA Return Modal */}

@@ -16,6 +16,8 @@ router.get("/listings/:id", ecommerce_controller_1.getListingById);
 router.get("/categories", ecommerce_controller_1.getCategories);
 router.get("/stores", ecommerce_controller_1.getStores);
 // Merchant Product / Listing Management
+router.post("/listings", ecommerce_controller_1.createListing);
+router.post("/products", ecommerce_controller_1.createListing);
 router.put("/listings/:id", ecommerce_controller_1.updateListing);
 router.delete("/listings/:id", ecommerce_controller_1.deleteListing);
 router.put("/products/:id", ecommerce_controller_1.updateListing);

@@ -129,6 +129,41 @@ export async function getFeaturedListings(req: Request, res: Response) {
   }
 }
 
+export async function createListing(req: Request, res: Response) {
+  try {
+    const orgId = (req as any).user?.organizationId || (await resolveOrgId(req));
+    if (!orgId) {
+      res.status(404).json({ success: false, message: "No organization found" });
+      return;
+    }
+
+    const { name, title, description, sellingPrice, price, categoryId, storeId, sku, images, hsnCode, hsn } = req.body;
+    const finalName = name || title;
+    const finalPrice = sellingPrice || price;
+
+    if (!finalName || finalPrice === undefined) {
+      res.status(400).json({ success: false, message: "Product name/title and price are required" });
+      return;
+    }
+
+    const listing = await service.createListing(orgId, {
+      name: finalName,
+      description,
+      sellingPrice: parseFloat(finalPrice),
+      categoryId,
+      storeId,
+      sku,
+      images,
+      hsnCode: hsnCode || hsn,
+    });
+
+    res.status(201).json({ success: true, data: listing });
+  } catch (error: any) {
+    console.error("[ecommerce] createListing error:", error);
+    res.status(500).json({ success: false, message: error.message || "Failed to create product listing" });
+  }
+}
+
 export async function updateListing(req: Request, res: Response) {
   try {
     const listingId = Array.isArray(req.params.id) ? req.params.id[0] : (req.params.id as string);

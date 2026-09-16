@@ -136,143 +136,10 @@ function DashboardMarketplaceContent() {
     loadCatalog();
   }, []);
 
-  const masterProductsList: (ProductCardProps & { category: string; brand: string })[] = [
-    {
-      id: "prod-1",
-      title: "Sony WH-1000XM5 Wireless Noise Canceling Headphones (Midnight Black)",
-      image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=600&q=80",
-      price: 29990,
-      originalPrice: 34990,
-      sellerName: "Sony India Direct 👑",
-      sellerTier: "premium",
-      badge: "★ TOP RATED",
-      rating: 4.9,
-      reviewsCount: 842,
-      category: "Electronics",
-      brand: "Sony",
-      stockQty: 24,
-    },
-    {
-      id: "prod-2",
-      title: "UrbanThreads 240 GSM Heavyweight Oversized French Terry T-Shirt",
-      image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80",
-      price: 1499,
-      originalPrice: 2499,
-      sellerName: "UrbanThreads Official",
-      sellerTier: "verified",
-      badge: "⚡ 24H DISPATCH",
-      rating: 4.8,
-      reviewsCount: 310,
-      category: "Apparel",
-      brand: "UrbanThreads",
-      stockQty: 45,
-    },
-    {
-      id: "rec-p3",
-      title: "Damask Rose Botanical Hydrating Serum (50ml)",
-      image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80",
-      price: 2499,
-      originalPrice: 3200,
-      sellerName: "Glow Beauty Organics 🌸",
-      sellerTier: "premium",
-      badge: "ORGANIC CERTIFIED",
-      rating: 5.0,
-      reviewsCount: 310,
-      category: "Beauty",
-      brand: "Glow Beauty",
-      stockQty: 18,
-    },
-    {
-      id: "rec-p4",
-      title: "5W-40 Fully Synthetic Engine Motor Oil (5 Liters)",
-      image: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=600&q=80",
-      price: 3200,
-      originalPrice: 3800,
-      sellerName: "AutoCare Motors 🚘",
-      sellerTier: "verified",
-      rating: 4.8,
-      reviewsCount: 88,
-      category: "Automotive",
-      brand: "AutoCare",
-      stockQty: 12,
-    },
-    {
-      id: "prod-aerotech-earbuds",
-      title: "AeroTech AirPulse Truly Wireless ANC Earbuds (30H Battery)",
-      image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=600&q=80",
-      price: 12990,
-      originalPrice: 15990,
-      sellerName: "AeroTech Official Store",
-      sellerTier: "premium",
-      rating: 4.8,
-      reviewsCount: 420,
-      category: "Electronics",
-      brand: "AeroTech",
-      stockQty: 30,
-    },
-    {
-      id: "prod-hisense-visionbook",
-      title: "Hisense VisionBook Pro 16 AI Workstation Laptop (Core i9, 32GB, RTX 4070)",
-      image: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80",
-      price: 149990,
-      originalPrice: 179990,
-      sellerName: "Hisense Computers (bhaskeradv1@gmail.com) 👑",
-      sellerTier: "premium",
-      badge: "★ FLAGSHIP WORKSTATION",
-      rating: 4.9,
-      reviewsCount: 142,
-      category: "Computing",
-      brand: "Hisense Computers",
-      stockQty: 18,
-    },
-    {
-      id: "prod-hisense-aio27",
-      title: "Hisense Infinity AIO 27\" 4K All-In-One Desktop Computer",
-      image: "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80",
-      price: 84990,
-      originalPrice: 99990,
-      sellerName: "Hisense Computers (bhaskeradv1@gmail.com) 👑",
-      sellerTier: "premium",
-      badge: "4K INFINITYEDGE",
-      rating: 4.9,
-      reviewsCount: 98,
-      category: "Computing",
-      brand: "Hisense Computers",
-      stockQty: 22,
-    },
-    {
-      id: "prod-hisense-ultraview34",
-      title: "Hisense UltraView 34-Inch Curved WQHD USB-C Ergonomic Hub Monitor",
-      image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80",
-      price: 38990,
-      originalPrice: 46990,
-      sellerName: "Hisense Computers (bhaskeradv1@gmail.com) 👑",
-      sellerTier: "premium",
-      badge: "165HZ WQHD",
-      rating: 4.8,
-      reviewsCount: 184,
-      category: "Computing",
-      brand: "Hisense Computers",
-      stockQty: 35,
-    },
-    {
-      id: "prod-dell-monitor",
-      title: "Dell UltraSharp 27-inch 4K USB-C Hub Ergonomic Monitor",
-      image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80",
-      price: 42990,
-      originalPrice: 49990,
-      sellerName: "Dell India Enterprise",
-      sellerTier: "premium",
-      badge: "4K UHD",
-      rating: 4.9,
-      reviewsCount: 195,
-      category: "Computing",
-      brand: "Dell",
-      stockQty: 10,
-    },
-  ];
+  // Master products list: only products uploaded by registered accounts
+  const masterProductsList: (ProductCardProps & { category: string; brand: string })[] = [];
 
-  // Combined products: custom merchant-uploaded products + master catalog
+  // Combined products: custom merchant-uploaded products + live catalog
   const combinedProductsList = useMemo(() => {
     const formattedCustom = customUploadedProducts.map((cp: any) => ({
       id: cp.id || `custom-${Date.now()}`,
@@ -280,18 +147,34 @@ function DashboardMarketplaceContent() {
       image: cp.image || cp.images?.[0] || "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80",
       price: typeof cp.price === "number" ? cp.price : parseFloat(cp.price) || 0,
       originalPrice: cp.originalPrice || cp.mrp ? parseFloat(cp.originalPrice || cp.mrp) : undefined,
-      sellerName: cp.sellerName || `${cp.brand || "Hisense Computers"} (${userEmail}) 👑`,
+      sellerName: cp.sellerName || `${cp.brand || "Registered Store"} (${userEmail}) 👑`,
       sellerTier: (cp.sellerTier === "verified" ? "verified" : cp.sellerTier === "new" ? "new" : "premium") as "verified" | "premium" | "new",
       badge: cp.badge || "★ STOREFRONT LISTING",
-      rating: cp.rating || 4.9,
-      reviewsCount: cp.reviewsCount || 12,
-      category: cp.category || "Computing",
-      brand: cp.brand || "Hisense Computers",
+      rating: cp.rating || 5.0,
+      reviewsCount: cp.reviewsCount || 0,
+      category: cp.category || "General",
+      brand: cp.brand || "Independent Seller",
       stockQty: typeof cp.stockQty === "number" ? cp.stockQty : parseInt(cp.stockQty || "10", 10),
     }));
 
-    return [...formattedCustom, ...masterProductsList];
-  }, [customUploadedProducts, masterProductsList, userEmail]);
+    const formattedApi = liveCatalogProducts.map((ap: any) => ({
+      id: ap.id,
+      title: ap.product?.name || ap.title || "Product",
+      image: ap.images?.[0] || ap.primaryImage || "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80",
+      price: typeof ap.sellingPrice === "number" ? ap.sellingPrice : parseFloat(ap.sellingPrice) || 0,
+      originalPrice: ap.originalPrice ? parseFloat(ap.originalPrice) : undefined,
+      sellerName: ap.store?.name || ap.brandName || "Registered Merchant",
+      sellerTier: (ap.store?.sellerTier || "verified") as "verified" | "premium" | "new",
+      badge: "★ STOREFRONT LISTING",
+      rating: 5.0,
+      reviewsCount: 0,
+      category: ap.category?.name || ap.categoryName || "General",
+      brand: ap.product?.name || ap.brand || "Merchant Brand",
+      stockQty: 10,
+    }));
+
+    return [...formattedCustom, ...formattedApi, ...masterProductsList];
+  }, [customUploadedProducts, liveCatalogProducts, masterProductsList, userEmail]);
 
   // Dynamic Filtering Logic
   const filteredProducts = useMemo(() => {
@@ -721,66 +604,49 @@ function StorefrontHomeContent() {
     loadCatalog();
   }, []);
 
-  const fallbackRecommended = [
-    {
-      id: "prod-1",
-      title: "Sony WH-1000XM5 Wireless Noise Canceling Headphones (Midnight Black)",
-      image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=600&q=80",
-      price: 29990,
-      originalPrice: 34990,
-      sellerName: "Sony India Direct 👑",
-      sellerTier: "premium" as const,
-      badge: "★ TOP RATED",
-      rating: 4.9,
-      reviewsCount: 842,
-      category: "Electronics",
-    },
-    {
-      id: "prod-2",
-      title: "UrbanThreads 240 GSM Heavyweight Oversized French Terry T-Shirt",
-      image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80",
-      price: 1499,
-      originalPrice: 2499,
-      sellerName: "UrbanThreads Official",
-      sellerTier: "verified" as const,
-      badge: "⚡ 24H DISPATCH",
-      rating: 4.8,
-      reviewsCount: 310,
-      category: "Apparel",
-    },
-    {
-      id: "rec-p3",
-      title: "Damask Rose Botanical Hydrating Serum (50ml)",
-      image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80",
-      price: 2499,
-      originalPrice: 3200,
-      sellerName: "Glow Beauty Organics 🌸",
-      sellerTier: "premium" as const,
-      badge: "ORGANIC CERTIFIED",
-      rating: 5.0,
-      reviewsCount: 310,
-      category: "Beauty",
-    },
-  ];
+  const [customProds, setCustomProds] = useState<any[]>([]);
 
-  const displayProducts = liveCatalogProducts.length > 0
-    ? [
-        ...liveCatalogProducts.map((p) => ({
-          id: p.id,
-          title: p.title,
-          image: p.primaryImage,
-          price: p.id === "prod-1" ? 29990 : 1499,
-          originalPrice: p.id === "prod-1" ? 34990 : 2499,
-          sellerName: p.brandName ? `${p.brandName} Direct 👑` : "Office Connect Direct 👑",
-          sellerTier: "premium" as const,
-          badge: "★ TOP RATED",
-          rating: 4.9,
-          reviewsCount: 248,
-          category: p.categoryName?.includes("Headphones") ? "Electronics" : "Apparel",
-        })),
-        ...fallbackRecommended.slice(2),
-      ]
-    : fallbackRecommended;
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("officeconnect_custom_products");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) setCustomProds(parsed);
+      }
+    } catch (e) {}
+  }, []);
+
+  const displayProducts = useMemo(() => {
+    const fromApi = liveCatalogProducts.map((p) => ({
+      id: p.id,
+      title: p.title,
+      image: p.primaryImage,
+      price: 1999,
+      originalPrice: undefined,
+      sellerName: p.brandName ? `${p.brandName} Direct 👑` : "Registered Merchant 👑",
+      sellerTier: "premium" as const,
+      badge: "★ REGISTERED SELLER",
+      rating: 5.0,
+      reviewsCount: 0,
+      category: p.categoryName || "General",
+    }));
+
+    const fromCustom = customProds.map((cp: any) => ({
+      id: cp.id || `custom-${Date.now()}`,
+      title: cp.title || cp.name,
+      image: cp.image || cp.images?.[0] || "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80",
+      price: typeof cp.price === "number" ? cp.price : parseFloat(cp.price) || 0,
+      originalPrice: cp.originalPrice ? parseFloat(cp.originalPrice) : undefined,
+      sellerName: cp.sellerName || "Registered Merchant 👑",
+      sellerTier: "premium" as const,
+      badge: "★ STOREFRONT LISTING",
+      rating: 5.0,
+      reviewsCount: 0,
+      category: cp.category || "General",
+    }));
+
+    return [...fromCustom, ...fromApi];
+  }, [customProds, liveCatalogProducts]);
 
   const filteredRecommended = recommendedCategoryTab === "All"
     ? displayProducts
@@ -790,7 +656,7 @@ function StorefrontHomeContent() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-12 pb-24 lg:pb-16 select-none font-sans">
       <StorefrontHero />
       <StorefrontCategoryShortcuts />
-      <StorefrontTopDeals />
+      {displayProducts.length > 0 && <StorefrontTopDeals />}
 
       <section className="space-y-6 pt-4 border-t border-slate-200">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-3 border-b border-slate-100">
@@ -802,12 +668,12 @@ function StorefrontHomeContent() {
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Handpicked selections dynamically loaded from master catalog with live Buy Box pricing
+              Verified products uploaded by registered marketplace merchants
             </p>
           </div>
 
           <div className="flex items-center gap-4 text-xs font-semibold">
-            {["All", "Electronics", "Apparel", "Beauty"].map((tab) => (
+            {["All", "Electronics", "Apparel", "Beauty", "Computing"].map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -824,23 +690,45 @@ function StorefrontHomeContent() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredRecommended.map((p) => (
-            <ProductCard
-              key={p.id}
-              id={p.id}
-              title={p.title}
-              image={p.image}
-              price={p.price}
-              originalPrice={p.originalPrice}
-              sellerName={p.sellerName}
-              sellerTier={p.sellerTier}
-              badge={p.badge}
-              rating={p.rating}
-              reviewsCount={p.reviewsCount}
-            />
-          ))}
-        </div>
+        {filteredRecommended.length === 0 ? (
+          <div className="rounded-[8px] border border-slate-200 bg-white p-12 text-center space-y-4 shadow-2xs">
+            <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-3xl mx-auto">
+              🏪
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-extrabold text-slate-900 text-base">Marketplace Catalog Ready For Launch</h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                All sample products have been cleared. As registered merchants upload their products, they will immediately appear here with live Buy Box pricing and nationwide delivery estimates.
+              </p>
+            </div>
+            <div className="pt-2 flex items-center justify-center gap-3">
+              <Link
+                href="/seller-central"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-[6px] bg-[#404d85] hover:bg-[#323d6a] text-white font-bold text-xs transition shadow-xs"
+              >
+                <span>➕</span> Register as Merchant & Upload Products
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredRecommended.map((p) => (
+              <ProductCard
+                key={p.id}
+                id={p.id}
+                title={p.title}
+                image={p.image}
+                price={p.price}
+                originalPrice={p.originalPrice}
+                sellerName={p.sellerName}
+                sellerTier={p.sellerTier}
+                badge={p.badge}
+                rating={p.rating}
+                reviewsCount={p.reviewsCount}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <StorefrontFeaturedStores />
