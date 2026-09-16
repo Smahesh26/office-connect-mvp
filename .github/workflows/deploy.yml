@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: deploy-hostinger-vps
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -25,7 +25,6 @@ jobs:
           host: ${{ secrets.HOSTINGER_HOST || '200.141.13.198' }}
           username: ${{ secrets.HOSTINGER_USER || 'root' }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          password: ${{ secrets.HOSTINGER_PASSWORD }}
           port: ${{ secrets.HOSTINGER_PORT || '22' }}
           timeout: 120s
           command_timeout: 25m

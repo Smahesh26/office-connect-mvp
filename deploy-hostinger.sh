@@ -11,14 +11,25 @@ TARGET_BRANCH="${1:-master}"
 # Clean up legacy directories
 rm -rf /var/www/officeconnect-cambliss
 
+# Clean any existing git locks
+rm -f "$PROJECT_DIR/.git/index.lock" "$PROJECT_DIR/.git/shallow.lock" 2>/dev/null || true
+
 # Fetch or clone latest code
 if [ -d "$PROJECT_DIR/.git" ]; then
     echo "🔄 Updating existing repository on branch $TARGET_BRANCH..."
     cd "$PROJECT_DIR"
-    git fetch origin "$TARGET_BRANCH"
-    git checkout -B "$TARGET_BRANCH" "origin/$TARGET_BRANCH"
-    git reset --hard "origin/$TARGET_BRANCH"
-    git clean -fd
+    rm -f .git/index.lock .git/shallow.lock 2>/dev/null || true
+    if git fetch origin "$TARGET_BRANCH"; then
+        git checkout -B "$TARGET_BRANCH" "origin/$TARGET_BRANCH" 2>/dev/null || git checkout "$TARGET_BRANCH"
+        git reset --hard "origin/$TARGET_BRANCH"
+        git clean -fd
+    else
+        echo "⚠️ Git fetch failed. Re-cloning fresh clean repository..."
+        cd /var/www
+        rm -rf "$PROJECT_DIR"
+        git clone -b "$TARGET_BRANCH" https://github.com/Smahesh26/office-connect-mvp.git "$PROJECT_DIR"
+        cd "$PROJECT_DIR"
+    fi
 else
     echo "📁 Fresh cloning latest clean repository from GitHub..."
     rm -rf "$PROJECT_DIR"
