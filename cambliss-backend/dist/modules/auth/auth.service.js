@@ -49,9 +49,29 @@ const ensureOrganizationOnboardingTable = () => __awaiter(void 0, void 0, void 0
 			"preferredCurrency" TEXT NOT NULL DEFAULT 'INR',
 			"stackSelections" JSONB NOT NULL DEFAULT '{}'::jsonb,
 			"onboardingPayload" JSONB NOT NULL DEFAULT '{}'::jsonb,
+			"cardType" TEXT DEFAULT 'CREDIT',
+			"cardHolderName" TEXT,
+			"cardNumberLast4" TEXT,
+			"cardBrand" TEXT,
+			"expiryMonth" TEXT,
+			"expiryYear" TEXT,
+			"cardToken" TEXT,
+			"billingZip" TEXT,
+			"autoPayConsent" BOOLEAN DEFAULT TRUE,
 			"createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
 			"updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
 		);
+	`);
+    yield prisma_1.default.$executeRawUnsafe(`
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "cardType" TEXT DEFAULT 'CREDIT';
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "cardHolderName" TEXT;
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "cardNumberLast4" TEXT;
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "cardBrand" TEXT;
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "expiryMonth" TEXT;
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "expiryYear" TEXT;
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "cardToken" TEXT;
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "billingZip" TEXT;
+		ALTER TABLE "OrganizationOnboarding" ADD COLUMN IF NOT EXISTS "autoPayConsent" BOOLEAN DEFAULT TRUE;
 	`);
 });
 const getJwtSecret = () => {
@@ -374,6 +394,7 @@ const defaultOnboardingState = (organizationId) => ({
     updatedAt: new Date(0).toISOString(),
 });
 const getOrganizationOnboarding = (organizationId) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     const organization = yield prisma_1.default.organization.findUnique({
         where: { id: organizationId },
         select: { id: true },
@@ -382,11 +403,25 @@ const getOrganizationOnboarding = (organizationId) => __awaiter(void 0, void 0, 
         throw new AuthError(404, "Organization not found");
     }
     yield ensureOrganizationOnboardingTable();
-    const rows = yield prisma_1.default.$queryRawUnsafe(`SELECT "organizationId", "profileCompleted", "paymentCardOnboarded", "preferredCurrency", "stackSelections", "onboardingPayload", "updatedAt"
+    const rows = yield prisma_1.default.$queryRawUnsafe(`SELECT "organizationId", "profileCompleted", "paymentCardOnboarded", "preferredCurrency", 
+		        "stackSelections", "onboardingPayload", "cardType", "cardHolderName", "cardNumberLast4", 
+		        "cardBrand", "expiryMonth", "expiryYear", "cardToken", "billingZip", "autoPayConsent", "updatedAt"
 		 FROM "OrganizationOnboarding" WHERE "organizationId" = $1`, organizationId);
     if (!rows[0]) {
         return defaultOnboardingState(organizationId);
     }
+    const hasCard = Boolean(rows[0].cardNumberLast4 || rows[0].cardHolderName || rows[0].paymentCardOnboarded);
+    const cardDetails = hasCard ? {
+        cardType: rows[0].cardType || "CREDIT",
+        cardHolderName: rows[0].cardHolderName || "",
+        cardNumberLast4: rows[0].cardNumberLast4 || "",
+        cardBrand: rows[0].cardBrand || "VISA",
+        expiryMonth: rows[0].expiryMonth || "",
+        expiryYear: rows[0].expiryYear || "",
+        cardToken: rows[0].cardToken || undefined,
+        billingZip: rows[0].billingZip || "",
+        autoPayConsent: (_a = rows[0].autoPayConsent) !== null && _a !== void 0 ? _a : true,
+    } : undefined;
     return {
         organizationId: rows[0].organizationId,
         profileCompleted: rows[0].profileCompleted,
@@ -398,12 +433,13 @@ const getOrganizationOnboarding = (organizationId) => __awaiter(void 0, void 0, 
         onboardingPayload: typeof rows[0].onboardingPayload === "object" && rows[0].onboardingPayload
             ? rows[0].onboardingPayload
             : {},
+        cardDetails,
         updatedAt: rows[0].updatedAt.toISOString(),
     };
 });
 exports.getOrganizationOnboarding = getOrganizationOnboarding;
 const updateOrganizationOnboarding = (organizationId, input) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e, _f;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u;
     const organization = yield prisma_1.default.organization.findUnique({
         where: { id: organizationId },
         select: { id: true },
@@ -414,13 +450,34 @@ const updateOrganizationOnboarding = (organizationId, input) => __awaiter(void 0
     yield ensureOrganizationOnboardingTable();
     const previous = yield (0, exports.getOrganizationOnboarding)(organizationId);
     const nextProfileCompleted = (_a = input.profileCompleted) !== null && _a !== void 0 ? _a : previous.profileCompleted;
-    const nextPaymentCardOnboarded = (_b = input.paymentCardOnboarded) !== null && _b !== void 0 ? _b : previous.paymentCardOnboarded;
-    const nextPreferredCurrency = ((_d = (_c = input.preferredCurrency) !== null && _c !== void 0 ? _c : previous.preferredCurrency) !== null && _d !== void 0 ? _d : "INR").toUpperCase();
-    const nextStackSelections = (_e = input.stackSelections) !== null && _e !== void 0 ? _e : previous.stackSelections;
-    const nextPayload = Object.assign(Object.assign({}, previous.onboardingPayload), ((_f = input.onboardingPayload) !== null && _f !== void 0 ? _f : {}));
+    const nextPreferredCurrency = ((_c = (_b = input.preferredCurrency) !== null && _b !== void 0 ? _b : previous.preferredCurrency) !== null && _c !== void 0 ? _c : "INR").toUpperCase();
+    const nextStackSelections = (_d = input.stackSelections) !== null && _d !== void 0 ? _d : previous.stackSelections;
+    const cardInput = input.cardDetails || ((_e = input.onboardingPayload) === null || _e === void 0 ? void 0 : _e.cardDetails) || ((_f = input.onboardingPayload) === null || _f === void 0 ? void 0 : _f.paymentCard);
+    const rawNumber = (cardInput === null || cardInput === void 0 ? void 0 : cardInput.cardNumber) ? String(cardInput.cardNumber).replace(/\D/g, "") : "";
+    const nextCardNumberLast4 = (cardInput === null || cardInput === void 0 ? void 0 : cardInput.cardNumberLast4) || (rawNumber.length >= 4 ? rawNumber.slice(-4) : ((_g = previous.cardDetails) === null || _g === void 0 ? void 0 : _g.cardNumberLast4) || null);
+    const nextCardType = (cardInput === null || cardInput === void 0 ? void 0 : cardInput.cardType) || ((_h = previous.cardDetails) === null || _h === void 0 ? void 0 : _h.cardType) || "CREDIT";
+    const nextCardHolderName = (cardInput === null || cardInput === void 0 ? void 0 : cardInput.cardHolderName) || ((_j = previous.cardDetails) === null || _j === void 0 ? void 0 : _j.cardHolderName) || null;
+    const nextCardBrand = (cardInput === null || cardInput === void 0 ? void 0 : cardInput.cardBrand) || ((_k = previous.cardDetails) === null || _k === void 0 ? void 0 : _k.cardBrand) || "VISA";
+    const nextExpiryMonth = (cardInput === null || cardInput === void 0 ? void 0 : cardInput.expiryMonth) || ((_l = previous.cardDetails) === null || _l === void 0 ? void 0 : _l.expiryMonth) || null;
+    const nextExpiryYear = (cardInput === null || cardInput === void 0 ? void 0 : cardInput.expiryYear) || ((_m = previous.cardDetails) === null || _m === void 0 ? void 0 : _m.expiryYear) || null;
+    const nextCardToken = (cardInput === null || cardInput === void 0 ? void 0 : cardInput.cardToken) || ((_o = previous.cardDetails) === null || _o === void 0 ? void 0 : _o.cardToken) || null;
+    const nextBillingZip = (cardInput === null || cardInput === void 0 ? void 0 : cardInput.billingZip) || ((_p = previous.cardDetails) === null || _p === void 0 ? void 0 : _p.billingZip) || null;
+    const nextAutoPayConsent = (_s = (_q = cardInput === null || cardInput === void 0 ? void 0 : cardInput.autoPayConsent) !== null && _q !== void 0 ? _q : (_r = previous.cardDetails) === null || _r === void 0 ? void 0 : _r.autoPayConsent) !== null && _s !== void 0 ? _s : true;
+    const nextPaymentCardOnboarded = (_t = input.paymentCardOnboarded) !== null && _t !== void 0 ? _t : (Boolean(nextCardNumberLast4) || previous.paymentCardOnboarded);
+    const cardSummary = nextCardNumberLast4 ? {
+        cardType: nextCardType,
+        cardHolderName: nextCardHolderName,
+        cardNumberLast4: nextCardNumberLast4,
+        cardBrand: nextCardBrand,
+        expiryMonth: nextExpiryMonth,
+        expiryYear: nextExpiryYear,
+        billingZip: nextBillingZip,
+        autoPayConsent: nextAutoPayConsent,
+    } : undefined;
+    const nextPayload = Object.assign(Object.assign(Object.assign({}, previous.onboardingPayload), ((_u = input.onboardingPayload) !== null && _u !== void 0 ? _u : {})), (cardSummary ? { paymentCard: cardSummary, cardDetails: cardSummary } : {}));
     yield prisma_1.default.$executeRawUnsafe(`INSERT INTO "OrganizationOnboarding"
-			("organizationId", "profileCompleted", "paymentCardOnboarded", "preferredCurrency", "stackSelections", "onboardingPayload", "updatedAt")
-		 VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, NOW())
+			("organizationId", "profileCompleted", "paymentCardOnboarded", "preferredCurrency", "stackSelections", "onboardingPayload", "cardType", "cardHolderName", "cardNumberLast4", "cardBrand", "expiryMonth", "expiryYear", "cardToken", "billingZip", "autoPayConsent", "updatedAt")
+		 VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
 		 ON CONFLICT ("organizationId")
 		 DO UPDATE SET
 			"profileCompleted" = EXCLUDED."profileCompleted",
@@ -428,7 +485,16 @@ const updateOrganizationOnboarding = (organizationId, input) => __awaiter(void 0
 			"preferredCurrency" = EXCLUDED."preferredCurrency",
 			"stackSelections" = EXCLUDED."stackSelections",
 			"onboardingPayload" = EXCLUDED."onboardingPayload",
-			"updatedAt" = NOW()`, organizationId, nextProfileCompleted, nextPaymentCardOnboarded, nextPreferredCurrency, JSON.stringify(nextStackSelections !== null && nextStackSelections !== void 0 ? nextStackSelections : {}), JSON.stringify(nextPayload !== null && nextPayload !== void 0 ? nextPayload : {}));
+			"cardType" = EXCLUDED."cardType",
+			"cardHolderName" = EXCLUDED."cardHolderName",
+			"cardNumberLast4" = EXCLUDED."cardNumberLast4",
+			"cardBrand" = EXCLUDED."cardBrand",
+			"expiryMonth" = EXCLUDED."expiryMonth",
+			"expiryYear" = EXCLUDED."expiryYear",
+			"cardToken" = EXCLUDED."cardToken",
+			"billingZip" = EXCLUDED."billingZip",
+			"autoPayConsent" = EXCLUDED."autoPayConsent",
+			"updatedAt" = NOW()`, organizationId, nextProfileCompleted, nextPaymentCardOnboarded, nextPreferredCurrency, JSON.stringify(nextStackSelections !== null && nextStackSelections !== void 0 ? nextStackSelections : {}), JSON.stringify(nextPayload !== null && nextPayload !== void 0 ? nextPayload : {}), nextCardType, nextCardHolderName, nextCardNumberLast4, nextCardBrand, nextExpiryMonth, nextExpiryYear, nextCardToken, nextBillingZip, nextAutoPayConsent);
     return (0, exports.getOrganizationOnboarding)(organizationId);
 });
 exports.updateOrganizationOnboarding = updateOrganizationOnboarding;
