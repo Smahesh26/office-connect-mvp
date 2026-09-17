@@ -4,6 +4,34 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState, useMemo } from "react";
 import WorkspaceShell from "../../../components/WorkspaceShell";
+import {
+	Bell,
+	MessageSquare,
+	BookOpen,
+	Folder,
+	Users,
+	FileText,
+	Megaphone,
+	Zap,
+	TrendingUp,
+	Shield,
+	Building,
+} from "lucide-react";
+
+function getSpaceDetailIcon(id: string) {
+	switch (id) {
+		case "general":
+			return <Megaphone className="h-8 w-8 text-blue-600" />;
+		case "engineering":
+			return <Zap className="h-8 w-8 text-amber-500" />;
+		case "sales":
+			return <TrendingUp className="h-8 w-8 text-emerald-600" />;
+		case "executive":
+			return <Shield className="h-8 w-8 text-purple-600" />;
+		default:
+			return <Building className="h-8 w-8 text-[#404d85]" />;
+	}
+}
 
 type SpaceTab = "discussions" | "wiki" | "files" | "members";
 
@@ -217,8 +245,8 @@ export default function SpaceDetailPage() {
 				<div className="rounded-3xl border border-[#d9e2ef] bg-white p-6 shadow-sm">
 					<div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
 						<div className="flex items-center gap-4">
-							<span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#eef2fa] text-3xl shadow-sm">
-								{currentSpace.icon}
+							<span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#eef2fa] shadow-sm">
+								{getSpaceDetailIcon(spaceId)}
 							</span>
 							<div>
 								<div className="flex items-center gap-2.5">
@@ -237,8 +265,9 @@ export default function SpaceDetailPage() {
 						</div>
 
 						<div className="flex items-center gap-3">
-							<button className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-								🔔 Notifications
+							<button className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+								<Bell className="h-3.5 w-3.5 text-slate-500" />
+								<span>Notifications</span>
 							</button>
 							<button className="rounded-xl bg-[#404d85] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#323d6b]">
 								Joined Space
@@ -249,24 +278,27 @@ export default function SpaceDetailPage() {
 					{/* Space Tab Navigation */}
 					<div className="mt-6 flex items-center gap-2 border-t border-slate-100 pt-4 text-xs font-semibold">
 						{[
-							{ id: "discussions", label: "Discussions & Stream", icon: "💬" },
-							{ id: "wiki", label: "Space Wiki & SOPs", icon: "📚" },
-							{ id: "files", label: "Files & Vault", icon: "📁" },
-							{ id: "members", label: "Members", icon: "👥" },
-						].map((tab) => (
-							<button
-								key={tab.id}
-								onClick={() => setActiveTab(tab.id as SpaceTab)}
-								className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 transition ${
-									activeTab === tab.id
-										? "bg-[#404d85] text-white shadow-sm"
-										: "text-slate-600 hover:bg-[#eef2fa] hover:text-slate-900"
-								}`}
-							>
-								<span>{tab.icon}</span>
-								<span>{tab.label}</span>
-							</button>
-						))}
+							{ id: "discussions", label: "Discussions & Stream", icon: MessageSquare },
+							{ id: "wiki", label: "Space Wiki & SOPs", icon: BookOpen },
+							{ id: "files", label: "Files & Vault", icon: Folder },
+							{ id: "members", label: "Members", icon: Users },
+						].map((tab) => {
+							const IconComponent = tab.icon;
+							return (
+								<button
+									key={tab.id}
+									onClick={() => setActiveTab(tab.id as SpaceTab)}
+									className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 transition ${
+										activeTab === tab.id
+											? "bg-[#404d85] text-white shadow-sm"
+											: "text-slate-600 hover:bg-[#eef2fa] hover:text-slate-900"
+									}`}
+								>
+									<IconComponent className="h-3.5 w-3.5" />
+									<span>{tab.label}</span>
+								</button>
+							);
+						})}
 					</div>
 				</div>
 
@@ -385,8 +417,9 @@ export default function SpaceDetailPage() {
 									href="/knowledge/central-multi-module"
 									className="group block rounded-xl border border-slate-100 bg-[#f8faff] p-3 transition hover:border-[#6678c1]"
 								>
-									<span className="text-xs font-bold text-slate-900 group-hover:text-[#404d85]">
-										📄 {currentSpace.pinnedDoc}
+									<span className="flex items-center gap-1.5 text-xs font-bold text-slate-900 group-hover:text-[#404d85]">
+										<FileText className="h-3.5 w-3.5 text-blue-600" />
+										<span>{currentSpace.pinnedDoc}</span>
 									</span>
 									<p className="mt-1 text-[11px] text-slate-500">
 										Required reading for all members contributing to this space.
@@ -448,14 +481,20 @@ export default function SpaceDetailPage() {
 								href="/knowledge"
 								className="rounded-xl border border-slate-100 bg-[#f8faff] p-4 transition hover:border-[#6678c1]"
 							>
-								<h4 className="text-sm font-bold text-slate-900">📖 {currentSpace.pinnedDoc}</h4>
+								<h4 className="flex items-center gap-2 text-sm font-bold text-slate-900">
+									<BookOpen className="h-4 w-4 text-blue-600" />
+									<span>{currentSpace.pinnedDoc}</span>
+								</h4>
 								<p className="mt-1 text-xs text-slate-500">Core operational guidance for all team members.</p>
 							</Link>
 							<Link
 								href="/knowledge"
 								className="rounded-xl border border-slate-100 bg-[#f8faff] p-4 transition hover:border-[#6678c1]"
 							>
-								<h4 className="text-sm font-bold text-slate-900">📑 Escalation & Incident Triage Protocol</h4>
+								<h4 className="flex items-center gap-2 text-sm font-bold text-slate-900">
+									<FileText className="h-4 w-4 text-indigo-600" />
+									<span>Escalation & Incident Triage Protocol</span>
+								</h4>
 								<p className="mt-1 text-xs text-slate-500">How to handle priority issues across departments.</p>
 							</Link>
 						</div>
@@ -478,7 +517,7 @@ export default function SpaceDetailPage() {
 						</div>
 
 						<div className="rounded-xl border border-dashed border-slate-200 p-8 text-center">
-							<span className="text-3xl">📁</span>
+							<Folder className="h-10 w-10 text-slate-400 mx-auto" />
 							<h4 className="mt-2 text-sm font-bold text-slate-700">Space File Vault Active</h4>
 							<p className="mt-1 text-xs text-slate-500">Drag and drop files to attach to this space, or view them in File Sharing.</p>
 						</div>

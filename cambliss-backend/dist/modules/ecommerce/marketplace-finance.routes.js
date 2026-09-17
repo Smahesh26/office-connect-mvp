@@ -16,6 +16,7 @@ const express_1 = require("express");
 const financial_ledger_service_1 = require("./financial-ledger.service");
 const seller_verification_service_1 = require("./seller-verification.service");
 const settlement_provider_factory_1 = __importDefault(require("../payments/settlement-provider.factory"));
+const supply_chain_service_1 = require("../inventory/supply-chain.service");
 const router = (0, express_1.Router)();
 const settlementProvider = settlement_provider_factory_1.default.getProvider();
 /**
@@ -65,6 +66,7 @@ router.get("/overview", (req, res) => __awaiter(void 0, void 0, void 0, function
  * 2. MULTI-SELLER CHECKOUT ORDER CREATION
  */
 router.post("/orders", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const { customerId, customerName, customerEmail, items } = req.body;
         if (!items || !Array.isArray(items) || items.length === 0) {
@@ -76,6 +78,14 @@ router.post("/orders", (req, res) => __awaiter(void 0, void 0, void 0, function*
             customerEmail: customerEmail || "anand@mahindra.com",
             items,
         });
+        // Interconnected Supply Chain: Automatically trigger warehouse stock deduction & check low-stock triggers
+        try {
+            const orgId = ((_a = req.user) === null || _a === void 0 ? void 0 : _a.organizationId) || "org_default";
+            yield (0, supply_chain_service_1.handleCommerceOrderStockDeduction)(masterOrder.id, items, orgId);
+        }
+        catch (stockErr) {
+            console.error("[SupplyChain] Non-blocking stock deduction note:", stockErr);
+        }
         res.status(201).json({ success: true, order: masterOrder });
     }
     catch (err) {

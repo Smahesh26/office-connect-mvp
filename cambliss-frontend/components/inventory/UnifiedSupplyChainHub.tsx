@@ -2,6 +2,18 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import {
+	ShoppingCart,
+	Zap,
+	Boxes,
+	AlertTriangle,
+	FileText,
+	Truck,
+	CheckCircle2,
+	Check,
+	ArrowRight,
+	Activity,
+} from "lucide-react";
 
 type SupplyChainTelemetry = {
 	metrics: {
@@ -81,10 +93,10 @@ export default function UnifiedSupplyChainHub({
 			});
 			const data = await res.json();
 			if (res.ok) {
-				setActionNotice(`✅ ${data.message || "Draft Purchase Order created successfully!"}`);
+				setActionNotice(data.message || "Draft Purchase Order created successfully!");
 				await fetchTelemetry();
 			} else {
-				setActionNotice(`⚠️ ${data.message || "Unable to generate draft PO."}`);
+				setActionNotice(data.message || "Unable to generate draft PO.");
 			}
 		} catch (e: any) {
 			setActionNotice(`Error: ${e.message}`);
@@ -114,11 +126,11 @@ export default function UnifiedSupplyChainHub({
 			const data = await res.json();
 			if (res.ok) {
 				setActionNotice(
-					`🎉 Simulated Commerce Order #${simOrderId}: 5 units sold. Warehouse inventory decremented & audit logged!`
+					`Simulated Commerce Order #${simOrderId}: 5 units sold. Warehouse inventory decremented & audit logged!`
 				);
 				await fetchTelemetry();
 			} else {
-				setActionNotice(`⚠️ ${data.message || "Simulation failed."}`);
+				setActionNotice(data.message || "Simulation failed.");
 			}
 		} catch (e: any) {
 			setActionNotice(`Error: ${e.message}`);
@@ -151,7 +163,7 @@ export default function UnifiedSupplyChainHub({
 							disabled={isSimulatingSale}
 							className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 px-4 py-2.5 text-xs font-bold text-slate-950 shadow-md hover:from-amber-400 hover:to-amber-300 active:scale-95 disabled:opacity-70"
 						>
-							<span>🛒</span>
+							<ShoppingCart className="h-4 w-4" />
 							<span>{isSimulatingSale ? "Simulating Sale..." : "Simulate Commerce Checkout"}</span>
 						</button>
 
@@ -160,7 +172,7 @@ export default function UnifiedSupplyChainHub({
 							disabled={isAutoReordering}
 							className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-[#323d6b] shadow-md hover:bg-[#f0f4fc] active:scale-95 disabled:opacity-70"
 						>
-							<span>⚡</span>
+							<Zap className="h-4 w-4 text-amber-500" />
 							<span>{isAutoReordering ? "Generating POs..." : "1-Click Auto-Reorder PO"}</span>
 						</button>
 					</div>
@@ -185,7 +197,9 @@ export default function UnifiedSupplyChainHub({
 					<div className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/80 p-4 relative group hover:border-[#404d85] transition">
 						<div>
 							<div className="flex items-center justify-between">
-								<span className="text-2xl">🛒</span>
+								<span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+									<ShoppingCart className="h-4 w-4" />
+								</span>
 								<span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">Step 1</span>
 							</div>
 							<h4 className="mt-2 text-xs font-bold text-slate-900">Commerce Sales</h4>
@@ -200,7 +214,9 @@ export default function UnifiedSupplyChainHub({
 					<div className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/80 p-4 relative group hover:border-[#404d85] transition">
 						<div>
 							<div className="flex items-center justify-between">
-								<span className="text-2xl">📦</span>
+								<span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
+									<Boxes className="h-4 w-4" />
+								</span>
 								<span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700">Step 2</span>
 							</div>
 							<h4 className="mt-2 text-xs font-bold text-slate-900">Warehouse Stock</h4>
@@ -215,7 +231,9 @@ export default function UnifiedSupplyChainHub({
 					<div className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/80 p-4 relative group hover:border-[#404d85] transition">
 						<div>
 							<div className="flex items-center justify-between">
-								<span className="text-2xl">⚠️</span>
+								<span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+									<AlertTriangle className="h-4 w-4" />
+								</span>
 								<span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">Step 3</span>
 							</div>
 							<h4 className="mt-2 text-xs font-bold text-slate-900">Reorder Threshold</h4>
@@ -230,7 +248,9 @@ export default function UnifiedSupplyChainHub({
 					<div className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/80 p-4 relative group hover:border-[#404d85] transition">
 						<div>
 							<div className="flex items-center justify-between">
-								<span className="text-2xl">📝</span>
+								<span className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 text-purple-700">
+									<FileText className="h-4 w-4" />
+								</span>
 								<span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700">Step 4</span>
 							</div>
 							<h4 className="mt-2 text-xs font-bold text-slate-900">Purchase Order (PO)</h4>
@@ -245,7 +265,9 @@ export default function UnifiedSupplyChainHub({
 					<div className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/80 p-4 relative group hover:border-[#404d85] transition">
 						<div>
 							<div className="flex items-center justify-between">
-								<span className="text-2xl">🚚</span>
+								<span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+									<Truck className="h-4 w-4" />
+								</span>
 								<span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Step 5</span>
 							</div>
 							<h4 className="mt-2 text-xs font-bold text-slate-900">Receipt & Restock</h4>
@@ -288,7 +310,13 @@ export default function UnifiedSupplyChainHub({
 												: "bg-emerald-100 text-emerald-700"
 										}`}
 									>
-										{evt.status === "WARNING" ? "⚠️" : evt.status === "INFO" ? "📝" : "✓"}
+										{evt.status === "WARNING" ? (
+											<AlertTriangle className="h-3.5 w-3.5" />
+										) : evt.status === "INFO" ? (
+											<FileText className="h-3.5 w-3.5" />
+										) : (
+											<Check className="h-3.5 w-3.5" />
+										)}
 									</span>
 									<div className="flex-1">
 										<div className="flex items-center justify-between">
@@ -358,7 +386,7 @@ export default function UnifiedSupplyChainHub({
 							))
 						) : (
 							<div className="rounded-xl border border-dashed border-slate-200 p-8 text-center space-y-2">
-								<span className="text-2xl">✅</span>
+								<CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto" />
 								<h4 className="text-xs font-bold text-slate-700">No Pending Draft POs</h4>
 								<p className="text-[11px] text-slate-500 max-w-xs mx-auto">
 									All products have sufficient stock levels. Use "1-Click Auto-Reorder PO" to generate POs whenever stock falls below threshold.

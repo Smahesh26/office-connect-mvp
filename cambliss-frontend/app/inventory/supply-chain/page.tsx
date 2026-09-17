@@ -3,6 +3,7 @@
 import Link from "next/link";
 import WorkspaceShell from "../../../components/WorkspaceShell";
 import UnifiedSupplyChainHub from "../../../components/inventory/UnifiedSupplyChainHub";
+import { ArrowLeft } from "lucide-react";
 
 export default function SupplyChainPage() {
 	return (
@@ -24,9 +25,10 @@ export default function SupplyChainPage() {
 
 					<Link
 						href="/inventory"
-						className="text-xs font-semibold text-[#404d85] hover:underline"
+						className="inline-flex items-center gap-1 text-xs font-semibold text-[#404d85] hover:underline"
 					>
-						← Back to Inventory Ops
+						<ArrowLeft className="h-3.5 w-3.5" />
+						<span>Back to Inventory Ops</span>
 					</Link>
 				</div>
 

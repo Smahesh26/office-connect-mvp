@@ -3,6 +3,44 @@
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import WorkspaceShell from "../../components/WorkspaceShell";
+import {
+	Compass,
+	Users,
+	MessagesSquare,
+	BookOpen,
+	Boxes,
+	Pin,
+	Heart,
+	MessageSquare,
+	Lock,
+	BarChart3,
+	Receipt,
+	Folder,
+	Video,
+	Store,
+	ArrowRight,
+	Shield,
+	Zap,
+	Megaphone,
+	TrendingUp,
+	X,
+	Sparkles,
+} from "lucide-react";
+
+function getSpaceIcon(id: string) {
+	switch (id) {
+		case "general":
+			return <Megaphone className="h-4 w-4 text-blue-600" />;
+		case "engineering":
+			return <Zap className="h-4 w-4 text-amber-500" />;
+		case "sales":
+			return <TrendingUp className="h-4 w-4 text-emerald-600" />;
+		case "executive":
+			return <Shield className="h-4 w-4 text-purple-600" />;
+		default:
+			return <MessagesSquare className="h-4 w-4 text-indigo-600" />;
+	}
+}
 
 type Post = {
 	id: string;
@@ -40,7 +78,7 @@ const INITIAL_SPACES: SpaceSummary[] = [
 		membersCount: 142,
 		unreadCount: 3,
 		isPrivate: false,
-		icon: "📢",
+		icon: "general",
 	},
 	{
 		id: "engineering",
@@ -49,7 +87,7 @@ const INITIAL_SPACES: SpaceSummary[] = [
 		membersCount: 38,
 		unreadCount: 7,
 		isPrivate: false,
-		icon: "⚡",
+		icon: "engineering",
 	},
 	{
 		id: "sales",
@@ -58,7 +96,7 @@ const INITIAL_SPACES: SpaceSummary[] = [
 		membersCount: 45,
 		unreadCount: 0,
 		isPrivate: false,
-		icon: "📈",
+		icon: "sales",
 	},
 	{
 		id: "executive",
@@ -67,7 +105,7 @@ const INITIAL_SPACES: SpaceSummary[] = [
 		membersCount: 8,
 		unreadCount: 1,
 		isPrivate: true,
-		icon: "🏛️",
+		icon: "executive",
 	},
 ];
 
@@ -296,7 +334,10 @@ export default function OfficeConnectCentralPage() {
 						className="group rounded-2xl border border-[#d9e2ef] bg-white p-4 shadow-sm transition hover:border-[#6678c1] hover:shadow-md"
 					>
 						<div className="flex items-center justify-between">
-							<span className="text-xs font-bold uppercase tracking-wider text-slate-400">Pillar 1</span>
+							<div className="flex items-center gap-2">
+								<Users className="h-4 w-4 text-blue-600" />
+								<span className="text-xs font-bold uppercase tracking-wider text-slate-400">Pillar 1</span>
+							</div>
 							<span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">Directory</span>
 						</div>
 						<h2 className="mt-2 text-base font-bold text-slate-900 group-hover:text-[#404d85]">Users & Presence</h2>
@@ -310,7 +351,10 @@ export default function OfficeConnectCentralPage() {
 						className="group rounded-2xl border border-[#d9e2ef] bg-white p-4 shadow-sm transition hover:border-[#6678c1] hover:shadow-md"
 					>
 						<div className="flex items-center justify-between">
-							<span className="text-xs font-bold uppercase tracking-wider text-slate-400">Pillar 2</span>
+							<div className="flex items-center gap-2">
+								<MessagesSquare className="h-4 w-4 text-purple-600" />
+								<span className="text-xs font-bold uppercase tracking-wider text-slate-400">Pillar 2</span>
+							</div>
 							<span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700">Collab</span>
 						</div>
 						<h2 className="mt-2 text-base font-bold text-slate-900 group-hover:text-[#404d85]">Spaces</h2>
@@ -324,7 +368,10 @@ export default function OfficeConnectCentralPage() {
 						className="group rounded-2xl border border-[#d9e2ef] bg-white p-4 shadow-sm transition hover:border-[#6678c1] hover:shadow-md"
 					>
 						<div className="flex items-center justify-between">
-							<span className="text-xs font-bold uppercase tracking-wider text-slate-400">Pillar 3</span>
+							<div className="flex items-center gap-2">
+								<BookOpen className="h-4 w-4 text-emerald-600" />
+								<span className="text-xs font-bold uppercase tracking-wider text-slate-400">Pillar 3</span>
+							</div>
 							<span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Memory</span>
 						</div>
 						<h2 className="mt-2 text-base font-bold text-slate-900 group-hover:text-[#404d85]">Content & SOPs</h2>
@@ -338,7 +385,10 @@ export default function OfficeConnectCentralPage() {
 						className="group rounded-2xl border border-[#d9e2ef] bg-white p-4 shadow-sm transition hover:border-[#6678c1] hover:shadow-md"
 					>
 						<div className="flex items-center justify-between">
-							<span className="text-xs font-bold uppercase tracking-wider text-slate-400">Pillar 4</span>
+							<div className="flex items-center gap-2">
+								<Boxes className="h-4 w-4 text-indigo-600" />
+								<span className="text-xs font-bold uppercase tracking-wider text-slate-400">Pillar 4</span>
+							</div>
 							<span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Supply Chain</span>
 						</div>
 						<h2 className="mt-2 text-base font-bold text-slate-900 group-hover:text-[#404d85]">Commerce, Stock & PO</h2>
@@ -378,7 +428,7 @@ export default function OfficeConnectCentralPage() {
 								>
 									{post.pinned && (
 										<div className="mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-700">
-											<span>📌</span>
+											<Pin className="h-3.5 w-3.5" />
 											<span>Pinned Leadership Announcement</span>
 										</div>
 									)}
@@ -432,11 +482,11 @@ export default function OfficeConnectCentralPage() {
 												}}
 												className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-slate-600 transition hover:bg-slate-100 hover:text-red-500"
 											>
-												<span>❤️</span>
+												<Heart className="h-3.5 w-3.5" />
 												<span>{post.likes}</span>
 											</button>
 											<button className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-slate-600 transition hover:bg-slate-100 hover:text-[#404d85]">
-												<span>💬</span>
+												<MessageSquare className="h-3.5 w-3.5" />
 												<span>{post.comments} comments</span>
 											</button>
 										</div>
@@ -472,8 +522,8 @@ export default function OfficeConnectCentralPage() {
 										className="group flex items-center justify-between rounded-xl border border-transparent p-2.5 transition hover:border-[#d9e2ef] hover:bg-[#f8faff]"
 									>
 										<div className="flex items-center gap-2.5">
-											<span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#eef2fa] text-sm">
-												{sp.icon}
+											<span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#eef2fa]">
+												{getSpaceIcon(sp.id)}
 											</span>
 											<div>
 												<div className="flex items-center gap-1.5">
@@ -481,9 +531,7 @@ export default function OfficeConnectCentralPage() {
 														{sp.name}
 													</p>
 													{sp.isPrivate && (
-														<span className="text-[10px] text-slate-400" title="Private space">
-															🔒
-														</span>
+														<Lock className="h-3 w-3 text-slate-400" />
 													)}
 												</div>
 												<p className="text-[10px] text-slate-500">{sp.membersCount} members</p>
@@ -519,7 +567,7 @@ export default function OfficeConnectCentralPage() {
 									href="/crm"
 									className="group flex flex-col rounded-xl border border-slate-100 bg-slate-50/70 p-3 transition hover:border-[#6678c1] hover:bg-white hover:shadow-sm"
 								>
-									<span className="text-lg">📊</span>
+									<BarChart3 className="h-5 w-5 text-indigo-600" />
 									<span className="mt-1 text-xs font-bold text-slate-900 group-hover:text-[#404d85]">CRM</span>
 									<span className="text-[10px] text-slate-500">Pipeline & Leads</span>
 								</Link>
@@ -528,7 +576,7 @@ export default function OfficeConnectCentralPage() {
 									href="/hrm"
 									className="group flex flex-col rounded-xl border border-slate-100 bg-slate-50/70 p-3 transition hover:border-[#6678c1] hover:bg-white hover:shadow-sm"
 								>
-									<span className="text-lg">👥</span>
+									<Users className="h-5 w-5 text-blue-600" />
 									<span className="mt-1 text-xs font-bold text-slate-900 group-hover:text-[#404d85]">HRM</span>
 									<span className="text-[10px] text-slate-500">Talent & Attendance</span>
 								</Link>
@@ -537,7 +585,7 @@ export default function OfficeConnectCentralPage() {
 									href="/inventory"
 									className="group flex flex-col rounded-xl border border-slate-100 bg-slate-50/70 p-3 transition hover:border-[#6678c1] hover:bg-white hover:shadow-sm"
 								>
-									<span className="text-lg">📦</span>
+									<Boxes className="h-5 w-5 text-amber-600" />
 									<span className="mt-1 text-xs font-bold text-slate-900 group-hover:text-[#404d85]">Inventory</span>
 									<span className="text-[10px] text-slate-500">Stock & Warehousing</span>
 								</Link>
@@ -546,7 +594,7 @@ export default function OfficeConnectCentralPage() {
 									href="/akaunting"
 									className="group flex flex-col rounded-xl border border-slate-100 bg-slate-50/70 p-3 transition hover:border-[#6678c1] hover:bg-white hover:shadow-sm"
 								>
-									<span className="text-lg">💰</span>
+									<Receipt className="h-5 w-5 text-emerald-600" />
 									<span className="mt-1 text-xs font-bold text-slate-900 group-hover:text-[#404d85]">Accountech</span>
 									<span className="text-[10px] text-slate-500">ERP & Invoicing</span>
 								</Link>
@@ -555,7 +603,7 @@ export default function OfficeConnectCentralPage() {
 									href="/file-sharing"
 									className="group flex flex-col rounded-xl border border-slate-100 bg-slate-50/70 p-3 transition hover:border-[#6678c1] hover:bg-white hover:shadow-sm"
 								>
-									<span className="text-lg">📁</span>
+									<Folder className="h-5 w-5 text-purple-600" />
 									<span className="mt-1 text-xs font-bold text-slate-900 group-hover:text-[#404d85]">File Vault</span>
 									<span className="text-[10px] text-slate-500">Secure Cloud Drive</span>
 								</Link>
@@ -564,7 +612,7 @@ export default function OfficeConnectCentralPage() {
 									href="/video-connect"
 									className="group flex flex-col rounded-xl border border-slate-100 bg-slate-50/70 p-3 transition hover:border-[#6678c1] hover:bg-white hover:shadow-sm"
 								>
-									<span className="text-lg">📹</span>
+									<Video className="h-5 w-5 text-rose-600" />
 									<span className="mt-1 text-xs font-bold text-slate-900 group-hover:text-[#404d85]">Video Connect</span>
 									<span className="text-[10px] text-slate-500">Instant HD Meetings</span>
 								</Link>
@@ -576,10 +624,10 @@ export default function OfficeConnectCentralPage() {
 									className="flex items-center justify-between rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 p-3 text-xs font-bold text-slate-950 shadow-sm transition hover:from-amber-400 hover:to-amber-300"
 								>
 									<div className="flex items-center gap-2">
-										<span>🏬</span>
+										<Store className="h-4 w-4" />
 										<span>Marketplace Supplies Hub</span>
 									</div>
-									<span>→</span>
+									<ArrowRight className="h-4 w-4" />
 								</Link>
 							</div>
 						</div>
@@ -598,21 +646,24 @@ export default function OfficeConnectCentralPage() {
 							<div className="space-y-1.5 text-xs">
 								<Link
 									href="/knowledge/company-handbook"
-									className="block rounded-lg p-2 font-medium text-slate-700 hover:bg-white hover:text-[#404d85]"
+									className="flex items-center gap-2 rounded-lg p-2 font-medium text-slate-700 hover:bg-white hover:text-[#404d85]"
 								>
-									📖 Employee Operating Handbook 2026
+									<BookOpen className="h-3.5 w-3.5 text-blue-600" />
+									<span>Employee Operating Handbook 2026</span>
 								</Link>
 								<Link
 									href="/knowledge/security-protocols"
-									className="block rounded-lg p-2 font-medium text-slate-700 hover:bg-white hover:text-[#404d85]"
+									className="flex items-center gap-2 rounded-lg p-2 font-medium text-slate-700 hover:bg-white hover:text-[#404d85]"
 								>
-									🔐 Enterprise Data Security & RBAC Policy
+									<Shield className="h-3.5 w-3.5 text-emerald-600" />
+									<span>Enterprise Data Security & RBAC Policy</span>
 								</Link>
 								<Link
 									href="/knowledge/crm-pipeline-sop"
-									className="block rounded-lg p-2 font-medium text-slate-700 hover:bg-white hover:text-[#404d85]"
+									className="flex items-center gap-2 rounded-lg p-2 font-medium text-slate-700 hover:bg-white hover:text-[#404d85]"
 								>
-									⚡ Sales Pipeline & Quote Conversion SOP
+									<Zap className="h-3.5 w-3.5 text-amber-500" />
+									<span>Sales Pipeline & Quote Conversion SOP</span>
 								</Link>
 							</div>
 						</div>
@@ -629,7 +680,7 @@ export default function OfficeConnectCentralPage() {
 									onClick={() => setNewPostModalOpen(false)}
 									className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
 								>
-									✕
+									<X className="h-4 w-4" />
 								</button>
 							</div>
 

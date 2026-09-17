@@ -14,6 +14,7 @@ const accounting_routes_1 = __importDefault(require("./modules/accounting/accoun
 const crm_routes_1 = __importDefault(require("./modules/crm/crm.routes"));
 const hrm_routes_1 = __importDefault(require("./modules/hrm/hrm.routes"));
 const inventory_routes_1 = __importDefault(require("./modules/inventory/inventory.routes"));
+const supply_chain_routes_1 = __importDefault(require("./modules/inventory/supply-chain.routes"));
 const files_routes_1 = __importDefault(require("./modules/files/files.routes"));
 const plans_routes_1 = __importDefault(require("./modules/plans/plans.routes"));
 const subscription_routes_1 = __importDefault(require("./modules/subscription/subscription.routes"));
@@ -29,6 +30,7 @@ const tools_routes_1 = __importDefault(require("./modules/tools/tools.routes"));
 const video_connect_routes_1 = __importDefault(require("./modules/video-connect/video-connect.routes"));
 const ecommerce_routes_1 = __importDefault(require("./modules/ecommerce/ecommerce.routes"));
 const catalog_router_1 = __importDefault(require("./modules/catalog/catalog.router"));
+const central_routes_1 = __importDefault(require("./modules/central/central.routes"));
 const app = (0, express_1.default)();
 const allowedOrigins = ((_a = process.env.CORS_ORIGINS) !== null && _a !== void 0 ? _a : "")
     .split(",")
@@ -72,6 +74,7 @@ app.use("/api/admin", admin_routes_1.default);
 app.use("/api/accounting", accounting_routes_1.default);
 app.use("/api/crm", crm_routes_1.default);
 app.use("/api/hrm", hrm_routes_1.default);
+app.use("/api/inventory/supply-chain", supply_chain_routes_1.default);
 app.use("/api/inventory", inventory_routes_1.default);
 app.use("/api/tools", tools_routes_1.default);
 app.use("/api", files_routes_1.default);
@@ -85,6 +88,7 @@ app.use("/api/gst", gst_routes_1.default);
 app.use("/api/ai/insights", insights_routes_1.default);
 app.use("/api/chat", chat_routes_1.default);
 app.use("/api/user-management", user_management_routes_1.default);
+app.use("/api/central", central_routes_1.default);
 // Centralized error handler: prevents leaking stack traces / internals to clients
 // (OWASP A05 Security Misconfiguration / A09 Logging & Monitoring). Details are
 // logged server-side only; the response body stays generic.

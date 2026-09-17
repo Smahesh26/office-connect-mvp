@@ -4,6 +4,35 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import WorkspaceShell from "../../../components/WorkspaceShell";
+import {
+	ArrowLeft,
+	ArrowRight,
+	ThumbsUp,
+	ThumbsDown,
+	Users,
+	ShieldCheck,
+	BarChart3,
+	Receipt,
+	Boxes,
+	CheckCircle2,
+} from "lucide-react";
+
+function getRelatedModuleIcon(name: string) {
+	switch (name) {
+		case "HRM Portal":
+			return <Users className="h-4 w-4 text-blue-600" />;
+		case "User Management":
+			return <ShieldCheck className="h-4 w-4 text-emerald-600" />;
+		case "CRM Engine":
+			return <BarChart3 className="h-4 w-4 text-indigo-600" />;
+		case "Accountech ERP":
+			return <Receipt className="h-4 w-4 text-amber-600" />;
+		case "Inventory":
+			return <Boxes className="h-4 w-4 text-purple-600" />;
+		default:
+			return <CheckCircle2 className="h-4 w-4 text-slate-500" />;
+	}
+}
 
 const ARTICLES_DATABASE: Record<
 	string,
@@ -232,15 +261,17 @@ export default function ArticleDetailPage() {
 									<div className="mt-3 flex justify-center gap-3">
 										<button
 											onClick={() => setFeedbackGiven(true)}
-											className="rounded-xl border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50"
+											className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50"
 										>
-											👍 Yes, helpful
+											<ThumbsUp className="h-3.5 w-3.5 text-emerald-600" />
+											<span>Yes, helpful</span>
 										</button>
 										<button
 											onClick={() => setFeedbackGiven(true)}
-											className="rounded-xl border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50"
+											className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50"
 										>
-											👎 Needs update
+											<ThumbsDown className="h-3.5 w-3.5 text-slate-400" />
+											<span>Needs update</span>
 										</button>
 									</div>
 								)}
@@ -265,12 +296,12 @@ export default function ArticleDetailPage() {
 										className="group flex items-center justify-between rounded-xl border border-slate-100 bg-[#f8faff] p-2.5 transition hover:border-[#6678c1] hover:bg-white hover:shadow-sm"
 									>
 										<div className="flex items-center gap-2">
-											<span>{mod.icon}</span>
+											<span>{getRelatedModuleIcon(mod.name)}</span>
 											<span className="text-xs font-bold text-slate-900 group-hover:text-[#404d85]">
 												{mod.name}
 											</span>
 										</div>
-										<span className="text-xs text-slate-400">→</span>
+										<ArrowRight className="h-3.5 w-3.5 text-slate-400" />
 									</Link>
 								))}
 							</div>

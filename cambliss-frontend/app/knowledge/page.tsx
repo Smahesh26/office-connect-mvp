@@ -4,6 +4,16 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState, useMemo, useEffect, Suspense } from "react";
 import WorkspaceShell from "../../components/WorkspaceShell";
+import {
+	BookOpen,
+	Search,
+	Plus,
+	CheckCircle2,
+	Clock,
+	ArrowRight,
+	X,
+	FileText,
+} from "lucide-react";
 
 type Article = {
 	id: string;
@@ -232,14 +242,7 @@ function KnowledgeHubContent() {
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div className="relative flex-1">
 						<span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-							<svg viewBox="0 0 20 20" fill="none" className="h-4 w-4">
-								<path
-									d="M17.5 17.5l-4.2-4.2m1.7-4.3a6 6 0 11-12 0 6 6 0 0112 0z"
-									stroke="currentColor"
-									strokeWidth="2"
-									strokeLinecap="round"
-								/>
-							</svg>
+							<Search className="h-4 w-4 text-slate-400" />
 						</span>
 						<input
 							type="text"
@@ -298,7 +301,7 @@ function KnowledgeHubContent() {
 
 									{art.verified && (
 										<span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
-											<span>✓</span>
+											<CheckCircle2 className="h-3 w-3 text-emerald-600" />
 											<span>Verified SOP</span>
 										</span>
 									)}
@@ -341,9 +344,10 @@ function KnowledgeHubContent() {
 
 									<Link
 										href={`/knowledge/${art.slug}`}
-										className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-[#404d85] hover:bg-[#eef2fa]"
+										className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-[#404d85] hover:bg-[#eef2fa]"
 									>
-										Read →
+										<span>Read</span>
+										<ArrowRight className="h-3 w-3" />
 									</Link>
 								</div>
 							</div>
@@ -361,7 +365,7 @@ function KnowledgeHubContent() {
 									onClick={() => setNewArticleModalOpen(false)}
 									className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
 								>
-									✕
+									<X className="h-4 w-4" />
 								</button>
 							</div>
 
