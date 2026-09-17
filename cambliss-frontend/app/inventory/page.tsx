@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import WorkspaceShell from "../../components/WorkspaceShell";
 import * as XLSX from "xlsx";
@@ -1582,7 +1583,14 @@ export default function InventoryPage() {
 				<h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Inventory Control Center</h1>
 				<p className="mt-1 text-sm text-zinc-600">Products, warehouses, stock movement and purchase receipts.</p>
 				
-				<div className="mt-3 flex gap-3">
+				<div className="mt-3 flex flex-wrap items-center gap-3">
+					<Link
+						href="/inventory/supply-chain"
+						className="flex items-center gap-1.5 rounded-lg border border-emerald-600 bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition"
+					>
+						<span>⚡</span>
+						<span>Unified Supply Chain & PO Command</span>
+					</Link>
 					<button
 						type="button"
 						onClick={() => setIsImportModalOpen(true)}

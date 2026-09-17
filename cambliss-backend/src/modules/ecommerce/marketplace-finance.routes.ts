@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { financialLedgerService } from "./financial-ledger.service";
 import { sellerVerificationService } from "./seller-verification.service";
 import SettlementProviderFactory from "../payments/settlement-provider.factory";
+import { handleCommerceOrderStockDeduction } from "../inventory/supply-chain.service";
 
 const router = Router();
 const settlementProvider = SettlementProviderFactory.getProvider();
@@ -71,6 +72,14 @@ router.post("/orders", async (req: Request, res: Response) => {
       customerEmail: customerEmail || "anand@mahindra.com",
       items,
     });
+
+    // Interconnected Supply Chain: Automatically trigger warehouse stock deduction & check low-stock triggers
+    try {
+      const orgId = (req as any).user?.organizationId || "org_default";
+      await handleCommerceOrderStockDeduction(masterOrder.id, items, orgId);
+    } catch (stockErr) {
+      console.error("[SupplyChain] Non-blocking stock deduction note:", stockErr);
+    }
 
     res.status(201).json({ success: true, order: masterOrder });
   } catch (err: any) {

@@ -333,16 +333,19 @@ export default function OfficeConnectCentralPage() {
 						</p>
 					</Link>
 
-					<div className="group rounded-2xl border border-[#d9e2ef] bg-white p-4 shadow-sm transition hover:border-[#6678c1] hover:shadow-md">
+					<Link
+						href="/inventory/supply-chain"
+						className="group rounded-2xl border border-[#d9e2ef] bg-white p-4 shadow-sm transition hover:border-[#6678c1] hover:shadow-md"
+					>
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-bold uppercase tracking-wider text-slate-400">Pillar 4</span>
-							<span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">Ecosystem</span>
+							<span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Supply Chain</span>
 						</div>
-						<h2 className="mt-2 text-base font-bold text-slate-900 group-hover:text-[#404d85]">Integrated Modules</h2>
+						<h2 className="mt-2 text-base font-bold text-slate-900 group-hover:text-[#404d85]">Commerce, Stock & PO</h2>
 						<p className="mt-1 text-xs text-slate-500">
-							One-click launch to CRM, HRMS, Accountech ERP, Inventory, Video & Marketplace.
+							Circular engine: Storefront orders ➔ Warehouse deduction ➔ 1-click Auto POs.
 						</p>
-					</div>
+					</Link>
 				</div>
 
 				{/* MAIN 2-COLUMN WORKPLACE LAYOUT */}

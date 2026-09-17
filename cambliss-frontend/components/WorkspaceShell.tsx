@@ -104,7 +104,15 @@ const clientMenuItems: SidebarItem[] = [
 	},
 	{ label: "CRM", href: "/crm", accessKey: "CRM" },
 	{ label: "HRM", href: "/hrm", accessKey: "HRM" },
-	{ label: "Inventory", href: "/inventory", accessKey: "INVENTORY" },
+	{
+		label: "Inventory",
+		href: "/inventory",
+		accessKey: "INVENTORY",
+		subItems: [
+			{ label: "Inventory Control", href: "/inventory" },
+			{ label: "⚡ Supply Chain & POs", href: "/inventory/supply-chain" },
+		],
+	},
 	{ label: "Accountech ERP", href: "/akaunting" },
 	{ label: "File Sharing", href: "/file-sharing", accessKey: "FILE_SHARING" },
 	{ label: "Video Connect", href: "/video-connect" },
@@ -166,7 +174,14 @@ const adminMenuItems: SidebarItem[] = [
 	{ label: "Vendor Portal", href: "/vendor-dashboard" },
 	{ label: "CRM", href: "/crm" },
 	{ label: "HRM", href: "/hrm" },
-	{ label: "Inventory", href: "/inventory" },
+	{
+		label: "Inventory",
+		href: "/inventory",
+		subItems: [
+			{ label: "Inventory Control", href: "/inventory" },
+			{ label: "⚡ Supply Chain & POs", href: "/inventory/supply-chain" },
+		],
+	},
 	{ label: "Accountech ERP", href: "/akaunting" },
 	{ label: "File Sharing", href: "/file-sharing" },
 	{ label: "Video Connect", href: "/video-connect" },
