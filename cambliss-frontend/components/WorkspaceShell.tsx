@@ -63,7 +63,30 @@ function ChevronRightIcon({ className = "" }: { className?: string }) {
 
 
 const clientMenuItems: SidebarItem[] = [
-	{ label: "Dashboard", href: "/dashboard" },
+	{ label: "Office Connect Central", href: "/central", badge: "Hub" },
+	{
+		label: "Spaces",
+		href: "/spaces",
+		badge: "Collab",
+		subItems: [
+			{ label: "All Spaces", href: "/spaces" },
+			{ label: "# General Announcements", href: "/spaces/general" },
+			{ label: "# Engineering & Tech", href: "/spaces/engineering" },
+			{ label: "# Sales & Marketing", href: "/spaces/sales" },
+			{ label: "+ Create Space", href: "/spaces?action=create" },
+		],
+	},
+	{
+		label: "Knowledge & SOPs",
+		href: "/knowledge",
+		subItems: [
+			{ label: "Knowledge Center", href: "/knowledge" },
+			{ label: "Company Policies", href: "/knowledge?category=policies" },
+			{ label: "Operations SOPs", href: "/knowledge?category=operations" },
+			{ label: "Create Article", href: "/knowledge?action=new" },
+		],
+	},
+	{ label: "People Directory", href: "/directory" },
 	{
 		label: "Your Store",
 		badge: "Seller",
@@ -102,6 +125,29 @@ const clientMenuItems: SidebarItem[] = [
 
 const adminMenuItems: SidebarItem[] = [
 	{ label: "Admin Dashboard", href: "/admin-dashboard" },
+	{ label: "Office Connect Central", href: "/central", badge: "Hub" },
+	{
+		label: "Spaces",
+		href: "/spaces",
+		badge: "Collab",
+		subItems: [
+			{ label: "All Spaces", href: "/spaces" },
+			{ label: "# General Announcements", href: "/spaces/general" },
+			{ label: "# Executive Committee", href: "/spaces/executive" },
+			{ label: "+ Create Space", href: "/spaces?action=create" },
+		],
+	},
+	{
+		label: "Knowledge & SOPs",
+		href: "/knowledge",
+		subItems: [
+			{ label: "Knowledge Center", href: "/knowledge" },
+			{ label: "Company Policies", href: "/knowledge?category=policies" },
+			{ label: "Operations SOPs", href: "/knowledge?category=operations" },
+			{ label: "Create Article", href: "/knowledge?action=new" },
+		],
+	},
+	{ label: "People Directory", href: "/directory" },
 	{
 		label: "Your Store",
 		badge: "Seller",
@@ -180,6 +226,46 @@ function SidebarIcon({ label }: { label: string }) {
 			return (
 				<svg viewBox="0 0 24 24" fill="none" className={common}>
 					<path d="M4 12h7V4H4v8Zm9 8h7v-7h-7v7Zm0-16v7h7V4h-7ZM4 20h7v-7H4v7Z" fill="currentColor" />
+				</svg>
+			);
+		case "Office Connect Central":
+		case "Central Hub":
+		case "Central":
+			return (
+				<svg viewBox="0 0 24 24" fill="none" className={common}>
+					<circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+					<circle cx="12" cy="12" r="3.5" fill="currentColor" />
+					<path d="M12 3v3m0 12v3M3 12h3m12 0h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+				</svg>
+			);
+		case "Spaces":
+		case "Collaboration Spaces":
+			return (
+				<svg viewBox="0 0 24 24" fill="none" className={common}>
+					<rect x="3" y="4" width="8" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
+					<rect x="13" y="4" width="8" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
+					<rect x="3" y="13" width="8" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
+					<rect x="13" y="13" width="8" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
+				</svg>
+			);
+		case "Knowledge & SOPs":
+		case "Knowledge":
+		case "Knowledge Continuity":
+			return (
+				<svg viewBox="0 0 24 24" fill="none" className={common}>
+					<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+					<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+					<path d="M8 7h8M8 11h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+				</svg>
+			);
+		case "People Directory":
+		case "Directory":
+			return (
+				<svg viewBox="0 0 24 24" fill="none" className={common}>
+					<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+					<circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" />
+					<path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+					<path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
 				</svg>
 			);
 		case "CRM":

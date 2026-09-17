@@ -1535,3 +1535,70 @@ model MarketplaceEvent {
   @@index([productListingId])
   @@index([eventType, createdAt])
 }
+
+// ============================================
+// OFFICE CONNECT CENTRAL DIGITAL WORKPLACE
+// ============================================
+
+model Space {
+  id             String      @id @default(cuid())
+  organizationId String
+  name           String
+  slug           String
+  description    String
+  category       String      @default("public")
+  icon           String      @default("🏢")
+  leadName       String?
+  isPrivate      Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  posts          SpacePost[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@index([category])
+}
+
+model SpacePost {
+  id          String   @id @default(cuid())
+  spaceId     String
+  space       Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  authorId    String?
+  authorName  String
+  authorRole  String?
+  authorDept  String?
+  title       String
+  content     String
+  pinned      Boolean  @default(false)
+  likes       Int      @default(0)
+  tags        String[] @default([])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([spaceId])
+  @@index([createdAt])
+}
+
+model KnowledgeItem {
+  id             String   @id @default(cuid())
+  organizationId String
+  title          String
+  slug           String
+  category       String
+  summary        String
+  content        String
+  authorName     String
+  authorRole     String?
+  authorDept     String?
+  readingTime    String?
+  views          Int      @default(0)
+  tags           String[] @default([])
+  verified       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@index([category])
+}

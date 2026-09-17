@@ -353,9 +353,12 @@ export default function DashboardPage() {
 			<div className="mt-5 space-y-5 text-[#111827]">
 				<div className="flex flex-wrap items-center justify-between gap-4">
 					<div>
-						<p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#6678c1]">Workspace overview</p>
+						<div className="inline-flex items-center gap-2 rounded-full border border-[#6678c1]/20 bg-[#6678c1]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#404d85]">
+							<span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+							Office Connect Central
+						</div>
 						<h1 className="mt-2 text-4xl font-semibold tracking-tight text-[#404d85]">Hello, {userName}</h1>
-						<p className="mt-2 max-w-2xl text-sm leading-6 text-[#5b6472]">Use this hub to open the core Phase 1 modules. All modules remain enabled during the 90-day free trial.</p>
+						<p className="mt-2 max-w-2xl text-sm leading-6 text-[#5b6472]">Welcome to your unified enterprise digital workplace. Connect with team spaces, access organizational memory, and launch integrated business engines.</p>
 					</div>
 					<div className="flex items-center gap-3">
 						<div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${trialSummary.isExpired ? "bg-red-50 text-red-600 border border-red-200" : "bg-[#eef2fa] text-[#404d85] border border-[#d9e2ef]"}`}>
@@ -365,17 +368,69 @@ export default function DashboardPage() {
 							</svg>
 							{trialSummary.isExpired ? "Trial Expired" : `${trialSummary.daysLeft} days left`}
 						</div>
+						<Link href="/central" className="inline-flex items-center gap-2 rounded-xl bg-[#404d85] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#323d6b]">
+							<span>🏢</span>
+							<span>Open Central Hub</span>
+						</Link>
 						<Link href="/storefront" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 px-4 py-2 text-sm font-bold text-slate-950 shadow-md hover:from-amber-400 hover:to-amber-300">
 							<span>🏬</span>
 							<span>Browse Marketplace</span>
 						</Link>
 						<Link href="/crm" className="inline-flex items-center rounded-xl bg-[#6678c1] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_24px_-16px_rgba(102,120,193,0.35)] hover:bg-[#404d85]">
-							Open CRM
-						</Link>
-						<Link href="/file-sharing" className="inline-flex items-center rounded-xl border border-[#d9e2ef] bg-white px-4 py-2 text-sm font-semibold text-[#404d85] hover:bg-[#f8faff]">
-							Open Files
+							CRM
 						</Link>
 					</div>
+				</div>
+
+				{/* OFFICE CONNECT CENTRAL QUICK ACCESS PILLARS */}
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+					<Link
+						href="/central"
+						className="group rounded-2xl border border-[#d9e2ef] bg-gradient-to-br from-white to-[#f8faff] p-4 shadow-sm transition hover:border-[#6678c1] hover:shadow-md"
+					>
+						<div className="flex items-center justify-between">
+							<span className="text-xl">💬</span>
+							<span className="rounded-full bg-[#eef2fa] px-2 py-0.5 text-[10px] font-bold text-[#404d85]">Live Hub</span>
+						</div>
+						<h3 className="mt-2 text-sm font-bold text-slate-900 group-hover:text-[#404d85]">Central Stream</h3>
+						<p className="mt-0.5 text-[11px] text-slate-500">Company announcements & leadership broadcasts</p>
+					</Link>
+
+					<Link
+						href="/spaces"
+						className="group rounded-2xl border border-[#d9e2ef] bg-gradient-to-br from-white to-[#f8faff] p-4 shadow-sm transition hover:border-[#6678c1] hover:shadow-md"
+					>
+						<div className="flex items-center justify-between">
+							<span className="text-xl">🏢</span>
+							<span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700">Collaboration</span>
+						</div>
+						<h3 className="mt-2 text-sm font-bold text-slate-900 group-hover:text-[#404d85]">Team Spaces</h3>
+						<p className="mt-0.5 text-[11px] text-slate-500">Public & private zones for squads and depts</p>
+					</Link>
+
+					<Link
+						href="/knowledge"
+						className="group rounded-2xl border border-[#d9e2ef] bg-gradient-to-br from-white to-[#f8faff] p-4 shadow-sm transition hover:border-[#6678c1] hover:shadow-md"
+					>
+						<div className="flex items-center justify-between">
+							<span className="text-xl">📚</span>
+							<span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Memory</span>
+						</div>
+						<h3 className="mt-2 text-sm font-bold text-slate-900 group-hover:text-[#404d85]">Knowledge & SOPs</h3>
+						<p className="mt-0.5 text-[11px] text-slate-500">Searchable institutional wiki and guidelines</p>
+					</Link>
+
+					<Link
+						href="/directory"
+						className="group rounded-2xl border border-[#d9e2ef] bg-gradient-to-br from-white to-[#f8faff] p-4 shadow-sm transition hover:border-[#6678c1] hover:shadow-md"
+					>
+						<div className="flex items-center justify-between">
+							<span className="text-xl">👥</span>
+							<span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">140+ People</span>
+						</div>
+						<h3 className="mt-2 text-sm font-bold text-slate-900 group-hover:text-[#404d85]">People Directory</h3>
+						<p className="mt-0.5 text-[11px] text-slate-500">Employee profiles, roles, and expertise locator</p>
+					</Link>
 				</div>
 
 				{/* MULTI-VENDOR MARKETPLACE HUB WIDGET */}
