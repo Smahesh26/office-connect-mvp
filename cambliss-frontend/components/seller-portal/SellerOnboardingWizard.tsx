@@ -33,6 +33,7 @@ import {
   X,
 } from "lucide-react";
 import { SellerFeeCalculator } from "./SellerFeeCalculator";
+import { LiveCameraCaptureModal } from "./LiveCameraCaptureModal";
 
 export interface OnboardingFormState {
   // Step 1: Account & Mobile OTP
@@ -92,6 +93,8 @@ export interface OnboardingFormState {
   kycDocNumber: string;
   kycDocUploaded: boolean;
   selfieCaptured: boolean;
+  selfieImage?: string;
+  faceMatchScore?: number;
   videoKycSlot: string;
 
   // Step 9: Fulfillment Model
@@ -168,6 +171,8 @@ const INITIAL_FORM_STATE: OnboardingFormState = {
   kycDocNumber: "",
   kycDocUploaded: false,
   selfieCaptured: false,
+  selfieImage: "",
+  faceMatchScore: 0,
   videoKycSlot: "Today, 4:00 PM - 4:30 PM",
 
   fulfillmentModel: "EASY_SHIP",
@@ -257,6 +262,7 @@ export const SellerOnboardingWizard = ({
   const [submissionSuccess, setSubmissionSuccess] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isCameraModalOpen, setIsCameraModalOpen] = useState<boolean>(false);
   const gstFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleGstFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -296,6 +302,12 @@ export const SellerOnboardingWizard = ({
         if (parsed.gstDocName === "GSTIN_Certificate_REG06.pdf" || !parsed.gstDocName) {
           parsed.gstDocUploaded = false;
           parsed.gstDocName = "";
+        }
+        // Sanitize: do not restore selfieCaptured as true unless an image was genuinely captured
+        if (!parsed.selfieImage) {
+          parsed.selfieCaptured = false;
+          parsed.selfieImage = "";
+          parsed.faceMatchScore = 0;
         }
         setFormData((prev) => ({ ...prev, ...parsed }));
       } else {
@@ -431,6 +443,7 @@ export const SellerOnboardingWizard = ({
         cancelledCheque: `BANK_MANDATE_${(formData.bankName || "HDFC").toUpperCase().replace(/\s+/g, "_")}.pdf`,
         incorporationCertificate: formData.entityType !== "Individual / Sole Proprietor" ? `COI_${bName.replace(/\s+/g, "_")}.pdf` : undefined,
         identityProof: `${(formData.kycDocType || "AADHAAR").toUpperCase().replace(/\s+/g, "_")}_PROOF.pdf`,
+        liveMerchantSelfie: formData.selfieImage || undefined,
       },
     };
 
@@ -1441,32 +1454,89 @@ export const SellerOnboardingWizard = ({
                   </div>
                 </div>
 
-                {/* Webcam Selfie Simulation */}
-                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 shrink-0">
-                      <Camera className="w-6 h-6" />
+                {/* Real Live Biometric Camera Capture */}
+                <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/80">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-start sm:items-center gap-3.5">
+                      {formData.selfieCaptured && formData.selfieImage ? (
+                        <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-sm shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={formData.selfieImage}
+                            alt="Merchant Selfie"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow">
+                            ✓
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-14 h-14 rounded-2xl bg-violet-100/80 border border-violet-200 flex items-center justify-center text-violet-600 shrink-0">
+                          <Camera className="w-7 h-7" />
+                        </div>
+                      )}
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-extrabold text-sm text-slate-900 block">
+                            Live Merchant Face Match Snapshot
+                          </span>
+                          {formData.selfieCaptured ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                              <ShieldCheck className="w-3 h-3" />
+                              Face Verified ({formData.faceMatchScore || 96}%)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                              Camera Action Required
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1 max-w-md">
+                          {formData.selfieCaptured
+                            ? "Biometric face snapshot captured & verified. Ready for compliance cross-reference with your government ID."
+                            : "Uses your device camera to capture a secure, real-time live selfie with instant client-side biometric liveness check."}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-extrabold text-xs text-slate-900 block">
-                        Live Merchant Face Match Snapshot
-                      </span>
-                      <span className="text-[11px] text-slate-500">
-                        Matches your photo against uploaded government proof.
-                      </span>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      {formData.selfieCaptured ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setIsCameraModalOpen(true)}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 transition shadow-2xs"
+                          >
+                            <Camera className="w-3.5 h-3.5" />
+                            Retake Photo
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateForm({
+                                selfieCaptured: false,
+                                selfieImage: "",
+                                faceMatchScore: 0,
+                              })
+                            }
+                            className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 border border-transparent transition"
+                            title="Remove photo"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setIsCameraModalOpen(true)}
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black bg-violet-600 hover:bg-violet-700 text-white transition shadow-sm hover:shadow active:scale-95"
+                        >
+                          <Camera className="w-4 h-4" />
+                          Open Live Camera
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => updateForm({ selfieCaptured: true })}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 ${
-                      formData.selfieCaptured
-                        ? "bg-emerald-600 text-white"
-                        : "bg-slate-900 hover:bg-slate-800 text-white"
-                    }`}
-                  >
-                    {formData.selfieCaptured ? "Selfie Captured ✓" : "Simulate Selfie Capture"}
-                  </button>
                 </div>
 
                 {/* Video KYC Slot Selection */}
@@ -1798,9 +1868,19 @@ export const SellerOnboardingWizard = ({
                 </div>
                 <div className="py-2.5 flex justify-between items-center">
                   <span className="font-bold text-slate-600">8. Identity & Video KYC:</span>
-                  <span className="font-semibold text-slate-900">
-                    {formData.kycDocType} • Slot: {formData.videoKycSlot}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {formData.selfieCaptured && formData.selfieImage && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={formData.selfieImage}
+                        alt="Merchant Selfie"
+                        className="w-6 h-6 rounded-full object-cover border border-emerald-400 shrink-0"
+                      />
+                    )}
+                    <span className="font-semibold text-slate-900 text-right">
+                      {formData.kycDocType} {formData.selfieCaptured ? `(Face Match: ${formData.faceMatchScore || 96}%)` : ""} • {formData.videoKycSlot}
+                    </span>
+                  </div>
                 </div>
                 <div className="py-2.5 flex justify-between items-center">
                   <span className="font-bold text-slate-600">9. Default Fulfillment:</span>
@@ -1894,6 +1974,20 @@ export const SellerOnboardingWizard = ({
           </div>
         </div>
       </div>
+
+      {/* Live Camera Biometric Capture Modal */}
+      <LiveCameraCaptureModal
+        isOpen={isCameraModalOpen}
+        onClose={() => setIsCameraModalOpen(false)}
+        onCapture={(imageDataUrl, score) => {
+          updateForm({
+            selfieCaptured: true,
+            selfieImage: imageDataUrl,
+            faceMatchScore: score,
+          });
+          setIsCameraModalOpen(false);
+        }}
+      />
     </div>
   );
 };
