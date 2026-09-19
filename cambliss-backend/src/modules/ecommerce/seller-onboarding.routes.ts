@@ -36,6 +36,8 @@ export interface MerchantOnboardingApplication {
   gstDocUploaded?: boolean;
   gstDocName?: string;
   selfieCaptured?: boolean;
+  selfieImage?: string;
+  faceMatchScore?: number;
   videoKycSlot?: string;
   fulfillmentModel: "FOC" | "EASY_SHIP" | "SELF_SHIP";
   documents?: {
@@ -44,6 +46,7 @@ export interface MerchantOnboardingApplication {
     cancelledCheque?: string;
     incorporationCertificate?: string;
     identityProof?: string;
+    liveMerchantSelfie?: string;
   };
   sampleProduct?: {
     title: string;
@@ -54,6 +57,7 @@ export interface MerchantOnboardingApplication {
     mrp: number;
     inventory: number;
     sku: string;
+    image?: string;
   };
   signatureName: string;
   appliedDate: string;
@@ -128,6 +132,8 @@ router.post("/", (req: Request, res: Response) => {
       gstDocUploaded: Boolean(data.gstDocUploaded),
       gstDocName: data.gstDocName || undefined,
       selfieCaptured: Boolean(data.selfieCaptured),
+      selfieImage: data.selfieImage || undefined,
+      faceMatchScore: data.faceMatchScore || undefined,
       videoKycSlot: data.videoKycSlot || "Scheduled with Compliance Agent",
       fulfillmentModel: data.fulfillmentModel || "EASY_SHIP",
       documents: data.documents || {
@@ -136,6 +142,7 @@ router.post("/", (req: Request, res: Response) => {
         cancelledCheque: `BANK_CHEQUE_${(data.bankName || "HDFC").toUpperCase().replace(/\s+/g, "_")}.pdf`,
         incorporationCertificate: data.entityType !== "Individual / Sole Proprietor" ? `COI_${bName.replace(/\s+/g, "_")}.pdf` : undefined,
         identityProof: `${(data.kycDocType || "AADHAAR").toUpperCase().replace(/\s+/g, "_")}_PROOF.pdf`,
+        liveMerchantSelfie: data.selfieImage || undefined,
       },
       sampleProduct: data.sampleProduct || undefined,
       signatureName: data.signatureName?.trim() || data.digitalSignature?.trim() || data.ownerName?.trim() || "Authorized Signatory",

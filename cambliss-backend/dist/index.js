@@ -63,7 +63,8 @@ app.use((0, cors_1.default)({
     },
     credentials: true,
 }));
-app.use(express_1.default.json());
+app.use(express_1.default.json({ limit: "50mb" }));
+app.use(express_1.default.urlencoded({ extended: true, limit: "50mb" }));
 app.use((0, cookie_parser_1.default)());
 app.use("/uploads", express_1.default.static(path_1.default.join(__dirname, "../uploads")));
 // Public Video Connect signaling routes (No auth token required for guest access)
@@ -105,7 +106,13 @@ app.use((err, _req, res, _next) => {
         return;
     }
     res.status(status).json({
-        message: isBadJson ? "Malformed request body" : status < 500 ? "Request could not be processed" : "Internal server error",
+        message: isBadJson
+            ? "Malformed request body"
+            : (err === null || err === void 0 ? void 0 : err.message) && status < 500
+                ? err.message
+                : status < 500
+                    ? "Request could not be processed"
+                    : "Internal server error",
     });
 });
 exports.default = app;

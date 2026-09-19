@@ -63,6 +63,8 @@ router.post("/", (req, res) => {
             gstDocUploaded: Boolean(data.gstDocUploaded),
             gstDocName: data.gstDocName || undefined,
             selfieCaptured: Boolean(data.selfieCaptured),
+            selfieImage: data.selfieImage || undefined,
+            faceMatchScore: data.faceMatchScore || undefined,
             videoKycSlot: data.videoKycSlot || "Scheduled with Compliance Agent",
             fulfillmentModel: data.fulfillmentModel || "EASY_SHIP",
             documents: data.documents || {
@@ -71,6 +73,7 @@ router.post("/", (req, res) => {
                 cancelledCheque: `BANK_CHEQUE_${(data.bankName || "HDFC").toUpperCase().replace(/\s+/g, "_")}.pdf`,
                 incorporationCertificate: data.entityType !== "Individual / Sole Proprietor" ? `COI_${bName.replace(/\s+/g, "_")}.pdf` : undefined,
                 identityProof: `${(data.kycDocType || "AADHAAR").toUpperCase().replace(/\s+/g, "_")}_PROOF.pdf`,
+                liveMerchantSelfie: data.selfieImage || undefined,
             },
             sampleProduct: data.sampleProduct || undefined,
             signatureName: ((_w = data.signatureName) === null || _w === void 0 ? void 0 : _w.trim()) || ((_x = data.digitalSignature) === null || _x === void 0 ? void 0 : _x.trim()) || ((_y = data.ownerName) === null || _y === void 0 ? void 0 : _y.trim()) || "Authorized Signatory",

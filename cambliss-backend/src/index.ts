@@ -66,7 +66,8 @@ app.use(
 	})
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
@@ -115,7 +116,13 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
 	}
 
 	res.status(status).json({
-		message: isBadJson ? "Malformed request body" : status < 500 ? "Request could not be processed" : "Internal server error",
+		message: isBadJson
+			? "Malformed request body"
+			: (err as any)?.message && status < 500
+			? (err as any).message
+			: status < 500
+			? "Request could not be processed"
+			: "Internal server error",
 	});
 });
 
