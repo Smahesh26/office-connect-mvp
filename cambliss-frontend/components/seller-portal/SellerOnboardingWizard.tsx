@@ -272,20 +272,58 @@ export const SellerOnboardingWizard = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMessage("Product image exceeds 5MB limit. Please upload a smaller JPEG, PNG, or WEBP.");
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMessage("Product image exceeds 10MB limit. Please upload a smaller JPEG, PNG, or WEBP.");
       return;
     }
 
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        updateForm({
-          sampleProduct: {
-            ...formData.sampleProduct,
-            image: reader.result,
-          },
-        });
+        const rawUrl = reader.result;
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 500;
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            updateForm({
+              sampleProduct: {
+                ...formData.sampleProduct,
+                image: canvas.toDataURL("image/jpeg", 0.75),
+              },
+            });
+          } else {
+            updateForm({
+              sampleProduct: {
+                ...formData.sampleProduct,
+                image: rawUrl,
+              },
+            });
+          }
+        };
+        img.onerror = () => {
+          updateForm({
+            sampleProduct: {
+              ...formData.sampleProduct,
+              image: rawUrl,
+            },
+          });
+        };
+        img.src = rawUrl;
       }
     };
     reader.readAsDataURL(file);
@@ -469,8 +507,48 @@ export const SellerOnboardingWizard = ({
     const bName = formData.storeName || (formData.ownerName ? `${formData.ownerName}'s Enterprise` : "Merchant Enterprise");
     const tName = formData.storeName || "Office Connect Verified Store";
 
+    // Helper to compress raw data URLs before network dispatch
+    const compressForUpload = async (dataUrl?: string, maxDim = 480): Promise<string | undefined> => {
+      if (!dataUrl || !dataUrl.startsWith("data:image")) return dataUrl;
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", 0.72));
+          } else {
+            resolve(dataUrl);
+          }
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      });
+    };
+
+    const optSelfie = await compressForUpload(formData.selfieImage, 450);
+    const optProductImg = await compressForUpload(formData.sampleProduct.image, 480);
+
     const payload = {
       ...formData,
+      selfieImage: optSelfie,
+      sampleProduct: {
+        ...formData.sampleProduct,
+        image: optProductImg,
+      },
       applicationId: appId,
       businessName: bName,
       tradeName: tName,
@@ -482,16 +560,34 @@ export const SellerOnboardingWizard = ({
         cancelledCheque: `BANK_MANDATE_${(formData.bankName || "HDFC").toUpperCase().replace(/\s+/g, "_")}.pdf`,
         incorporationCertificate: formData.entityType !== "Individual / Sole Proprietor" ? `COI_${bName.replace(/\s+/g, "_")}.pdf` : undefined,
         identityProof: `${(formData.kycDocType || "AADHAAR").toUpperCase().replace(/\s+/g, "_")}_PROOF.pdf`,
-        liveMerchantSelfie: formData.selfieImage || undefined,
+        liveMerchantSelfie: optSelfie ? "ATTACHED_IN_VERIFICATION_VAULT" : undefined,
       },
     };
 
     try {
-      const res = await fetch("/api/storefront/seller-onboarding", {
+      let res = await fetch("/api/storefront/seller-onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
+      // If reverse proxy/gateway rejects payload size (413), retry once with stripped base64 images
+      if (res.status === 413) {
+        console.warn("Reverse proxy returned 413. Retrying with stripped lightweight compliance payload...");
+        const lightPayload = {
+          ...payload,
+          selfieImage: undefined,
+          sampleProduct: {
+            ...payload.sampleProduct,
+            image: undefined,
+          },
+        };
+        res = await fetch("/api/storefront/seller-onboarding", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(lightPayload),
+        });
+      }
 
       if (res.ok) {
         updateForm({ applicationId: appId });

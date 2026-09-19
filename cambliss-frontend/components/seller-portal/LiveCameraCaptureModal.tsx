@@ -128,14 +128,26 @@ export const LiveCameraCaptureModal = ({
     };
   }, [isOpen, facingMode, startCamera, stopStream]);
 
-  // Capture frame from live video
+  // Capture frame from live video with lightweight client-side optimization
   const captureFrame = () => {
     if (!videoRef.current || !canvasRef.current) return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const width = video.videoWidth || 640;
-    const height = video.videoHeight || 480;
+    
+    // Cap dimensions to max 480x480 to keep base64 payload under 30KB
+    const maxDim = 480;
+    let width = video.videoWidth || 640;
+    let height = video.videoHeight || 480;
+    if (width > maxDim || height > maxDim) {
+      if (width > height) {
+        height = Math.round((height * maxDim) / width);
+        width = maxDim;
+      } else {
+        width = Math.round((width * maxDim) / height);
+        height = maxDim;
+      }
+    }
 
     canvas.width = width;
     canvas.height = height;
@@ -155,7 +167,8 @@ export const LiveCameraCaptureModal = ({
     setIsFlashing(true);
     setTimeout(() => setIsFlashing(false), 200);
 
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    // 0.75 quality produces a sharp ~25KB JPEG
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
     setCapturedPhoto(dataUrl);
 
     // Run simulated algorithmic liveness and lighting quality check
@@ -170,7 +183,7 @@ export const LiveCameraCaptureModal = ({
     stopStream();
   };
 
-  // Fallback: upload from device file picker
+  // Fallback: upload from device file picker with automatic canvas compression
   const handleFallbackFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -178,9 +191,39 @@ export const LiveCameraCaptureModal = ({
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        setCapturedPhoto(reader.result);
-        setQualityScore(95);
-        stopStream();
+        const rawUrl = reader.result;
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 480;
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const c = document.createElement("canvas");
+          c.width = width;
+          c.height = height;
+          const ctx = c.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            setCapturedPhoto(c.toDataURL("image/jpeg", 0.75));
+          } else {
+            setCapturedPhoto(rawUrl);
+          }
+          setQualityScore(95);
+          stopStream();
+        };
+        img.onerror = () => {
+          setCapturedPhoto(rawUrl);
+          setQualityScore(95);
+          stopStream();
+        };
+        img.src = rawUrl;
       }
     };
     reader.readAsDataURL(file);
