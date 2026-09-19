@@ -743,6 +743,7 @@ export default function AdminDashboardPage() {
           {activeView.startsWith("mkt-") && (
             <AdminMarketplaceDomain
               subView={activeView.replace("mkt-", "") as any}
+              applications={applications}
               onApprove={handleApproveApp}
               onInspect={(app) => setInspectingApp(app)}
             />
