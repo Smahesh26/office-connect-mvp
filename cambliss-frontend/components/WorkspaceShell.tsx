@@ -139,9 +139,10 @@ const clientMenuItems: SidebarItem[] = [
 	{ label: "Video Connect", href: "/video-connect" },
 	{
 		label: "Marketplace",
-		href: "/storefront",
+		href: "/seller-central",
 		badge: "Live",
 		subItems: [
+			{ label: "Marketplace Hub", href: "/seller-central" },
 			{ label: "Browse Catalog", href: "/storefront?tab=browse" },
 			{ label: "Merchant Onboarding", href: "/storefront?tab=onboarding" },
 			{ label: "Your Storefront & Catalog", href: "/storefront?tab=store" },
@@ -208,9 +209,10 @@ const adminMenuItems: SidebarItem[] = [
 	{ label: "Video Connect", href: "/video-connect" },
 	{
 		label: "Marketplace",
-		href: "/storefront",
+		href: "/seller-central",
 		badge: "Live",
 		subItems: [
+			{ label: "Marketplace Hub", href: "/seller-central" },
 			{ label: "Browse Catalog", href: "/storefront?tab=browse" },
 			{ label: "Merchant Onboarding", href: "/storefront?tab=onboarding" },
 			{ label: "Your Storefront & Catalog", href: "/storefront?tab=store" },
