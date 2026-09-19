@@ -76,11 +76,8 @@ export const SectionBasicInfo = ({
             onChange={(e) => onChange({ ...data, brand: e.target.value })}
             className="w-full px-3 py-2 border border-slate-300 rounded font-bold bg-white"
           >
-            <option value="Sony">👑 Sony (Authorized Flagship)</option>
-            <option value="Keychron">👑 Keychron (Official India)</option>
-            <option value="UrbanThreads">UrbanThreads Premium Apparel</option>
+            <option value="Custom">Independent / Merchant Brand</option>
             <option value="OfficeConnect">Office Connect Private Label</option>
-            <option value="Custom">Other / Custom Brand</option>
           </select>
         </div>
 

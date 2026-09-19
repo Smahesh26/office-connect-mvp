@@ -222,6 +222,16 @@ function DashboardMarketplaceContent() {
     return result;
   }, [combinedProductsList, selectedCategory, selectedPriceRange, selectedBrand, selectedRating, onlyInStock, sortBy, searchQuery]);
 
+  const availableBrands = useMemo(() => {
+    const brands = new Set<string>();
+    combinedProductsList.forEach((p) => {
+      if (p.brand && p.brand !== "Independent Seller") {
+        brands.add(p.brand);
+      }
+    });
+    return Array.from(brands);
+  }, [combinedProductsList]);
+
   const resetFilters = () => {
     setSelectedCategory("All");
     setSelectedPriceRange("all");
@@ -338,60 +348,55 @@ function DashboardMarketplaceContent() {
         </button>
       </div>
 
-      {/* TAB 1: BROWSE MARKETPLACE */}
+      {/* TAB 1: BROWSE CATALOG WITH SIDEBAR FILTERS */}
       {activeMarketplaceTab === "browse" && (
         <>
-          {/* Top Search & Filter Bar Controls */}
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-[6px] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2 w-full sm:w-auto flex-1 max-w-md">
-              <span className="text-slate-400">🔍</span>
+          {/* SEARCH & SORT BAR */}
+          <div className="bg-white p-3 rounded-[8px] border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="relative flex-1">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-sm">
+                🔍
+              </span>
               <input
                 type="text"
-                placeholder="Search products, brands, or keywords..."
+                placeholder="Search products by title, category, or brand..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3 py-1.5 border border-slate-200 rounded-[4px] text-xs font-medium bg-white focus:border-[#404d85] focus:outline-hidden"
+                className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-[6px] text-xs focus:outline-none focus:ring-1 focus:ring-[#404d85]"
               />
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-              <div className="flex items-center gap-1">
-                <span className="font-semibold text-slate-600">Sort By:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="px-2.5 py-1 border border-slate-200 rounded-[4px] text-xs font-semibold bg-white"
-                >
-                  <option value="recommended">Featured & Recommended</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                  <option value="rating">Highest Rated</option>
-                </select>
-              </div>
-
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="px-2.5 py-1 rounded border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs transition"
+            <div className="flex items-center gap-3 self-end sm:self-auto">
+              <label className="text-xs font-semibold text-slate-500 whitespace-nowrap">Sort By:</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-2.5 py-1.5 border border-slate-200 rounded-[6px] text-xs font-medium text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-[#404d85]"
               >
-                Reset Filters ↺
-              </button>
+                <option value="recommended">Featured / Recommended</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="rating">Customer Rating</option>
+              </select>
             </div>
           </div>
 
-          {/* 2-COLUMN LAYOUT: LEFT SIDEBAR FILTERS & RIGHT PRODUCTS GRID */}
-          <div className="flex flex-col lg:flex-row gap-6 items-start">
+          <div className="flex flex-col md:flex-row gap-6 items-start">
             
-            {/* LEFT SIDEBAR FILTER PANEL */}
-            <aside className="w-full lg:w-64 shrink-0 rounded-[8px] border border-slate-200 bg-white p-4 space-y-6 shadow-2xs text-xs">
+            {/* LEFT FILTERS SIDEBAR */}
+            <aside className="w-full md:w-60 shrink-0 bg-white border border-slate-200 rounded-[8px] p-4 space-y-5 shadow-xs">
               
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <h3 className="font-semibold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <span>⚡</span> Marketplace Filters
-                </h3>
-                <span className="text-[10px] font-semibold text-slate-500">
-                  {filteredProducts.length} Results
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <span className="font-bold text-xs text-slate-900 tracking-wide flex items-center gap-1.5">
+                  <span className="text-amber-500">⚡</span> MARKETPLACE FILTERS
                 </span>
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="text-[11px] font-semibold text-[#404d85] hover:underline"
+                >
+                  Reset
+                </button>
               </div>
 
               {/* 1. CATEGORIES */}
@@ -403,10 +408,10 @@ function DashboardMarketplaceContent() {
                       key={cat}
                       type="button"
                       onClick={() => setSelectedCategory(cat)}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-[4px] transition text-xs font-medium flex items-center justify-between ${
+                      className={`w-full text-left px-2.5 py-1.5 rounded transition text-xs font-medium flex items-center justify-between ${
                         selectedCategory === cat
-                          ? "bg-slate-900 text-white font-semibold"
-                          : "text-slate-700 hover:bg-slate-100"
+                          ? "bg-slate-900 text-white font-bold"
+                          : "text-slate-600 hover:bg-slate-50"
                       }`}
                     >
                       <span>{cat}</span>
@@ -419,23 +424,23 @@ function DashboardMarketplaceContent() {
               {/* 2. PRICE RANGE */}
               <div className="space-y-2 pt-3 border-t border-slate-100">
                 <h4 className="font-semibold text-[11px] text-slate-700 uppercase tracking-wider">Price Range</h4>
-                <div className="space-y-1 font-medium text-slate-700">
+                <div className="space-y-1.5 text-xs text-slate-700 font-medium">
                   {[
                     { id: "all", label: "All Prices" },
                     { id: "under-2k", label: "Under ₹2,000" },
                     { id: "2k-10k", label: "₹2,000 – ₹10,000" },
                     { id: "10k-50k", label: "₹10,000 – ₹50,000" },
-                    { id: "50k-plus", label: "₹50,000+" },
-                  ].map((range) => (
-                    <label key={range.id} className="flex items-center gap-2 cursor-pointer py-1 px-1 hover:bg-slate-50 rounded">
+                    { id: "50k-plus", label: "₹50,000 & Above" },
+                  ].map((pr) => (
+                    <label key={pr.id} className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="radio"
                         name="priceRange"
-                        checked={selectedPriceRange === range.id}
-                        onChange={() => setSelectedPriceRange(range.id)}
+                        checked={selectedPriceRange === pr.id}
+                        onChange={() => setSelectedPriceRange(pr.id)}
                         className="accent-[#404d85]"
                       />
-                      <span>{range.label}</span>
+                      <span>{pr.label}</span>
                     </label>
                   ))}
                 </div>
@@ -450,13 +455,9 @@ function DashboardMarketplaceContent() {
                   className="w-full px-2.5 py-1.5 border border-slate-200 rounded-[4px] text-xs font-medium bg-white"
                 >
                   <option value="All">All Verified Brands</option>
-                  <option value="Hisense Computers">Hisense Computers 👑</option>
-                  <option value="Dell">Dell</option>
-                  <option value="Sony">Sony</option>
-                  <option value="UrbanThreads">UrbanThreads</option>
-                  <option value="Glow Beauty">Glow Beauty</option>
-                  <option value="AutoCare">AutoCare</option>
-                  <option value="AeroTech">AeroTech</option>
+                  {availableBrands.map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
                 </select>
               </div>
 
@@ -508,7 +509,28 @@ function DashboardMarketplaceContent() {
                 )}
               </div>
 
-              {filteredProducts.length === 0 ? (
+              {combinedProductsList.length === 0 ? (
+                <div className="rounded-[8px] border border-slate-200 bg-white p-12 text-center space-y-4 shadow-2xs">
+                  <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-3xl mx-auto">
+                    🏪
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-extrabold text-slate-900 text-base">Marketplace Ready For Merchant Listings</h3>
+                    <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                      All demo products have been removed. Register your storefront or upload your catalog to begin selling across India.
+                    </p>
+                  </div>
+                  <div className="pt-2 flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setActiveMarketplaceTab("store")}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#404d85] hover:bg-[#323d6a] text-white font-semibold text-xs transition"
+                    >
+                      <span>➕</span> List Product in Storefront
+                    </button>
+                  </div>
+                </div>
+              ) : filteredProducts.length === 0 ? (
                 <div className="rounded-[8px] border border-slate-200 bg-white p-12 text-center space-y-3">
                   <div className="text-4xl">🔍</div>
                   <h3 className="font-bold text-slate-900 text-sm">No Products Match Your Selected Filters</h3>

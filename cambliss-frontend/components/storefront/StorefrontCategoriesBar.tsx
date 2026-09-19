@@ -61,10 +61,10 @@ export const StorefrontCategoriesBar = () => {
         },
       ],
       featuredPromo: {
-        title: "AeroTech Studio Audio",
-        subtitle: "High-performance ANC up to 40% off",
-        badge: "VERIFIED MERCHANT",
-        href: "/brand/aerotech",
+        title: "Electronics & Audio Hub",
+        subtitle: "High-performance gear with verified warranty",
+        badge: "MARKETPLACE",
+        href: "/storefront?category=Electronics",
       },
     },
     {

@@ -129,12 +129,7 @@ export async function fetchCatalogBrands(): Promise<ApiBrand[]> {
     const json = await res.json();
     return json.data || [];
   } catch (err) {
-    console.warn("[CatalogAPI] Falling back to default brands:", err);
-    return [
-      { id: "brand-sony", name: "Sony", slug: "sony", isVerified: true },
-      { id: "brand-keychron", name: "Keychron", slug: "keychron", isVerified: true },
-      { id: "brand-urbanthreads", name: "UrbanThreads", slug: "urbanthreads", isVerified: true },
-    ];
+    return [];
   }
 }
 

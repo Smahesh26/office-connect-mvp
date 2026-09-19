@@ -13,29 +13,7 @@ import { CartSummaryCard } from "@/components/cart/CartSummaryCard";
 import { getStoredCart } from "@/lib/cart-wishlist";
 
 export default function CartPage() {
-  const [packages, setPackages] = useState<SellerPackage[]>([
-    {
-      sellerId: "seller-aerotech",
-      sellerName: "AeroTech Official Direct",
-      sellerTier: "premium",
-      carrier: "Bluedart Air Express",
-      deliveryEstimate: "FREE Delivery by Tomorrow, 1 PM",
-      items: [
-        {
-          id: "item-1",
-          productId: "prod-1",
-          title: "AeroTech ANC-500 Wireless Studio Noise Canceling Headphones",
-          brand: "AeroTech",
-          price: 29990,
-          originalPrice: 34990,
-          quantity: 1,
-          image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=400&q=80",
-          variantName: "Midnight Black",
-          inStock: true,
-        },
-      ],
-    },
-  ]);
+  const [packages, setPackages] = useState<SellerPackage[]>([]);
 
   useEffect(() => {
     const stored = getStoredCart();
@@ -68,24 +46,13 @@ export default function CartPage() {
         items,
       }));
       setPackages(newPackages);
+    } else {
+      setPackages([]);
     }
   }, []);
 
   // Saved for Later state
-  const [savedItems, setSavedItems] = useState<CartLineItem[]>([
-    {
-      id: "item-saved-1",
-      productId: "prod-3",
-      title: "Dell UltraSharp 32-inch 4K UHD Thunderbolt Hub USB-C Monitor",
-      brand: "Dell",
-      price: 78900,
-      originalPrice: 89900,
-      quantity: 1,
-      image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=400&q=80",
-      variantName: "U3224KB Platinum",
-      inStock: true,
-    },
-  ]);
+  const [savedItems, setSavedItems] = useState<CartLineItem[]>([]);
 
   // Coupon state
   const [couponCode, setCouponCode] = useState<string>("");

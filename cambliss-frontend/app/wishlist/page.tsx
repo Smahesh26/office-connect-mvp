@@ -7,23 +7,7 @@ import { ProductCard, ProductCardProps } from "@/components/commerce/CommercePri
 import { getStoredWishlist, saveWishlist } from "@/lib/cart-wishlist";
 
 export default function CustomerWishlistPage() {
-  const [wishlistItems, setWishlistItems] = useState<ProductCardProps[]>([
-    {
-      id: "prod-1",
-      title: "AeroTech ANC-500 Wireless Noise Canceling Headphones",
-      brand: "AeroTech",
-      image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=600&q=80",
-      price: 29990,
-      originalPrice: 34990,
-      sellerName: "AeroTech Direct",
-      sellerTier: "premium",
-      rating: 4.9,
-      reviewsCount: 1420,
-      stockQty: 24,
-      deliveryEstimate: "FREE Delivery by Tomorrow",
-      variant: "wishlist",
-    },
-  ]);
+  const [wishlistItems, setWishlistItems] = useState<ProductCardProps[]>([]);
 
   useEffect(() => {
     const stored = getStoredWishlist();

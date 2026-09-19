@@ -12,56 +12,6 @@ import { fetchPDPDetails } from "@/lib/catalog-api";
 import { addToCartStorage } from "@/lib/cart-wishlist";
 
 const KNOWN_PRODUCTS: Record<string, ProductHeroData> = {
-  // 1. Headphones & Audio
-  "prod-1": {
-    id: "prod-1",
-    title: "AeroTech ANC-500 Wireless Studio Noise Canceling Headphones",
-    brand: "AeroTech",
-    brandSlug: "aerotech",
-    category: "Electronics",
-    rating: 4.9,
-    reviewsCount: 1420,
-    questionsCount: 284,
-    basePrice: 29990,
-    originalPrice: 34990,
-    images: [
-      "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=800&q=80",
-    ],
-    variants: [
-      { id: "v-black", name: "Midnight Black", colorCode: "#111827", image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
-      { id: "v-silver", name: "Platinum Silver", colorCode: "#e2e8f0", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
-    ],
-    sellerName: "AeroTech Official Direct 👑",
-    sellerTier: "premium",
-    dispatchSla: "Express 24-Hour Dispatch",
-    stockCount: 24,
-  },
-  "deal-2": {
-    id: "deal-2",
-    title: "Wireless ANC Noise-Cancelling Headphones Hi-Res Audio",
-    brand: "AeroTech",
-    brandSlug: "aerotech",
-    category: "Electronics",
-    rating: 4.9,
-    reviewsCount: 420,
-    questionsCount: 94,
-    basePrice: 18990,
-    originalPrice: 22490,
-    images: [
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
-    ],
-    variants: [
-      { id: "v-blk", name: "Matte Black", colorCode: "#111827", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
-    ],
-    sellerName: "Office Connect Direct 👑",
-    sellerTier: "premium",
-    dispatchSla: "Express 24-Hour Dispatch",
-    stockCount: 18,
-  },
-
   // 2. Beauty & Hydrating Serums
   "rec-p3": {
     id: "rec-p3",
@@ -248,28 +198,6 @@ const KNOWN_PRODUCTS: Record<string, ProductHeroData> = {
   },
 
   // 5. Smartwatch & Cloud Clusters & Keyboards
-  "rec-2": {
-    id: "rec-2",
-    title: "Titanium Fitness & Cardiac Health Smartwatch",
-    brand: "AeroTech",
-    brandSlug: "aerotech",
-    category: "Electronics",
-    rating: 4.9,
-    reviewsCount: 156,
-    questionsCount: 38,
-    basePrice: 24990,
-    originalPrice: 29990,
-    images: [
-      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80",
-    ],
-    variants: [
-      { id: "v-ti", name: "Titanium Silver", colorCode: "#cbd5e1", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80", inStock: true, priceOffset: 0 },
-    ],
-    sellerName: "AeroTech Official Direct 👑",
-    sellerTier: "premium",
-    dispatchSla: "Express 24-Hour Dispatch",
-    stockCount: 16,
-  },
   "rec-3": {
     id: "rec-3",
     title: "Kubernetes NVMe Cloud Server Cluster (16 vCPU, 64GB RAM)",

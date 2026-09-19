@@ -19,19 +19,16 @@ export const ProductCreatorStudio = ({
 
   // 1. Basic Info State
   const [basicInfo, setBasicInfo] = useState<BasicInfoData>({
-    title: "UrbanThreads 240 GSM Heavyweight Oversized French Terry T-Shirt",
-    brand: "UrbanThreads",
-    subtitle: "100% Super-Combed Bio-Washed Organic Cotton with 2.5cm Ribbed Crew Neck",
-    hsnCode: "61091000",
+    title: "",
+    brand: "Custom",
+    subtitle: "",
+    hsnCode: "84713010",
     countryOfOrigin: "India",
     highlights: [
-      "240 GSM Heavyweight French Terry knit with high tensile durability",
-      "Super-combed bio-washed 100% organic long-staple cotton",
-      "Boxy drop-shoulder aesthetic with reinforced double-stitched hems",
-      "Pre-shrunk fabric to prevent post-wash deformation and color fade",
+      "Premium quality construction and verified standard compliance",
+      "Backed by full merchant warranty and Escrow buyer protection",
     ],
-    description:
-      "Engineered for luxury streetwear and daily executive comfort, the UrbanThreads 240 GSM Heavyweight T-Shirt sets the gold standard for oversized apparel. Built with high-density combed yarn and reactive dyes that stay vibrant after 50+ wash cycles.",
+    description: "",
   });
 
   // 2. Category State
@@ -111,10 +108,10 @@ export const ProductCreatorStudio = ({
 
   // 9. SEO State
   const [seoData, setSeoData] = useState<SeoData>({
-    metaTitle: "UrbanThreads Heavyweight 240 GSM Oversized T-Shirt | Office Connect",
-    metaDescription: "Buy 100% organic combed cotton 240 GSM oversized t-shirts in Black, White, and Blue. Free 24h express delivery with 100% Escrow Protection.",
-    urlSlug: "urbanthreads-heavyweight-oversized-tshirt",
-    searchKeywords: "tshirt, 240 gsm, oversized, black tshirt, white tshirt, blue tshirt, streetwear",
+    metaTitle: "",
+    metaDescription: "",
+    urlSlug: "",
+    searchKeywords: "",
   });
 
   const steps = [
