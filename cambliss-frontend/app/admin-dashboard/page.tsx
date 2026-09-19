@@ -90,6 +90,8 @@ export default function AdminDashboardPage() {
 
   const handleApproveApp = async (id: string) => {
     const target = applications.find((a) => a.id === id || a.applicationId === id);
+    const updatedTarget = target ? { ...target, status: "Approved" as const } : undefined;
+
     setApplications((prev) =>
       prev.map((a) => (a.id === id || a.applicationId === id ? { ...a, status: "Approved" } : a))
     );
@@ -111,10 +113,36 @@ export default function AdminDashboardPage() {
         );
         localStorage.setItem("officeconnect_submitted_applications", JSON.stringify(updated));
       }
+
+      // Set merchant specific approval status and notification for real-time listener
+      const email = target?.email || "bhaskeradv1@gmail.com";
+      localStorage.setItem(
+        `officeconnect_merchant_status_${email}`,
+        JSON.stringify({ status: "Approved", payload: updatedTarget })
+      );
+
+      localStorage.setItem(
+        `officeconnect_notification_${email}`,
+        JSON.stringify({
+          id: `notif-${Date.now()}`,
+          title: "KYB Verification Approved! 🎉",
+          message: `Congratulations! Your merchant registration for "${target?.businessName || target?.tradeName || "Bhasker Fashions"}" has passed compliance checks. Stage 2 is complete. Proceed to live storefront and product publishing!`,
+          timestamp: new Date().toISOString(),
+          read: false,
+        })
+      );
+
+      // Dispatch cross-tab and in-window real-time events
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(
+        new CustomEvent("officeconnect_kyb_approved", {
+          detail: { id, email, businessName: target?.businessName },
+        })
+      );
     } catch (e) {}
 
-    setToastMessage(`✓ Merchant "${target?.businessName || target?.tradeName || id}" verified & approved!`);
-    setTimeout(() => setToastMessage(null), 4500);
+    setToastMessage(`✓ Merchant "${target?.businessName || target?.tradeName || id}" verified & approved! Notification sent to merchant dashboard.`);
+    setTimeout(() => setToastMessage(null), 5000);
   };
 
   const handleRejectApp = async (id: string, notes?: string) => {
@@ -715,6 +743,8 @@ export default function AdminDashboardPage() {
           {activeView.startsWith("mkt-") && (
             <AdminMarketplaceDomain
               subView={activeView.replace("mkt-", "") as any}
+              onApprove={handleApproveApp}
+              onInspect={(app) => setInspectingApp(app)}
             />
           )}
 

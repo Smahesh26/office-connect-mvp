@@ -40,6 +40,7 @@ export const MerchantOnboardingStatusDesk = ({
   const [applicationData, setApplicationData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSimulatingApproval, setIsSimulatingApproval] = useState<boolean>(false);
+  const [approvalNotification, setApprovalNotification] = useState<{ title: string; message: string } | null>(null);
 
   // Detect current logged-in user email
   useEffect(() => {
@@ -59,7 +60,6 @@ export const MerchantOnboardingStatusDesk = ({
   // Load application and verification status for effectiveEmail
   useEffect(() => {
     const loadStatus = async () => {
-      setIsLoading(true);
       const emailKey = `officeconnect_merchant_status_${effectiveEmail}`;
       const fallbackKey = `officeconnect_merchant_status_bhaskeradv1@gmail.com`;
 
@@ -68,7 +68,8 @@ export const MerchantOnboardingStatusDesk = ({
       if (storedStatus) {
         try {
           const parsed = JSON.parse(storedStatus);
-          setStatus(parsed.status === "Approved" ? "APPROVED" : "PENDING_REVIEW");
+          const isAppr = parsed.status === "Approved";
+          setStatus(isAppr ? "APPROVED" : "PENDING_REVIEW");
           setApplicationData(parsed.payload || parsed);
           setIsLoading(false);
           return;
@@ -120,6 +121,47 @@ export const MerchantOnboardingStatusDesk = ({
     };
 
     loadStatus();
+
+    // Check for existing notifications on load
+    try {
+      const notifKey = `officeconnect_notification_${effectiveEmail}`;
+      const fallbackNotifKey = `officeconnect_notification_bhaskeradv1@gmail.com`;
+      const savedNotif = localStorage.getItem(notifKey) || localStorage.getItem(fallbackNotifKey);
+      if (savedNotif) {
+        const parsed = JSON.parse(savedNotif);
+        if (!parsed.read) {
+          setApprovalNotification(parsed);
+        }
+      }
+    } catch (e) {}
+
+    // Real-time listener for approval across tabs or in same window
+    const handleStorageOrApprove = () => {
+      loadStatus();
+      try {
+        const notifKey = `officeconnect_notification_${effectiveEmail}`;
+        const fallbackNotifKey = `officeconnect_notification_bhaskeradv1@gmail.com`;
+        const savedNotif = localStorage.getItem(notifKey) || localStorage.getItem(fallbackNotifKey);
+        if (savedNotif) {
+          const parsed = JSON.parse(savedNotif);
+          if (!parsed.read) {
+            setApprovalNotification(parsed);
+          }
+        }
+      } catch (err) {}
+    };
+
+    window.addEventListener("storage", handleStorageOrApprove);
+    window.addEventListener("officeconnect_kyb_approved" as any, handleStorageOrApprove);
+
+    // Active real-time poll every 2 seconds
+    const interval = setInterval(loadStatus, 2000);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageOrApprove);
+      window.removeEventListener("officeconnect_kyb_approved" as any, handleStorageOrApprove);
+      clearInterval(interval);
+    };
   }, [effectiveEmail]);
 
   // Simulate background verification approval (allows instant testing without waiting 2 full days)
@@ -386,6 +428,123 @@ export const MerchantOnboardingStatusDesk = ({
   // 3. STATE: APPROVED (Verified Merchant)
   return (
     <div className="space-y-6 select-none">
+      {/* Real-time Approval Notification Toast/Banner */}
+      {approvalNotification && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white shadow-xl flex items-center justify-between gap-4 border border-emerald-300 animate-in fade-in slide-in-from-top duration-500">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-white/20 border border-white/30 text-white flex items-center justify-center font-bold text-2xl shrink-0 shadow-inner">
+              🎉
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/20 text-white">
+                  Compliance Notification
+                </span>
+                <span className="text-xs font-bold text-emerald-100">Live Approval Event</span>
+              </div>
+              <h3 className="text-sm sm:text-base font-black tracking-tight mt-0.5">
+                {approvalNotification.title}
+              </h3>
+              <p className="text-xs text-emerald-50 leading-tight mt-0.5">
+                {approvalNotification.message}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setApprovalNotification(null);
+              try {
+                const notifKey = `officeconnect_notification_${effectiveEmail}`;
+                const saved = localStorage.getItem(notifKey);
+                if (saved) {
+                  const p = JSON.parse(saved);
+                  p.read = true;
+                  localStorage.setItem(notifKey, JSON.stringify(p));
+                }
+              } catch (e) {}
+            }}
+            className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white font-extrabold text-xs transition border border-white/30 shrink-0 cursor-pointer"
+          >
+            Dismiss ✕
+          </button>
+        </div>
+      )}
+
+      {/* 4-Stage Verification Roadmap (ALL 4 STAGES COMPLETED) */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <span>🛡️</span> 4-Stage Verification Roadmap
+          </h3>
+          <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider border border-emerald-300 flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> All Stages Complete
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Stage 1: Submitted */}
+          <div className="p-4 rounded-xl border border-emerald-300 bg-emerald-50/60 space-y-2 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-emerald-800 uppercase">Stage 1</span>
+              <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center font-bold">
+                ✓
+              </span>
+            </div>
+            <h4 className="font-extrabold text-xs text-slate-900">12 Steps Submitted</h4>
+            <p className="text-[11px] text-slate-600">
+              Registration, legal entity, and contact inputs collected.
+            </p>
+            <span className="text-[10px] font-bold text-emerald-700 block">Completed ✓</span>
+          </div>
+
+          {/* Stage 2: Manual Audit */}
+          <div className="p-4 rounded-xl border border-emerald-300 bg-emerald-50/60 space-y-2 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-emerald-800 uppercase">Stage 2</span>
+              <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center font-bold">
+                ✓
+              </span>
+            </div>
+            <h4 className="font-extrabold text-xs text-slate-900">Manual KYB & GST Audit</h4>
+            <p className="text-[11px] text-slate-600">
+              Form REG-06 and CBDT records verified by officer.
+            </p>
+            <span className="text-[10px] font-black text-emerald-700 block">Passed & Approved ✓</span>
+          </div>
+
+          {/* Stage 3: Bank & KYC */}
+          <div className="p-4 rounded-xl border border-emerald-300 bg-emerald-50/60 space-y-2 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-emerald-800 uppercase">Stage 3</span>
+              <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center font-bold">
+                ✓
+              </span>
+            </div>
+            <h4 className="font-extrabold text-xs text-slate-900">Escrow Bank & KYC</h4>
+            <p className="text-[11px] text-slate-600">
+              ₹1 Penny-drop verified and signatory KYC signed off.
+            </p>
+            <span className="text-[10px] font-bold text-emerald-700 block">Escrow Active ✓</span>
+          </div>
+
+          {/* Stage 4: Live Store */}
+          <div className="p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50 space-y-2 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-emerald-900 uppercase">Stage 4</span>
+              <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center font-bold animate-pulse">
+                👑
+              </span>
+            </div>
+            <h4 className="font-extrabold text-xs text-slate-900">Storefront & Uploads Live</h4>
+            <p className="text-[11px] text-slate-700 font-semibold">
+              Dedicated URL active and product publishing unlocked!
+            </p>
+            <span className="text-[10px] font-black text-emerald-800 block">Active & Unlocked</span>
+          </div>
+        </div>
+      </div>
+
       {/* Top Verified Merchant Banner */}
       <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -403,14 +562,14 @@ export const MerchantOnboardingStatusDesk = ({
                 </span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight mt-1">
-                {applicationData?.tradeName || "Official Store"} — Storefront Live
+                {applicationData?.tradeName || "Bhasker Fashions"} — Storefront Live
               </h2>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <Link
-              href={`/store/${applicationData?.storeSlug || "my-store"}`}
+              href={`/store/${applicationData?.storeSlug || "bhasker-fashions"}`}
               target="_blank"
               className="px-4 py-2.5 rounded-xl bg-white text-emerald-900 font-black text-xs hover:bg-emerald-50 transition shadow-xs flex items-center gap-1.5"
             >
@@ -425,21 +584,19 @@ export const MerchantOnboardingStatusDesk = ({
         </p>
 
         <div className="pt-2 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={onNavigateToStore}
+          <Link
+            href="/vendor-dashboard"
             className="px-5 py-2.5 rounded-xl bg-emerald-900/50 hover:bg-emerald-950 text-white font-extrabold text-xs transition border border-emerald-400/30 flex items-center gap-2"
           >
             <UploadCloud className="w-4 h-4 text-emerald-300" />
             Upload Products & Manage Catalog →
-          </button>
-          <button
-            type="button"
-            onClick={onNavigateToBrowse}
+          </Link>
+          <Link
+            href="/storefront"
             className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-xs transition border border-white/20"
           >
             Browse Marketplace Deals
-          </button>
+          </Link>
         </div>
       </div>
 

@@ -8,8 +8,12 @@ import { Building2, Store, Package, CheckCircle2, ShieldCheck, ArrowRight } from
 
 export const AdminMarketplaceDomain = ({
   subView,
+  onApprove,
+  onInspect,
 }: {
   subView: "customers" | "sellers" | "stores" | "products" | "categories" | "brands";
+  onApprove?: (id: string) => void;
+  onInspect?: (app: SellerKybApplication) => void;
 }) => {
   const [applications, setApplications] = useState<SellerKybApplication[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -67,7 +71,7 @@ export const AdminMarketplaceDomain = ({
               <p className="text-xs text-slate-500">Overview of verified marketplace retail and enterprise buyers</p>
             </div>
             <span className="px-2.5 py-1 rounded bg-slate-100 font-bold text-slate-700 text-xs">
-              1 Registered Account
+              {applications.length > 0 ? `${applications.length} Registered Account` : "1 Registered Account"}
             </span>
           </div>
 
@@ -77,8 +81,8 @@ export const AdminMarketplaceDomain = ({
                 <tr className="border-b text-slate-400 font-extrabold text-[10px] uppercase">
                   <th className="pb-2">Account Name & Email</th>
                   <th className="pb-2">Type</th>
-                  <th className="pb-2 text-right">Role</th>
-                  <th className="pb-2 text-right">KYB Verification</th>
+                  <th className="pb-2 text-right">Enterprise / Store</th>
+                  <th className="pb-2 text-right">KYB Verification Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -93,11 +97,22 @@ export const AdminMarketplaceDomain = ({
                         Enterprise Merchant
                       </span>
                     </td>
-                    <td className="py-3 text-right font-bold text-slate-800">Merchant Administrator</td>
+                    <td className="py-3 text-right font-bold text-slate-800">Bhasker Fashions</td>
                     <td className="py-3 text-right">
-                      <span className="px-2 py-0.5 rounded font-black text-[10px] bg-amber-100 text-amber-800">
-                        Pending Review
-                      </span>
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="px-2 py-0.5 rounded font-black text-[10px] bg-amber-100 text-amber-800 border border-amber-300">
+                          Pending Review
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onApprove) onApprove("app-bhasker-default");
+                          }}
+                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-lg shadow-xs transition inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>✓</span> Approve KYB Now
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -120,15 +135,45 @@ export const AdminMarketplaceDomain = ({
                         {app.tradeName || "Bhasker Fashions"}
                       </td>
                       <td className="py-3 text-right">
-                        <span
-                          className={`px-2 py-0.5 rounded font-black text-[10px] ${
-                            app.status === "Approved"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-amber-100 text-amber-800"
-                          }`}
-                        >
-                          {app.status === "Approved" ? "Verified ✓" : "Pending Review"}
-                        </span>
+                        {app.status === "Approved" ? (
+                          <span className="px-2.5 py-1 rounded font-black text-[11px] bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1">
+                            <span>✓</span> Verified Merchant
+                          </span>
+                        ) : (
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="px-2 py-0.5 rounded font-black text-[10px] bg-amber-100 text-amber-800 border border-amber-300">
+                              Pending Review
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const targetId = app.id || app.applicationId || "";
+                                if (onApprove) {
+                                  onApprove(targetId);
+                                }
+                                setApplications((prev) =>
+                                  prev.map((a) =>
+                                    a.id === targetId || a.applicationId === targetId
+                                      ? { ...a, status: "Approved" }
+                                      : a
+                                  )
+                                );
+                              }}
+                              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-lg shadow-xs transition inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              <span>✓</span> Approve KYB Now
+                            </button>
+                            {onInspect && (
+                              <button
+                                type="button"
+                                onClick={() => onInspect(app)}
+                                className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-bold text-[11px] rounded-lg transition border border-slate-300 cursor-pointer"
+                              >
+                                Review Dossier
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -141,7 +186,7 @@ export const AdminMarketplaceDomain = ({
 
       {/* 2. SELLERS (KYB DESK - 100% ORIGINAL GENUINE DATA) */}
       {subView === "sellers" && (
-        <AdminSellerKybDesk />
+        <AdminSellerKybDesk onApprove={onApprove} />
       )}
 
       {/* 3. STORES (GENUINE REGISTERED STOREFRONTS) */}
