@@ -368,21 +368,21 @@ export const SellerFeeCalculator = ({
               {
                 id: "FOC",
                 name: "FOC (Prime)",
-                badge: "Recommended",
+                badge: "Prime",
                 tagColor: "bg-emerald-100 text-emerald-800",
                 desc: "Office Connect Fulfillment Center stores, packs & delivers with 1-2 day Prime badges.",
               },
               {
                 id: "EASY_SHIP",
                 name: "Easy Ship",
-                badge: "Doorstep Pickup",
+                badge: "Doorstep",
                 tagColor: "bg-blue-100 text-blue-800",
                 desc: "Keep goods in your warehouse. Marketplace courier partner picks up & delivers to buyer.",
               },
               {
                 id: "SELF_SHIP",
                 name: "Self Ship",
-                badge: "Zero Platform Fee",
+                badge: "Zero Fee",
                 tagColor: "bg-amber-100 text-amber-800",
                 desc: "You pack and ship directly using your third-party logistics (Blue Dart, Delhivery, etc.).",
               },
@@ -393,16 +393,16 @@ export const SellerFeeCalculator = ({
                   key={m.id}
                   type="button"
                   onClick={() => setFulfillment(m.id as any)}
-                  className={`p-4 rounded-2xl text-left border transition flex flex-col justify-between ${
+                  className={`p-4 rounded-2xl text-left border transition flex flex-col justify-between overflow-hidden ${
                     isSelected
                       ? "border-violet-600 bg-violet-50/70 ring-2 ring-violet-500/30 shadow-xs"
                       : "border-slate-200 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300"
                   }`}
                 >
                   <div>
-                    <div className="flex items-center justify-between gap-1 mb-1.5">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2">
                       <span className="font-extrabold text-sm text-slate-900">{m.name}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${m.tagColor}`}>
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 ${m.tagColor}`}>
                         {m.badge}
                       </span>
                     </div>
@@ -415,39 +415,42 @@ export const SellerFeeCalculator = ({
         </div>
 
         {/* Row 3: Destination Zone, Weight & Merchant COGS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-100">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-2 border-t border-slate-100">
           
           {/* Shipping Zone & Weight (If Not Self-Ship) */}
           {fulfillment !== "SELF_SHIP" ? (
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-4">
               <div>
-                <label className="text-xs font-extrabold uppercase tracking-wider text-slate-700 block mb-1.5">
+                <label className="text-xs font-extrabold uppercase tracking-wider text-slate-700 block mb-2">
                   Delivery Destination
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: "local", label: "Local (City)" },
-                    { id: "regional", label: "Regional (State)" },
-                    { id: "national", label: "National" },
+                    { id: "local", label: "Local", sub: "Same City" },
+                    { id: "regional", label: "Regional", sub: "Same State" },
+                    { id: "national", label: "National", sub: "All India" },
                   ].map((z) => (
                     <button
                       key={z.id}
                       type="button"
                       onClick={() => setShippingZone(z.id as any)}
-                      className={`py-2 px-1 rounded-xl text-xs font-bold transition text-center ${
+                      className={`py-2 px-1.5 rounded-xl transition text-center flex flex-col items-center justify-center ${
                         shippingZone === z.id
                           ? "bg-slate-900 text-white shadow-xs"
-                          : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
+                          : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
                       }`}
                     >
-                      {z.label}
+                      <span className="text-xs font-bold leading-tight">{z.label}</span>
+                      <span className={`text-[10px] block mt-0.5 ${shippingZone === z.id ? "text-slate-300" : "text-slate-400"}`}>
+                        {z.sub}
+                      </span>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
                     Product Package Weight
                   </label>
@@ -471,7 +474,7 @@ export const SellerFeeCalculator = ({
               </div>
             </div>
           ) : (
-            <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 flex items-center gap-3">
+            <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 flex items-center gap-3">
               <Building2 className="w-6 h-6 text-amber-600 shrink-0" />
               <span>
                 <strong>Self-Ship Enabled:</strong> Office Connect charges ₹0 logistics fee. You dispatch packages using your own courier contract.
