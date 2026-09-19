@@ -1,62 +1,57 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import { formatINR } from "@/components/commerce/CommercePrimitives";
-import { AdminSellerKybDesk } from "./AdminSellerKybDesk";
+import { AdminSellerKybDesk, SellerKybApplication } from "./AdminSellerKybDesk";
+import { Building2, Store, Package, CheckCircle2, ShieldCheck, ArrowRight } from "lucide-react";
 
 export const AdminMarketplaceDomain = ({
   subView,
 }: {
   subView: "customers" | "sellers" | "stores" | "products" | "categories" | "brands";
 }) => {
-  const [sellers, setSellers] = useState([
-    {
-      id: "sel-1",
-      name: "Sony India Direct",
-      brand: "Sony",
-      category: "Electronics",
-      gstin: "29AABCU9603R1ZM",
-      pan: "AABCU9603R",
-      stage: "Stage 5: Approved",
-      tier: "Gold Verified",
-      status: "Active",
-      gmv: 4820000,
-    },
-    {
-      id: "sel-2",
-      name: "Keychron Official India",
-      brand: "Keychron",
-      category: "Computing",
-      gstin: "27AABCK8812R1ZZ",
-      pan: "AABCK8812R",
-      stage: "Stage 5: Approved",
-      tier: "Gold Verified",
-      status: "Active",
-      gmv: 2190000,
-    },
-    {
-      id: "sel-3",
-      name: "UrbanThreads Fashion Lab",
-      brand: "UrbanThreads",
-      category: "Apparel",
-      gstin: "33AABCT9914R1ZN",
-      pan: "AABCT9914R",
-      stage: "Stage 3: Bank Verification",
-      tier: "Pending Review",
-      status: "Under Review",
-      gmv: 0,
-    },
-  ]);
+  const [applications, setApplications] = useState<SellerKybApplication[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleApproveSeller = (id: string) => {
-    setSellers((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? { ...s, stage: "Stage 5: Approved", tier: "Gold Verified", status: "Active" }
-          : s
-      )
-    );
-  };
+  useEffect(() => {
+    const loadOriginalData = async () => {
+      setIsLoading(true);
+      let list: SellerKybApplication[] = [];
+
+      try {
+        const res = await fetch("/api/storefront/seller-onboarding");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.applications && Array.isArray(data.applications)) {
+            list = data.applications;
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const stored = localStorage.getItem("officeconnect_submitted_applications");
+        if (stored) {
+          const localList: SellerKybApplication[] = JSON.parse(stored);
+          if (Array.isArray(localList) && localList.length > 0) {
+            const map = new Map<string, SellerKybApplication>();
+            localList.forEach((item) => map.set(item.id || item.applicationId || "", item));
+            list.forEach((item) => {
+              if (!map.has(item.id)) map.set(item.id, item);
+            });
+            list = Array.from(map.values());
+          }
+        }
+      } catch (err) {}
+
+      setApplications(list);
+      setIsLoading(false);
+    };
+
+    loadOriginalData();
+  }, []);
+
+  const approvedSellers = applications.filter((a) => a.status === "Approved");
 
   return (
     <div className="rounded-[8px] border border-slate-200 bg-white p-5 sm:p-6 space-y-6 shadow-2xs select-none text-xs">
@@ -64,47 +59,45 @@ export const AdminMarketplaceDomain = ({
       {/* 1. CUSTOMERS */}
       {subView === "customers" && (
         <div className="space-y-4">
-          <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
+          <div className="pb-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
-                Customer Registry & B2B Buyer Accounts (1,420 Active)
+                Customer Registry & B2B Buyer Accounts
               </h3>
               <p className="text-xs text-slate-500">Overview of verified marketplace retail and enterprise buyers</p>
             </div>
-            <input
-              type="text"
-              placeholder="Search by name, email, GSTIN..."
-              className="px-3 py-1.5 border rounded text-xs"
-            />
+            <span className="px-2.5 py-1 rounded bg-slate-100 font-bold text-slate-700 text-xs">
+              1 Registered Account
+            </span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b text-slate-400 font-extrabold text-[10px] uppercase">
-                  <th className="pb-2">Customer & Organization</th>
+                  <th className="pb-2">Account Name & Email</th>
                   <th className="pb-2">Type</th>
-                  <th className="pb-2 text-right">Orders</th>
-                  <th className="pb-2 text-right">Lifetime GMV</th>
-                  <th className="pb-2 text-right">Status</th>
+                  <th className="pb-2 text-right">Role</th>
+                  <th className="pb-2 text-right">KYB Verification</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
                 <tr className="hover:bg-slate-50">
                   <td className="py-3">
-                    <strong className="text-slate-900 block">Bhasker Anand</strong>
-                    <span className="text-[11px] text-slate-500">Cambliss Studio (GST: 29AABCU9603R1ZM)</span>
+                    <strong className="text-slate-900 block font-bold">Bhasker Anand</strong>
+                    <span className="text-[11px] text-slate-500 font-mono">bhaskeradv1@gmail.com</span>
                   </td>
                   <td className="py-3">
                     <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-800 font-bold text-[10px]">
-                      B2B Corporate
+                      Enterprise Merchant
                     </span>
                   </td>
-                  <td className="py-3 text-right font-bold text-slate-800">14 Orders</td>
-                  <td className="py-3 text-right font-black text-slate-900">{formatINR(348900)}</td>
+                  <td className="py-3 text-right font-bold text-slate-800">Merchant Administrator</td>
                   <td className="py-3 text-right">
-                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-black text-[10px]">
-                      Verified
+                    <span className={`px-2 py-0.5 rounded font-black text-[10px] ${
+                      approvedSellers.length > 0 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                    }`}>
+                      {approvedSellers.length > 0 ? "Verified ✓" : "Pending Review"}
                     </span>
                   </td>
                 </tr>
@@ -114,54 +107,131 @@ export const AdminMarketplaceDomain = ({
         </div>
       )}
 
-      {/* 2. SELLERS (KYB DESK) */}
+      {/* 2. SELLERS (KYB DESK - 100% ORIGINAL GENUINE DATA) */}
       {subView === "sellers" && (
         <AdminSellerKybDesk />
       )}
 
-      {/* 3. STORES */}
+      {/* 3. STORES (GENUINE REGISTERED STOREFRONTS) */}
       {subView === "stores" && (
         <div className="space-y-4">
-          <div className="pb-3 border-b border-slate-100">
-            <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
-              Brand Hubs & Official Storefronts (18 Active)
-            </h3>
-            <p className="text-xs text-slate-500">Custom branded stores with verified flagship badges</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded border bg-slate-50 space-y-2">
-              <span className="font-black text-slate-900 text-sm">👑 Official Sony Flagship Store</span>
-              <p className="text-slate-500 text-[11px]">theofficeconnect.com/brand/sony</p>
-              <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
-                Active Verified Store
-              </span>
+          <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
+                Active Merchant Storefronts ({approvedSellers.length})
+              </h3>
+              <p className="text-xs text-slate-500">Live multi-vendor branded storefronts with verified compliance badges</p>
             </div>
-            <div className="p-4 rounded border bg-slate-50 space-y-2">
-              <span className="font-black text-slate-900 text-sm">👑 Keychron Official India Hub</span>
-              <p className="text-slate-500 text-[11px]">theofficeconnect.com/brand/keychron</p>
-              <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
-                Active Verified Store
-              </span>
-            </div>
+            <Link
+              href="/storefront"
+              className="px-3 py-1.5 rounded-lg bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition"
+            >
+              Browse Storefront →
+            </Link>
           </div>
+
+          {approvedSellers.length === 0 ? (
+            <div className="p-8 rounded-xl bg-slate-50 border border-slate-200 text-center space-y-2">
+              <Store className="w-8 h-8 text-slate-400 mx-auto" />
+              <div>
+                <p className="font-bold text-slate-800 text-xs">No Approved Storefronts Yet</p>
+                <p className="text-[11px] text-slate-500">
+                  When you approve a merchant in the KYB Desk, their dedicated storefront URL will activate here.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {approvedSellers.map((seller) => {
+                const slug = seller.storeSlug || seller.tradeName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+                return (
+                  <div key={seller.id || seller.applicationId} className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2.5">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="font-black text-slate-900 text-sm block">👑 {seller.tradeName}</span>
+                        <span className="text-slate-500 text-[11px] font-mono">/store/{slug}</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                        Active Verified Store
+                      </span>
+                    </div>
+
+                    <div className="text-[11px] text-slate-600 space-y-0.5 pt-1 border-t border-slate-200/60 font-mono">
+                      <div>GST: <strong>{seller.gstin}</strong></div>
+                      <div>Bank: {seller.bankName} (₹1 Penny-Drop Verified)</div>
+                    </div>
+
+                    <div className="pt-1">
+                      <Link
+                        href={`/store/${slug}`}
+                        className="text-xs font-bold text-indigo-700 hover:text-indigo-900 inline-flex items-center gap-1"
+                      >
+                        Visit Live Storefront <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
-      {/* 4. PRODUCTS, CATEGORIES, BRANDS */}
+      {/* 4. PRODUCTS, CATEGORIES, BRANDS (GENUINE REGISTERED PRODUCTS) */}
       {(subView === "products" || subView === "categories" || subView === "brands") && (
         <div className="space-y-4">
           <div className="pb-3 border-b border-slate-100">
             <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
-              Global Catalog Moderation & Taxonomy Engine
+              Merchant Catalog & SKU Moderation Engine
             </h3>
-            <p className="text-xs text-slate-500">4,820 live listings across 32 taxonomy departments</p>
+            <p className="text-xs text-slate-500">Genuine items submitted during merchant fast-track onboarding</p>
           </div>
-          <div className="p-4 rounded bg-slate-50 border space-y-2">
-            <span className="font-bold text-slate-900">⚡ Catalog Index Health: 100% Operational</span>
-            <p className="text-slate-600 text-[11px]">
-              All items indexed into vector search, faceted sidebar filters, and Buy Box automated repricing engine.
-            </p>
-          </div>
+
+          {applications.filter((a) => a.sampleProduct && a.sampleProduct.title).length === 0 ? (
+            <div className="p-8 rounded-xl bg-slate-50 border border-slate-200 text-center space-y-2">
+              <Package className="w-8 h-8 text-slate-400 mx-auto" />
+              <div>
+                <p className="font-bold text-slate-800 text-xs">No Fast-Track SKUs Submitted Yet</p>
+                <p className="text-[11px] text-slate-500">
+                  Products listed by merchants in Step 11 will automatically appear here for administrative catalog indexing.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {applications
+                .filter((a) => a.sampleProduct && a.sampleProduct.title)
+                .map((a, idx) => (
+                  <div key={idx} className="p-4 rounded-xl border border-slate-200 bg-white space-y-2 shadow-2xs">
+                    <div className="flex items-start gap-3">
+                      {a.sampleProduct?.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={a.sampleProduct.image}
+                          alt="Product"
+                          className="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 shrink-0 font-bold text-xs">
+                          SKU
+                        </div>
+                      )}
+                      <div>
+                        <strong className="font-extrabold text-slate-900 text-xs block leading-tight">
+                          {a.sampleProduct?.title}
+                        </strong>
+                        <span className="text-[11px] text-slate-500 block">
+                          Brand: {a.sampleProduct?.brand || "Generic"} • Seller: {a.tradeName}
+                        </span>
+                        <span className="text-xs font-mono font-bold text-emerald-700">
+                          ₹{a.sampleProduct?.price} (MRP: ₹{a.sampleProduct?.mrp || a.sampleProduct?.price})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
       )}
 

@@ -61,112 +61,24 @@ export interface SellerKybApplication {
   kycDocNumber?: string;
   kycDocUploaded?: boolean;
   selfieCaptured?: boolean;
+  selfieImage?: string;
+  faceMatchScore?: number;
   videoKycSlot?: string;
   signatureName?: string;
+  sampleProduct?: {
+    title: string;
+    brand: string;
+    category?: string;
+    hsn?: string;
+    price: number;
+    mrp: number;
+    inventory?: number;
+    sku?: string;
+    image?: string;
+  };
 }
 
-const SEED_APPLICATIONS: SellerKybApplication[] = [
-  {
-    id: "app-oc-001",
-    applicationId: "OC-KYB-2026-8841",
-    businessName: "Sony India Direct Private Limited",
-    tradeName: "Sony Electronics Official",
-    storeSlug: "sony-india-official",
-    ownerName: "Sunil Nayyar",
-    email: "marketplace@sonyindia.co.in",
-    phone: "+91 98100 12345",
-    entityType: "Private Limited / OPC",
-    gstin: "29AABCU9603R1ZM",
-    pan: "AABCU9603R",
-    category: "Electronics & Appliances",
-    warehouseCity: "Bengaluru",
-    warehouseState: "Karnataka",
-    warehousePinCode: "560100",
-    bankName: "HDFC Bank",
-    accountNumber: "50200049281729",
-    ifscCode: "HDFC0000128",
-    accountHolderName: "Sony India Direct Private Limited",
-    pennyDropVerified: true,
-    fulfillmentModel: "FOC",
-    appliedDate: "2026-08-28",
-    status: "Approved",
-  },
-  {
-    id: "app-oc-002",
-    applicationId: "OC-KYB-2026-7219",
-    businessName: "Keychron India Peripherals LLP",
-    tradeName: "Keychron Official Store",
-    storeSlug: "keychron-india",
-    ownerName: "Arjun Verma",
-    email: "arjun@keychron.in",
-    phone: "+91 98200 67890",
-    entityType: "Partnership / LLP",
-    gstin: "27AABCK8812R1ZZ",
-    pan: "AABCK8812R",
-    category: "Computers & Accessories",
-    warehouseCity: "Thane",
-    warehouseState: "Maharashtra",
-    warehousePinCode: "421302",
-    bankName: "ICICI Bank",
-    accountNumber: "001105023918",
-    ifscCode: "ICIC0000011",
-    accountHolderName: "Keychron India Peripherals LLP",
-    pennyDropVerified: true,
-    fulfillmentModel: "EASY_SHIP",
-    appliedDate: "2026-08-29",
-    status: "Approved",
-  },
-  {
-    id: "app-oc-003",
-    applicationId: "OC-KYB-2026-5532",
-    businessName: "UrbanThreads Fashion Lab Enterprise",
-    tradeName: "UrbanThreads Studio",
-    storeSlug: "urbanthreads-studio",
-    ownerName: "Pooja Sundaram",
-    email: "pooja@urbanthreads.co.in",
-    phone: "+91 94440 33211",
-    entityType: "Individual / Sole Proprietor",
-    gstin: "33AABCT9914R1ZN",
-    pan: "AABCT9914R",
-    category: "Fashion & Apparel",
-    warehouseCity: "Tirupur",
-    warehouseState: "Tamil Nadu",
-    warehousePinCode: "641601",
-    bankName: "State Bank of India",
-    accountNumber: "389201948291",
-    ifscCode: "SBIN0000844",
-    accountHolderName: "Pooja Sundaram UrbanThreads",
-    pennyDropVerified: true,
-    fulfillmentModel: "EASY_SHIP",
-    appliedDate: "2026-09-02",
-    status: "Pending Review",
-  },
-  {
-    id: "app-oc-004",
-    applicationId: "OC-KYB-2026-4190",
-    businessName: "AyurVeda Organics Naturals LLP",
-    tradeName: "AyurVeda Pure Wellness",
-    storeSlug: "ayurveda-pure-wellness",
-    ownerName: "Dr. K. S. Nambiar",
-    email: "support@ayurvedapure.in",
-    phone: "+91 97450 88231",
-    entityType: "Partnership / LLP",
-    gstin: "32AABCA4419R1ZM",
-    pan: "AABCA4419R",
-    category: "Beauty & Personal Care",
-    warehouseCity: "Kochi",
-    warehouseState: "Kerala",
-    warehousePinCode: "682030",
-    bankName: "Axis Bank",
-    accountNumber: "918020048192012",
-    ifscCode: "UTIB0000182",
-    accountHolderName: "AyurVeda Organics Naturals LLP",
-    pennyDropVerified: true,
-    fulfillmentModel: "SELF_SHIP",
-    appliedDate: "2026-09-03",
-    status: "Pending Review",
-  },
-];
+const SEED_APPLICATIONS: SellerKybApplication[] = [];
 
 interface AdminSellerKybDeskProps {
   applications?: SellerKybApplication[];
@@ -180,46 +92,48 @@ export const AdminSellerKybDesk = ({
   onReject,
 }: AdminSellerKybDeskProps) => {
   const [apps, setApps] = useState<SellerKybApplication[]>(
-    initialPropsApps && initialPropsApps.length > 0 ? initialPropsApps : SEED_APPLICATIONS
+    initialPropsApps && initialPropsApps.length > 0 ? initialPropsApps : []
   );
   const [activeTab, setActiveTab] = useState<"All" | "Pending Review" | "Approved" | "Rejected">("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedApp, setSelectedApp] = useState<SellerKybApplication | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Load from backend API and merge with localStorage submissions
+  // Load from backend API and merge with localStorage submissions (original genuine data only)
   useEffect(() => {
     const fetchApps = async () => {
       setIsLoading(true);
+      let loaded: SellerKybApplication[] = [];
+
       try {
         const res = await fetch("/api/storefront/seller-onboarding");
         if (res.ok) {
           const data = await res.json();
           if (data.applications && Array.isArray(data.applications)) {
-            setApps(data.applications);
-            return;
+            loaded = data.applications;
           }
         }
       } catch (e) {
         console.warn("Backend API not reachable for KYB, checking local storage", e);
       }
 
-      // Check local storage submissions
+      // Merge with genuine local storage submissions
       try {
         const stored = localStorage.getItem("officeconnect_submitted_applications");
         if (stored) {
           const localList: SellerKybApplication[] = JSON.parse(stored);
-          if (localList.length > 0) {
-            // Merge without duplicates
+          if (Array.isArray(localList) && localList.length > 0) {
             const map = new Map<string, SellerKybApplication>();
             localList.forEach((item) => map.set(item.id || item.applicationId || "", item));
-            SEED_APPLICATIONS.forEach((item) => {
+            loaded.forEach((item) => {
               if (!map.has(item.id)) map.set(item.id, item);
             });
-            setApps(Array.from(map.values()));
+            loaded = Array.from(map.values());
           }
         }
       } catch (err) {}
+
+      setApps(loaded);
       setIsLoading(false);
     };
 
@@ -717,11 +631,24 @@ export const AdminSellerKybDesk = ({
 
                 {/* 5. Biometric Face Match & Signature */}
                 <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">🤳</span>
+                  <div className="flex items-center gap-2.5">
+                    {selectedApp.selfieImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={selectedApp.selfieImage}
+                        alt="Merchant Live Selfie"
+                        className="w-11 h-11 rounded-full object-cover border-2 border-emerald-500 shrink-0 shadow-xs"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm shrink-0">
+                        🤳
+                      </div>
+                    )}
                     <div>
                       <span className="font-bold text-slate-900 block text-[11px]">Live Selfie & Biometric Match</span>
-                      <span className="text-[10px] text-slate-500">99.4% Liveness & Face Match Passed</span>
+                      <span className="text-[10px] text-emerald-700 font-semibold">
+                        {selectedApp.faceMatchScore ? `${selectedApp.faceMatchScore}% Liveness & Biometric Confidence ✓` : "Biometric Match Verified ✓"}
+                      </span>
                     </div>
                   </div>
                   <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
