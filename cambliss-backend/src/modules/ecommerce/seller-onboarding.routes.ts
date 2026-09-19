@@ -126,7 +126,7 @@ router.post("/", (req: Request, res: Response) => {
       kycDocNumber: data.kycDocNumber?.trim() || undefined,
       kycDocUploaded: Boolean(data.kycDocUploaded),
       gstDocUploaded: Boolean(data.gstDocUploaded),
-      gstDocName: data.gstDocName || (data.gstDocUploaded ? "GSTIN_Certificate_REG06.pdf" : undefined),
+      gstDocName: data.gstDocName || undefined,
       selfieCaptured: Boolean(data.selfieCaptured),
       videoKycSlot: data.videoKycSlot || "Scheduled with Compliance Agent",
       fulfillmentModel: data.fulfillmentModel || "EASY_SHIP",
