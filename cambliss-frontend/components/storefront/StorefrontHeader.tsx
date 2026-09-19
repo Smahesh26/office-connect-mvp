@@ -108,15 +108,24 @@ export const StorefrontHeader = () => {
               </span>
             </Link>
 
-            {/* Quick return to Workspace Dashboard if logged in */}
+            {/* Quick Add Product or Go to Dashboard if logged in */}
             {isLoggedIn && (
-              <Link
-                href="/dashboard"
-                className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-[6px] bg-[#404d85] hover:bg-[#323d6a] text-white font-bold text-xs transition shadow-2xs active:scale-95"
-              >
-                <span>🏢</span>
-                <span>Dashboard ↗</span>
-              </Link>
+              <>
+                <Link
+                  href="/storefront?tab=store"
+                  className="hidden md:inline-flex items-center gap-1.5 h-9 px-3 rounded-[6px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-2xs active:scale-95"
+                >
+                  <span>➕</span>
+                  <span>Add Products</span>
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-[6px] bg-[#404d85] hover:bg-[#323d6a] text-white font-bold text-xs transition shadow-2xs active:scale-95"
+                >
+                  <span>🏢</span>
+                  <span>Dashboard ↗</span>
+                </Link>
+              </>
             )}
 
             {/* Account Controls */}

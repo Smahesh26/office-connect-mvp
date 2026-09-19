@@ -27,9 +27,10 @@ export default function StorefrontPage() {
 function StorefrontRouterContent() {
   const searchParams = useSearchParams();
   const viewParam = searchParams.get("view");
+  const tabParam = searchParams.get("tab");
 
-  // Only render inside internal WorkspaceShell if explicitly requested via ?view=workspace
-  if (viewParam === "workspace") {
+  // If user explicitly requests workspace view or the seller onboarding/store product upload tabs, render inside WorkspaceShell
+  if (viewParam === "workspace" || tabParam === "store" || tabParam === "onboarding") {
     return (
       <WorkspaceShell>
         <DashboardMarketplaceContent />

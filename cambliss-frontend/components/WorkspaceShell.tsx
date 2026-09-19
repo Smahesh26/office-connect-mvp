@@ -142,10 +142,10 @@ const clientMenuItems: SidebarItem[] = [
 		href: "/storefront",
 		badge: "Live",
 		subItems: [
-			{ label: "Explore Marketplace", href: "/storefront" },
-			{ label: "Seller Central Hub", href: "/seller-central" },
-			{ label: "Merchant Onboarding", href: "/storefront?view=workspace&tab=onboarding" },
-			{ label: "Your Storefront & Catalog", href: "/storefront?view=workspace&tab=store" },
+			{ label: "🛍️ Explore Marketplace", href: "/storefront" },
+			{ label: "➕ Add Products & Catalog", href: "/storefront?tab=store" },
+			{ label: "📋 Seller Central Hub", href: "/seller-central" },
+			{ label: "📝 Merchant Onboarding", href: "/storefront?tab=onboarding" },
 		],
 	},
 	{ label: "Tools Suite", href: "/tools" },
@@ -212,10 +212,10 @@ const adminMenuItems: SidebarItem[] = [
 		href: "/storefront",
 		badge: "Live",
 		subItems: [
-			{ label: "Explore Marketplace", href: "/storefront" },
-			{ label: "Seller Central Hub", href: "/seller-central" },
-			{ label: "Merchant Onboarding", href: "/storefront?view=workspace&tab=onboarding" },
-			{ label: "Your Storefront & Catalog", href: "/storefront?view=workspace&tab=store" },
+			{ label: "🛍️ Explore Marketplace", href: "/storefront" },
+			{ label: "➕ Add Products & Catalog", href: "/storefront?tab=store" },
+			{ label: "📋 Seller Central Hub", href: "/seller-central" },
+			{ label: "📝 Merchant Onboarding", href: "/storefront?tab=onboarding" },
 		],
 	},
 	{ label: "Tools Suite", href: "/tools" },
@@ -301,7 +301,7 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
 	const [authRole, setAuthRole] = useState<string | null>(null);
 	const [authAccesses, setAuthAccesses] = useState<string[]>([]);
 	const [currentHash, setCurrentHash] = useState("");
-	const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+	const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({ Marketplace: true });
 
 	useEffect(() => {
 		setIsMounted(true);
@@ -309,7 +309,10 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
 
 	const toggleExpanded = (label: string, e: React.MouseEvent) => {
 		e.preventDefault();
-		setExpandedItems(prev => ({ ...prev, [label]: !prev[label] }));
+		setExpandedItems(prev => {
+			const isCurrentlyExpanded = prev[label] !== undefined ? prev[label] : (label === "Marketplace" ? true : false);
+			return { ...prev, [label]: !isCurrentlyExpanded };
+		});
 	};
 
 	useEffect(() => {
@@ -500,7 +503,9 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
 							{filteredMenuItems.map((item) => {
 								const baseHref = item.href?.split("?")[0].split("#")[0];
 								const isActive = Boolean(baseHref && pathname.startsWith(baseHref));
-								const isExpanded = expandedItems[item.label] ?? isActive;
+								const isExpanded = expandedItems[item.label] !== undefined
+									? expandedItems[item.label]
+									: (item.label === "Marketplace" ? true : isActive);
 								
 								return (
 									<li key={item.label} className="flex flex-col">
@@ -509,13 +514,11 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
 												href={item.href}
 												onClick={(e) => { 
 													if (item.subItems) {
-														if (isActive) {
-															toggleExpanded(item.label, e);
-														} else {
-															setExpandedItems(prev => ({ ...prev, [item.label]: true }));
-														}
+														toggleExpanded(item.label, e);
 													} else {
-														setSidebarCollapsed(true); 
+														if (typeof window !== "undefined" && window.innerWidth < 1024) {
+															setSidebarCollapsed(true); 
+														}
 													}
 												}}
 												className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition ${
@@ -558,16 +561,26 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
 										{!sidebarCollapsed && item.subItems && isExpanded && (
 											<ul className="mt-1 flex flex-col space-y-0.5 pl-12 pr-2">
 												{item.subItems.map(subItem => {
+													const subBaseHref = subItem.href?.split('?')[0].split('#')[0];
 													const subHrefQuery = subItem.href?.includes('?') ? new URLSearchParams(subItem.href.split('?')[1]) : null;
+													const subTab = subHrefQuery?.get('tab');
 													const subView = subHrefQuery?.get('view');
+													const currentTab = searchParams.get('tab');
 													const currentView = searchParams.get('view');
-													const isSubActive = subView ? currentView === subView : !currentView;
+													
+													const isSubActive = (pathname === subBaseHref) && 
+														(!subTab || currentTab === subTab) && 
+														(!subView || currentView === subView);
 													
 													return (
 														<li key={subItem.label}>
 															<Link
 																href={subItem.href || "#"}
-																onClick={() => setSidebarCollapsed(true)}
+																onClick={() => {
+																	if (typeof window !== "undefined" && window.innerWidth < 1024) {
+																		setSidebarCollapsed(true);
+																	}
+																}}
 																className={`block rounded-lg px-3 py-2 text-[14px] transition ${
 																	isSubActive ? "bg-[#eef2fa] font-semibold text-[#6678c1]" : "text-[#5b6472] hover:bg-[#f8faff] hover:text-[#1f2430]"
 																}`}
