@@ -39,7 +39,7 @@ export interface CustomMerchantProduct {
   createdAt: string;
 }
 
-const DEFAULT_HISENSE_PRODUCTS: CustomMerchantProduct[] = [];
+const DEFAULT_CUSTOM_PRODUCTS: CustomMerchantProduct[] = [];
 
 const PRESET_PRODUCT_IMAGES = [
   { label: "Hardware Product", url: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80" },
@@ -57,10 +57,26 @@ interface MerchantStorefrontAndUploadTabProps {
 
 export const MerchantStorefrontAndUploadTab = ({
   isVerified = true,
-  userEmail = "bhaskeradv1@gmail.com",
+  userEmail = "",
   onNavigateToOnboarding,
   onProductAdded,
 }: MerchantStorefrontAndUploadTabProps) => {
+  const [storeName, setStoreName] = useState<string>("Official Merchant Store");
+  const [storeSlug, setStoreSlug] = useState<string>("my-store");
+
+  useEffect(() => {
+    try {
+      const allSubmitted = localStorage.getItem("officeconnect_submitted_applications");
+      if (allSubmitted) {
+        const list = JSON.parse(allSubmitted);
+        const found = list.find((a: any) => a.email && userEmail && a.email.toLowerCase() === userEmail.toLowerCase());
+        if (found) {
+          if (found.tradeName) setStoreName(found.tradeName);
+          if (found.storeSlug) setStoreSlug(found.storeSlug);
+        }
+      }
+    } catch (e) {}
+  }, [userEmail]);
   const [products, setProducts] = useState<CustomMerchantProduct[]>([]);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -165,7 +181,7 @@ export const MerchantStorefrontAndUploadTab = ({
   const handleOpenEdit = (p: CustomMerchantProduct) => {
     setEditingProduct(p);
     setEditTitle(p.title);
-    setEditBrand(p.brand || "Hisense Computers");
+    setEditBrand(p.brand || storeName || "In-House");
     setEditCategory(p.category || "Computing");
     setEditPrice(String(p.price));
     setEditMrp(String(p.originalPrice || p.price * 1.2));
@@ -315,14 +331,14 @@ export const MerchantStorefrontAndUploadTab = ({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-black text-slate-900">
-                Hisense Computers — Verified Brand Hub
+                {storeName} — Verified Brand Hub
               </h2>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
                 VERIFIED SELLER 👑
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Owner: <strong className="text-slate-800 font-semibold">{userEmail}</strong> • Official Storefront: <span className="font-mono text-violet-700">https://theofficeconnect.com/store/hisense-computers</span>
+              Owner: <strong className="text-slate-800 font-semibold">{userEmail || "Registered Merchant"}</strong> • Official Storefront: <span className="font-mono text-violet-700">https://theofficeconnect.com/store/{storeSlug}</span>
             </p>
           </div>
         </div>
@@ -338,7 +354,7 @@ export const MerchantStorefrontAndUploadTab = ({
           </button>
 
           <Link
-            href="/store/hisense-computers"
+            href={`/store/${storeSlug}`}
             target="_blank"
             className="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs transition flex items-center gap-1.5 shadow-2xs"
           >
@@ -391,20 +407,20 @@ export const MerchantStorefrontAndUploadTab = ({
             </div>
           </div>
           <span className="text-[11px] font-bold text-slate-600 font-mono bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
-            VA ID: va_hisense_8819
+            VA ID: va_merch_{userEmail ? userEmail.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6) : "8819"}
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
           <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
             <span className="text-[10px] text-slate-400 font-bold uppercase block">Virtual Account Number</span>
-            <strong className="text-sm font-mono font-black text-slate-900 block">OCHISENSE9021</strong>
+            <strong className="text-sm font-mono font-black text-slate-900 block">OCMERCHANT9021</strong>
             <span className="text-[10px] text-slate-500 block">IFSC: RAZR0000001</span>
           </div>
 
           <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
             <span className="text-[10px] text-slate-400 font-bold uppercase block">Virtual UPI Handle</span>
-            <strong className="text-sm font-mono font-black text-indigo-700 block">hisense.officeconnect@icici</strong>
+            <strong className="text-sm font-mono font-black text-indigo-700 block">merchant.officeconnect@icici</strong>
             <span className="text-[10px] text-slate-500 block">Instant customer split transfer</span>
           </div>
 
@@ -562,7 +578,7 @@ export const MerchantStorefrontAndUploadTab = ({
                   Merchant SKU Publisher
                 </span>
                 <h3 className="text-lg font-black text-slate-900 mt-1">
-                  Upload Product to Hisense Computers Storefront
+                  Upload Product to Storefront
                 </h3>
               </div>
               <button
@@ -584,7 +600,7 @@ export const MerchantStorefrontAndUploadTab = ({
                   required
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. Hisense VisionPro 14-inch Touch OLED Laptop"
+                  placeholder="e.g. Executive Workstation Laptop 16-inch OLED"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-violet-500 outline-none"
                 />
               </div>

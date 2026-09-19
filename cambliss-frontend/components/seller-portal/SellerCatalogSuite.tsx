@@ -29,7 +29,29 @@ export const SellerCatalogSuite = ({
   activeSubView: "products" | "add" | "bulk" | "categories";
   onFinishAdd?: () => void;
 }) => {
-  const [storeSlug] = useState("hisense-computers");
+  const [storeSlug, setStoreSlug] = useState("my-store");
+  const [storeName, setStoreName] = useState("Official Merchant Storefront");
+  const [sellerEmail, setSellerEmail] = useState("");
+
+  useEffect(() => {
+    try {
+      const rawUser = localStorage.getItem("authUser");
+      if (rawUser) {
+        const u = JSON.parse(rawUser);
+        if (u.email) setSellerEmail(u.email);
+      }
+      const allSubmitted = localStorage.getItem("officeconnect_submitted_applications");
+      if (allSubmitted) {
+        const list = JSON.parse(allSubmitted);
+        if (Array.isArray(list) && list.length > 0) {
+          const app = list[list.length - 1];
+          if (app.storeSlug) setStoreSlug(app.storeSlug);
+          if (app.tradeName) setStoreName(app.tradeName);
+        }
+      }
+    } catch (e) {}
+  }, []);
+
   const [products, setProducts] = useState<CatalogProduct[]>(DEFAULT_PRODUCTS);
   const [searchTerm, setSearchTerm] = useState("");
   const [publishSuccess, setPublishSuccess] = useState(false);
@@ -223,10 +245,12 @@ export const SellerCatalogSuite = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="font-bold text-xs text-slate-900">Hisense Computers — Live Storefront</h4>
-              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                bhaskeradv1@gmail.com
-              </span>
+              <h4 className="font-bold text-xs text-slate-900">{storeName}</h4>
+              {sellerEmail && (
+                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  {sellerEmail}
+                </span>
+              )}
             </div>
             <p className="text-[11px] text-slate-500 font-mono">
               https://theofficeconnect.com/store/{storeSlug}

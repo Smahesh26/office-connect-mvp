@@ -73,7 +73,7 @@ export class FinancialLedgerService {
     // Group items by sellerId
     const itemsBySeller = new Map<string, CreateOrderCartItem[]>();
     for (const item of params.items) {
-      const sellerId = item.sellerId || "sel-hisense-01";
+      const sellerId = item.sellerId || "sel-merchant-01";
       if (!itemsBySeller.has(sellerId)) {
         itemsBySeller.set(sellerId, []);
       }
@@ -87,9 +87,9 @@ export class FinancialLedgerService {
     let totalPayable = 0;
 
     for (const [sellerId, items] of itemsBySeller.entries()) {
-      const sellerProfile = sellersStore.find((s) => s.id === sellerId) || sellersStore[0];
+      const sellerProfile = sellersStore.find((s) => s.id === sellerId) || null;
       const sellerOrderId = `sord_${Date.now()}_${Math.floor(100 + Math.random() * 900)}`;
-      const commissionRate = sellerProfile.commissionRate || 0.08;
+      const commissionRate = sellerProfile?.commissionRate || 0.08;
 
       let subOrderGross = 0;
       let subOrderCommission = 0;
@@ -135,9 +135,9 @@ export class FinancialLedgerService {
         id: sellerOrderId,
         masterOrderId,
         masterOrderNumber: orderNumber,
-        sellerId: sellerProfile.id,
-        sellerCode: sellerProfile.sellerCode,
-        sellerName: sellerProfile.tradeName,
+        sellerId: sellerProfile?.id || sellerId,
+        sellerCode: sellerProfile?.sellerCode || "SEL-MERCHANT-01",
+        sellerName: sellerProfile?.tradeName || "Marketplace Merchant",
         items: orderItems,
         grossAmount: subOrderGross,
         commissionAmount: subOrderCommission,

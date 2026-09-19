@@ -216,7 +216,7 @@ export default function SellerCentralPage() {
   const sellerReviews = [
     {
       name: "Rajesh Kulkarni",
-      company: "Hisense Computer Solutions",
+      company: "Apex Enterprise IT Solutions",
       city: "Bengaluru, Karnataka",
       category: "IT Hardware",
       rating: 5,

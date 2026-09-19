@@ -64,8 +64,8 @@ export interface RazorpayVirtualAccountInfo {
 
 export interface SellerProfile {
   id: string;
-  sellerCode: string;           // e.g. "SEL-HISENSE-01"
-  storeSlug: string;            // e.g. "hisense-computers"
+  sellerCode: string;           // e.g. "SEL-MERCHANT-01"
+  storeSlug: string;            // e.g. "my-store"
   businessName: string;
   tradeName: string;
   ownerName: string;

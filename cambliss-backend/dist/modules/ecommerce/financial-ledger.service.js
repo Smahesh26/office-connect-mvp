@@ -45,7 +45,7 @@ class FinancialLedgerService {
             // Group items by sellerId
             const itemsBySeller = new Map();
             for (const item of params.items) {
-                const sellerId = item.sellerId || "sel-hisense-01";
+                const sellerId = item.sellerId || "sel-merchant-01";
                 if (!itemsBySeller.has(sellerId)) {
                     itemsBySeller.set(sellerId, []);
                 }
@@ -57,9 +57,9 @@ class FinancialLedgerService {
             let totalTaxes = 0;
             let totalPayable = 0;
             for (const [sellerId, items] of itemsBySeller.entries()) {
-                const sellerProfile = exports.sellersStore.find((s) => s.id === sellerId) || exports.sellersStore[0];
+                const sellerProfile = exports.sellersStore.find((s) => s.id === sellerId) || null;
                 const sellerOrderId = `sord_${Date.now()}_${Math.floor(100 + Math.random() * 900)}`;
-                const commissionRate = sellerProfile.commissionRate || 0.08;
+                const commissionRate = (sellerProfile === null || sellerProfile === void 0 ? void 0 : sellerProfile.commissionRate) || 0.08;
                 let subOrderGross = 0;
                 let subOrderCommission = 0;
                 let subOrderTaxes = 0;
@@ -98,9 +98,9 @@ class FinancialLedgerService {
                     id: sellerOrderId,
                     masterOrderId,
                     masterOrderNumber: orderNumber,
-                    sellerId: sellerProfile.id,
-                    sellerCode: sellerProfile.sellerCode,
-                    sellerName: sellerProfile.tradeName,
+                    sellerId: (sellerProfile === null || sellerProfile === void 0 ? void 0 : sellerProfile.id) || sellerId,
+                    sellerCode: (sellerProfile === null || sellerProfile === void 0 ? void 0 : sellerProfile.sellerCode) || "SEL-MERCHANT-01",
+                    sellerName: (sellerProfile === null || sellerProfile === void 0 ? void 0 : sellerProfile.tradeName) || "Marketplace Merchant",
                     items: orderItems,
                     grossAmount: subOrderGross,
                     commissionAmount: subOrderCommission,

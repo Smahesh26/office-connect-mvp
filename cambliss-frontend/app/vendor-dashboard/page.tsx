@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { MarketplacePageWrapper } from "@/components/storefront/MarketplacePageWrapper";
 import { SellerNavSidebar, SellerPortalView } from "@/components/seller-portal/SellerNavSidebar";
@@ -12,7 +12,28 @@ import { SellerPricingPromos } from "@/components/seller-portal/SellerPricingPro
 
 export default function VendorDashboardPage() {
   const [activeView, setActiveView] = useState<SellerPortalView>("dashboard");
-  const [storeSlug] = useState("hisense-computers");
+  const [storeSlug, setStoreSlug] = useState("my-store");
+  const [storeName, setStoreName] = useState("Merchant Portal");
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    try {
+      const rawUser = localStorage.getItem("authUser");
+      if (rawUser) {
+        const u = JSON.parse(rawUser);
+        if (u.email) setUserEmail(u.email);
+      }
+      const allSubmitted = localStorage.getItem("officeconnect_submitted_applications");
+      if (allSubmitted) {
+        const list = JSON.parse(allSubmitted);
+        if (Array.isArray(list) && list.length > 0) {
+          const app = list[list.length - 1];
+          if (app.storeSlug) setStoreSlug(app.storeSlug);
+          if (app.tradeName) setStoreName(app.tradeName);
+        }
+      }
+    } catch (e) {}
+  }, []);
 
   return (
     <MarketplacePageWrapper>
@@ -24,20 +45,20 @@ export default function VendorDashboardPage() {
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
               <Link href="/dashboard" className="hover:text-slate-900 transition">Dashboard</Link>
               <span>/</span>
-              <span className="text-slate-900 font-bold">Hisense Computers</span>
+              <span className="text-slate-900 font-bold">{storeName}</span>
               <span>/</span>
               <span className="capitalize text-slate-600">{activeView.replace("-", " > ")}</span>
             </div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                <span>🖥️</span> Hisense Computers — Merchant Portal
+                <span>🖥️</span> {storeName} — Merchant Portal
               </h1>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                 VERIFIED SELLER
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Store Owner: <strong className="text-slate-800 font-semibold">bhaskeradv1@gmail.com</strong> • Manage hardware catalog, order dispatch, Buy Box pricing, and escrow payouts.
+              Store Owner: <strong className="text-slate-800 font-semibold">{userEmail || "Registered Merchant"}</strong> • Manage hardware catalog, order dispatch, Buy Box pricing, and escrow payouts.
             </p>
           </div>
 

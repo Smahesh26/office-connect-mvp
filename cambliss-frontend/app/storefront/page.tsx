@@ -86,13 +86,13 @@ function DashboardMarketplaceContent() {
         const allSubmitted = localStorage.getItem("officeconnect_submitted_applications");
         if (allSubmitted) {
           const list = JSON.parse(allSubmitted);
-          const found = list.find((a: any) => a.email === userEmail || (a.tradeName && a.tradeName.includes("Hisense")));
+          const found = list.find((a: any) => a.email && userEmail && a.email.toLowerCase() === userEmail.toLowerCase());
           if (found) {
             setMerchantStatus(found.status === "Approved" ? "APPROVED" : "PENDING_REVIEW");
             return;
           }
         }
-        setMerchantStatus("PENDING_REVIEW");
+        setMerchantStatus("NOT_STARTED");
       }
     } catch (e) {}
   }, [userEmail, activeMarketplaceTab]);
@@ -264,11 +264,10 @@ function DashboardMarketplaceContent() {
         <div className="flex items-center gap-2 shrink-0">
           {merchantStatus === "APPROVED" ? (
             <Link
-              href="/store/hisense-computers"
-              target="_blank"
+              href="/storefront?tab=store"
               className="px-3.5 py-1.5 rounded-[4px] bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition shadow-2xs flex items-center gap-1.5"
             >
-              <span>🏪</span> View Live Storefront ↗
+              <span>🏪</span> View My Storefront ↗
             </Link>
           ) : (
             <button

@@ -41,20 +41,7 @@ exports.storefrontCustomersStore = [
         registeredAt: "2026-08-15T12:30:00.000Z",
     },
 ];
-const merchantCredentialsStore = [
-    {
-        id: "merch-cred-001",
-        email: "bhaskeradv1@gmail.com",
-        passwordHash: "$2a$10$wE9i.zD.R208f7xWqP0j0O01/vVbFw54dI2gT1h9lqM4.q81s20q6", // default
-        applicationId: "OC-KYB-2026-8819",
-    },
-    {
-        id: "merch-cred-002",
-        email: "marketplace@sonyindia.co.in",
-        passwordHash: "$2a$10$wE9i.zD.R208f7xWqP0j0O01/vVbFw54dI2gT1h9lqM4.q81s20q6",
-        applicationId: "OC-KYB-2026-8841",
-    },
-];
+const merchantCredentialsStore = [];
 const normalizePhone = (phone) => {
     const clean = phone.trim().replace(/\s+/g, "");
     if (clean.startsWith("+"))

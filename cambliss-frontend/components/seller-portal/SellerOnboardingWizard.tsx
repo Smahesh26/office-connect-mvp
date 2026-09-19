@@ -904,7 +904,7 @@ export const SellerOnboardingWizard = ({
                     type="text"
                     value={formData.storeName}
                     onChange={(e) => handleStoreNameChange(e.target.value)}
-                    placeholder="e.g. Hisense Computers India"
+                    placeholder="e.g. Apex Hardware Solutions"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-violet-500 outline-none"
                   />
                 </div>
@@ -1553,7 +1553,7 @@ export const SellerOnboardingWizard = ({
                             sampleProduct: { ...formData.sampleProduct, brand: e.target.value },
                           })
                         }
-                        placeholder="e.g. Hisense / Generic"
+                        placeholder="e.g. In-House / Generic"
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-violet-500 outline-none"
                       />
                     </div>

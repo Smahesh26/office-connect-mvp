@@ -57,50 +57,6 @@ export const AdminMarketplaceGovernanceDesk = ({
   // KYC Dossiers State
   const [kycDossiers, setKycDossiers] = useState<any[]>([
     {
-      sellerId: "sel-hisense-01",
-      sellerCode: "SEL-HISENSE",
-      submittedInfo: {
-        businessName: "Hisense Computers India Private Limited",
-        tradeName: "Hisense Computers Official",
-        ownerName: "Bhasker Advani",
-        email: "bhaskeradv1@gmail.com",
-        phone: "+91 98765 43210",
-        pan: "AAACH9102K",
-        gstin: "29AAACH9102K1Z5",
-        warehouseAddress: "Plot 88, Electronic City Phase 2, Hosur Road, Bengaluru 560100",
-        bankName: "HDFC Bank",
-        accountNumber: "50100294819284",
-        ifscCode: "HDFC0000128",
-      },
-      submittedDocuments: {
-        panDocUrl: "#",
-        gstDocUrl: "#",
-        bankChequeUrl: "#",
-      },
-      aiCollectedData: {
-        gstinVerified: true,
-        gstinTradeName: "HISENSE COMPUTERS INDIA PVT LTD",
-        gstinStateCode: "29 (Karnataka)",
-        panChecksumValid: true,
-        mcaRegisteredEntity: "U72900KA2021PTC148921 (Active)",
-        pincodeServiceable: true,
-        scrapedCatalogMatchScore: 98,
-        flaggedMismatches: [],
-        confidenceScore: 98,
-        collectedAt: "2026-09-02T10:00:00.000Z",
-      },
-      checklist: {
-        panMatchesLegalName: true,
-        gstinActiveOnPortal: true,
-        bankPennyDropSuccess: true,
-        videoKycDone: true,
-        warehousePinServiceable: true,
-      },
-      kycStatus: "VERIFIED_ACTIVE",
-      reviewerName: "Pooja Hegde (Compliance Head)",
-      reviewedAt: "2026-09-02T14:30:00.000Z",
-    },
-    {
       sellerId: "sel-keychron-03",
       sellerCode: "SEL-KEYCHRON",
       submittedInfo: {
@@ -146,7 +102,7 @@ export const AdminMarketplaceGovernanceDesk = ({
     },
   ]);
 
-  const [selectedDossier, setSelectedDossier] = useState<any>(kycDossiers[1]);
+  const [selectedDossier, setSelectedDossier] = useState<any>(kycDossiers[0]);
   const [reviewerNotes, setReviewerNotes] = useState("");
 
   // Orders State (Multi-Seller Splits)
@@ -165,9 +121,9 @@ export const AdminMarketplaceGovernanceDesk = ({
       createdAt: "2026-09-08T10:15:00.000Z",
       sellerOrders: [
         {
-          id: "sord_hisense_01",
-          sellerCode: "SEL-HISENSE",
-          sellerName: "Hisense Computers (bhaskeradv1@gmail.com) 👑",
+          id: "sord_keychron_01",
+          sellerCode: "SEL-KEYCHRON",
+          sellerName: "Keychron Official Store 👑",
           grossAmount: 149990,
           commissionAmount: 11249,
           taxDeductionAmount: 2024,
@@ -180,9 +136,9 @@ export const AdminMarketplaceGovernanceDesk = ({
           trackingNumber: "TRK-OC-882194",
           items: [
             {
-              title: "Hisense VisionBook Pro 16 AI Workstation Laptop",
-              quantity: 1,
-              unitPrice: 149990,
+              title: "Keychron Q3 Max Wireless Custom Mechanical Keyboard",
+              quantity: 10,
+              unitPrice: 14999,
               commissionRate: 0.075,
               commissionAmount: 11249,
               sellerPayable: 136717,
@@ -190,9 +146,9 @@ export const AdminMarketplaceGovernanceDesk = ({
           ],
         },
         {
-          id: "sord_hisense_02",
-          sellerCode: "SEL-HISENSE",
-          sellerName: "Hisense Computers (bhaskeradv1@gmail.com) 👑",
+          id: "sord_keychron_02",
+          sellerCode: "SEL-KEYCHRON",
+          sellerName: "Keychron Official Store 👑",
           grossAmount: 38990,
           commissionAmount: 3441,
           taxDeductionAmount: 620,
@@ -205,9 +161,9 @@ export const AdminMarketplaceGovernanceDesk = ({
           trackingNumber: "TRK-OC-882195",
           items: [
             {
-              title: "Hisense UltraView 34-Inch Curved WQHD USB-C Hub Monitor",
-              quantity: 1,
-              unitPrice: 38990,
+              title: "Keychron Lemokey L3 Wireless Gaming Mouse",
+              quantity: 5,
+              unitPrice: 7798,
               commissionRate: 0.088,
               commissionAmount: 3441,
               sellerPayable: 34929,
@@ -219,7 +175,7 @@ export const AdminMarketplaceGovernanceDesk = ({
   ]);
 
   // Refund Simulator State
-  const [selectedRefundOrder, setSelectedRefundOrder] = useState<string>("sord_hisense_02");
+  const [selectedRefundOrder, setSelectedRefundOrder] = useState<string>("sord_keychron_02");
   const [refundType, setRefundType] = useState<"FULL" | "PARTIAL">("FULL");
   const [partialRefundValue, setPartialRefundValue] = useState<number>(10000);
   const [refundReason, setRefundReason] = useState<string>("Customer requested return due to minor transit box damage");
@@ -241,7 +197,7 @@ export const AdminMarketplaceGovernanceDesk = ({
       id: "led_02",
       entryType: "PLATFORM_COMMISSION",
       masterOrderId: "mord_9042",
-      sellerCode: "SEL-HISENSE",
+      sellerCode: "SEL-KEYCHRON",
       debitAmount: 0,
       creditAmount: 17334,
       referenceId: "pay_rzp_98418902",
@@ -253,11 +209,11 @@ export const AdminMarketplaceGovernanceDesk = ({
       id: "led_03",
       entryType: "SELLER_PAYABLE",
       masterOrderId: "mord_9042",
-      sellerCode: "SEL-HISENSE",
+      sellerCode: "SEL-KEYCHRON",
       debitAmount: 0,
       creditAmount: 171646,
       referenceId: "pay_rzp_98418902",
-      description: "Net payable allocated to Hisense Computers (Held in 7-day return window)",
+      description: "Net payable allocated to Keychron Official Store (Held in 7-day return window)",
       auditHash: "77a83d99420bf3109b",
       createdAt: "2026-09-08 10:15",
     },
@@ -267,10 +223,10 @@ export const AdminMarketplaceGovernanceDesk = ({
   const [settlements, setSettlements] = useState<any[]>([
     {
       settlementId: "OC-STL-2026-0012",
-      sellerName: "Hisense Computers (bhaskeradv1@gmail.com) 👑",
-      sellerCode: "SEL-HISENSE",
-      virtualAccountId: "OCHISENSE9021",
-      bankAccountNo: "50100294819284",
+      sellerName: "Keychron Official Store 👑",
+      sellerCode: "SEL-KEYCHRON",
+      virtualAccountId: "OCKEYCHRON9021",
+      bankAccountNo: "001105028491",
       amount: 124900,
       status: "SETTLED",
       providerReference: "pout_rzp_8849182",
@@ -335,7 +291,7 @@ export const AdminMarketplaceGovernanceDesk = ({
       setIsLoading(false);
       showToast(
         decision === "VERIFIED_ACTIVE"
-          ? `Seller ${selectedDossier.sellerCode} approved! Razorpay Virtual Account OCHISENSE9021 provisioned.`
+          ? `Seller ${selectedDossier.sellerCode} approved! Dedicated Razorpay Virtual Account provisioned.`
           : `Seller status updated to ${decision}.`
       );
     }, 1000);
@@ -353,7 +309,7 @@ export const AdminMarketplaceGovernanceDesk = ({
       id: `led_${Date.now()}_crfnd`,
       entryType: "CUSTOMER_REFUND",
       masterOrderId: "mord_9042",
-      sellerCode: "SEL-HISENSE",
+      sellerCode: "SEL-KEYCHRON",
       debitAmount: refundAmount,
       creditAmount: 0,
       referenceId: `rfnd_rzp_${Date.now()}`,
@@ -367,11 +323,11 @@ export const AdminMarketplaceGovernanceDesk = ({
       id: `led_${Date.now()}_srev`,
       entryType: "SELLER_REVERSAL",
       masterOrderId: "mord_9042",
-      sellerCode: "SEL-HISENSE",
+      sellerCode: "SEL-KEYCHRON",
       debitAmount: sellerDeduction,
       creditAmount: 0,
       referenceId: `REV-${Date.now()}`,
-      description: `Seller payable deduction reversal (₹${sellerDeduction.toLocaleString()}) on sub-order sord_hisense_02`,
+      description: `Seller payable deduction reversal (₹${sellerDeduction.toLocaleString()}) on sub-order sord_keychron_02`,
       auditHash: "b7e4198c2d5f01",
       createdAt: new Date().toISOString().replace("T", " ").substring(0, 16),
     };
@@ -386,10 +342,10 @@ export const AdminMarketplaceGovernanceDesk = ({
     setTimeout(() => {
       const newSettlement = {
         settlementId: `OC-STL-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-        sellerName: "Hisense Computers (bhaskeradv1@gmail.com) 👑",
-        sellerCode: "SEL-HISENSE",
-        virtualAccountId: "OCHISENSE9021",
-        bankAccountNo: "50100294819284",
+        sellerName: "Keychron Official Store 👑",
+        sellerCode: "SEL-KEYCHRON",
+        virtualAccountId: "OCKEYCHRON9021",
+        bankAccountNo: "001105028491",
         amount: 171646,
         status: "SETTLED",
         providerReference: `pout_rzp_${Date.now()}`,
@@ -400,11 +356,11 @@ export const AdminMarketplaceGovernanceDesk = ({
       const stlEntry = {
         id: `led_${Date.now()}_stl`,
         entryType: "SELLER_SETTLEMENT",
-        sellerCode: "SEL-HISENSE",
+        sellerCode: "SEL-KEYCHRON",
         debitAmount: 171646,
         creditAmount: 0,
         referenceId: newSettlement.providerReference,
-        description: `Settlement payout dispatched to Hisense Computers via Razorpay Virtual Account OCHISENSE9021`,
+        description: `Settlement payout dispatched to Keychron Official Store via Razorpay Virtual Account OCKEYCHRON9021`,
         auditHash: "f48c17a9e03d",
         createdAt: new Date().toISOString().replace("T", " ").substring(0, 16),
       };
@@ -787,11 +743,11 @@ export const AdminMarketplaceGovernanceDesk = ({
                   onChange={(e) => setSelectedRefundOrder(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded font-semibold bg-white"
                 >
-                  <option value="sord_hisense_02">
-                    sord_hisense_02 — Hisense UltraView 34-Inch Monitor (₹38,990)
+                  <option value="sord_keychron_02">
+                    sord_keychron_02 — Keychron Gaming Mouse (₹38,990)
                   </option>
-                  <option value="sord_hisense_01">
-                    sord_hisense_01 — Hisense VisionBook Pro 16 AI Laptop (₹1,49,990)
+                  <option value="sord_keychron_01">
+                    sord_keychron_01 — Keychron Mechanical Keyboard (₹1,49,990)
                   </option>
                 </select>
               </div>

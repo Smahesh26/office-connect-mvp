@@ -82,8 +82,7 @@ export const MerchantOnboardingStatusDesk = ({
           const list = JSON.parse(allSubmitted);
           const found = list.find(
             (a: any) =>
-              (a.email && a.email.toLowerCase() === effectiveEmail.toLowerCase()) ||
-              (a.tradeName && a.tradeName.toLowerCase().includes("hisense"))
+              a.email && a.email.toLowerCase() === effectiveEmail.toLowerCase()
           );
           if (found) {
             setStatus(found.status === "Approved" ? "APPROVED" : "PENDING_REVIEW");
@@ -102,8 +101,7 @@ export const MerchantOnboardingStatusDesk = ({
           if (data.applications && Array.isArray(data.applications)) {
             const found = data.applications.find(
               (a: any) =>
-                (a.email && a.email.toLowerCase() === effectiveEmail.toLowerCase()) ||
-                (a.tradeName && a.tradeName.toLowerCase().includes("hisense"))
+                a.email && a.email.toLowerCase() === effectiveEmail.toLowerCase()
             );
             if (found) {
               setStatus(found.status === "Approved" ? "APPROVED" : "PENDING_REVIEW");
@@ -115,36 +113,9 @@ export const MerchantOnboardingStatusDesk = ({
         }
       } catch (e) {}
 
-      // Default seed state for bhaskeradv1@gmail.com if not yet submitted
-      if (effectiveEmail === "bhaskeradv1@gmail.com") {
-        const defaultApp = {
-          applicationId: "OC-KYB-2026-9214",
-          businessName: "Hisense Computers Enterprise India",
-          tradeName: "Hisense Computers",
-          storeSlug: "hisense-computers",
-          ownerName: "Bhasker Anand",
-          email: "bhaskeradv1@gmail.com",
-          phone: "+91 98450 11223",
-          entityType: "Private Limited / OPC",
-          gstin: "29AABCH9912R1Z8",
-          pan: "AABCH9912R",
-          category: "Computers & Accessories",
-          warehouseCity: "Bengaluru",
-          warehouseState: "Karnataka",
-          warehousePinCode: "560001",
-          bankName: "HDFC Bank",
-          accountNumber: "50200088192019",
-          ifscCode: "HDFC0000128",
-          fulfillmentModel: "EASY_SHIP",
-          status: "Pending Review",
-          appliedDate: new Date().toISOString().split("T")[0],
-        };
-        setStatus("PENDING_REVIEW");
-        setApplicationData(defaultApp);
-      } else {
-        setStatus("NOT_STARTED");
-      }
-
+      // Clean default state for all SaaS users — start fresh from scratch
+      setStatus("NOT_STARTED");
+      setApplicationData(null);
       setIsLoading(false);
     };
 
@@ -226,7 +197,7 @@ export const MerchantOnboardingStatusDesk = ({
 
         <SellerOnboardingWizard
           initialEmail={effectiveEmail}
-          initialStoreName="Hisense Computers"
+          initialStoreName=""
           onSubmitted={(app) => {
             setApplicationData(app);
             setStatus("PENDING_REVIEW");
@@ -275,7 +246,7 @@ export const MerchantOnboardingStatusDesk = ({
           </div>
 
           <p className="text-slate-600 text-xs sm:text-sm leading-relaxed max-w-4xl">
-            Your merchant registration details for <strong>{applicationData?.tradeName || "Hisense Computers"}</strong> have been successfully recorded in our central compliance registry. Under Indian marketplace e-commerce norms, our officers manually verify your GSTIN REG-06 certificate, PAN details, and escrow settlement bank account. This verification step takes approximately <strong>2 business days</strong>.
+            Your merchant registration details for <strong>{applicationData?.tradeName || "your business"}</strong> have been successfully recorded in our central compliance registry. Under Indian marketplace e-commerce norms, our officers manually verify your GSTIN REG-06 certificate, PAN details, and escrow settlement bank account. This verification step takes approximately <strong>2 business days</strong>.
           </p>
 
           <div className="p-3.5 rounded-xl bg-amber-100/60 border border-amber-200 text-xs text-amber-900 flex items-center justify-between gap-4">
@@ -380,10 +351,10 @@ export const MerchantOnboardingStatusDesk = ({
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-0.5">
               <span className="text-slate-400 font-bold block text-[10px]">Store Display Name</span>
               <span className="font-bold text-slate-900 block text-sm">
-                {applicationData?.tradeName || "Hisense Computers"}
+                {applicationData?.tradeName || "My Store"}
               </span>
               <span className="text-[11px] text-violet-700 font-medium">
-                /store/{applicationData?.storeSlug || "hisense-computers"}
+                /store/{applicationData?.storeSlug || "my-store"}
               </span>
             </div>
 
@@ -432,14 +403,14 @@ export const MerchantOnboardingStatusDesk = ({
                 </span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight mt-1">
-                {applicationData?.tradeName || "Hisense Computers"} — Storefront Live
+                {applicationData?.tradeName || "Official Store"} — Storefront Live
               </h2>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <Link
-              href={`/store/${applicationData?.storeSlug || "hisense-computers"}`}
+              href={`/store/${applicationData?.storeSlug || "my-store"}`}
               target="_blank"
               className="px-4 py-2.5 rounded-xl bg-white text-emerald-900 font-black text-xs hover:bg-emerald-50 transition shadow-xs flex items-center gap-1.5"
             >

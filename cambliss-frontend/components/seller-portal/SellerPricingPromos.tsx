@@ -100,7 +100,7 @@ export const SellerPricingPromos = ({
         <div className="space-y-4">
           <div className="pb-3 border-b border-slate-100">
             <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
-              Hisense Computers Storefront Builder
+              Merchant Storefront Builder
             </h3>
             <p className="text-xs text-slate-500">Customize your verified brand page, hero graphics, and hardware showcases</p>
           </div>
@@ -124,7 +124,7 @@ export const SellerPricingPromos = ({
             </div>
             <button
               type="button"
-              onClick={() => alert("Hisense Computers visual storefront settings updated!")}
+              onClick={() => alert("Storefront visual settings updated!")}
               className="px-4 py-2 bg-[#404d85] text-white font-bold rounded text-xs"
             >
               Save Storefront Layout
@@ -138,7 +138,7 @@ export const SellerPricingPromos = ({
         <div className="space-y-4">
           <div className="pb-3 border-b border-slate-100">
             <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
-              Merchant Settings & Compliance (bhaskeradv1@gmail.com)
+              Merchant Settings & Compliance
             </h3>
             <p className="text-xs text-slate-500">Manage KYB documentation, bank accounts, and warehouse logistics nodes</p>
           </div>
@@ -146,8 +146,8 @@ export const SellerPricingPromos = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="p-4 rounded border bg-slate-50 space-y-2">
               <span className="font-bold text-slate-800 block text-xs">KYB & Tax Credentials</span>
-              <p className="text-slate-600 text-[11px]">Entity: <strong>Hisense Computers & Systems India Pvt Ltd</strong></p>
-              <p className="text-slate-600 text-[11px]">Contact: <strong>bhaskeradv1@gmail.com</strong></p>
+              <p className="text-slate-600 text-[11px]">Entity: <strong>Verified Merchant Enterprise Pvt Ltd</strong></p>
+              <p className="text-slate-600 text-[11px]">Contact: <strong>merchant@theofficeconnect.com</strong></p>
               <p className="text-slate-600 text-[11px]">GSTIN: <strong>29AAACH8921K1Z5</strong> (Verified)</p>
               <p className="text-slate-600 text-[11px]">PAN: <strong>AAACH8921K</strong> (Verified)</p>
               <span className="inline-block px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">

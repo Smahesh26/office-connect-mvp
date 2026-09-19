@@ -7,52 +7,7 @@ import { SellerHeroHeader, SellerProfileData } from "@/components/seller-storefr
 import { SellerStorefrontTabs } from "@/components/seller-storefront/SellerStorefrontTabs";
 import { ProductCardProps } from "@/components/commerce/CommercePrimitives";
 
-const VENDOR_PROFILES: Record<string, { seller: SellerProfileData; products: ProductCardProps[]; gstin: string; legalEntity: string }> = {
-  "hisense-computers": {
-    seller: {
-      id: "v-hisense-computers",
-      name: "Hisense Computers Official Store 🖥️",
-      legalEntity: "Hisense Computers & Systems India Private Limited",
-      tier: "premium",
-      bannerImage: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80",
-      logoImage: "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=400&q=80",
-      rating: 5.0,
-      reviewsCount: 0,
-      location: "Bengaluru, Karnataka, India",
-      memberSince: "2024",
-      onTimeDispatchPct: 100,
-      returnRatePct: 0.0,
-      productCount: 0,
-      tagline: "Official verified merchant storefront on Office Connect Marketplace.",
-      gstin: "29AAACH8921K1Z5",
-    },
-    legalEntity: "Hisense Computers & Systems India Private Limited",
-    gstin: "29AAACH8921K1Z5",
-    products: [],
-  },
-  hisense: {
-    seller: {
-      id: "v-hisense",
-      name: "Hisense Computers Official Store 🖥️",
-      legalEntity: "Hisense Computers & Systems India Private Limited",
-      tier: "premium",
-      bannerImage: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80",
-      logoImage: "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=400&q=80",
-      rating: 5.0,
-      reviewsCount: 0,
-      location: "Bengaluru, Karnataka, India",
-      memberSince: "2024",
-      onTimeDispatchPct: 100,
-      returnRatePct: 0.0,
-      productCount: 0,
-      tagline: "Official verified merchant storefront on Office Connect Marketplace.",
-      gstin: "29AAACH8921K1Z5",
-    },
-    legalEntity: "Hisense Computers & Systems India Private Limited",
-    gstin: "29AAACH8921K1Z5",
-    products: [],
-  },
-};
+const VENDOR_PROFILES: Record<string, { seller: SellerProfileData; products: ProductCardProps[]; gstin: string; legalEntity: string }> = {};
 
 export default function DedicatedVendorStorePage({
   params,
@@ -94,14 +49,14 @@ export default function DedicatedVendorStorePage({
       const saved = localStorage.getItem("officeconnect_custom_products");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0 && (vendorSlug === "hisense-computers" || vendorSlug === "hisense")) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           const formatted: ProductCardProps[] = parsed.map((item: any) => ({
             id: item.id,
             title: item.title,
-            brand: item.brand || "Hisense Computers",
+            brand: item.brand || storeData.seller.name,
             price: Number(item.price),
             originalPrice: Number(item.mrp || item.originalPrice || item.price * 1.2),
-            sellerName: item.sellerName || "Hisense Computers (bhaskeradv1@gmail.com)",
+            sellerName: item.sellerName || storeData.seller.name,
             sellerTier: "premium",
             rating: item.rating || 4.9,
             reviewsCount: item.reviewsCount || 100,
@@ -114,7 +69,7 @@ export default function DedicatedVendorStorePage({
         }
       }
     } catch (e) {}
-  }, [vendorSlug]);
+  }, [vendorSlug, storeData.seller.name]);
 
   const handleSendInquiry = (e: React.FormEvent) => {
     e.preventDefault();
