@@ -60,10 +60,10 @@ export default function AccountHubPage() {
           <div className="lg:col-span-3 rounded-[8px] border border-slate-200 bg-white p-3 space-y-1 shadow-2xs">
             <div className="p-3 pb-4 border-b border-slate-100 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#404d85] text-white font-black flex items-center justify-center text-sm">
-                BA
+                BM
               </div>
               <div className="min-w-0">
-                <h4 className="font-black text-slate-900 text-xs truncate">Bhasker Anand</h4>
+                <h4 className="font-black text-slate-900 text-xs truncate">Bhasker Mahesh</h4>
                 <span className="text-[10px] text-emerald-700 font-bold block">✓ Verified Buyer & B2B</span>
               </div>
             </div>

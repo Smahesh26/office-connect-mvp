@@ -4,10 +4,10 @@ import { useState } from "react";
 
 export const AccountProfileSettings = () => {
   const [profile, setProfile] = useState({
-    fullName: "Bhasker Anand",
+    fullName: "Bhasker Mahesh",
     email: "bhaskeradv1@gmail.com",
     phone: "+91 98450 12345",
-    companyName: "Cambliss Studio Private Limited",
+    companyName: "Bhasker Fashions / Cambliss Studio",
     gstin: "29AABCU9603R1ZM",
     pan: "AABCU9603R",
     designation: "Chief Executive Officer / Procurement Lead",

@@ -26,7 +26,7 @@ export const AdminOperationsDomain = ({
           <div className="p-4 rounded border bg-slate-50 flex items-center justify-between">
             <div>
               <span className="font-bold text-slate-900">Ticket #T-8891: Delivery SLA Check (Delhivery Express)</span>
-              <p className="text-slate-500 text-[11px]">Buyer: Bhasker Anand • Status: Resolved in 12 mins</p>
+              <p className="text-slate-500 text-[11px]">Merchant: Bhasker Mahesh • Status: Resolved in 12 mins</p>
             </div>
             <span className="text-[10px] text-slate-400 font-bold">Closed</span>
           </div>

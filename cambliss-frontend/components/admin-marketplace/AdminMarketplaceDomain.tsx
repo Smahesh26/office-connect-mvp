@@ -82,25 +82,57 @@ export const AdminMarketplaceDomain = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                <tr className="hover:bg-slate-50">
-                  <td className="py-3">
-                    <strong className="text-slate-900 block font-bold">Bhasker Anand</strong>
-                    <span className="text-[11px] text-slate-500 font-mono">bhaskeradv1@gmail.com</span>
-                  </td>
-                  <td className="py-3">
-                    <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-800 font-bold text-[10px]">
-                      Enterprise Merchant
-                    </span>
-                  </td>
-                  <td className="py-3 text-right font-bold text-slate-800">Merchant Administrator</td>
-                  <td className="py-3 text-right">
-                    <span className={`px-2 py-0.5 rounded font-black text-[10px] ${
-                      approvedSellers.length > 0 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
-                    }`}>
-                      {approvedSellers.length > 0 ? "Verified ✓" : "Pending Review"}
-                    </span>
-                  </td>
-                </tr>
+                {applications.length === 0 ? (
+                  <tr className="hover:bg-slate-50">
+                    <td className="py-3">
+                      <strong className="text-slate-900 block font-bold">Bhasker Mahesh</strong>
+                      <span className="text-[11px] text-slate-500 font-mono">bhaskeradv1@gmail.com • Bhasker Fashions</span>
+                    </td>
+                    <td className="py-3">
+                      <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-800 font-bold text-[10px]">
+                        Enterprise Merchant
+                      </span>
+                    </td>
+                    <td className="py-3 text-right font-bold text-slate-800">Merchant Administrator</td>
+                    <td className="py-3 text-right">
+                      <span className="px-2 py-0.5 rounded font-black text-[10px] bg-amber-100 text-amber-800">
+                        Pending Review
+                      </span>
+                    </td>
+                  </tr>
+                ) : (
+                  applications.map((app) => (
+                    <tr key={app.id || app.applicationId} className="hover:bg-slate-50">
+                      <td className="py-3">
+                        <strong className="text-slate-900 block font-bold">
+                          {app.ownerName || "Bhasker Mahesh"}
+                        </strong>
+                        <span className="text-[11px] text-slate-500 font-mono">
+                          {app.email || "bhaskeradv1@gmail.com"} • {app.businessName || "Bhasker Fashions"}
+                        </span>
+                      </td>
+                      <td className="py-3">
+                        <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-800 font-bold text-[10px]">
+                          {app.entityType || "Enterprise Merchant"}
+                        </span>
+                      </td>
+                      <td className="py-3 text-right font-bold text-slate-800">
+                        {app.tradeName || "Bhasker Fashions"}
+                      </td>
+                      <td className="py-3 text-right">
+                        <span
+                          className={`px-2 py-0.5 rounded font-black text-[10px] ${
+                            app.status === "Approved"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-amber-100 text-amber-800"
+                          }`}
+                        >
+                          {app.status === "Approved" ? "Verified ✓" : "Pending Review"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

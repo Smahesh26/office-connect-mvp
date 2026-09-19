@@ -106,12 +106,12 @@ export const AdminMasterSidebar = ({
           {openSections.marketplace && (
             <div className="pl-6 pt-1 space-y-0.5 border-l border-slate-800 ml-3">
               {[
-                { id: "mkt-customers" as AdminDomainView, label: "Customers (1,420)" },
-                { id: "mkt-sellers" as AdminDomainView, label: "Sellers (24 KYB)", badge: "3 New" },
-                { id: "mkt-stores" as AdminDomainView, label: "Stores (18)" },
-                { id: "mkt-products" as AdminDomainView, label: "Products (4,820)" },
-                { id: "mkt-categories" as AdminDomainView, label: "Categories (32)" },
-                { id: "mkt-brands" as AdminDomainView, label: "Brands (12)" },
+                { id: "mkt-customers" as AdminDomainView, label: "Customers" },
+                { id: "mkt-sellers" as AdminDomainView, label: "Sellers (KYB Desk)" },
+                { id: "mkt-stores" as AdminDomainView, label: "Stores" },
+                { id: "mkt-products" as AdminDomainView, label: "Products & Catalog" },
+                { id: "mkt-categories" as AdminDomainView, label: "Categories" },
+                { id: "mkt-brands" as AdminDomainView, label: "Brands" },
               ].map((sub) => (
                 <button
                   key={sub.id}
@@ -124,11 +124,6 @@ export const AdminMasterSidebar = ({
                   }`}
                 >
                   <span>{sub.label}</span>
-                  {sub.badge && (
-                    <span className="px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold text-[9px]">
-                      {sub.badge}
-                    </span>
-                  )}
                 </button>
               ))}
             </div>
@@ -154,10 +149,10 @@ export const AdminMasterSidebar = ({
           {openSections.commerce && (
             <div className="pl-6 pt-1 space-y-0.5 border-l border-slate-800 ml-3">
               {[
-                { id: "com-orders" as AdminDomainView, label: "Orders (284 Today)" },
-                { id: "com-returns" as AdminDomainView, label: "Returns (2 RMA)" },
-                { id: "com-refunds" as AdminDomainView, label: "Refunds ($24K)" },
-                { id: "com-reviews" as AdminDomainView, label: "Reviews (98% 5★)" },
+                { id: "com-orders" as AdminDomainView, label: "Orders" },
+                { id: "com-returns" as AdminDomainView, label: "Returns & RMA" },
+                { id: "com-refunds" as AdminDomainView, label: "Refunds" },
+                { id: "com-reviews" as AdminDomainView, label: "Customer Reviews" },
               ].map((sub) => (
                 <button
                   key={sub.id}
@@ -195,9 +190,9 @@ export const AdminMasterSidebar = ({
           {openSections.finance && (
             <div className="pl-6 pt-1 space-y-0.5 border-l border-slate-800 ml-3">
               {[
-                { id: "fin-payments" as AdminDomainView, label: "Payments ($1.2M GMV)" },
-                { id: "fin-commissions" as AdminDomainView, label: "Commissions (8.5% Cut)" },
-                { id: "fin-settlements" as AdminDomainView, label: "Settlements ($182K)" },
+                { id: "fin-payments" as AdminDomainView, label: "Payments" },
+                { id: "fin-commissions" as AdminDomainView, label: "Commissions" },
+                { id: "fin-settlements" as AdminDomainView, label: "Settlements" },
                 { id: "fin-payouts" as AdminDomainView, label: "Payouts Dispatch" },
               ].map((sub) => (
                 <button
