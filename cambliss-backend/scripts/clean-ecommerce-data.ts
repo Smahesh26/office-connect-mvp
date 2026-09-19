@@ -62,6 +62,30 @@ async function main() {
     await prisma.$executeRawUnsafe(`DELETE FROM "MarketplaceEvent";`);
     console.log("✓ Cleared Marketplace Events");
 
+    // 9. Delete Store Members, Categories, and Stores
+    await prisma.$executeRawUnsafe(`DELETE FROM "StoreMember";`);
+    await prisma.$executeRawUnsafe(`DELETE FROM "Category";`);
+    await prisma.$executeRawUnsafe(`DELETE FROM "Store";`);
+    console.log("✓ Cleared StoreMembers, Categories & Stores");
+
+    // 10. Delete demo marketplace accounts
+    await prisma.$executeRawUnsafe(`
+      DELETE FROM "OrganizationUser" WHERE "userId" IN (
+        SELECT id FROM "User" WHERE email IN ('admin.marketplace@cambliss.local', 'seller.marketplace@cambliss.local')
+      );
+      DELETE FROM "User" WHERE email IN ('admin.marketplace@cambliss.local', 'seller.marketplace@cambliss.local');
+    `);
+    console.log("✓ Cleared demo marketplace accounts");
+
+    // 11. Delete demo marketplace organizations
+    await prisma.$executeRawUnsafe(`
+      DELETE FROM "OrganizationUser" WHERE "organizationId" IN (
+        SELECT id FROM "Organization" WHERE name IN ('Cambliss Marketplace Demo', 'Demo Vendor 20260624221922', 'Test Store')
+      );
+      DELETE FROM "Organization" WHERE name IN ('Cambliss Marketplace Demo', 'Demo Vendor 20260624221922', 'Test Store');
+    `);
+    console.log("✓ Cleared demo marketplace organizations");
+
     // Count preserved accounts
     const userCount: any = await prisma.$queryRawUnsafe(`SELECT count(*) as count FROM "User";`);
     const orgCount: any = await prisma.$queryRawUnsafe(`SELECT count(*) as count FROM "Organization";`);
