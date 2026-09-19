@@ -18,6 +18,7 @@ export const StorefrontHeader = () => {
   const [cartItemsCount, setCartItemsCount] = useState(0);
   const [cartSubtotal, setCartSubtotal] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const updateCounts = () => {
     const cart = getStoredCart();
@@ -28,6 +29,10 @@ export const StorefrontHeader = () => {
 
     const wishlist = getStoredWishlist();
     setWishlistCount(wishlist.length);
+
+    try {
+      setIsLoggedIn(!!localStorage.getItem("authToken"));
+    } catch (e) {}
   };
 
   useEffect(() => {
@@ -102,6 +107,17 @@ export const StorefrontHeader = () => {
                 {wishlistCount}
               </span>
             </Link>
+
+            {/* Quick return to Workspace Dashboard if logged in */}
+            {isLoggedIn && (
+              <Link
+                href="/dashboard"
+                className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-[6px] bg-[#404d85] hover:bg-[#323d6a] text-white font-bold text-xs transition shadow-2xs active:scale-95"
+              >
+                <span>🏢</span>
+                <span>Dashboard ↗</span>
+              </Link>
+            )}
 
             {/* Account Controls */}
             <StorefrontAccountDropdown />

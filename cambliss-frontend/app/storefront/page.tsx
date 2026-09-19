@@ -17,31 +17,31 @@ import WorkspaceShell from "@/components/WorkspaceShell";
 import Link from "next/link";
 
 export default function StorefrontPage() {
-  const [isWorkspaceUser, setIsWorkspaceUser] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("authToken");
-      if (token) {
-        setIsWorkspaceUser(true);
-      }
-    }
-  }, []);
-
   return (
     <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-800 font-bold">Loading Marketplace...</div>}>
-      {isMounted && isWorkspaceUser ? (
-        <WorkspaceShell>
-          <DashboardMarketplaceContent />
-        </WorkspaceShell>
-      ) : (
-        <StorefrontShell>
-          <StorefrontHomeContent />
-        </StorefrontShell>
-      )}
+      <StorefrontRouterContent />
     </Suspense>
+  );
+}
+
+function StorefrontRouterContent() {
+  const searchParams = useSearchParams();
+  const viewParam = searchParams.get("view");
+
+  // Only render inside internal WorkspaceShell if explicitly requested via ?view=workspace
+  if (viewParam === "workspace") {
+    return (
+      <WorkspaceShell>
+        <DashboardMarketplaceContent />
+      </WorkspaceShell>
+    );
+  }
+
+  // By default, always display the full e-commerce marketplace storefront with all products
+  return (
+    <StorefrontShell>
+      <StorefrontHomeContent />
+    </StorefrontShell>
   );
 }
 

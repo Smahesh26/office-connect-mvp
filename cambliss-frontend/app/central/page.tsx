@@ -620,12 +620,12 @@ export default function OfficeConnectCentralPage() {
 
 							<div className="pt-2 border-t border-slate-100">
 								<Link
-									href="/seller-central"
+									href="/storefront"
 									className="flex items-center justify-between rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 p-3 text-xs font-bold text-slate-950 shadow-sm transition hover:from-amber-400 hover:to-amber-300"
 								>
 									<div className="flex items-center gap-2">
 										<Store className="h-4 w-4" />
-										<span>Marketplace Supplies Hub</span>
+										<span>Explore Multi-Vendor Marketplace</span>
 									</div>
 									<ArrowRight className="h-4 w-4" />
 								</Link>

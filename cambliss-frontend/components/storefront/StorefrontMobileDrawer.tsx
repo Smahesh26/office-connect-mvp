@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export const StorefrontMobileDrawer = ({
   isOpen,
@@ -10,7 +11,38 @@ export const StorefrontMobileDrawer = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
+  const router = useRouter();
   const [expandedSection, setExpandedSection] = useState<string | null>("electronics");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState("Alex");
+
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const rawUser = localStorage.getItem("authUser");
+      if (token) {
+        setIsLoggedIn(true);
+        if (rawUser) {
+          const parsed = JSON.parse(rawUser);
+          setUserName(parsed.name || (parsed.email ? parsed.email.split("@")[0] : "Member"));
+        }
+      } else {
+        setIsLoggedIn(false);
+      }
+    } catch (e) {
+      setIsLoggedIn(false);
+    }
+  }, [isOpen]);
+
+  const handleSignOut = () => {
+    try {
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("authUser");
+    } catch (e) {}
+    setIsLoggedIn(false);
+    onClose();
+    router.push("/login");
+  };
 
   if (!isOpen) return null;
 
@@ -75,8 +107,12 @@ export const StorefrontMobileDrawer = ({
               👤
             </div>
             <div>
-              <div className="font-bold text-xs">Welcome, Alex</div>
-              <div className="text-[10px] text-slate-400">Standard Buyer Account</div>
+              <div className="font-bold text-xs">
+                {isLoggedIn ? `Welcome, ${userName}` : "Welcome, Guest"}
+              </div>
+              <div className="text-[10px] text-slate-400">
+                {isLoggedIn ? "Connected User Account" : "Marketplace Shopper"}
+              </div>
             </div>
           </div>
           <button
@@ -182,29 +218,59 @@ export const StorefrontMobileDrawer = ({
 
         {/* Footer Merchant & Auth Callouts */}
         <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-2">
-          <Link
-            href="/seller-central"
-            onClick={onClose}
-            className="w-full py-2 px-3 rounded-[6px] bg-[#404d85] hover:bg-[#323d6a] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition"
-          >
-            <span>🏬</span> Sell on Office Connect / Merchant Onboarding
-          </Link>
-          <div className="grid grid-cols-2 gap-2">
-            <Link
-              href="/seller-central"
-              onClick={onClose}
-              className="py-1.5 px-2 rounded-[6px] border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-[11px] font-bold text-center transition"
-            >
-              Register
-            </Link>
-            <Link
-              href="/seller-central"
-              onClick={onClose}
-              className="py-1.5 px-2 rounded-[6px] border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-[11px] font-bold text-center transition"
-            >
-              Sign In
-            </Link>
-          </div>
+          {isLoggedIn ? (
+            <>
+              <Link
+                href="/dashboard"
+                onClick={onClose}
+                className="w-full py-2 px-3 rounded-[6px] bg-[#404d85] hover:bg-[#323d6a] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition"
+              >
+                <span>🏢</span> Go to Workspace Dashboard ⚡
+              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/seller-central"
+                  onClick={onClose}
+                  className="flex-1 py-1.5 px-2 rounded-[6px] border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-[11px] font-bold text-center transition"
+                >
+                  Seller Hub
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="flex-1 py-1.5 px-2 rounded-[6px] border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-[11px] font-bold text-center transition"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/seller-central"
+                onClick={onClose}
+                className="w-full py-2 px-3 rounded-[6px] bg-[#404d85] hover:bg-[#323d6a] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition"
+              >
+                <span>🏬</span> Sell on Office Connect / Seller Hub
+              </Link>
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  href="/register"
+                  onClick={onClose}
+                  className="py-1.5 px-2 rounded-[6px] border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-[11px] font-bold text-center transition"
+                >
+                  Register
+                </Link>
+                <Link
+                  href="/login"
+                  onClick={onClose}
+                  className="py-1.5 px-2 rounded-[6px] border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-[11px] font-bold text-center transition"
+                >
+                  Sign In
+                </Link>
+              </div>
+            </>
+          )}
         </div>
 
       </div>
