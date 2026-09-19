@@ -114,6 +114,7 @@ export interface OnboardingFormState {
     mrp: number;
     inventory: number;
     sku: string;
+    image?: string;
   };
 
   // Step 12: Audit & Submission
@@ -189,6 +190,7 @@ const INITIAL_FORM_STATE: OnboardingFormState = {
     mrp: 1499,
     inventory: 50,
     sku: "",
+    image: "",
   },
 
   finalAuditConfirmed: false,
@@ -264,6 +266,43 @@ export const SellerOnboardingWizard = ({
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isCameraModalOpen, setIsCameraModalOpen] = useState<boolean>(false);
   const gstFileInputRef = useRef<HTMLInputElement>(null);
+  const productImageInputRef = useRef<HTMLInputElement>(null);
+
+  const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage("Product image exceeds 5MB limit. Please upload a smaller JPEG, PNG, or WEBP.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        updateForm({
+          sampleProduct: {
+            ...formData.sampleProduct,
+            image: reader.result,
+          },
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveProductImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (productImageInputRef.current) {
+      productImageInputRef.current.value = "";
+    }
+    updateForm({
+      sampleProduct: {
+        ...formData.sampleProduct,
+        image: "",
+      },
+    });
+  };
 
   const handleGstFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1727,6 +1766,80 @@ export const SellerOnboardingWizard = ({
                     />
                   </div>
 
+                  {/* Primary Product Image Upload */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                      Primary Product Photo <span className="text-slate-400 font-normal">(Instant Storefront Preview)</span>
+                    </label>
+
+                    <input
+                      type="file"
+                      ref={productImageInputRef}
+                      onChange={handleProductImageUpload}
+                      accept="image/png, image/jpeg, image/webp"
+                      className="hidden"
+                    />
+
+                    {formData.sampleProduct.image ? (
+                      <div className="p-3.5 rounded-2xl border-2 border-emerald-200 bg-emerald-50/40 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-emerald-300 bg-white shadow-xs shrink-0">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={formData.sampleProduct.image}
+                              alt="Product Preview"
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow">
+                              ✓
+                            </div>
+                          </div>
+                          <div>
+                            <span className="font-extrabold text-xs text-slate-900 block">
+                              Main Product Image Attached
+                            </span>
+                            <span className="text-[11px] text-emerald-700 font-medium">
+                              Ready for live customer storefront presentation upon KYB approval.
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => productImageInputRef.current?.click()}
+                            className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition"
+                          >
+                            Replace
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRemoveProductImage}
+                            className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
+                            title="Remove image"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => productImageInputRef.current?.click()}
+                        className="p-6 rounded-2xl border-2 border-dashed border-slate-300 hover:border-violet-500 bg-slate-50/60 hover:bg-violet-50/30 transition cursor-pointer flex flex-col items-center justify-center text-center group"
+                      >
+                        <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 group-hover:text-violet-600 group-hover:border-violet-300 transition shadow-2xs mb-2">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <span className="font-extrabold text-xs text-slate-800 block mb-0.5">
+                          Click to upload primary product photo (PNG, JPG, WEBP)
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          Add your main catalog image now. Multi-angle galleries & lifestyle shots can be added from Seller Central later.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-bold text-slate-700 block mb-1">
@@ -1894,11 +2007,21 @@ export const SellerOnboardingWizard = ({
                 </div>
                 <div className="py-2.5 flex justify-between items-center">
                   <span className="font-bold text-slate-600">11. Initial SKU Status:</span>
-                  <span className="font-semibold text-slate-900">
-                    {formData.listNow && formData.sampleProduct.title
-                      ? `Fast-Track: "${formData.sampleProduct.title}" (₹${formData.sampleProduct.price})`
-                      : "Deferred to Seller Catalog Suite"}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {formData.listNow && formData.sampleProduct.image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={formData.sampleProduct.image}
+                        alt="Product Preview"
+                        className="w-7 h-7 rounded-lg object-cover border border-slate-300 shrink-0"
+                      />
+                    )}
+                    <span className="font-semibold text-slate-900 text-right">
+                      {formData.listNow && formData.sampleProduct.title
+                        ? `Fast-Track: "${formData.sampleProduct.title}" (₹${formData.sampleProduct.price})`
+                        : "Deferred to Seller Catalog Suite"}
+                    </span>
+                  </div>
                 </div>
                 <div className="pt-2.5 flex justify-between items-center">
                   <span className="font-bold text-slate-600">12. Digital Signature:</span>
