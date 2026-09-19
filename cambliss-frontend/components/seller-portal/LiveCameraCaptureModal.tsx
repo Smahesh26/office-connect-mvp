@@ -27,8 +27,8 @@ export const LiveCameraCaptureModal = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isLoadingCamera, setIsLoadingCamera] = useState<boolean>(true);
@@ -37,13 +37,22 @@ export const LiveCameraCaptureModal = ({
   const [analyzingQuality, setAnalyzingQuality] = useState<boolean>(false);
   const [qualityScore, setQualityScore] = useState<number>(96);
 
-  // Stop media stream tracks
+  // Stop media stream tracks cleanly without triggering re-render cascades
   const stopStream = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch (e) {
+          // ignore track stop errors
+        }
+      });
+      streamRef.current = null;
     }
-  }, [stream]);
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }, []);
 
   // Start video stream from user's camera
   const startCamera = useCallback(async (facing: "user" | "environment" = "user") => {
@@ -53,7 +62,7 @@ export const LiveCameraCaptureModal = ({
 
     try {
       if (!navigator?.mediaDevices?.getUserMedia) {
-        throw new Error("Camera API is not supported on this browser. Please upload a photo instead.");
+        throw new Error("Camera API is not supported on this browser or connection. Please upload a photo instead.");
       }
 
       const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -65,29 +74,50 @@ export const LiveCameraCaptureModal = ({
         audio: false,
       });
 
-      setStream(mediaStream);
+      streamRef.current = mediaStream;
+
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        videoRef.current.play();
+        const vid = videoRef.current;
+        vid.srcObject = mediaStream;
+        vid.onloadedmetadata = () => {
+          vid.play().catch((err) => {
+            // Silently ignore play() interruptions from cleanup
+            if (err.name !== "AbortError") {
+              console.warn("Video playback issue:", err);
+            }
+          });
+        };
       }
     } catch (err: any) {
+      // Don't treat deliberate teardown / cleanup as a user-facing error
+      if (err.name === "AbortError") return;
+
       console.warn("Camera access failed:", err);
       if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-        setCameraError("Camera permission was denied. Please allow camera access in your browser or upload a photo.");
+        setCameraError(
+          "Camera permission was blocked. Please click the camera/padlock icon in your browser URL bar to allow camera access, then click 'Retry Camera'."
+        );
       } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
-        setCameraError("No webcam or camera device was found on this system. You can upload a live selfie photo instead.");
+        setCameraError(
+          "No webcam or camera device was detected on your machine. You can take a selfie using your phone or upload a live photo below."
+        );
+      } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
+        setCameraError(
+          "Camera is currently being used by another application (Zoom, Teams, or another browser window). Please close other camera apps and click 'Retry Camera'."
+        );
       } else {
-        setCameraError(err.message || "Unable to start camera. Please verify device permissions or upload a snapshot.");
+        setCameraError(err.message || "Unable to activate camera. Please check permissions or upload a snapshot.");
       }
     } finally {
       setIsLoadingCamera(false);
     }
   }, [stopStream]);
 
-  // Initialize camera when modal opens
+  // Lifecycle: open/close and camera facing changes
   useEffect(() => {
     if (isOpen) {
       setCapturedPhoto(null);
+      setCameraError(null);
       startCamera(facingMode);
     } else {
       stopStream();
@@ -131,7 +161,6 @@ export const LiveCameraCaptureModal = ({
     // Run simulated algorithmic liveness and lighting quality check
     setAnalyzingQuality(true);
     setTimeout(() => {
-      // Calculate realistic score between 94% and 98%
       const calculatedScore = Math.floor(94 + Math.random() * 5);
       setQualityScore(calculatedScore);
       setAnalyzingQuality(false);
@@ -257,7 +286,7 @@ export const LiveCameraCaptureModal = ({
               {isLoadingCamera && (
                 <div className="absolute inset-0 bg-slate-950/80 flex flex-col items-center justify-center text-white space-y-2">
                   <RefreshCw className="w-6 h-6 animate-spin text-violet-400" />
-                  <span className="text-xs font-medium">Requesting camera permissions...</span>
+                  <span className="text-xs font-medium">Starting secure camera session...</span>
                 </div>
               )}
             </div>
@@ -266,6 +295,7 @@ export const LiveCameraCaptureModal = ({
           {/* STATE 2: Captured Photo Preview & Analysis */}
           {capturedPhoto && (
             <div className="relative w-full max-w-sm aspect-4/3 rounded-2xl overflow-hidden bg-black shadow-2xl flex items-center justify-center border-2 border-emerald-400">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={capturedPhoto}
                 alt="Captured Face Snapshot"
@@ -309,15 +339,15 @@ export const LiveCameraCaptureModal = ({
                 <button
                   type="button"
                   onClick={() => startCamera(facingMode)}
-                  className="w-full py-2 px-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold transition flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold transition flex items-center justify-center gap-2"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  Retry Camera
+                  Retry Camera Access
                 </button>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white text-xs font-bold transition flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white text-xs font-bold transition flex items-center justify-center gap-2"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   Upload Live Selfie From Device
