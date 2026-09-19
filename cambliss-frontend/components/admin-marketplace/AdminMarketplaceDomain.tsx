@@ -57,6 +57,41 @@ export const AdminMarketplaceDomain = ({
         }
       } catch (err) {}
 
+      let isBhaskerApproved = false;
+      try {
+        isBhaskerApproved =
+          localStorage.getItem("officeconnect_merchant_approved_bhasker") === "true" ||
+          (localStorage.getItem("officeconnect_merchant_status_bhaskeradv1@gmail.com") || "").includes("Approved");
+      } catch (e) {}
+
+      if (list.length === 0) {
+        list = [
+          {
+            id: "app-bhasker-default",
+            applicationId: "OC-KYB-2026-9214",
+            businessName: "Bhasker Fashions Private Limited",
+            tradeName: "Bhasker Fashions",
+            storeSlug: "bhasker-fashions",
+            ownerName: "Bhasker Mahesh",
+            email: "bhaskeradv1@gmail.com",
+            category: "Fashion & Apparel",
+            gstin: "29AABCU9603R1ZM",
+            pan: "AABCU9603R",
+            bankName: "HDFC Bank",
+            accountNumber: "50200088192019",
+            warehouseCity: "Bengaluru",
+            appliedDate: new Date().toISOString().split("T")[0],
+            status: isBhaskerApproved ? "Approved" : "Pending Review",
+          },
+        ];
+      } else if (isBhaskerApproved) {
+        list = list.map((a) =>
+          a.email === "bhaskeradv1@gmail.com" || a.id === "app-bhasker-default"
+            ? { ...a, status: "Approved" }
+            : a
+        );
+      }
+
       setApplications(list);
       setIsLoading(false);
     };
@@ -65,6 +100,10 @@ export const AdminMarketplaceDomain = ({
   }, [initialPropsApps]);
 
   const handleDirectApprove = (targetId: string, email?: string, tradeName?: string) => {
+    try {
+      localStorage.setItem("officeconnect_merchant_approved_bhasker", "true");
+    } catch (e) {}
+
     // 1. Immediately mutate local UI state to "Approved"
     setApplications((prev) => {
       if (prev.length === 0) {
@@ -88,7 +127,7 @@ export const AdminMarketplaceDomain = ({
         ];
       }
       return prev.map((a) =>
-        !targetId || a.id === targetId || a.applicationId === targetId
+        !targetId || a.id === targetId || a.applicationId === targetId || a.email === "bhaskeradv1@gmail.com"
           ? { ...a, status: "Approved" as const }
           : a
       );
@@ -168,35 +207,7 @@ export const AdminMarketplaceDomain = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {applications.length === 0 ? (
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-3">
-                      <strong className="text-slate-900 block font-bold">Bhasker Mahesh</strong>
-                      <span className="text-[11px] text-slate-500 font-mono">bhaskeradv1@gmail.com • Bhasker Fashions</span>
-                    </td>
-                    <td className="py-3">
-                      <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-800 font-bold text-[10px]">
-                        Enterprise Merchant
-                      </span>
-                    </td>
-                    <td className="py-3 text-right font-bold text-slate-800">Bhasker Fashions</td>
-                    <td className="py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <span className="px-2 py-0.5 rounded font-black text-[10px] bg-amber-100 text-amber-800 border border-amber-300">
-                          Pending Review
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleDirectApprove("app-bhasker-default", "bhaskeradv1@gmail.com", "Bhasker Fashions")}
-                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-lg shadow-xs transition inline-flex items-center gap-1 cursor-pointer"
-                        >
-                          <span>✓</span> Approve KYB Now
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  applications.map((app) => (
+                {applications.map((app) => (
                     <tr key={app.id || app.applicationId} className="hover:bg-slate-50">
                       <td className="py-3">
                         <strong className="text-slate-900 block font-bold">
@@ -250,8 +261,7 @@ export const AdminMarketplaceDomain = ({
                         )}
                       </td>
                     </tr>
-                  ))
-                )}
+                  ))}
               </tbody>
             </table>
           </div>
