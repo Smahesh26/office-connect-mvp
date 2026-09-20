@@ -10,7 +10,8 @@ import { AdminFinanceDomain } from "@/components/admin-marketplace/AdminFinanceD
 import { AdminMarketingDomain } from "@/components/admin-marketplace/AdminMarketingDomain";
 import { AdminOperationsDomain } from "@/components/admin-marketplace/AdminOperationsDomain";
 import { AdminSettingsDomain } from "@/components/admin-marketplace/AdminSettingsDomain";
-import { SellerKybApplication } from "@/components/admin-marketplace/AdminSellerKybDesk";
+import { SellerKybApplication, AdminSellerKybDesk } from "@/components/admin-marketplace/AdminSellerKybDesk";
+import { RealDocumentViewerModal } from "@/components/admin-marketplace/RealDocumentViewerModal";
 import {
   CheckCircle2,
   XCircle,
@@ -875,6 +876,16 @@ export default function AdminDashboardPage() {
 
         </main>
       </div>
+
+      {/* Real Statutory Government Document Viewer */}
+      {inspectingApp && (
+        <RealDocumentViewerModal
+          isOpen={!!inspectingApp}
+          onClose={() => setInspectingApp(null)}
+          application={inspectingApp}
+          initialDocType="gst"
+        />
+      )}
 
     </div>
   );

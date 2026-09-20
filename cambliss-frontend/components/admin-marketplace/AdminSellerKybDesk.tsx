@@ -18,6 +18,7 @@ import {
   RefreshCw,
   X,
 } from "lucide-react";
+import { RealDocumentViewerModal, DocumentType } from "./RealDocumentViewerModal";
 
 export interface SellerKybApplication {
   id: string;
@@ -103,6 +104,7 @@ export const AdminSellerKybDesk = ({
   const [activeTab, setActiveTab] = useState<"All" | "Pending Review" | "Approved" | "Rejected">("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedApp, setSelectedApp] = useState<SellerKybApplication | null>(null);
+  const [previewDocModal, setPreviewDocModal] = useState<{ isOpen: boolean; docType: DocumentType } | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Load from backend API and merge with localStorage submissions (original genuine data only)
@@ -484,13 +486,22 @@ export const AdminSellerKybDesk = ({
                   Ref: {selectedApp.applicationId || selectedApp.id}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedApp(null)}
-                className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPreviewDocModal({ isOpen: true, docType: "gst" })}
+                  className="px-3.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>🏛️</span> Inspect Real Documents
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedApp(null)}
+                  className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -591,16 +602,10 @@ export const AdminSellerKybDesk = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() =>
-                      alert(
-                        `Viewing GST Certificate for ${selectedApp.businessName}\nGSTIN: ${selectedApp.gstin}\nFile: ${
-                          selectedApp.documents?.gstCertificate || selectedApp.gstDocName || "GST_REG06.pdf"
-                        }\nStatus: Certified by CBIC Common Portal`
-                      )
-                    }
-                    className="w-full py-1 text-[11px] font-bold text-[#404d85] hover:text-[#2b345e] bg-white hover:bg-indigo-50 border border-indigo-200 rounded transition text-center"
+                    onClick={() => setPreviewDocModal({ isOpen: true, docType: "gst" })}
+                    className="w-full py-1.5 text-[11px] font-bold text-[#404d85] hover:text-[#2b345e] bg-white hover:bg-indigo-50 border border-indigo-200 rounded-lg transition text-center shadow-2xs cursor-pointer flex items-center justify-center gap-1"
                   >
-                    Inspect Document Preview 👁️
+                    <span>👁️</span> Inspect Real Form REG-06
                   </button>
                 </div>
 
@@ -624,14 +629,10 @@ export const AdminSellerKybDesk = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() =>
-                      alert(
-                        `Viewing PAN Card Document for ${selectedApp.businessName}\nPAN: ${selectedApp.pan}\nLegal Name: ${selectedApp.ownerName}\nStatus: Active on Income Tax Department Database`
-                      )
-                    }
-                    className="w-full py-1 text-[11px] font-bold text-[#404d85] hover:text-[#2b345e] bg-white hover:bg-indigo-50 border border-indigo-200 rounded transition text-center"
+                    onClick={() => setPreviewDocModal({ isOpen: true, docType: "pan" })}
+                    className="w-full py-1.5 text-[11px] font-bold text-[#404d85] hover:text-[#2b345e] bg-white hover:bg-indigo-50 border border-indigo-200 rounded-lg transition text-center shadow-2xs cursor-pointer flex items-center justify-center gap-1"
                   >
-                    Inspect Document Preview 👁️
+                    <span>👁️</span> Inspect Real PAN Card
                   </button>
                 </div>
 
@@ -655,14 +656,10 @@ export const AdminSellerKybDesk = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() =>
-                      alert(
-                        `Viewing Cancelled Cheque / Bank Mandate:\nBank: ${selectedApp.bankName}\nAccount: ${selectedApp.accountNumber}\nIFSC: ${selectedApp.ifscCode}\nBeneficiary: ${selectedApp.accountHolderName || selectedApp.businessName}\nPenny Drop: Verified Successfully`
-                      )
-                    }
-                    className="w-full py-1 text-[11px] font-bold text-[#404d85] hover:text-[#2b345e] bg-white hover:bg-indigo-50 border border-indigo-200 rounded transition text-center"
+                    onClick={() => setPreviewDocModal({ isOpen: true, docType: "cheque" })}
+                    className="w-full py-1.5 text-[11px] font-bold text-[#404d85] hover:text-[#2b345e] bg-white hover:bg-indigo-50 border border-indigo-200 rounded-lg transition text-center shadow-2xs cursor-pointer flex items-center justify-center gap-1"
                   >
-                    Inspect Document Preview 👁️
+                    <span>👁️</span> Inspect Real Cancelled Cheque
                   </button>
                 </div>
 
@@ -688,58 +685,72 @@ export const AdminSellerKybDesk = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() =>
-                      alert(
-                        `Viewing Signatory Government ID Proof:\nType: ${selectedApp.kycDocType || "Aadhaar Card"}\nNumber: ${selectedApp.kycDocNumber || "XXXX-XXXX-9812"}\nSignatory: ${selectedApp.ownerName}\nFace Match Score: 99.4% Biometric Confidence`
-                      )
-                    }
-                    className="w-full py-1 text-[11px] font-bold text-[#404d85] hover:text-[#2b345e] bg-white hover:bg-indigo-50 border border-indigo-200 rounded transition text-center"
+                    onClick={() => setPreviewDocModal({ isOpen: true, docType: "id" })}
+                    className="w-full py-1.5 text-[11px] font-bold text-[#404d85] hover:text-[#2b345e] bg-white hover:bg-indigo-50 border border-indigo-200 rounded-lg transition text-center shadow-2xs cursor-pointer flex items-center justify-center gap-1"
                   >
-                    Inspect Document Preview 👁️
+                    <span>👁️</span> Inspect Real ID / Aadhaar
                   </button>
                 </div>
 
                 {/* 5. Biometric Face Match & Signature */}
-                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    {selectedApp.selfieImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={selectedApp.selfieImage}
-                        alt="Merchant Live Selfie"
-                        className="w-11 h-11 rounded-full object-cover border-2 border-emerald-500 shrink-0 shadow-xs"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm shrink-0">
-                        🤳
+                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2.5">
+                      {selectedApp.selfieImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={selectedApp.selfieImage}
+                          alt="Merchant Live Selfie"
+                          className="w-10 h-10 rounded-full object-cover border-2 border-emerald-500 shrink-0 shadow-xs"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm shrink-0">
+                          🤳
+                        </div>
+                      )}
+                      <div>
+                        <span className="font-bold text-slate-900 block text-[11px]">Live Selfie & Biometrics</span>
+                        <span className="text-[10px] text-emerald-700 font-semibold">
+                          {selectedApp.faceMatchScore ? `${selectedApp.faceMatchScore}% Confidence ✓` : "Biometric Match Verified ✓"}
+                        </span>
                       </div>
-                    )}
-                    <div>
-                      <span className="font-bold text-slate-900 block text-[11px]">Live Selfie & Biometric Match</span>
-                      <span className="text-[10px] text-emerald-700 font-semibold">
-                        {selectedApp.faceMatchScore ? `${selectedApp.faceMatchScore}% Liveness & Biometric Confidence ✓` : "Biometric Match Verified ✓"}
-                      </span>
                     </div>
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[9px]">
+                      Liveness Passed
+                    </span>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
-                    Verified
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDocModal({ isOpen: true, docType: "selfie" })}
+                    className="w-full py-1.5 text-[11px] font-bold text-[#404d85] hover:text-[#2b345e] bg-white hover:bg-indigo-50 border border-indigo-200 rounded-lg transition text-center shadow-2xs cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    <span>👁️</span> Inspect Biometric Face Audit
+                  </button>
                 </div>
 
                 {/* 6. Digital Signature & Video KYC */}
-                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">✍️</span>
-                    <div>
-                      <span className="font-bold text-slate-900 block text-[11px]">Digital Invoice Signature</span>
-                      <span className="text-[10px] font-serif italic text-slate-600">
-                        "{selectedApp.signatureName || selectedApp.ownerName || "Authorized Signatory"}"
-                      </span>
+                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">📜</span>
+                      <div>
+                        <span className="font-bold text-slate-900 block text-[11px]">MCA Incorporation & Signature</span>
+                        <span className="text-[10px] font-serif italic text-slate-600 block">
+                          "{selectedApp.signatureName || selectedApp.ownerName || "Authorized Signatory"}"
+                        </span>
+                      </div>
                     </div>
+                    <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-bold text-[9px]">
+                      SPICe+ COI
+                    </span>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold text-[10px]">
-                    e-Signed
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDocModal({ isOpen: true, docType: "incorporation" })}
+                    className="w-full py-1.5 text-[11px] font-bold text-[#404d85] hover:text-[#2b345e] bg-white hover:bg-indigo-50 border border-indigo-200 rounded-lg transition text-center shadow-2xs cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    <span>👁️</span> Inspect Real MCA Certificate
+                  </button>
                 </div>
               </div>
             </div>
@@ -763,29 +774,29 @@ export const AdminSellerKybDesk = ({
                     <button
                       type="button"
                       onClick={() => {
-                        handleApprove(selectedApp.id);
+                        handleReject(selectedApp.id);
                         setSelectedApp(null);
                       }}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition"
+                      className="px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 font-bold text-xs"
                     >
-                      ✓ Approve Seller
+                      Reject Application
                     </button>
                     <button
                       type="button"
                       onClick={() => {
-                        handleReject(selectedApp.id);
+                        handleApprove(selectedApp.id);
                         setSelectedApp(null);
                       }}
-                      className="px-3 py-2 bg-slate-100 hover:bg-red-50 text-red-600 font-bold text-xs rounded-xl transition"
+                      className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs"
                     >
-                      Reject
+                      ✓ Approve Application
                     </button>
                   </>
                 )}
                 <button
                   type="button"
                   onClick={() => setSelectedApp(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs"
+                  className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs cursor-pointer"
                 >
                   Close Dossier
                 </button>
@@ -793,6 +804,16 @@ export const AdminSellerKybDesk = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Real Statutory Government Document Viewer */}
+      {previewDocModal?.isOpen && selectedApp && (
+        <RealDocumentViewerModal
+          isOpen={previewDocModal.isOpen}
+          onClose={() => setPreviewDocModal(null)}
+          application={selectedApp}
+          initialDocType={previewDocModal.docType}
+        />
       )}
     </div>
   );
