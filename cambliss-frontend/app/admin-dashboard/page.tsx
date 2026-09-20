@@ -12,6 +12,7 @@ import { AdminOperationsDomain } from "@/components/admin-marketplace/AdminOpera
 import { AdminSettingsDomain } from "@/components/admin-marketplace/AdminSettingsDomain";
 import { SellerKybApplication, AdminSellerKybDesk } from "@/components/admin-marketplace/AdminSellerKybDesk";
 import { RealDocumentViewerModal } from "@/components/admin-marketplace/RealDocumentViewerModal";
+import { fetchGenuineKybApplications } from "@/lib/sellerKybDiscovery";
 import {
   CheckCircle2,
   XCircle,
@@ -36,102 +37,14 @@ export default function AdminDashboardPage() {
 
   const fetchApplications = async () => {
     setIsLoading(true);
-    let loaded: SellerKybApplication[] = [];
-
-    // 1. Fetch from backend API
     try {
-      const res = await fetch("/api/storefront/seller-onboarding");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.applications && Array.isArray(data.applications)) {
-          loaded = data.applications;
-        }
-      }
+      const genuine = await fetchGenuineKybApplications();
+      setApplications(genuine);
     } catch (e) {
-      console.warn("Could not fetch seller onboarding from API", e);
+      console.warn("Could not fetch genuine applications:", e);
+    } finally {
+      setIsLoading(false);
     }
-
-    // 2. Merge with locally submitted applications
-    try {
-      const stored = localStorage.getItem("officeconnect_submitted_applications");
-      if (stored) {
-        const localList: SellerKybApplication[] = JSON.parse(stored);
-        if (Array.isArray(localList) && localList.length > 0) {
-          const map = new Map<string, SellerKybApplication>();
-          localList.forEach((item) => map.set(item.id || item.applicationId || "", item));
-          loaded.forEach((item) => {
-            if (!map.has(item.id)) map.set(item.id, item);
-          });
-          loaded = Array.from(map.values());
-        }
-      }
-    } catch (e) {
-      console.warn("Could not load local applications", e);
-    }
-
-    // Check permanent approval flag
-    let isBhaskerApproved = false;
-    try {
-      isBhaskerApproved =
-        localStorage.getItem("officeconnect_merchant_approved_bhasker") === "true" ||
-        (localStorage.getItem("officeconnect_merchant_status_bhaskeradv1@gmail.com") || "").includes("Approved");
-    } catch (e) {}
-
-    if (loaded.length === 0) {
-      loaded = [
-        {
-          id: "app-bhasker-default",
-          applicationId: "OC-KYB-2026-9214",
-          businessName: "Bhasker Fashions Private Limited",
-          tradeName: "Bhasker Fashions",
-          storeSlug: "bhasker-fashions",
-          ownerName: "Bhasker Mahesh",
-          email: "bhaskeradv1@gmail.com",
-          phone: "+91 98450 12345",
-          entityType: "Private Limited",
-          gstin: "29AABCU9603R1ZM",
-          pan: "AABCU9603R",
-          isGstExempt: false,
-          category: "Fashion & Apparel",
-          warehouseAddress: "Plot 42, KIADB Industrial Area, Phase II",
-          warehouseCity: "Bengaluru",
-          warehouseState: "Karnataka",
-          warehousePinCode: "560001",
-          dispatchManagerName: "Bhasker Mahesh",
-          dispatchManagerPhone: "+91 98450 12345",
-          bankName: "HDFC Bank",
-          accountNumber: "50200088192019",
-          ifscCode: "HDFC0000128",
-          accountHolderName: "Bhasker Fashions Private Limited",
-          pennyDropVerified: true,
-          gstRateTier: "12%",
-          hsnCode: "6104",
-          automatedInvoicing: true,
-          tcsAccepted: true,
-          kycDocType: "Aadhaar Card",
-          kycDocNumber: "9821-4412-8819",
-          kycDocUploaded: true,
-          gstDocUploaded: true,
-          gstDocName: "GST_REG06_29AABCU9603R1ZM.pdf",
-          selfieCaptured: true,
-          faceMatchScore: 98,
-          videoKycSlot: "Completed Instantly",
-          fulfillmentModel: "EASY_SHIP",
-          signatureName: "Bhasker Mahesh",
-          appliedDate: new Date().toISOString().split("T")[0],
-          status: isBhaskerApproved ? "Approved" : "Pending Review",
-        },
-      ];
-    } else if (isBhaskerApproved) {
-      loaded = loaded.map((a) =>
-        a.email === "bhaskeradv1@gmail.com" || a.id === "app-bhasker-default"
-          ? { ...a, status: "Approved" }
-          : a
-      );
-    }
-
-    setApplications(loaded);
-    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -153,25 +66,23 @@ export default function AdminDashboardPage() {
     const updatedTarget = target ? { ...target, status: "Approved" as const } : undefined;
 
     setApplications((prev) =>
-      prev.map((a) => (a.id === id || a.applicationId === id || id === "app-bhasker-default" ? { ...a, status: "Approved" } : a))
+      prev.map((a) => (a.id === id || a.applicationId === id ? { ...a, status: "Approved" } : a))
     );
 
     try {
-      await fetch(`/api/storefront/seller-onboarding/${id}/status`, {
+      await fetch(`/api/storefront/seller-onboarding`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "Approved" }),
+        body: JSON.stringify({ id, status: "Approved" }),
       });
     } catch (e) {}
 
     try {
-      localStorage.setItem("officeconnect_merchant_approved_bhasker", "true");
-
       const stored = localStorage.getItem("officeconnect_submitted_applications");
       if (stored) {
         const list = JSON.parse(stored);
         const updated = list.map((a: any) =>
-          a.id === id || a.applicationId === id || a.email === "bhaskeradv1@gmail.com"
+          a.id === id || a.applicationId === id
             ? { ...a, status: "Approved" }
             : a
         );
@@ -179,22 +90,24 @@ export default function AdminDashboardPage() {
       }
 
       // Set merchant specific approval status and notification for real-time listener
-      const email = target?.email || "bhaskeradv1@gmail.com";
-      localStorage.setItem(
-        `officeconnect_merchant_status_${email}`,
-        JSON.stringify({ status: "Approved", payload: updatedTarget || { status: "Approved", tradeName: "Bhasker Fashions" } })
-      );
+      const email = target?.email;
+      if (email) {
+        localStorage.setItem(
+          `officeconnect_merchant_status_${email}`,
+          JSON.stringify({ status: "Approved", applicationId: target?.applicationId || id, payload: updatedTarget })
+        );
 
-      localStorage.setItem(
-        `officeconnect_notification_${email}`,
-        JSON.stringify({
-          id: `notif-${Date.now()}`,
-          title: "KYB Verification Approved! 🎉",
-          message: `Congratulations! Your merchant registration for "${target?.businessName || target?.tradeName || "Bhasker Fashions"}" has passed compliance checks. Stage 2 is complete. Proceed to live storefront and product publishing!`,
-          timestamp: new Date().toISOString(),
-          read: false,
-        })
-      );
+        localStorage.setItem(
+          `officeconnect_notification_${email}`,
+          JSON.stringify({
+            id: `notif-${Date.now()}`,
+            title: "KYB Verification Approved! 🎉",
+            message: `Congratulations! Your merchant registration for "${target?.businessName || target?.tradeName || "Your Store"}" has passed compliance checks. Stage 2 is complete. Proceed to live storefront and product publishing!`,
+            timestamp: new Date().toISOString(),
+            read: false,
+          })
+        );
+      }
 
       // Dispatch cross-tab and in-window real-time events
       window.dispatchEvent(new Event("storage"));

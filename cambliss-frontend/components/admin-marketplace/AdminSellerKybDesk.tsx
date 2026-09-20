@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { RealDocumentViewerModal, DocumentType } from "./RealDocumentViewerModal";
+import { fetchGenuineKybApplications, fetchGenuineMerchantByEmail } from "@/lib/sellerKybDiscovery";
 
 export interface SellerKybApplication {
   id: string;
@@ -60,6 +61,7 @@ export interface SellerKybApplication {
     cancelledCheque?: string;
     incorporationCertificate?: string;
     identityProof?: string;
+    liveMerchantSelfie?: string;
   };
   gstDocUploaded?: boolean;
   gstDocName?: string;
@@ -107,126 +109,59 @@ export const AdminSellerKybDesk = ({
   const [previewDocModal, setPreviewDocModal] = useState<{ isOpen: boolean; docType: DocumentType } | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Load from backend API and merge with localStorage submissions (original genuine data only)
-  useEffect(() => {
-    const fetchApps = async () => {
-      setIsLoading(true);
-      let loaded: SellerKybApplication[] = [];
-
-      try {
-        const res = await fetch("/api/storefront/seller-onboarding");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.applications && Array.isArray(data.applications)) {
-            loaded = data.applications;
-          }
-        }
-      } catch (e) {
-        console.warn("Backend API not reachable for KYB, checking local storage", e);
+  // Load genuine submitted merchant applications (0 dummy data)
+  const loadApplications = async () => {
+    setIsLoading(true);
+    try {
+      const genuine = await fetchGenuineKybApplications();
+      setApps(genuine);
+      if (genuine.length > 0) {
+        setSelectedApp((prev) => {
+          if (!prev) return genuine[0];
+          const matched = genuine.find((g) => g.id === prev.id || g.applicationId === prev.applicationId);
+          return matched || genuine[0];
+        });
+      } else {
+        setSelectedApp(null);
       }
-
-      // Merge with genuine local storage submissions
-      try {
-        const stored = localStorage.getItem("officeconnect_submitted_applications");
-        if (stored) {
-          const localList: SellerKybApplication[] = JSON.parse(stored);
-          if (Array.isArray(localList) && localList.length > 0) {
-            const map = new Map<string, SellerKybApplication>();
-            localList.forEach((item) => map.set(item.id || item.applicationId || "", item));
-            loaded.forEach((item) => {
-              if (!map.has(item.id)) map.set(item.id, item);
-            });
-            loaded = Array.from(map.values());
-          }
-        }
-      } catch (err) {}
-
-      let isBhaskerApproved = false;
-      try {
-        isBhaskerApproved =
-          localStorage.getItem("officeconnect_merchant_approved_bhasker") === "true" ||
-          (localStorage.getItem("officeconnect_merchant_status_bhaskeradv1@gmail.com") || "").includes("Approved");
-      } catch (e) {}
-
-      if (loaded.length === 0) {
-        loaded = [
-          {
-            id: "app-bhasker-default",
-            applicationId: "OC-KYB-2026-9214",
-            businessName: "Bhasker Fashions Private Limited",
-            tradeName: "Bhasker Fashions",
-            storeSlug: "bhasker-fashions",
-            ownerName: "Bhasker Mahesh",
-            email: "bhaskeradv1@gmail.com",
-            phone: "+91 98450 12345",
-            entityType: "Private Limited",
-            gstin: "29AABCU9603R1ZM",
-            pan: "AABCU9603R",
-            isGstExempt: false,
-            category: "Fashion & Apparel",
-            warehouseAddress: "Plot 42, KIADB Industrial Area, Phase II",
-            warehouseCity: "Bengaluru",
-            warehouseState: "Karnataka",
-            warehousePinCode: "560001",
-            dispatchManagerName: "Bhasker Mahesh",
-            dispatchManagerPhone: "+91 98450 12345",
-            bankName: "HDFC Bank",
-            accountNumber: "50200088192019",
-            ifscCode: "HDFC0000128",
-            accountHolderName: "Bhasker Fashions Private Limited",
-            pennyDropVerified: true,
-            gstRateTier: "12%",
-            hsnCode: "6104",
-            automatedInvoicing: true,
-            tcsAccepted: true,
-            kycDocType: "Aadhaar Card",
-            kycDocNumber: "9821-4412-8819",
-            kycDocUploaded: true,
-            gstDocUploaded: true,
-            gstDocName: "GST_REG06_29AABCU9603R1ZM.pdf",
-            selfieCaptured: true,
-            faceMatchScore: 98,
-            videoKycSlot: "Completed Instantly",
-            fulfillmentModel: "EASY_SHIP",
-            signatureName: "Bhasker Mahesh",
-            appliedDate: new Date().toISOString().split("T")[0],
-            status: isBhaskerApproved ? "Approved" : "Pending Review",
-          },
-        ];
-      } else if (isBhaskerApproved) {
-        loaded = loaded.map((a) =>
-          a.email === "bhaskeradv1@gmail.com" || a.id === "app-bhasker-default"
-            ? { ...a, status: "Approved" }
-            : a
-        );
-      }
-
-      setApps(loaded);
+    } catch (e) {
+      console.error("Failed to load genuine merchant applications:", e);
+    } finally {
       setIsLoading(false);
-    };
+    }
+  };
 
-    fetchApps();
+  useEffect(() => {
+    loadApplications();
   }, []);
 
   const handleApprove = async (id: string) => {
-    try {
-      localStorage.setItem("officeconnect_merchant_approved_bhasker", "true");
-    } catch (e) {}
+    const target = apps.find((a) => a.id === id || a.applicationId === id);
+    if (target?.email) {
+      try {
+        localStorage.setItem(`officeconnect_merchant_status_${target.email}`, JSON.stringify({
+          status: "Approved",
+          applicationId: target.applicationId,
+          approvedAt: new Date().toISOString(),
+          payload: { ...target, status: "Approved" },
+        }));
+      } catch (e) {}
+    }
 
     if (onApprove) {
       onApprove(id);
     }
     setApps((prev) =>
       prev.map((a) =>
-        a.id === id || a.applicationId === id || a.email === "bhaskeradv1@gmail.com" ? { ...a, status: "Approved" } : a
+        a.id === id || a.applicationId === id ? { ...a, status: "Approved" } : a
       )
     );
 
     try {
-      await fetch(`/api/storefront/seller-onboarding/${id}/status`, {
+      await fetch(`/api/storefront/seller-onboarding`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "Approved" }),
+        body: JSON.stringify({ id, status: "Approved" }),
       });
     } catch (e) {
       console.warn("Status patch failed", e);
@@ -305,10 +240,20 @@ export const AdminSellerKybDesk = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search store, GSTIN, PAN, City..."
+              placeholder="Search by email, store, GSTIN..."
               className="pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:ring-1 focus:ring-violet-500 outline-none w-48 sm:w-64"
             />
           </div>
+          <button
+            type="button"
+            onClick={() => loadApplications()}
+            disabled={isLoading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition disabled:opacity-50"
+            title="Fetch and sync latest submitted documents"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-violet-600" : "text-slate-500"}`} />
+            <span className="hidden sm:inline">Sync Live Submissions</span>
+          </button>
         </div>
       </div>
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { formatINR } from "@/components/commerce/CommercePrimitives";
 import { AdminSellerKybDesk, SellerKybApplication } from "./AdminSellerKybDesk";
+import { fetchGenuineKybApplications } from "@/lib/sellerKybDiscovery";
 import { Building2, Store, Package, CheckCircle2, ShieldCheck, ArrowRight } from "lucide-react";
 
 export const AdminMarketplaceDomain = ({
@@ -30,108 +31,34 @@ export const AdminMarketplaceDomain = ({
 
     const loadOriginalData = async () => {
       setIsLoading(true);
-      let list: SellerKybApplication[] = [];
-
       try {
-        const res = await fetch("/api/storefront/seller-onboarding");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.applications && Array.isArray(data.applications)) {
-            list = data.applications;
-          }
-        }
-      } catch (e) {}
-
-      try {
-        const stored = localStorage.getItem("officeconnect_submitted_applications");
-        if (stored) {
-          const localList: SellerKybApplication[] = JSON.parse(stored);
-          if (Array.isArray(localList) && localList.length > 0) {
-            const map = new Map<string, SellerKybApplication>();
-            localList.forEach((item) => map.set(item.id || item.applicationId || "", item));
-            list.forEach((item) => {
-              if (!map.has(item.id)) map.set(item.id, item);
-            });
-            list = Array.from(map.values());
-          }
-        }
-      } catch (err) {}
-
-      let isBhaskerApproved = false;
-      try {
-        isBhaskerApproved =
-          localStorage.getItem("officeconnect_merchant_approved_bhasker") === "true" ||
-          (localStorage.getItem("officeconnect_merchant_status_bhaskeradv1@gmail.com") || "").includes("Approved");
-      } catch (e) {}
-
-      if (list.length === 0) {
-        list = [
-          {
-            id: "app-bhasker-default",
-            applicationId: "OC-KYB-2026-9214",
-            businessName: "Bhasker Fashions Private Limited",
-            tradeName: "Bhasker Fashions",
-            storeSlug: "bhasker-fashions",
-            ownerName: "Bhasker Mahesh",
-            email: "bhaskeradv1@gmail.com",
-            category: "Fashion & Apparel",
-            gstin: "29AABCU9603R1ZM",
-            pan: "AABCU9603R",
-            bankName: "HDFC Bank",
-            accountNumber: "50200088192019",
-            warehouseCity: "Bengaluru",
-            appliedDate: new Date().toISOString().split("T")[0],
-            status: isBhaskerApproved ? "Approved" : "Pending Review",
-          },
-        ];
-      } else if (isBhaskerApproved) {
-        list = list.map((a) =>
-          a.email === "bhaskeradv1@gmail.com" || a.id === "app-bhasker-default"
-            ? { ...a, status: "Approved" }
-            : a
-        );
+        const genuine = await fetchGenuineKybApplications();
+        setApplications(genuine);
+      } catch (e) {
+        console.error("Failed to load genuine merchant applications:", e);
+      } finally {
+        setIsLoading(false);
       }
-
-      setApplications(list);
-      setIsLoading(false);
     };
 
     loadOriginalData();
   }, [initialPropsApps]);
 
   const handleDirectApprove = (targetId: string, email?: string, tradeName?: string) => {
-    try {
-      localStorage.setItem("officeconnect_merchant_approved_bhasker", "true");
-    } catch (e) {}
+    const target = applications.find(
+      (a) => (!targetId || a.id === targetId || a.applicationId === targetId) || (email && a.email && a.email.toLowerCase() === email.toLowerCase())
+    );
 
-    // 1. Immediately mutate local UI state to "Approved"
-    setApplications((prev) => {
-      if (prev.length === 0) {
-        return [
-          {
-            id: targetId || "app-bhasker-default",
-            businessName: "Bhasker Fashions Private Limited",
-            tradeName: "Bhasker Fashions",
-            storeSlug: "bhasker-fashions",
-            ownerName: "Bhasker Mahesh",
-            email: email || "bhaskeradv1@gmail.com",
-            category: "Fashion & Apparel",
-            gstin: "29AABCU9603R1ZM",
-            pan: "AABCU9603R",
-            bankName: "HDFC Bank",
-            accountNumber: "50200088192019",
-            warehouseCity: "Bengaluru",
-            appliedDate: new Date().toISOString().split("T")[0],
-            status: "Approved",
-          },
-        ];
-      }
-      return prev.map((a) =>
-        !targetId || a.id === targetId || a.applicationId === targetId || a.email === "bhaskeradv1@gmail.com"
+    const targetEmail = email || target?.email;
+
+    // 1. Mutate local UI state to "Approved"
+    setApplications((prev) =>
+      prev.map((a) =>
+        (!targetId || a.id === targetId || a.applicationId === targetId) || (targetEmail && a.email && a.email.toLowerCase() === targetEmail.toLowerCase())
           ? { ...a, status: "Approved" as const }
           : a
-      );
-    });
+      )
+    );
 
     // 2. Trigger parent handler
     if (onApprove) {
@@ -139,41 +66,44 @@ export const AdminMarketplaceDomain = ({
     }
 
     // 3. Directly update localStorage and notify all windows
-    try {
-      const targetEmail = email || "bhaskeradv1@gmail.com";
-      localStorage.setItem(
-        `officeconnect_merchant_status_${targetEmail}`,
-        JSON.stringify({
-          status: "Approved",
-          payload: {
+    if (targetEmail) {
+      try {
+        localStorage.setItem(
+          `officeconnect_merchant_status_${targetEmail}`,
+          JSON.stringify({
             status: "Approved",
-            tradeName: tradeName || "Bhasker Fashions",
-            ownerName: "Bhasker Mahesh",
-            email: targetEmail,
-            storeSlug: "bhasker-fashions",
-            gstin: "29AABCU9603R1ZM",
-          },
-        })
-      );
-
-      const allSubmitted = localStorage.getItem("officeconnect_submitted_applications");
-      if (allSubmitted) {
-        const list = JSON.parse(allSubmitted);
-        const updated = list.map((item: any) =>
-          !targetId || item.id === targetId || item.email === targetEmail
-            ? { ...item, status: "Approved" }
-            : item
+            applicationId: target?.applicationId || targetId,
+            approvedAt: new Date().toISOString(),
+            payload: target ? { ...target, status: "Approved" } : { status: "Approved", email: targetEmail },
+          })
         );
-        localStorage.setItem("officeconnect_submitted_applications", JSON.stringify(updated));
-      }
 
-      window.dispatchEvent(new Event("storage"));
-      window.dispatchEvent(
-        new CustomEvent("officeconnect_kyb_approved", {
-          detail: { email: targetEmail, businessName: tradeName || "Bhasker Fashions" },
-        })
-      );
-    } catch (e) {}
+        const allSubmitted = localStorage.getItem("officeconnect_submitted_applications");
+        if (allSubmitted) {
+          const list = JSON.parse(allSubmitted);
+          const updated = list.map((item: any) =>
+            (!targetId || item.id === targetId || (item.email && item.email.toLowerCase() === targetEmail.toLowerCase()))
+              ? { ...item, status: "Approved" }
+              : item
+          );
+          localStorage.setItem("officeconnect_submitted_applications", JSON.stringify(updated));
+        }
+
+        window.dispatchEvent(new Event("storage"));
+        window.dispatchEvent(
+          new CustomEvent("officeconnect_kyb_approved", {
+            detail: { email: targetEmail, businessName: tradeName || target?.tradeName || "Bhasker Fashions" },
+          })
+        );
+      } catch (e) {}
+    }
+
+    // 4. Patch server API
+    fetch(`/api/storefront/seller-onboarding`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: targetId, email: targetEmail, status: "Approved" }),
+    }).catch(() => {});
   };
 
   const approvedSellers = applications.filter((a) => a.status === "Approved");

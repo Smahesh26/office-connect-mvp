@@ -1,4 +1,6 @@
 import { Router, Request, Response } from "express";
+import fs from "fs";
+import path from "path";
 
 export interface MerchantOnboardingApplication {
   id: string;
@@ -66,8 +68,33 @@ export interface MerchantOnboardingApplication {
   decisionNotes?: string;
 }
 
-// In-memory store initialized empty — only contains applications submitted by registered merchants
-export const applicationsStore: MerchantOnboardingApplication[] = [];
+const DATA_FILE = path.join(process.cwd(), "data/seller_onboarding_applications.json");
+
+function loadApplicationsFromDisk(): MerchantOnboardingApplication[] {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const content = fs.readFileSync(DATA_FILE, "utf-8");
+      const list = JSON.parse(content || "[]");
+      if (Array.isArray(list)) return list;
+    }
+  } catch (e) {
+    console.warn("Could not read applications from disk:", e);
+  }
+  return [];
+}
+
+function saveApplicationsToDisk(list: MerchantOnboardingApplication[]) {
+  try {
+    const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(DATA_FILE, JSON.stringify(list, null, 2), "utf-8");
+  } catch (e) {
+    console.warn("Could not save applications to disk:", e);
+  }
+}
+
+// Persistent store initialized from disk file
+export const applicationsStore: MerchantOnboardingApplication[] = loadApplicationsFromDisk();
 
 const router = Router();
 
@@ -150,8 +177,9 @@ router.post("/", (req: Request, res: Response) => {
       status: "Pending Review",
     };
 
-    // Prepend to queue
+    // Prepend to queue and persist to disk
     applicationsStore.unshift(newApp);
+    saveApplicationsToDisk(applicationsStore);
 
     return res.status(201).json({
       success: true,
@@ -273,6 +301,7 @@ router.patch("/:id/status", (req: Request, res: Response) => {
     if (notes) {
       applicationsStore[index].decisionNotes = notes;
     }
+    saveApplicationsToDisk(applicationsStore);
 
     return res.json({
       success: true,

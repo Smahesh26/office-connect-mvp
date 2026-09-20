@@ -1,9 +1,40 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.applicationsStore = void 0;
 const express_1 = require("express");
-// In-memory store initialized empty — only contains applications submitted by registered merchants
-exports.applicationsStore = [];
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
+const DATA_FILE = path_1.default.join(process.cwd(), "data/seller_onboarding_applications.json");
+function loadApplicationsFromDisk() {
+    try {
+        if (fs_1.default.existsSync(DATA_FILE)) {
+            const content = fs_1.default.readFileSync(DATA_FILE, "utf-8");
+            const list = JSON.parse(content || "[]");
+            if (Array.isArray(list))
+                return list;
+        }
+    }
+    catch (e) {
+        console.warn("Could not read applications from disk:", e);
+    }
+    return [];
+}
+function saveApplicationsToDisk(list) {
+    try {
+        const dir = path_1.default.dirname(DATA_FILE);
+        if (!fs_1.default.existsSync(dir))
+            fs_1.default.mkdirSync(dir, { recursive: true });
+        fs_1.default.writeFileSync(DATA_FILE, JSON.stringify(list, null, 2), "utf-8");
+    }
+    catch (e) {
+        console.warn("Could not save applications to disk:", e);
+    }
+}
+// Persistent store initialized from disk file
+exports.applicationsStore = loadApplicationsFromDisk();
 const router = (0, express_1.Router)();
 /**
  * POST /api/storefront/seller-onboarding
@@ -80,8 +111,9 @@ router.post("/", (req, res) => {
             appliedDate: new Date().toISOString().split("T")[0],
             status: "Pending Review",
         };
-        // Prepend to queue
+        // Prepend to queue and persist to disk
         exports.applicationsStore.unshift(newApp);
+        saveApplicationsToDisk(exports.applicationsStore);
         return res.status(201).json({
             success: true,
             message: "Seller onboarding application successfully submitted for KYB verification.",
@@ -184,6 +216,7 @@ router.patch("/:id/status", (req, res) => {
         if (notes) {
             exports.applicationsStore[index].decisionNotes = notes;
         }
+        saveApplicationsToDisk(exports.applicationsStore);
         return res.json({
             success: true,
             message: `Application ${exports.applicationsStore[index].applicationId} updated to ${status}.`,
