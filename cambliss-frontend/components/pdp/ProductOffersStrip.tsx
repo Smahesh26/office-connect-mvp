@@ -2,33 +2,69 @@
 
 import { formatINR } from "@/components/commerce/CommercePrimitives";
 
-export const ProductOffersStrip = () => {
-  const offers = [
-    {
-      icon: "💳",
-      badge: "BANK OFFER",
-      title: "Flat ₹2,000 Instant Discount",
-      description: "On HDFC, ICICI & SBI Credit Cards on orders above ₹20,000.",
-    },
-    {
-      icon: "🗓️",
-      badge: "NO COST EMI",
-      title: "Zero Downpayment EMI from ₹2,499/mo",
-      description: "Available on all major bank credit cards and Bajaj Finserv.",
-    },
-    {
-      icon: "🏢",
-      badge: "B2B GST SAVINGS",
-      title: "Save up to 18% with GST Input Credit",
-      description: "Enter your registered GSTIN at checkout to receive formal tax invoice.",
-    },
-    {
-      icon: "🔄",
-      badge: "EXCHANGE OFFER",
-      title: "Up to ₹6,000 off on Old Audio/Tech Exchange",
-      description: "Instant doorstep evaluation and pickup for eligible electronics.",
-    },
-  ];
+export const ProductOffersStrip = ({
+  category = "Fashion & Apparel",
+  basePrice = 999,
+}: {
+  category?: string;
+  basePrice?: number;
+}) => {
+  const catLower = category.toLowerCase();
+  const isFashion = catLower.includes("fashion") || catLower.includes("apparel") || catLower.includes("clothing") || catLower.includes("kurta");
+
+  const offers = isFashion
+    ? [
+        {
+          icon: "💳",
+          badge: "INSTANT BANK OFFER",
+          title: "10% Instant Discount on SBI & HDFC",
+          description: "Applicable on credit & debit card orders. Maximum savings ₹150.",
+        },
+        {
+          icon: "🏷️",
+          badge: "FESTIVE COUPON",
+          title: "Extra ₹100 Off with Code BHASKER100",
+          description: "Special inaugural merchant voucher on orders above ₹899.",
+        },
+        {
+          icon: "🏢",
+          badge: "B2B GST SAVINGS",
+          title: "Save 12% via Verified GST Invoice",
+          description: "Enter your registered GSTIN at checkout to receive formal tax invoice.",
+        },
+        {
+          icon: "🚚",
+          badge: "EXPRESS DISPATCH",
+          title: "Free Express Shipping Nationwide",
+          description: "Dispatched directly from merchant warehouse in sealed packaging.",
+        },
+      ]
+    : [
+        {
+          icon: "💳",
+          badge: "BANK OFFER",
+          title: "Flat 10% Instant Card Discount",
+          description: "On major bank cards on prepaid orders.",
+        },
+        {
+          icon: "🗓️",
+          badge: "FLEXIBLE EMI",
+          title: "No-Cost EMI Options Available",
+          description: "Applicable on leading credit cards and credit lines.",
+        },
+        {
+          icon: "🏢",
+          badge: "B2B GST SAVINGS",
+          title: "Save 18% with GST Input Credit",
+          description: "Enter your registered GSTIN at checkout to claim full input credit.",
+        },
+        {
+          icon: "🛡️",
+          badge: "ASSURED DISPATCH",
+          title: "Office Connect Escrow Protected",
+          description: "100% genuine brand stock with manufacturer domestic warranty.",
+        },
+      ];
 
   return (
     <div className="space-y-3 select-none">

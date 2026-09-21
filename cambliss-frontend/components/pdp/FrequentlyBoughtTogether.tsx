@@ -14,37 +14,23 @@ export interface BundleItem {
 
 export const FrequentlyBoughtTogether = ({
   mainProduct,
+  bundleItems,
   onAddBundleToCart,
 }: {
   mainProduct: { id: string; title: string; price: number; originalPrice: number; image: string };
+  bundleItems?: BundleItem[];
   onAddBundleToCart: (items: BundleItem[]) => void;
 }) => {
-  const [items, setItems] = useState<BundleItem[]>([
-    {
-      id: mainProduct.id,
-      title: mainProduct.title,
-      price: mainProduct.price,
-      originalPrice: mainProduct.originalPrice,
-      image: mainProduct.image,
-      isSelected: true,
-    },
-    {
-      id: "bundle-case",
-      title: "Hard Shell Protective EVA Travel Case for Overhead Headphones",
-      price: 1499,
-      originalPrice: 1999,
-      image: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=300&q=80",
-      isSelected: true,
-    },
-    {
-      id: "bundle-cable",
-      title: "Premium 3.5mm Gold-Plated Braided Oxygen-Free Copper Audio Cable (1.5m)",
-      price: 699,
-      originalPrice: 999,
-      image: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=300&q=80",
-      isSelected: true,
-    },
-  ]);
+  const initialItems: BundleItem[] = bundleItems && bundleItems.length > 1
+    ? bundleItems
+    : [];
+
+  const [items, setItems] = useState<BundleItem[]>(initialItems);
+
+  // If no bundle items configured, do not render irrelevant items
+  if (!items || items.length <= 1) {
+    return null;
+  }
 
   const handleToggle = (id: string) => {
     if (id === mainProduct.id) return; // Main product cannot be unselected

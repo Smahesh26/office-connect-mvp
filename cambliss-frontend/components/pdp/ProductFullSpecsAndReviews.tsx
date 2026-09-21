@@ -15,6 +15,16 @@ export interface OtherSellerOffer {
   rating: number;
 }
 
+export interface ReviewItem {
+  author: string;
+  city: string;
+  date: string;
+  stars: number;
+  title: string;
+  comment: string;
+  verified: boolean;
+}
+
 export const ProductFullSpecsAndReviews = ({
   description,
   features,
@@ -24,6 +34,8 @@ export const ProductFullSpecsAndReviews = ({
   otherSellers,
   rating,
   reviewsCount,
+  activePrice = 999,
+  reviews,
   onAddToCart,
 }: {
   description: string;
@@ -34,38 +46,42 @@ export const ProductFullSpecsAndReviews = ({
   otherSellers: OtherSellerOffer[];
   rating: number;
   reviewsCount: number;
+  activePrice?: number;
+  reviews?: ReviewItem[];
   onAddToCart: (sellerName: string, price: number) => void;
 }) => {
   const [activeTab, setActiveTab] = useState<"overview" | "specs" | "sellers" | "reviews">("overview");
 
   const ratingBreakdown = [
-    { stars: 5, pct: 82 },
-    { stars: 4, pct: 12 },
-    { stars: 3, pct: 4 },
-    { stars: 2, pct: 1 },
-    { stars: 1, pct: 1 },
+    { stars: 5, pct: 85 },
+    { stars: 4, pct: 15 },
+    { stars: 3, pct: 0 },
+    { stars: 2, pct: 0 },
+    { stars: 1, pct: 0 },
   ];
 
-  const sampleReviews = [
-    {
-      author: "Aditya Vardhan",
-      city: "Bengaluru, KA",
-      date: "28 Aug 2026",
-      stars: 5,
-      title: "Unbelievable Active Noise Cancellation & Audio Clarity",
-      comment: "Arrived in 24 hours via Bluedart Express in pristine sealed packaging. The microphone clarity during enterprise Zoom calls is exceptional.",
-      verified: true,
-    },
-    {
-      author: "Sneha Mukhopadhyay",
-      city: "Mumbai, MH",
-      date: "22 Aug 2026",
-      stars: 5,
-      title: "Extremely comfortable for 8+ hour coding sessions",
-      comment: "Lightweight build, premium soft-fit leather, and the battery life easily surpasses 30 hours. Claimed 18% GST input credit smoothly.",
-      verified: true,
-    },
-  ];
+  const sampleReviews: ReviewItem[] = reviews && reviews.length > 0
+    ? reviews
+    : [
+        {
+          author: "Kavita Rao",
+          city: "Bengaluru, KA",
+          date: "Verified Store Order",
+          stars: 5,
+          title: "Stunning finish and rich craftsmanship!",
+          comment: "Arrived within 48 hours in sealed protective packaging with official GST tax invoice. Looks even better in person!",
+          verified: true,
+        },
+        {
+          author: "Rohan Varma",
+          city: "Hyderabad, TS",
+          date: "Verified Store Order",
+          stars: 5,
+          title: "100% genuine merchant product",
+          comment: "Fabric and fit are exceptional. Very satisfied with the quick dispatch and genuine quality.",
+          verified: true,
+        },
+      ];
 
   return (
     <div className="space-y-6 select-none">
@@ -213,12 +229,12 @@ export const ProductFullSpecsAndReviews = ({
                     </div>
                   </td>
                   <td className="py-3 px-4 font-semibold text-slate-900">Brand New (Sealed)</td>
-                  <td className="py-3 px-4 text-emerald-700 font-bold">Express Tomorrow</td>
-                  <td className="py-3 px-4 font-black text-sm text-slate-900">{formatINR(29990)}</td>
+                  <td className="py-3 px-4 text-emerald-700 font-bold">Express 24-48 Hours</td>
+                  <td className="py-3 px-4 font-black text-sm text-slate-900">{formatINR(activePrice)}</td>
                   <td className="py-3 px-4 text-right">
                     <button
                       type="button"
-                      onClick={() => onAddToCart(sellerName, 29990)}
+                      onClick={() => onAddToCart(sellerName, activePrice)}
                       className="px-3.5 py-1.5 bg-[#404d85] hover:bg-[#323d6a] text-white font-bold rounded text-xs transition"
                     >
                       Buy from Store
@@ -250,6 +266,11 @@ export const ProductFullSpecsAndReviews = ({
               </tbody>
             </table>
           </div>
+          {otherSellers.length === 0 && (
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 text-xs">
+              🛡️ <strong>Exclusive Merchant Offering:</strong> This product is exclusively manufactured and distributed directly by {sellerName}. No unauthorized third-party resellers.
+            </div>
+          )}
         </div>
       )}
 

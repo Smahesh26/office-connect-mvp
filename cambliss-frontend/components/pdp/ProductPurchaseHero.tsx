@@ -156,10 +156,10 @@ export const ProductPurchaseHero = ({
         <div className="space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
             <Link
-              href={`/brand/${product.brandSlug}`}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#404d85]/10 border border-[#404d85]/20 text-[#404d85] text-xs font-black hover:bg-[#404d85]/15 transition"
+              href={product.brandSlug?.includes("bhasker") || product.brand?.toLowerCase().includes("bhasker") ? "/store/bhasker-fashion" : `/store/${product.brandSlug || "bhasker-fashion"}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#404d85]/10 border border-[#404d85]/20 text-[#404d85] text-xs font-black hover:bg-[#404d85]/15 transition"
             >
-              <span>👑 Official {product.brand} Flagship Store</span>
+              <span>👑 Official {product.brand} Store</span>
               <span>→</span>
             </Link>
             <SellerBadge sellerName={product.sellerName} sellerTier={product.sellerTier} />
@@ -169,20 +169,27 @@ export const ProductPurchaseHero = ({
             {product.title}
           </h1>
 
-          {/* Ratings & Q&A Bar */}
+          {/* Ratings & Status Bar */}
           <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
             <div className="flex items-center gap-1 bg-emerald-700 text-white font-black px-2 py-0.5 rounded text-[11px]">
               <span>★</span>
               <span>{product.rating.toFixed(1)}</span>
             </div>
-            <span className="font-bold text-slate-700">{product.reviewsCount.toLocaleString()} Verified Ratings</span>
-            <span>•</span>
-            <span className="text-slate-500">{product.questionsCount} Answered Questions</span>
+            <span className="font-bold text-slate-700">{product.reviewsCount} Verified Ratings</span>
+            {product.questionsCount > 0 && (
+              <>
+                <span>•</span>
+                <span className="text-slate-500">{product.questionsCount} Answered Inquiries</span>
+              </>
+            )}
+            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold border border-emerald-200 text-[11px]">
+              ✓ Verified Merchant Stock
+            </span>
           </div>
         </div>
 
-        {/* PRICE & DISCOUNT SECTION (High Visual Impact) */}
-        <div className="p-4 rounded-[8px] bg-slate-50 border border-slate-200 space-y-2">
+        {/* PRICE & DISCOUNT SECTION */}
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
           <div className="flex items-baseline gap-3 flex-wrap">
             <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
               {formatINR(activePrice)}
@@ -195,45 +202,48 @@ export const ProductPurchaseHero = ({
             </span>
           </div>
           <p className="text-[11px] text-slate-500 font-medium">
-            Inclusive of all taxes • 18% GST invoice eligible for B2B input tax credit
+            Inclusive of all taxes • {product.category?.toLowerCase().includes("fashion") || product.category?.toLowerCase().includes("apparel") ? "12%" : "18%"} GST invoice eligible for B2B input tax credit
           </p>
         </div>
 
-        {/* VARIANT SELECTORS (Color & Finish) */}
-        <div className="space-y-3 pt-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px]">
-              Select Color Finish: <strong className="text-[#404d85]">{selectedVariant.name}</strong>
-            </span>
-            <span className="text-emerald-700 font-bold text-[11px]">
-              {selectedVariant.inStock ? "✓ In Stock" : "Out of Stock"}
-            </span>
-          </div>
+        {/* VARIANT / SIZE SELECTORS */}
+        {product.variants.length > 0 && (
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px]">
+                {product.category?.toLowerCase().includes("fashion") || product.category?.toLowerCase().includes("apparel") ? "Select Size & Fit:" : "Select Option:"}{" "}
+                <strong className="text-[#404d85]">{selectedVariant.name}</strong>
+              </span>
+              <span className="text-emerald-700 font-bold text-[11px]">
+                {selectedVariant.inStock ? "✓ In Stock" : "Out of Stock"}
+              </span>
+            </div>
 
-          <div className="flex items-center gap-2.5 flex-wrap">
-            {product.variants.map((v) => {
-              const isSelected = selectedVariant.id === v.id;
-              return (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => handleVariantSelect(v)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-[6px] border text-xs font-bold transition ${
-                    isSelected
-                      ? "border-[#404d85] bg-[#404d85]/5 ring-2 ring-[#404d85]/20 text-[#404d85]"
-                      : "border-slate-200 bg-white hover:border-slate-300 text-slate-700"
-                  }`}
-                >
-                  <span
-                    className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0"
-                    style={{ backgroundColor: v.colorCode }}
-                  />
-                  <span>{v.name}</span>
-                </button>
-              );
-            })}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {product.variants.map((v) => {
+                const isSelected = selectedVariant.id === v.id;
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => handleVariantSelect(v)}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-lg border text-xs font-bold transition ${
+                      isSelected
+                        ? "border-[#404d85] bg-[#404d85]/5 ring-2 ring-[#404d85]/20 text-[#404d85]"
+                        : "border-slate-200 bg-white hover:border-slate-300 text-slate-700"
+                    }`}
+                  >
+                    <span
+                      className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0"
+                      style={{ backgroundColor: v.colorCode }}
+                    />
+                    <span>{v.name}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* DELIVERY AVAILABILITY & PINCODE CHECKER */}
         <div className="p-4 rounded-[8px] bg-white border border-slate-200 space-y-2.5 text-xs">

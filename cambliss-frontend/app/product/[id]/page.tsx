@@ -6,10 +6,11 @@ import { MarketplacePageWrapper } from "@/components/storefront/MarketplacePageW
 import { ProductPurchaseHero, ProductHeroData } from "@/components/pdp/ProductPurchaseHero";
 import { ProductOffersStrip } from "@/components/pdp/ProductOffersStrip";
 import { FrequentlyBoughtTogether, BundleItem } from "@/components/pdp/FrequentlyBoughtTogether";
-import { ProductFullSpecsAndReviews, OtherSellerOffer } from "@/components/pdp/ProductFullSpecsAndReviews";
+import { ProductFullSpecsAndReviews, OtherSellerOffer, ReviewItem } from "@/components/pdp/ProductFullSpecsAndReviews";
 import { ProductCard } from "@/components/commerce/CommercePrimitives";
 import { fetchPDPDetails } from "@/lib/catalog-api";
 import { addToCartStorage } from "@/lib/cart-wishlist";
+import { fetchAuthenticProductPDP, fetchRelatedProducts } from "@/lib/productDiscovery";
 
 const KNOWN_PRODUCTS: Record<string, ProductHeroData> = {
   // 2. Beauty & Hydrating Serums
@@ -308,9 +309,33 @@ export default function ProductDetailPage({
     };
   });
 
+  const [customSpecs, setCustomSpecs] = useState<Record<string, string> | null>(null);
+  const [customFeatures, setCustomFeatures] = useState<string[] | null>(null);
+  const [customReviews, setCustomReviews] = useState<ReviewItem[] | null>(null);
+  const [customDesc, setCustomDesc] = useState<string | null>(null);
+  const [customBundle, setCustomBundle] = useState<BundleItem[] | null>(null);
+  const [similarItems, setSimilarItems] = useState<any[]>([]);
+
   useEffect(() => {
-    async function loadApiProduct() {
+    async function loadProduct() {
       try {
+        // 1. First check authentic product discovery engine (includes KYC merchants like Bhasker Fashion)
+        const authentic = await fetchAuthenticProductPDP(productId);
+        if (authentic) {
+          setProductData(authentic.hero);
+          if (authentic.specifications) setCustomSpecs(authentic.specifications);
+          if (authentic.features) setCustomFeatures(authentic.features);
+          if (authentic.reviews) setCustomReviews(authentic.reviews);
+          if (authentic.description) setCustomDesc(authentic.description);
+          if (authentic.bundleItems) setCustomBundle(authentic.bundleItems);
+
+          // Fetch real related products in the same category
+          const related = await fetchRelatedProducts(authentic.hero.category, productId);
+          setSimilarItems(related);
+          return;
+        }
+
+        // 2. Fallback to API PDP endpoint
         const pdp = await fetchPDPDetails(productId);
         if (pdp && pdp.product) {
           const apiP = pdp.product;
@@ -341,15 +366,18 @@ export default function ProductDetailPage({
             dispatchSla: pdp.buyBoxOffer?.dispatchSla || "Express 24-Hour Dispatch",
             stockCount: pdp.buyBoxOffer?.stockAvailable || 20,
           });
+
+          const related = await fetchRelatedProducts(apiP.categoryName || "General", productId);
+          setSimilarItems(related);
         }
       } catch (err) {
         console.warn("Using fallback local product data for:", productId, err);
       }
     }
-    loadApiProduct();
+    loadProduct();
   }, [productId]);
 
-  const specifications: Record<string, string> = {
+  const specifications: Record<string, string> = customSpecs || {
     "Brand & Model": `${productData.brand} (${productData.id})`,
     "Category": productData.category,
     "Seller": productData.sellerName,
@@ -358,70 +386,14 @@ export default function ProductDetailPage({
     "Return Window": "7 Days Hassle-Free Returns & Replacements",
   };
 
-  const features: string[] = [
+  const features: string[] = customFeatures || [
     `Authentic ${productData.brand} brand specification with full quality assurance.`,
     "Direct warehouse dispatch with sealed protective packaging.",
     "B2B tax invoice eligible with GST input credit.",
     "Backed by Office Connect buyer protection guarantee.",
   ];
 
-  const otherSellers: OtherSellerOffer[] = [
-    {
-      sellerId: "s-102",
-      sellerName: "Apex Digital Solutions",
-      sellerTier: "verified",
-      price: productData.basePrice + 500,
-      condition: "Brand New (Factory Sealed)",
-      deliveryEstimate: "FREE Delivery in 2 Days",
-      dispatchRate: "99.2%",
-      rating: 4.8,
-    },
-  ];
-
-  const similarProducts = [
-    {
-      id: "prod-2",
-      title: "UrbanStyle 240 GSM Heavyweight Oversized French Terry T-Shirt",
-      brand: "UrbanStyle",
-      price: 1499,
-      originalPrice: 2499,
-      rating: 4.8,
-      reviewsCount: 310,
-      deliveryEstimate: "Tomorrow, by 5 PM",
-      sellerName: "UrbanStyle Store",
-      sellerTier: "verified" as const,
-      stockQty: 45,
-      image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80",
-    },
-    {
-      id: "prod-3",
-      title: "Lumina Q1 Pro Custom Wireless Mechanical Keyboard QMK/VIA",
-      brand: "Lumina Keyboards",
-      price: 16999,
-      originalPrice: 19999,
-      rating: 4.9,
-      reviewsCount: 680,
-      deliveryEstimate: "Tomorrow, by 11 AM",
-      sellerName: "Lumina Keyboards Official",
-      sellerTier: "premium" as const,
-      stockQty: 12,
-      image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80",
-    },
-    {
-      id: "prod-7",
-      title: "Anker Prime 27,650mAh Power Bank (250W Fast Charger)",
-      brand: "Anker",
-      price: 14999,
-      originalPrice: 17999,
-      rating: 4.9,
-      reviewsCount: 680,
-      deliveryEstimate: "Tomorrow, by 2 PM",
-      sellerName: "Anker Official Direct",
-      sellerTier: "premium" as const,
-      stockQty: 22,
-      image: "https://images.unsplash.com/photo-1609081219090-a6d81d3085bf?auto=format&fit=crop&w=600&q=80",
-    },
-  ];
+  const otherSellers: OtherSellerOffer[] = [];
 
   const handleAddToCart = (variantId: string, qty: number) => {
     addToCartStorage({
@@ -484,7 +456,10 @@ export default function ProductDetailPage({
         />
 
         {/* 3. Promotional Offers & Bank Deals Strip */}
-        <ProductOffersStrip />
+        <ProductOffersStrip
+          category={productData.category}
+          basePrice={productData.basePrice}
+        />
 
         {/* 4. Frequently Bought Together */}
         <FrequentlyBoughtTogether
@@ -495,12 +470,16 @@ export default function ProductDetailPage({
             originalPrice: productData.originalPrice,
             image: productData.images[0],
           }}
+          bundleItems={customBundle || undefined}
           onAddBundleToCart={handleAddBundleToCart}
         />
 
         {/* 5. Comprehensive Overview, Specs, Seller Profile & Reviews */}
         <ProductFullSpecsAndReviews
-          description={`Experience exceptional performance with the ${productData.title}. Engineered with premium materials, high-fidelity components, and direct seller warranty.`}
+          description={
+            customDesc ||
+            `Experience exceptional craftsmanship and quality with the ${productData.title}. Manufactured and verified directly by ${productData.sellerName}.`
+          }
           features={features}
           specifications={specifications}
           sellerName={productData.sellerName}
@@ -508,6 +487,8 @@ export default function ProductDetailPage({
           otherSellers={otherSellers}
           rating={productData.rating}
           reviewsCount={productData.reviewsCount}
+          activePrice={productData.basePrice}
+          reviews={customReviews || undefined}
           onAddToCart={(sName, price) => {
             addToCartStorage({
               id: productData.id,
@@ -521,37 +502,39 @@ export default function ProductDetailPage({
         />
 
         {/* 6. Similar & Recommended Products */}
-        <div className="space-y-4 pt-4 border-t border-slate-200">
-          <div className="flex items-center justify-between">
-            <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider">
-              Similar Products Recommended for You
-            </h3>
-            <Link href="/storefront" className="text-xs font-bold text-[#404d85] hover:underline">
-              Explore More Products →
-            </Link>
-          </div>
+        {similarItems.length > 0 && (
+          <div className="space-y-4 pt-4 border-t border-slate-200">
+            <div className="flex items-center justify-between">
+              <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider">
+                Similar Products in {productData.category}
+              </h3>
+              <Link href="/storefront" className="text-xs font-bold text-[#404d85] hover:underline">
+                Explore More Products →
+              </Link>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {similarProducts.map((p) => (
-              <ProductCard
-                key={p.id}
-                id={p.id}
-                title={p.title}
-                brand={p.brand}
-                price={p.price}
-                originalPrice={p.originalPrice}
-                rating={p.rating}
-                reviewsCount={p.reviewsCount}
-                deliveryEstimate={p.deliveryEstimate}
-                sellerName={p.sellerName}
-                sellerTier={p.sellerTier}
-                stockQty={p.stockQty}
-                image={p.image}
-                variant="standard"
-              />
-            ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {similarItems.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  id={p.id}
+                  title={p.title}
+                  brand={p.brand}
+                  price={p.price}
+                  originalPrice={p.originalPrice}
+                  rating={p.rating}
+                  reviewsCount={p.reviewsCount}
+                  deliveryEstimate={p.deliveryEstimate}
+                  sellerName={p.sellerName}
+                  sellerTier={p.sellerTier}
+                  stockQty={p.stockQty}
+                  image={p.image}
+                  variant="standard"
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     </MarketplacePageWrapper>
